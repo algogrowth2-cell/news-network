@@ -280,7 +280,7 @@ export default function HomePage() {
       <div style={{ background: '#111827', color: '#94a3b8', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid #1f2937' }}>
         <div className="top-sub-bar-row" style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 16px' }}>
           <div className="hide-scrollbar" style={{ display: 'flex', gap: '16px', overflowX: 'auto', whiteSpace: 'nowrap', width: '100%' }}>
-            {['वीडियो', 'राशिफल', 'वेब स्टोरीज', 'फोटो गैलरी', 'ई-पेपर', 'शोक संदेश', 'क्लासिफाइड'].map((item) => (
+            {['वीडियो', 'राशिफल', 'वेब स्टोRIES', 'फोटो गैलरी', 'ई-पेपर', 'शोक संदेश', 'क्लासिफाइड'].map((item) => (
               <span 
                 key={item} 
                 onClick={() => setActiveCategory(item)} 
@@ -521,7 +521,7 @@ export default function HomePage() {
             <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {filteredArticles[0] && (
                 <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                  <Link href={`/article/${filteredArticles[0].id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div className="lead-hero-img-box">
                       <img src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} alt={filteredArticles[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <span style={{ position: 'absolute', bottom: '12px', left: '12px', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 800, padding: '4px 8px', borderRadius: '3px', textTransform: 'uppercase' }}>
@@ -547,7 +547,7 @@ export default function HomePage() {
               {filteredArticles.length > 1 && (
                 <div className="sub-cards-grid">
                   {filteredArticles.slice(1).map((item) => (
-                    <Link key={item.id} href={`/article/${item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={item.id} href={`/article/${item.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', height: '100%' }}>
                         <div style={{ height: '160px', width: '100%', background: '#e2e8f0' }}>
                           <img src={item.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600'} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -573,7 +573,7 @@ export default function HomePage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filteredArticles.map((art, idx) => (
-                    <Link key={art.id} href={`/article/${art.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', paddingBottom: '8px', borderBottom: idx !== filteredArticles.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                         <span style={{ fontSize: '16px', fontWeight: 800, color: '#cbd5e1' }}>0{idx + 1}</span>
                         <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', lineHeight: '1.4' }}>{art.title}</span>
