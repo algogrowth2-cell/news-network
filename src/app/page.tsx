@@ -104,11 +104,19 @@ export default function HomePage() {
         const qAds = query(collection(db, 'ads'), where('status', '==', 'active'));
         const adSnap = await getDocs(qAds);
         adSnap.docs.forEach(docSnap => {
-          const data = docSnap.data() as AdItem;
-          if (data.zone?.includes('728') || data.zone?.includes('हेडर')) {
-            setHeaderAd({ id: docSnap.id, ...data });
-          } else if (data.zone?.includes('300') || data.zone?.includes('साइडबार')) {
-            setSidebarAd({ id: docSnap.id, ...data });
+          const rawData = docSnap.data();
+          const cleanAd: AdItem = {
+            id: docSnap.id,
+            name: rawData.name || '',
+            zone: rawData.zone || '',
+            imageUrl: rawData.imageUrl || '',
+            targetUrl: rawData.targetUrl || '',
+            status: rawData.status || 'active'
+          };
+          if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर')) {
+            setHeaderAd(cleanAd);
+          } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार')) {
+            setSidebarAd(cleanAd);
           }
         });
       } catch (err) {
