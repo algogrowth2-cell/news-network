@@ -1,0 +1,174 @@
+/* Layout Shell */
+.adminContainer {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0f172a;
+  color: #f8fafc;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background-color: #0b1120;
+  border-right: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebarHeader {
+  padding: 18px 20px;
+  border-bottom: 1px solid #1e293b;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.logoBadge {
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.menu {
+  padding: 16px 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.navItemActive {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Main Content Area */
+.contentPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #090d16;
+}
+
+.topNavbar {
+  height: 60px;
+  min-height: 60px;
+  background-color: #0b1120;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  font-size: 13.5px;
+}
+
+.mainBody {
+  padding: 28px;
+  flex: 1;
+}
+
+/* Cards & Forms */
+.formCard {
+  background-color: #0f172a;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #1e293b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.fieldGroup {
+  margin-bottom: 16px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.inputControl {
+  width: 100%;
+  padding: 9px 12px;
+  background-color: #0b1120;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.inputControl:focus {
+  border-color: #3b82f6;
+}
+
+.btnPrimary {
+  background-color: #2563eb;
+  color: #ffffff;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13.5px;
+  transition: background-color 0.15s ease;
+}
+
+.btnPrimary:hover {
+  background-color: #1d4ed8;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
