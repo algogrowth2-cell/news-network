@@ -9,8 +9,31 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+
+  // 1. STRICT AUTH CHECK: Bina ID-Password ke dashboard kabhi nahi khulega
+  useEffect(() => {
+    // Agar user pehle se login page par hai toh layout check bypass karein
+    if (pathname === '/admin/login') {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    const adminUser = localStorage.getItem('admin_user');
+    const adminToken = localStorage.getItem('admin_token');
+
+    if (!adminUser || !adminToken) {
+      // User logged in nahi hai -> Direct login page par bhejo
+      setIsAuthenticated(false);
+      router.replace('/admin/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+    setIsCheckingAuth(false);
+  }, [pathname, router]);
 
   // Route change hone par mobile drawer automatically close ho jaye
   useEffect(() => {
@@ -20,10 +43,29 @@ export default function AdminLayout({
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
-    router.push('/admin/login');
+    setIsAuthenticated(false);
+    router.replace('/admin/login');
   };
 
-  // Screenshot (image_00ffbd.png) ke exact 4 categories aur 19 navigation links
+  // Agar user '/admin/login' page par hai, toh sidebar ke bina sirf login page render karein
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  // Jab tak check chal raha hai, sleek loading screen dikhayein (taaki dashboard blink na ho)
+  if (isCheckingAuth || !isAuthenticated) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#090d16', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid #1e293b', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
+        <style jsx global>{`
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        `}</style>
+        <span style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Verifying Admin Credentials...</span>
+      </div>
+    );
+  }
+
+  // Screenshot ke exact 4 categories aur 19 navigation links
   const navSections = [
     {
       heading: 'MAIN',
@@ -143,7 +185,7 @@ export default function AdminLayout({
         onClick={() => setMobileMenuOpen(false)}
       />
 
-      {/* COMPLETE SIDEBAR (Exact match with Screenshot image_00ffbd.png) */}
+      {/* COMPLETE SIDEBAR */}
       <aside className={`admin-sidebar-container ${mobileMenuOpen ? 'open' : ''}`}>
         
         {/* Brand & User Profile Header */}
@@ -225,7 +267,7 @@ export default function AdminLayout({
               gap: '8px',
               background: 'none',
               border: 'none',
-              color: '#94a3b8',
+              color: '#ef4444',
               fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer',
