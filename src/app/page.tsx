@@ -29,6 +29,19 @@ interface AdItem {
   status: string;
 }
 
+interface MarketRates {
+  diesel: string;
+  petrol: string;
+  nifty: string;
+  niftyChange: string;
+  niftyPositive: boolean;
+  sensex: string;
+  sensexChange: string;
+  sensexPositive: boolean;
+  gold: string;
+  silver: string;
+}
+
 const DEFAULT_RASHI_LIST = [
   { id: 'aries', name: 'मेष', sign: '♈' },
   { id: 'taurus', name: 'वृषभ', sign: '♉' },
@@ -55,10 +68,73 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
 
+  // Dynamic Date State
+  const [currentHindiDate, setCurrentHindiDate] = useState('');
+
+  // Dynamic Market Rates State
+  const [marketRates, setMarketRates] = useState<MarketRates>({
+    diesel: '₹95.20',
+    petrol: '₹102.12',
+    nifty: '23,897.7 points',
+    niftyChange: '-16.70',
+    niftyPositive: false,
+    sensex: '76,642.81 points',
+    sensexChange: '+72.41',
+    sensexPositive: true,
+    silver: '₹2,50,000',
+    gold: '₹1,56,810'
+  });
+
   // Rashifal State
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
+  // 1. Dynamic Live Hindi Date Formatter (Auto Updates Every Day)
+  useEffect(() => {
+    const updateDate = () => {
+      const days = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+      const months = [
+        'जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून',
+        'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'
+      ];
+      const now = new Date();
+      const dayName = days[now.getDay()];
+      const dateNum = now.getDate();
+      const monthName = months[now.getMonth()];
+      const year = now.getFullYear();
+
+      setCurrentHindiDate(`${dayName}, ${dateNum} ${monthName} ${year}`);
+    };
+
+    updateDate();
+    const interval = setInterval(updateDate, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 2. Real-time Market Rates Sync via Firestore (with daily fallback)
+  useEffect(() => {
+    const unsubMarket = onSnapshot(doc(db, 'settings', 'market'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setMarketRates({
+          diesel: data.diesel || '₹95.20',
+          petrol: data.petrol || '₹102.12',
+          nifty: data.nifty || '23,897.7 points',
+          niftyChange: data.niftyChange || '-16.70',
+          niftyPositive: data.niftyPositive ?? false,
+          sensex: data.sensex || '76,642.81 points',
+          sensexChange: data.senseChange || '+72.41',
+          sensexPositive: data.sensexPositive ?? true,
+          silver: data.silver || '₹2,50,000',
+          gold: data.gold || '₹1,56,810'
+        });
+      }
+    });
+
+    return () => unsubMarket();
+  }, []);
+
+  // 3. User Session Check
   useEffect(() => {
     const cached = localStorage.getItem('reader_user');
     if (cached) {
@@ -260,19 +336,27 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* 1. TOP MARKET STATS TICKER */}
+      {/* 1. DYNAMIC TOP MARKET STATS TICKER & LIVE DATE */}
       <div style={{ background: '#0b0f19', color: '#cbd5e1', fontSize: '11.5px', padding: '6px 0', borderBottom: '1px solid #1e293b' }}>
         <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="hide-scrollbar" style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-            <span>Diesel (Delhi) <b style={{ color: '#fff' }}>₹95.20</b></span>
-            <span>Petrol (Delhi) <b style={{ color: '#fff' }}>₹102.12</b></span>
-            <span>Nifty <b style={{ color: '#f87171' }}>23,897.7 points ↘ -16.70</b></span>
-            <span>Sensex <b style={{ color: '#4ade80' }}>76,642.81 points ↗ +72.41</b></span>
-            <span>Silver <b style={{ color: '#fff' }}>₹2,50,000</b></span>
-            <span>Gold <b style={{ color: '#fff' }}>₹1,56,810</b></span>
+            <span>Diesel (Delhi) <b style={{ color: '#fff' }}>{marketRates.diesel}</b></span>
+            <span>Petrol (Delhi) <b style={{ color: '#fff' }}>{marketRates.petrol}</b></span>
+            <span>
+              Nifty <b style={{ color: marketRates.niftyPositive ? '#4ade80' : '#f87171' }}>
+                {marketRates.nifty} {marketRates.niftyPositive ? '↗' : '↘'} {marketRates.niftyChange}
+              </b>
+            </span>
+            <span>
+              Sensex <b style={{ color: marketRates.sensexPositive ? '#4ade80' : '#f87171' }}>
+                {marketRates.sensex} {marketRates.sensexPositive ? '↗' : '↘'} {marketRates.sensexChange}
+              </b>
+            </span>
+            <span>Silver <b style={{ color: '#fff' }}>{marketRates.silver}</b></span>
+            <span>Gold <b style={{ color: '#fff' }}>{marketRates.gold}</b></span>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', whiteSpace: 'nowrap', paddingLeft: '12px' }}>
-            <span>शनिवार, 5 सितंबर 2026</span>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', whiteSpace: 'nowrap', paddingLeft: '12px', flexShrink: 0 }}>
+            <span>{currentHindiDate || 'लोड हो रहा है...'}</span>
           </div>
         </div>
       </div>
@@ -304,7 +388,6 @@ export default function HomePage() {
               विज्ञापन दें
             </Link>
             
-            {/* DYNAMIC MULTI-LANGUAGE TRANSLATOR DROPDOWN */}
             <LanguageTranslator />
             
             <span style={{ color: '#6b7280' }}>|</span>
@@ -453,7 +536,7 @@ export default function HomePage() {
               </h3>
             </div>
             <span style={{ fontSize: '11.5px', color: '#64748b' }}>
-              {activeRashiInfo?.date || '5 सितंबर 2026'}
+              {activeRashiInfo?.date || currentHindiDate}
             </span>
           </div>
 
@@ -535,7 +618,7 @@ export default function HomePage() {
 
                     <div style={{ padding: '18px' }}>
                       <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '6px' }}>
-                        {filteredArticles[0].createdAt || '5 सितंबर 2026'} | 👁️ {filteredArticles[0].views || 0} बार पढ़ा गया
+                        {filteredArticles[0].createdAt || currentHindiDate} | 👁️ {filteredArticles[0].views || 0} बार पढ़ा गया
                       </div>
                       <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', lineHeight: 1.3 }}>
                         {filteredArticles[0].title}
