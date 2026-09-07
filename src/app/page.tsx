@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
+import LanguageTranslator from '@/components/LanguageTranslator';
 
 interface ArticleItem {
   id: string;
@@ -302,7 +303,10 @@ export default function HomePage() {
             <Link href="/advertiser/login" style={{ background: primary, color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}>
               विज्ञापन दें
             </Link>
-            <span style={{ fontSize: '11px', cursor: 'pointer' }}>🌐 हिंदी</span>
+            
+            {/* DYNAMIC MULTI-LANGUAGE TRANSLATOR DROPDOWN */}
+            <LanguageTranslator />
+            
             <span style={{ color: '#6b7280' }}>|</span>
 
             {readerUser ? (
