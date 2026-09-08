@@ -1,192 +1,412 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { loadRazorpayScript } from '@/lib/razorpay';
 import Link from 'next/link';
 
+interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  validity: string;
+  features: string[];
+}
+
+const REPORTER_PLANS: Plan[] = [
+  {
+    id: 'starter',
+    name: 'Basic Reporter',
+    price: 499,
+    validity: '1 महीना (Monthly)',
+    features: ['प्रति माह 15 खबरें प्रकाशित करें', 'लेखक प्रोफाइल बैज', 'स्टैंडर्ड सपोर्ट']
+  },
+  {
+    id: 'pro',
+    name: 'Pro Journalist',
+    price: 1199,
+    validity: '3 महीने (Quarterly)',
+    features: ['अनलिमिटेड खबरें प्रकाशित करें', 'वेरिफाइड प्रेस आईडी कार्ड', 'ताज़ा ब्रेकिंग न्यूज़ टैग', 'प्राथमिकता सपोर्ट']
+  },
+  {
+    id: 'chief',
+    name: 'Bureau Chief (वार्षिक)',
+    price: 3999,
+    validity: '1 वर्ष (Annual)',
+    features: ['अनलिमिटेड खबरें व वीडियो', 'ज़िला ब्यूरो प्रमुख बैज', 'वेब स्टोरीज़ व ई-पेपर एक्सेस', 'डायरेक्ट एडिटोरियल एक्सेस']
+  }
+];
+
 export default function PatrakarDashboard() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [reporter, setReporter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('सभी');
+  const [payingPlan, setPayingPlan] = useState<string | null>(null);
+
+  // Article creation state
+  const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('राजनीति');
+  const [submitting, setSubmitting] = useState(false);
+  const [articleSuccess, setArticleSuccess] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
-    async function checkStatus() {
-      const cached = localStorage.getItem('patrakar_user');
-      if (!cached) {
-        router.push('/patrakar/login');
-        return;
-      }
-      const parsed = JSON.parse(cached);
+    const raw = localStorage.getItem('patrakar_user');
+    if (!raw) {
+      router.replace('/patrakar/login');
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    setReporter(parsed);
 
-      try {
+    // Refresh user from DB to check membership
+    async function syncProfile() {
+      if (parsed.id) {
         const snap = await getDoc(doc(db, 'reporters', parsed.id));
         if (snap.exists()) {
-          const freshData = snap.data();
-          const updatedUser = { id: snap.id, ...freshData };
-          setUser(updatedUser);
-          localStorage.setItem('patrakar_user', JSON.stringify(updatedUser));
-        } else {
-          setUser(parsed);
+          const freshData = { id: snap.id, ...snap.data() };
+          setReporter(freshData);
+          localStorage.setItem('patrakar_user', JSON.stringify(freshData));
         }
-      } catch (e) {
-        setUser(parsed);
       }
       setLoading(false);
     }
-    checkStatus();
+    syncProfile();
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('patrakar_user');
-    router.push('/patrakar/login');
+  const handleRazorpayPayment = async (plan: Plan) => {
+    setPayingPlan(plan.id);
+    const res = await loadRazorpayScript();
+    if (!res) {
+      alert('Razorpay SDK लोड करने में विफल रहा। कृपया इंटरनेट कनेक्शन जांचें।');
+      setPayingPlan(null);
+      return;
+    }
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_demoKey12345',
+      amount: plan.price * 100, // in paise
+      currency: 'INR',
+      name: 'News Network Journalist Portal',
+      description: `${plan.name} - ${plan.validity}`,
+      handler: async function (response: any) {
+        try {
+          // Update Firestore reporter membership
+          const expiryDate = new Date();
+          if (plan.id === 'starter') expiryDate.setDate(expiryDate.getDate() + 30);
+          else if (plan.id === 'pro') expiryDate.setDate(expiryDate.getDate() + 90);
+          else expiryDate.setDate(expiryDate.getDate() + 365);
+
+          const membershipData = {
+            planId: plan.id,
+            planName: plan.name,
+            amount: plan.price,
+            paymentId: response.razorpay_payment_id || 'test_pay_' + Date.now(),
+            status: 'active',
+            activatedAt: new Date().toISOString(),
+            expiresAt: expiryDate.toISOString()
+          };
+
+          await updateDoc(doc(db, 'reporters', reporter.id), {
+            membership: membershipData
+          });
+
+          // Update local state
+          const updated = { ...reporter, membership: membershipData };
+          setReporter(updated);
+          localStorage.setItem('patrakar_user', JSON.stringify(updated));
+
+          alert(`बधाई हो! आपका ${plan.name} एक्टिवेट हो गया है।`);
+        } catch (err) {
+          console.error('Error saving membership:', err);
+          alert('पेमेंट सफल रहा, पर एक्टिवेशन में समस्या आई।');
+        }
+        setPayingPlan(null);
+      },
+      prefill: {
+        name: reporter?.name || 'Journalist',
+        email: reporter?.email || '',
+        contact: reporter?.mobile || ''
+      },
+      theme: {
+        color: '#ea580c'
+      }
+    };
+
+    const paymentObject = new (window as any).Razorpay(options);
+    paymentObject.open();
+  };
+
+  const handleCreateArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim()) return;
+
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'articles'), {
+        title,
+        summary,
+        content,
+        category,
+        authorName: reporter?.name || 'पत्रकार',
+        authorEmail: reporter?.email || '',
+        reporterId: reporter?.id,
+        siteId: 'the-local-leader', // Default or user choice
+        createdAt: new Date().toISOString().split('T')[0],
+        views: 0,
+        status: 'pending' // Admin review
+      });
+      setTitle('');
+      setSummary('');
+      setContent('');
+      setArticleSuccess(true);
+      setTimeout(() => setArticleSuccess(false), 5000);
+    } catch (err) {
+      console.error(err);
+      alert('खबर सबमिट करने में समस्या आई।');
+    }
+    setSubmitting(false);
   };
 
   if (loading) {
-    return <div style={{ padding: '60px', textAlign: 'center' }}>सत्यापन हो रहा है...</div>;
-  }
-
-  // 1. Pending Approval Screen (Matching Screenshot 9eece3)
-  if (user?.status === 'pending') {
     return (
-      <div style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid #ea580c', color: '#ea580c', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', marginBottom: '16px' }}>
-            🕒
-          </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: '0 0 8px 0' }}>
-            समीक्षा प्रतीक्षित
-          </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-            आपका आवेदन अभी समीक्षा में है। स्वीकृति मिलने पर आपको सूचित किया जाएगा।
-          </p>
-          <div style={{ marginTop: '24px' }}>
-            <button onClick={handleLogout} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
-              लॉग आउट करें
-            </button>
-          </div>
-        </div>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+        पत्रकार प्रोफ़ाइल लोड हो रही है...
       </div>
     );
   }
 
-  // 2. Approved Dashboard Screen (Matching Screenshot 9eeda1)
+  const hasActiveMembership = reporter?.membership?.status === 'active';
+
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Header */}
-      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '12px 24px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '38px', height: '38px', background: '#fff7ed', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ea580c', fontSize: '18px' }}>
-              📰
-            </div>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>पत्रकार पोर्टल</div>
-              <div style={{ fontSize: '11px', color: '#94a3b8' }}>PTR260002</div>
+      {/* Top Navbar */}
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '24px' }}>🪪</span>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>पत्रकार डेस्क</h2>
+            <div style={{ fontSize: '11px', color: '#64748b' }}>
+              नमस्ते, <b>{reporter?.name}</b> ({reporter?.email})
             </div>
           </div>
+        </div>
 
-          <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            [→ लॉग आउट
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link href="/" style={{ fontSize: '12px', color: '#64748b', textDecoration: 'none' }}>
+            वेबसाइट देखें ↗
+          </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem('patrakar_user');
+              router.push('/patrakar/login');
+            }}
+            style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+          >
+            लॉग आउट
           </button>
         </div>
       </header>
 
-      {/* Navigation Sub-bar */}
-      <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '8px 24px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', gap: '12px' }}>
-          <button style={{ background: '#ea580c', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '13px', fontWeight: 600 }}>
-            📄 डैशबोर्ड
-          </button>
-          <button onClick={() => router.push('/patrakar/submissions/new')} style={{ background: 'none', border: 'none', color: '#64748b', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}>
-            + नया लेख
-          </button>
-          <button style={{ background: 'none', border: 'none', color: '#64748b', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}>
-            🪪 ID कार्ड
-          </button>
-          <button style={{ background: 'none', border: 'none', color: '#64748b', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}>
-            👤 प्रोफ़ाइल
-          </button>
-        </div>
-      </div>
-
-      {/* Main Panel Content */}
-      <main style={{ maxWidth: '1100px', margin: '28px auto', padding: '0 20px' }}>
+      <main style={{ maxWidth: '1100px', margin: '30px auto', padding: '0 16px' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        {/* MEMBERSHIP GATE: Agar membership active nahi hai toh pehle Plans screen aayegi */}
+        {!hasActiveMembership ? (
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>नमस्ते, {user?.name || 'pankaj'}</h1>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>{user?.name} · · {user?.city || 'indore'}</p>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '11px', fontWeight: 800, padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                प्रेस सदस्यता योजना
+              </span>
+              <h1 style={{ fontSize: '26px', fontWeight: 900, color: '#1e293b', margin: '10px 0 6px 0' }}>
+                पत्रकार सदस्यता प्लान चुनें
+              </h1>
+              <p style={{ fontSize: '13.5px', color: '#64748b', maxWidth: '600px', margin: '0 auto' }}>
+                खबरें प्रकाशित करने और डिजिटल प्रेस क्रेडेंशियल प्राप्त करने के लिए अपनी पसंद की योजना सक्रिय करें।
+              </p>
+            </div>
+
+            {/* Plans Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+              {REPORTER_PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: plan.id === 'pro' ? '2px solid #ea580c' : '1px solid #e2e8f0',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    boxShadow: plan.id === 'pro' ? '0 10px 25px rgba(234,88,12,0.1)' : '0 4px 12px rgba(0,0,0,0.03)',
+                    position: 'relative'
+                  }}
+                >
+                  {plan.id === 'pro' && (
+                    <span style={{ position: 'absolute', top: '-11px', right: '16px', background: '#ea580c', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 10px', borderRadius: '20px' }}>
+                      सर्वाधिक लोकप्रिय
+                    </span>
+                  )}
+
+                  <div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: '0 0 4px 0' }}>{plan.name}</h3>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>{plan.validity}</div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '20px' }}>
+                      <span style={{ fontSize: '28px', fontWeight: 900, color: '#ea580c' }}>₹{plan.price}</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>/ अवधि</span>
+                    </div>
+
+                    <ul style={{ paddingLeft: '20px', margin: '0 0 24px 0', fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {plan.features.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <button
+                    onClick={() => handleRazorpayPayment(plan)}
+                    disabled={payingPlan === plan.id}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: plan.id === 'pro' ? '#ea580c' : '#1e293b',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '13.5px',
+                      fontWeight: 800,
+                      cursor: payingPlan === plan.id ? 'not-allowed' : 'pointer',
+                      transition: 'opacity 0.2s'
+                    }}
+                  >
+                    {payingPlan === plan.id ? 'Razorpay खुल रहा है...' : `₹${plan.price} में एक्टिवेट करें →`}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <button onClick={() => router.push('/patrakar/submissions/new')} style={{ background: '#ea580c', color: '#fff', border: 'none', borderRadius: '6px', padding: '10px 18px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
-            + नया लेख जमा करें
-          </button>
-        </div>
-
-        {/* 3 Metric Summary Boxes */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '44px', height: '44px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: '20px' }}>
-              📄
+        ) : (
+          /* MEMBERSHIP ACTIVE: News Article Create Dashboard */
+          <div>
+            {/* Active Plan Status Badge */}
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '14px 18px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>✅</span>
+                <div>
+                  <b style={{ color: '#065f46', fontSize: '14px' }}>सक्रिय सदस्यता: {reporter.membership.planName}</b>
+                  <div style={{ fontSize: '11.5px', color: '#047857' }}>
+                    वैधता: {new Date(reporter.membership.expiresAt).toLocaleDateString('hi-IN')} तक
+                  </div>
+                </div>
+              </div>
+              <span style={{ fontSize: '11px', background: '#059669', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                वेरिफाइड पत्रकार
+              </span>
             </div>
-            <div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b' }}>0</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>कुल लेख</div>
+
+            {/* Article Submission Card */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: '0 0 16px 0' }}>
+                ✍️ नई खबर / लेख दर्ज करें
+              </h2>
+
+              {articleSuccess && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#15803d', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', fontWeight: 600 }}>
+                  ✓ आपकी खबर सफलतापूर्वक प्रेषित हो गई है। संपादक द्वारा समीक्षा के बाद पोर्टल पर लाइव प्रकाशित होगी।
+                </div>
+              )}
+
+              <form onSubmit={handleCreateArticle} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    खबर का मुख्य शीर्षक (Headline)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="आकर्षक शीर्षक दर्ज करें..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    style={{ width: '100%', padding: '11px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      श्रेणी (Category)
+                    </label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      style={{ width: '100%', padding: '11px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13.5px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                    >
+                      <option value="राजनीति">राजनीति (Politics)</option>
+                      <option value="अपराध">अपराध (Crime)</option>
+                      <option value="व्यापार">व्यापार (Business)</option>
+                      <option value="स्वास्थ्य">स्वास्थ्य (Health)</option>
+                      <option value="खेल">खेल (Sports)</option>
+                      <option value="राज्य">राज्य / स्थानीय</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      संक्षिप्त विवरण (Short Summary)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="1-2 पंक्तियों में सार..."
+                      value={summary}
+                      onChange={(e) => setSummary(e.target.value)}
+                      style={{ width: '100%', padding: '11px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    खबर का विस्तृत विवरण (Full Article Story)
+                  </label>
+                  <textarea
+                    required
+                    rows={8}
+                    placeholder="खबर का पूरा ब्यौरा विस्तार से यहां लिखें..."
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    style={{ width: '100%', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', lineHeight: '1.6' }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    alignSelf: 'flex-start',
+                    padding: '12px 28px',
+                    background: '#ea580c',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    cursor: submitting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {submitting ? 'भेजा जा रहा है...' : 'संपादक को खबर प्रेषित करें →'}
+                </button>
+              </form>
             </div>
           </div>
-
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '44px', height: '44px', background: '#ecfdf5', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontSize: '20px' }}>
-              ✔️
-            </div>
-            <div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b' }}>0</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>स्वीकृत</div>
-            </div>
-          </div>
-
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '44px', height: '44px', background: '#f5f3ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8b5cf6', fontSize: '20px' }}>
-              👁️
-            </div>
-            <div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b' }}>0</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>कुल व्यूज़</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Filters */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          {['सभी', 'ड्राफ्ट', 'समीक्षा में', 'स्वीकृत', 'अस्वीकृत', 'संशोधन आवश्यक'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                background: activeTab === tab ? '#ea580c' : '#ffffff',
-                color: activeTab === tab ? '#fff' : '#64748b',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                padding: '6px 14px',
-                fontSize: '12.5px',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab ? 700 : 500
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Empty State Box */}
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '60px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
-          कोई लेख नहीं मिला
-        </div>
+        )}
 
       </main>
+
     </div>
   );
 }

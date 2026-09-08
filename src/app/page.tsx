@@ -539,7 +539,7 @@ export default function HomePage() {
               {activeRashiInfo?.date || currentHindiDate}
             </span>
           </div>
-
+          
           <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
             {DEFAULT_RASHI_LIST.map((r) => {
               const isSelected = selectedRashi === r.id;
@@ -568,7 +568,7 @@ export default function HomePage() {
               );
             })}
           </div>
-
+           
           <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid #edf2f7', marginTop: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -615,7 +615,7 @@ export default function HomePage() {
                         {filteredArticles[0].category || 'ताज़ा खबर'}
                       </span>
                     </div>
-
+                    
                     <div style={{ padding: '18px' }}>
                       <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '6px' }}>
                         {filteredArticles[0].createdAt || currentHindiDate} | 👁️ {filteredArticles[0].views || 0} बार पढ़ा गया
@@ -630,7 +630,7 @@ export default function HomePage() {
                   </Link>
                 </div>
               )}
-
+              
               {filteredArticles.length > 1 && (
                 <div className="sub-cards-grid">
                   {filteredArticles.slice(1).map((item) => (
@@ -649,7 +649,7 @@ export default function HomePage() {
                 </div>
               )}
             </section>
-
+             
             {/* Right Column */}
             <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '16px' }}>
@@ -657,7 +657,7 @@ export default function HomePage() {
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
                   <h3 style={{ fontSize: '14.5px', fontWeight: 800, margin: 0, textTransform: 'uppercase' }}>बड़ी सुर्खियां (Trending)</h3>
                 </div>
-
+                  
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filteredArticles.map((art, idx) => (
                     <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -669,7 +669,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-
+              
               {/* Sidebar Ad */}
               <div style={{ height: '240px', background: '#e2e8f0', borderRadius: '6px', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {sidebarAd ? (
@@ -687,7 +687,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
-
+      
       {/* 8. DYNAMIC FOOTER COMPONENT */}
       <Footer 
         siteName={siteConfig?.name || 'द लोकल लीडर'} 
@@ -695,7 +695,7 @@ export default function HomePage() {
         logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
         tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
       />
-
+      
     </div>
   );
-}
+} 
