@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { loadRazorpayScript } from '@/lib/razorpay';
@@ -67,7 +67,7 @@ const CITIES_DATA: CityItem[] = [
   { id: 'patna', name: 'पटना', stateId: 'bihar' },
 ];
 
-export default function EPaperPage() {
+function EPaperContent() {
   const searchParams = useSearchParams();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
@@ -140,7 +140,6 @@ export default function EPaperPage() {
   const primary = siteConfig?.primaryColor || '#ea580c';
   const siteName = siteConfig?.name || 'द लोकल लीडर';
 
-  // Handle Local Reader Login/Signup
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -178,7 +177,6 @@ export default function EPaperPage() {
     }
   };
 
-  // Razorpay Checkout
   const handleRazorpayPay = async () => {
     setPaying(true);
     const loaded = await loadRazorpayScript();
@@ -269,11 +267,9 @@ export default function EPaperPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12.5px', color: '#334155' }}>
           {step === 'editions' && (
-            <>
-              <button onClick={() => setStep('state')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12.5px', color: '#334155', fontWeight: 600 }}>
-                📍 शहर बदलें
-              </button>
-            </>
+            <button onClick={() => setStep('state')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12.5px', color: '#334155', fontWeight: 600 }}>
+              📍 शहर बदलें
+            </button>
           )}
 
           {readerUser ? (
@@ -291,10 +287,10 @@ export default function EPaperPage() {
         </div>
       </header>
 
-      {/* 2. BODY CONTENT (AUTH -> STATE -> CITY -> PLAN -> EDITIONS) */}
+      {/* 2. BODY CONTENT */}
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         
-        {/* STEP 0: MANDATORY READER LOGIN / SIGNUP */}
+        {/* STEP 0: LOGIN / SIGNUP */}
         {step === 'auth' && (
           <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', padding: '30px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -309,7 +305,6 @@ export default function EPaperPage() {
               </p>
             </div>
 
-            {/* Toggle Login / Signup */}
             <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '4px', marginBottom: '18px' }}>
               <button
                 type="button"
@@ -514,10 +509,9 @@ export default function EPaperPage() {
           </div>
         )}
 
-        {/* STEP 3: RAZORPAY MEMBERSHIP PAYWALL */}
+        {/* STEP 3: MEMBERSHIP PLAN / RAZORPAY PAYWALL */}
         {step === 'plan' && (
           <div style={{ width: '100%', maxWidth: '580px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 12px 40px rgba(0,0,0,0.08)', padding: '24px', position: 'relative' }}>
-            
             <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '18px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', alignItems: 'center', border: '1px solid #edf2f7' }}>
               <div>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', marginBottom: '8px' }}>
@@ -611,7 +605,7 @@ export default function EPaperPage() {
           </div>
         )}
 
-        {/* STEP 4: E-PAPER EDITIONS READER */}
+        {/* STEP 4: EDITIONS */}
         {step === 'editions' && (
           <div style={{ width: '100%', maxWidth: '1100px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 900, margin: '0 0 20px 0', color: '#1e293b' }}>
@@ -678,5 +672,13 @@ export default function EPaperPage() {
       </footer>
 
     </div>
+  );
+}
+
+export default function EPaperPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>ई-पेपर लोड हो रहा है...</div>}>
+      <EPaperContent />
+    </Suspense>
   );
 }
