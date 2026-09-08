@@ -71,10 +71,8 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
 
-  // Dynamic Date State
   const [currentHindiDate, setCurrentHindiDate] = useState('');
 
-  // Dynamic Market Rates State
   const [marketRates, setMarketRates] = useState<MarketRates>({
     diesel: '₹95.20',
     petrol: '₹102.12',
@@ -88,11 +86,9 @@ export default function HomePage() {
     gold: '₹1,56,810'
   });
 
-  // Rashifal State
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
-  // Category navigation helper (handles direct page redirection for E-Paper)
   const handleCategoryClick = (cat: string) => {
     if (cat === 'ई-पेपर') {
       router.push(`/epaper?site=${currentSlug}`);
@@ -101,7 +97,6 @@ export default function HomePage() {
     setActiveCategory(cat);
   };
 
-  // 1. Dynamic Live Hindi Date Formatter (Auto Updates Every Day)
   useEffect(() => {
     const updateDate = () => {
       const days = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
@@ -123,7 +118,6 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // 2. Real-time Market Rates Sync via Firestore (with daily fallback)
   useEffect(() => {
     const unsubMarket = onSnapshot(doc(db, 'settings', 'market'), (snap) => {
       if (snap.exists()) {
@@ -146,7 +140,6 @@ export default function HomePage() {
     return () => unsubMarket();
   }, []);
 
-  // 3. User Session Check
   useEffect(() => {
     const cached = localStorage.getItem('reader_user');
     if (cached) {
@@ -189,32 +182,45 @@ export default function HomePage() {
         );
         const artSnap = await getDocs(qArt);
         
-        // Admin Approval Guard: only allow published or approved articles on homepage
+        // 🔒 STRICT APPROVAL GUARD: Reject anything that is 'pending' or not explicitly published/approved
         const approvedArticles = artSnap.docs
           .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter(art => {
-            const st = (art.status || 'published').toLowerCase();
-            return st === 'published' || st === 'approved';
+            const rawStatus = (art.status || '').toLowerCase().trim();
+            // Agar status pending ya review me hai, to homepage pe KABHI NAHI DIKHEGA
+            if (rawStatus === 'pending' || rawStatus === 'pending_review' || rawStatus === 'hold') {
+              return false;
+            }
+            return rawStatus === 'published' || rawStatus === 'approved';
           });
 
         setArticles(approvedArticles);
 
-        const qAds = query(collection(db, 'ads'), where('status', '==', 'active'));
+        // 🔒 STRICT AD APPROVAL GUARD: Only show ads with status 'active' or 'approved'
+        const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
+        setHeaderAd(null);
+        setSidebarAd(null);
+
         adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
-          const cleanAd: AdItem = {
-            id: docSnap.id,
-            name: rawData.name || '',
-            zone: rawData.zone || '',
-            imageUrl: rawData.imageUrl || '',
-            targetUrl: rawData.targetUrl || '',
-            status: rawData.status || 'active'
-          };
-          if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर')) {
-            setHeaderAd(cleanAd);
-          } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार')) {
-            setSidebarAd(cleanAd);
+          const adStatus = (rawData.status || '').toLowerCase().trim();
+          
+          // Only active/approved ads are allowed
+          if (adStatus === 'active' || adStatus === 'approved') {
+            const cleanAd: AdItem = {
+              id: docSnap.id,
+              name: rawData.name || '',
+              zone: rawData.zone || '',
+              imageUrl: rawData.imageUrl || '',
+              targetUrl: rawData.targetUrl || '',
+              status: adStatus
+            };
+            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर')) {
+              setHeaderAd(cleanAd);
+            } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार')) {
+              setSidebarAd(cleanAd);
+            }
           }
         });
       } catch (err) {
@@ -269,7 +275,6 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: siteFont, display: 'flex', flexDirection: 'column' }}>
       
-      {/* Mobile Responsive Injected Styles */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -434,11 +439,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 3. MAIN HEADER WITH SWITCHER BUTTON */}
+      {/* 3. MAIN HEADER */}
       <header style={{ background: headerBg, borderBottom: '1px solid #e5e7eb', padding: '12px 0' }}>
         <div className="main-header-row" style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 16px' }}>
           
-          {/* Logo and Tagline */}
           <Link href={`/?site=${currentSlug}`} style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <img 
@@ -457,7 +461,6 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Right Action Bar */}
           <div className="main-header-actions">
             <SiteSwitcher 
               currentSlug={currentSlug} 
@@ -531,7 +534,7 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* 5. TOP LEADERBOARD AD CONTAINER */}
+      {/* 5. TOP LEADERBOARD AD */}
       <div style={{ maxWidth: '1240px', margin: '14px auto 0 auto', padding: '0 16px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ minHeight: '80px', maxHeight: '100px', background: '#e2e8f0', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           {headerAd ? (
@@ -546,7 +549,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 6. DYNAMIC RASHIFAL WIDGET */}
+      {/* 6. DYNAMIC RASHIFAL */}
       <div style={{ maxWidth: '1240px', margin: '18px auto 0 auto', padding: '0 16px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
@@ -619,7 +622,7 @@ export default function HomePage() {
               {searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : `${siteConfig?.name || 'इस साइट'} के लिए अभी कोई खबर उपलब्ध नहीं है`}
             </h3>
             <p style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>
-              Admin Panel me jakar article create karein aur portal dropdown me "{siteConfig?.name}" select karke publish karein.
+              खबरें संपादक द्वारा समीक्षा और अनुमोदन के बाद ही यहां प्रदर्शित होंगी।
             </p>
           </div>
         ) : (
@@ -709,7 +712,7 @@ export default function HomePage() {
         )}
       </main>
       
-      {/* 8. DYNAMIC FOOTER COMPONENT */}
+      {/* 8. DYNAMIC FOOTER */}
       <Footer 
         siteName={siteConfig?.name || 'द लोकल लीडर'} 
         primaryColor={primary}
