@@ -52,22 +52,23 @@ export default function AdvertiserDashboard() {
     setMsg('');
 
     try {
-      // 🔒 HAR AD STRICTLY PENDING ME JAYEGA (Admin Approval Required)
+      // 🔒 HAR NAYA AD BY-DEFAULT PAUSED MEIN HI SAVE HOGA
       await addDoc(collection(db, 'ads'), {
         name: adName.trim() || 'विज्ञापन',
         zone,
         imageUrl: imageUrl.trim(),
         targetUrl: targetUrl.trim(),
+        budget: 5000,
         advertiserId: advertiser?.id || '',
         advertiserEmail: advertiser?.email || '',
         createdAt: new Date().toISOString(),
-        status: 'pending' // 🔴 STRICTLY PENDING: Live tabhi hoga jab Admin panel me approve hoga
+        status: 'paused' // 🔴 STRICTLY PAUSED: Admin jab tak approve nahi karega active nahi hoga
       });
 
       setAdName('');
       setImageUrl('');
       setTargetUrl('');
-      setMsg('✓ आपका विज्ञापन अनुमोदन (Approval) के लिए भेज दिया गया है। एडमिन द्वारा सक्रिय करने के बाद यह पोर्टल पर लाइव होगा।');
+      setMsg('✓ आपका विज्ञापन सफलतापूर्वक भेज दिया गया है! एडमिन द्वारा स्वीकृति के बाद ही यह पोर्टल पर लाइव होगा।');
     } catch (err: any) {
       console.error(err);
       alert('विज्ञापन सबमिट करने में त्रुटि आई: ' + err.message);
@@ -152,8 +153,8 @@ export default function AdvertiserDashboard() {
                   onChange={(e) => setZone(e.target.value)}
                   style={{ width: '100%', padding: '11px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13.5px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
                 >
-                  <option value="728x90 Header Leaderboard">728x90 हेडर लीडरबोर्ड (शीर्ष)</option>
-                  <option value="300x250 Sidebar Banner">300x250 साइडबार बैनर</option>
+                  <option value="728x90 (हेडर)">हेडर लीडरबोर्ड (728x90)</option>
+                  <option value="300x250 (साइडबार)">साइडबार बैनर (300x250)</option>
                 </select>
               </div>
 
