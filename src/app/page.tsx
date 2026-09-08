@@ -182,7 +182,7 @@ export default function HomePage() {
         );
         const artSnap = await getDocs(qArt);
         
-        // Strict in-memory double-lock for article approval
+        // STRICT DOUBLE-GUARD: Pending news is completely eliminated here
         const approvedArticles = artSnap.docs
           .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter(art => {
@@ -192,7 +192,7 @@ export default function HomePage() {
 
         setArticles(approvedArticles);
 
-        // Strict ads approval lock
+        // Strict ads approval guard
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null);
@@ -202,7 +202,7 @@ export default function HomePage() {
           const rawData = docSnap.data();
           const adStatus = String(rawData.status || '').trim().toLowerCase();
           
-          if (adStatus === 'active' || adStatus === 'approved') {
+          if (adStatus === 'active') {
             const cleanAd: AdItem = {
               id: docSnap.id,
               name: rawData.name || '',
@@ -242,10 +242,11 @@ export default function HomePage() {
   const siteFont = siteConfig?.fontFamily || 'system-ui, -apple-system, sans-serif';
 
   const filteredArticles = articles.filter(art => {
-    // Final security checkpoint on every render
+    // Extra safety lock on render: only allow published or approved
     const rawStatus = String(art.status || '').trim().toLowerCase();
-    const isActuallyApproved = rawStatus === 'published' || rawStatus === 'approved';
-    if (!isActuallyApproved) return false;
+    if (rawStatus !== 'published' && rawStatus !== 'approved') {
+      return false;
+    }
 
     const matchesCategory = 
       activeCategory === 'होम' || 
