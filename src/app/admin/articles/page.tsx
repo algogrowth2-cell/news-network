@@ -30,7 +30,7 @@ export default function ArticlesPage() {
   const handleApprove = async (id: string) => {
     try {
       await updateDoc(doc(db, 'articles', id), {
-        status: 'Published',
+        status: 'published',
       });
       alert('लेख स्वीकृत कर दिया गया है और वेबसाइट पर लाइव हो चुका है!');
     } catch (e: any) {
@@ -84,55 +84,72 @@ export default function ArticlesPage() {
                 </td>
               </tr>
             ) : (
-              articles.map((a) => (
-                <tr key={a.id} style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, maxWidth: '320px' }}>
-                    {a.title}
-                    {a.titleHi && a.titleHi !== a.title && (
-                      <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{a.titleHi}</div>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#38bdf8' }}>
-                    {a.authorName || 'Staff'}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#fb923c' }}>
-                    {a.siteId || 'the-local-leader'}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ 
-                      fontSize: '11px', 
-                      padding: '2px 8px', 
-                      borderRadius: '12px', 
-                      background: a.status === 'Published' ? '#065f46' : a.status === 'pending_review' ? '#854d0e' : '#334155', 
-                      color: a.status === 'Published' ? '#34d399' : a.status === 'pending_review' ? '#fde047' : '#94a3b8' 
-                    }}>
-                      {a.status === 'pending_review' ? 'समीक्षा में' : a.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 700, color: '#38bdf8' }}>
-                    👁️ {a.views ?? 0}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8' }}>
-                    {a.createdAt || 'Today'}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {a.status === 'pending_review' && (
+              articles.map((a) => {
+                const rawStatus = (a.status || '').toLowerCase();
+                const isPending = rawStatus === 'pending' || rawStatus === 'pending_review';
+                const isPublished = rawStatus === 'published' || rawStatus === 'approved';
+
+                return (
+                  <tr key={a.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, maxWidth: '320px' }}>
+                      {a.title}
+                      {a.titleHi && a.titleHi !== a.title && (
+                        <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{a.titleHi}</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#38bdf8' }}>
+                      {a.authorName || a.author || 'Staff'}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#fb923c' }}>
+                      {a.siteId || 'the-local-leader'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ 
+                        fontSize: '11px', 
+                        padding: '3px 10px', 
+                        borderRadius: '12px', 
+                        fontWeight: 700,
+                        background: isPublished ? '#065f46' : isPending ? '#451a03' : '#334155', 
+                        color: isPublished ? '#34d399' : isPending ? '#fde047' : '#94a3b8' 
+                      }}>
+                        {isPending ? 'समीक्षा में (Pending)' : isPublished ? 'Published' : a.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#38bdf8' }}>
+                      👁️ {a.views ?? 0}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#94a3b8' }}>
+                      {a.createdAt ? a.createdAt.split('T')[0] : 'Today'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {isPending && (
+                        <button 
+                          onClick={() => handleApprove(a.id)}
+                          style={{ 
+                            color: '#ffffff', 
+                            background: '#15803d', 
+                            border: 'none', 
+                            padding: '5px 12px', 
+                            borderRadius: '6px', 
+                            cursor: 'pointer', 
+                            marginRight: '10px',
+                            fontWeight: 700,
+                            fontSize: '12px'
+                          }}
+                        >
+                          ✓ स्वीकृत करें
+                        </button>
+                      )}
                       <button 
-                        onClick={() => handleApprove(a.id)}
-                        style={{ color: '#22c55e', background: 'none', border: '1px solid #22c55e', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', marginRight: '10px' }}
+                        onClick={() => handleDelete(a.id)} 
+                        style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                       >
-                        स्वीकृत करें
+                        Delete
                       </button>
-                    )}
-                    <button 
-                      onClick={() => handleDelete(a.id)} 
-                      style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
