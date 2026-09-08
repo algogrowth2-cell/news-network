@@ -195,6 +195,34 @@ function EPaperContent() {
       currency: 'INR',
       name: `${siteName} डिजिटल ई-पेपर`,
       description: planName,
+
+      // Explicitly enable and display UPI payment method in Test Mode
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true
+      },
+      config: {
+        display: {
+          blocks: {
+            banks: {
+              name: 'Pay via UPI / Cards / Netbanking',
+              instruments: [
+                { method: 'upi' },
+                { method: 'card' },
+                { method: 'netbanking' },
+                { method: 'wallet' }
+              ]
+            }
+          },
+          sequence: ['block.banks'],
+          preferences: {
+            show_default_blocks: true
+          }
+        }
+      },
+
       handler: async function (response: any) {
         setHasSubscription(true);
         const updatedUser = {
