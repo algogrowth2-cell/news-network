@@ -182,21 +182,17 @@ export default function HomePage() {
         );
         const artSnap = await getDocs(qArt);
         
-        // 🔒 STRICT APPROVAL GUARD: Reject anything that is 'pending' or not explicitly published/approved
+        // Strict in-memory double-lock for article approval
         const approvedArticles = artSnap.docs
           .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter(art => {
-            const rawStatus = (art.status || '').toLowerCase().trim();
-            // Agar status pending ya review me hai, to homepage pe KABHI NAHI DIKHEGA
-            if (rawStatus === 'pending' || rawStatus === 'pending_review' || rawStatus === 'hold') {
-              return false;
-            }
+            const rawStatus = String(art.status || '').trim().toLowerCase();
             return rawStatus === 'published' || rawStatus === 'approved';
           });
 
         setArticles(approvedArticles);
 
-        // 🔒 STRICT AD APPROVAL GUARD: Only show ads with status 'active' or 'approved'
+        // Strict ads approval lock
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null);
@@ -204,9 +200,8 @@ export default function HomePage() {
 
         adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
-          const adStatus = (rawData.status || '').toLowerCase().trim();
+          const adStatus = String(rawData.status || '').trim().toLowerCase();
           
-          // Only active/approved ads are allowed
           if (adStatus === 'active' || adStatus === 'approved') {
             const cleanAd: AdItem = {
               id: docSnap.id,
@@ -247,6 +242,11 @@ export default function HomePage() {
   const siteFont = siteConfig?.fontFamily || 'system-ui, -apple-system, sans-serif';
 
   const filteredArticles = articles.filter(art => {
+    // Final security checkpoint on every render
+    const rawStatus = String(art.status || '').trim().toLowerCase();
+    const isActuallyApproved = rawStatus === 'published' || rawStatus === 'approved';
+    if (!isActuallyApproved) return false;
+
     const matchesCategory = 
       activeCategory === 'होम' || 
       activeCategory === 'राशिफल' ||
