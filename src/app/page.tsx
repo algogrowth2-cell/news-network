@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import LanguageTranslator from '@/components/LanguageTranslator';
@@ -58,6 +59,7 @@ const DEFAULT_RASHI_LIST = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
   const [articles, setArticles] = useState<ArticleItem[]>([]);
@@ -88,6 +90,15 @@ export default function HomePage() {
   // Rashifal State
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
+
+  // Category navigation helper (handles direct page redirection for E-Paper)
+  const handleCategoryClick = (cat: string) => {
+    if (cat === 'ई-पेपर') {
+      router.push(`/epaper?site=${currentSlug}`);
+      return;
+    }
+    setActiveCategory(cat);
+  };
 
   // 1. Dynamic Live Hindi Date Formatter (Auto Updates Every Day)
   useEffect(() => {
@@ -368,7 +379,7 @@ export default function HomePage() {
             {['वीडियो', 'राशिफल', 'वेब स्टोRIES', 'फोटो गैलरी', 'ई-पेपर', 'शोक संदेश', 'क्लासिफाइड'].map((item) => (
               <span 
                 key={item} 
-                onClick={() => setActiveCategory(item)} 
+                onClick={() => handleCategoryClick(item)} 
                 style={{ 
                   cursor: 'pointer',
                   color: activeCategory === item ? primary : 'inherit',
@@ -491,7 +502,7 @@ export default function HomePage() {
             return (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => handleCategoryClick(cat)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -568,7 +579,7 @@ export default function HomePage() {
               );
             })}
           </div>
-           
+            
           <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '12px 14px', border: '1px solid #edf2f7', marginTop: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -649,7 +660,7 @@ export default function HomePage() {
                 </div>
               )}
             </section>
-             
+              
             {/* Right Column */}
             <aside style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '16px' }}>
@@ -698,4 +709,4 @@ export default function HomePage() {
       
     </div>
   );
-} 
+}
