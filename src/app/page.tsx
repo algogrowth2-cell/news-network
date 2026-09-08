@@ -19,6 +19,7 @@ interface ArticleItem {
   views?: number;
   siteId?: string;
   slug?: string;
+  status?: string;
 }
 
 interface AdItem {
@@ -187,7 +188,16 @@ export default function HomePage() {
           where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase()])
         );
         const artSnap = await getDocs(qArt);
-        setArticles(artSnap.docs.map(d => ({ id: d.id, ...d.data() } as ArticleItem)));
+        
+        // Admin Approval Guard: only allow published or approved articles on homepage
+        const approvedArticles = artSnap.docs
+          .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
+          .filter(art => {
+            const st = (art.status || 'published').toLowerCase();
+            return st === 'published' || st === 'approved';
+          });
+
+        setArticles(approvedArticles);
 
         const qAds = query(collection(db, 'ads'), where('status', '==', 'active'));
         const adSnap = await getDocs(qAds);

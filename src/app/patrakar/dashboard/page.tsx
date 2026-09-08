@@ -92,6 +92,31 @@ export default function PatrakarDashboard() {
       currency: 'INR',
       name: 'News Network Journalist Portal',
       description: `${plan.name} - ${plan.validity}`,
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true
+      },
+      config: {
+        display: {
+          blocks: {
+            banks: {
+              name: 'Pay via UPI / Cards / Netbanking',
+              instruments: [
+                { method: 'upi' },
+                { method: 'card' },
+                { method: 'netbanking' },
+                { method: 'wallet' }
+              ]
+            }
+          },
+          sequence: ['block.banks'],
+          preferences: {
+            show_default_blocks: true
+          }
+        }
+      },
       handler: async function (response: any) {
         try {
           // Update Firestore reporter membership
@@ -157,7 +182,7 @@ export default function PatrakarDashboard() {
         siteId: 'the-local-leader', // Default or user choice
         createdAt: new Date().toISOString().split('T')[0],
         views: 0,
-        status: 'pending' // Admin review
+        status: 'pending' // Enforced for Admin Approval
       });
       setTitle('');
       setSummary('');
