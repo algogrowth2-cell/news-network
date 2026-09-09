@@ -392,7 +392,6 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 RESPONSIVE MOBILE FIX: COMPACT & NO BUTTON CUTOFF */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -428,17 +427,17 @@ export default function HomePage() {
           }
           .header-portal-switchers {
             display: flex !important;
-            transform: scale(0.9);
+            transform: scale(0.85);
             transform-origin: right center;
           }
           .site-title-text {
-            font-size: 15px !important;
-            max-width: 110px;
+            font-size: 14.5px !important;
+            max-width: 100px;
           }
           .site-sub-text {
             display: none !important;
           }
-          .search-btn-label {
+          .search-btn-text {
             display: none !important;
           }
         }
@@ -510,7 +509,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* EMBEDDED DESKTOP SUBNAVBAR (Fills blank space on desktop, hidden on mobile) */}
+          {/* EMBEDDED DESKTOP SUBNAVBAR */}
           <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
@@ -593,17 +592,17 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Search Trigger */}
+            {/* Search Trigger (Single instance with smart responsive label) */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px', flexShrink: 0 }}
             >
               <span>🔍</span>
-              <span className="search-btn-label">खोजें</span>
+              <span className="search-btn-text">खोजें</span>
             </button>
 
             {/* Site Switcher & Language Translator */}
-            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
@@ -628,7 +627,8 @@ export default function HomePage() {
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
-                  display: 'inline-block'
+                  display: 'inline-block',
+                  flexShrink: 0
                 }}
               >
                 लॉगिन
@@ -639,9 +639,15 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* SEARCH MODAL OVERLAY */}
+      {/* SEARCH MODAL OVERLAY WITH OUTSIDE CLICK / MOUSE LEAVE AUTO-CLOSE */}
       {searchModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '14px', paddingRight: '14px' }}>
+        <div 
+          onMouseLeave={() => setSearchModalOpen(false)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSearchModalOpen(false);
+          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '14px', paddingRight: '14px' }}
+        >
           <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(22,21,15,.25)', alignSelf: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
               <span style={{ fontSize: '18px', color: '#8d897f' }}>🔍</span>
@@ -653,7 +659,7 @@ export default function HomePage() {
                 autoFocus
                 style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#16150f' }}
               />
-              <button onClick={() => setSearchModalOpen(false)} style={{ background: 'none', border: '1px solid #e3e0da', borderRadius: '5px', padding: '2px 8px', fontSize: '11.5px', color: '#8d897f', cursor: 'pointer' }}>Esc</button>
+              <button onClick={() => setSearchModalOpen(false)} style={{ background: 'none', border: '1px solid #e3e0da', borderRadius: '5px', padding: '2px 8px', fontSize: '11.5px', color: '#8d897f', cursor: 'pointer' }}>बंद करें</button>
             </div>
           </div>
         </div>
