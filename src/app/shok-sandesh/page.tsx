@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, adddoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -80,17 +80,15 @@ export default function ShokSandeshPage() {
 
     setLoading(true);
 
-    // Razorpay Integration Simulation / Setup
     const options = {
-      key: 'rzp_test_mockkey', // Replace with live Razorpay Key if available
+      key: 'rzp_test_mockkey',
       amount: 50000, // ₹500 in paise
       currency: 'INR',
       name: 'द लोकल लीडर मीडिया नेटवर्क',
       description: 'शोक संदेश प्रकाशन शुल्क',
       handler: async function (response: any) {
-        // Payment Success -> Save to Firestore with status 'pending' for admin approval
         try {
-          await adddoc(collection(db, 'shokSandesh'), {
+          await addDoc(collection(db, 'shokSandesh'), {
             siteId: siteSlug,
             deceasedName,
             relation,
@@ -102,7 +100,7 @@ export default function ShokSandeshPage() {
             userName: user.name,
             userEmail: user.email,
             paymentId: response.razorpay_payment_id || 'PAY_' + Date.now(),
-            status: 'pending', // Goes to Admin Panel for approval
+            status: 'pending',
             createdAt: serverTimestamp()
           });
           setSubmitted(true);
@@ -120,17 +118,15 @@ export default function ShokSandeshPage() {
       theme: { color: '#ea580c' }
     };
 
-    // Trigger Razorpay if script is loaded, otherwise fallback direct success
     try {
       if ((window as any).Razorpay) {
         const rzp1 = new (window as any).Razorpay(options);
         rzp1.open();
         setLoading(false);
       } else {
-        // Fallback direct mock payment flow if Razorpay script not injected
         const confirmPay = window.confirm('₹500 का भुगतान (Razorpay Sandbox) पूर्ण करें?');
         if (confirmPay) {
-          await adddoc(collection(db, 'shokSandesh'), {
+          await addDoc(collection(db, 'shokSandesh'), {
             siteId: siteSlug,
             deceasedName,
             relation,
@@ -157,22 +153,17 @@ export default function ShokSandeshPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: '"Mukta", system-ui, sans-serif' }}>
-      
-      {/* Script for Razorpay */}
       <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
 
-      {/* TOP HEADER */}
       <header style={{ background: '#ffffff', borderBottom: '1px solid #e3e0da', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href={`/?site=${siteSlug}`} style={{ fontSize: '20px', fontWeight: 700, color: '#ea580c', textDecoration: 'none' }}>
+        <Link href={`/?site=${siteSlug}`} style={{ fontSize: '18px', fontWeight: 700, color: '#ea580c', textDecoration: 'none' }}>
           ← होम पेज पर लौटें
         </Link>
-        <h1 style={{ fontSize: '22px', fontWeight: 600, margin: 0 }}>🕯️ श्रद्धांजलि एवं शोक संदेश पोर्टल</h1>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>🕯️ श्रद्धांजलि एवं शोक संदेश पोर्टल</h1>
       </header>
 
       <div style={{ maxWidth: '900px', margin: '30px auto', padding: '0 16px' }}>
-        
         {!user ? (
-          /* AUTH CARD */
           <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', border: '1px solid #e3e0da', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e3e0da', paddingBottom: '10px' }}>
               <button 
@@ -218,18 +209,16 @@ export default function ShokSandeshPage() {
             </form>
           </div>
         ) : submitted ? (
-          /* SUCCESS SUBMISSION CARD */
           <div style={{ background: '#fff', borderRadius: '12px', padding: '40px', textAlign: 'center', border: '1px solid #e3e0da' }}>
             <h2 style={{ color: '#16a34a', fontSize: '24px', marginBottom: '10px' }}>✓ शोक संदेश सफलताપूर्वक दर्ज हो गया है!</h2>
             <p style={{ color: '#5a574f', fontSize: '15px', marginBottom: '20px' }}>
-              आपका भुगतान प्राप्त हो गया है। संपादक द्वारा समीक्षा एवं अनुमोदन (Approval) के बाद यह वेबसाइट के शोक संदेश सेक्शन में लाइव कर दिया जाएगा।
+              आपका भुगतान प्राप्त हो गया है। संपादक द्वारा समीक्षा एवं अनुमोदन के बाद यह वेबसाइट के शोक संदेश सेक्शन में लाइव कर दिया जाएगा।
             </p>
             <button onClick={() => setSubmitted(false)} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
               दूसरा संदेश दर्ज करें
             </button>
           </div>
         ) : (
-          /* SHOK SANDESH FORM & PAYMENT */
           <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', border: '1px solid #e3e0da' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e3e0da', paddingBottom: '10px' }}>
               <div>
@@ -252,7 +241,7 @@ export default function ShokSandeshPage() {
                   <input type="text" value={relation} onChange={e => setRelation(e.target.value)} placeholder="जैसे: पिता / माता / धर्मपत्नी" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, marginBottom: '4px' }}>स्वर्गवास की तिथि (Date of Passing) *</label>
+                  <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, marginBottom: '4px' }}>स्वर्गवास की तिथि *</label>
                   <input type="date" value={dod} onChange={e => setDod(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                 </div>
               </div>
@@ -282,7 +271,6 @@ export default function ShokSandeshPage() {
           </div>
         )}
 
-        {/* PUBLIC APPROVED SHOK SANDESH DISPLAY FEED */}
         <div style={{ marginTop: '40px' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px', borderBottom: '2px solid #ea580c', paddingBottom: '6px', width: 'fit-content' }}>
             श्रद्धांजलि एवं शोक संदेश फीड
