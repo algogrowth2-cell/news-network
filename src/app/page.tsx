@@ -407,7 +407,7 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 ULTRA RESPONSIVE MOBILE FIX: NO CUTTING, SCROLLABLE/COMPACT TOOLS */
+        /* 📱 PERFECT MOBILE RESPONSIVE HEADER: SCROLLABLE TOOLS & NO CUTTING */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -438,13 +438,13 @@ export default function HomePage() {
             display: none !important;
           }
           .header-main-row {
-            padding: 0 6px !important;
-            height: 58px !important;
+            padding: 0 8px !important;
+            height: 64px !important;
             gap: 4px !important;
           }
           .site-title-text {
             font-size: 13.5px !important;
-            max-width: 85px;
+            max-width: 90px;
           }
           .site-sub-text {
             display: none !important;
@@ -455,19 +455,24 @@ export default function HomePage() {
           .search-btn-mobile {
             display: flex !important;
           }
-          .header-portal-switchers {
-            gap: 2px !important;
-            transform: scale(0.8);
-            transform-origin: right center;
+          .header-portal-tools-mobile {
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            max-width: 58vw;
+            padding-bottom: 2px;
           }
-          .login-btn-header {
-            padding: 4px 8px !important;
-            font-size: 11.5px !important;
+          .header-portal-tools-desktop {
+            display: none !important;
           }
         }
 
         @media (min-width: 901px) {
           .search-btn-mobile {
+            display: none !important;
+          }
+          .header-portal-tools-mobile {
             display: none !important;
           }
         }
@@ -577,10 +582,9 @@ export default function HomePage() {
             </button>
           </nav>
 
-          {/* Right Action Tools & Portals */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto', flexShrink: 0 }}>
+          {/* Desktop Right Action Tools & Portals */}
+          <div className="nav-tools-group header-portal-tools-desktop" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             
-            {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link 
                 href="/patrakar/login" 
@@ -622,39 +626,34 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Mobile Search Icon */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              className="search-btn-mobile"
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '13px', flexShrink: 0 }}
-              aria-label="सर्च"
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px', flexShrink: 0 }}
             >
               <span>🔍</span>
+              <span>खोजें</span>
             </button>
 
-            {/* Site Switcher & Language Translator */}
-            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
 
-            {/* Reader Auth / Login */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 7px', flexShrink: 0 }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 4) : 'यूज़र'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
               <Link 
                 href="/login" 
-                className="login-btn-header"
                 style={{
                   background: primary,
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '5px 12px',
-                  fontSize: '12.5px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
@@ -665,8 +664,53 @@ export default function HomePage() {
                 लॉगिन
               </Link>
             )}
-
           </div>
+
+          {/* 📱 Mobile Right Action Tools & Portals (Scrollable & Fully Visible: Search, SiteSwitcher, Lang, Login) */}
+          <div className="header-portal-tools-mobile hide-scrollbar" style={{ display: 'none', marginLeft: 'auto' }}>
+            <button 
+              onClick={() => setSearchModalOpen(true)}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '13px', flexShrink: 0 }}
+              aria-label="सर्च"
+            >
+              <span>🔍</span>
+            </button>
+
+            <div style={{ flexShrink: 0 }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            </div>
+
+            <div style={{ flexShrink: 0 }}>
+              <LanguageTranslator />
+            </div>
+
+            {readerUser ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '16px', padding: '3px 6px', flexShrink: 0 }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 600, color: primary }}>👤</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+              </div>
+            ) : (
+              <Link 
+                href="/login" 
+                style={{
+                  background: primary,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block',
+                  flexShrink: 0
+                }}
+              >
+                लॉगिन
+              </Link>
+            )}
+          </div>
+
         </div>
       </header>
 
