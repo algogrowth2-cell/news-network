@@ -560,7 +560,7 @@ export default function HomePage() {
       {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
-        {/* LEFT COLUMN: CATEGORIES & PORTAL DESKS */}
+        {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
         <aside className="side-col">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
@@ -593,17 +593,71 @@ export default function HomePage() {
             })}
           </div>
 
-          <div style={{ marginTop: '26px', paddingTop: '20px', borderTop: '1px solid #e3e0da' }}>
-            <div style={{ fontSize: '11px', color: '#8d897f', marginBottom: '10px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
-              पोर्टल डैशबोर्ड
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <Link href="/patrakar/login" style={{ fontSize: '13.5px', color: '#5a574f', textDecoration: 'none', padding: '9px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>✍️</span> <b>पत्रकार पोर्टल</b>
-              </Link>
-              <Link href="/advertiser/login" style={{ fontSize: '13.5px', color: '#5a574f', textDecoration: 'none', padding: '9px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📢</span> <b>विज्ञापनदाता डेस्क</b>
-              </Link>
+          {/* APP DOWNLOAD BOX (From HTML UI) */}
+          <div style={{ textAlign: 'center', marginTop: '26px', paddingTop: '22px', borderTop: '1px solid #e3e0da' }}>
+            <div style={{ fontSize: '13px', color: '#8d897f', marginBottom: '11px' }}>ऐप डाउनलोड करें</div>
+            
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{
+                display: 'block',
+                border: '1px solid #e3e0da',
+                borderRadius: '8px',
+                padding: '9px 14px',
+                margin: '0 auto 9px',
+                maxWidth: '186px',
+                textAlign: 'left',
+                background: '#f6f5f2',
+                textDecoration: 'none',
+                color: '#16150f'
+              }}
+            >
+              <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
+              <b style={{ fontSize: '15px', fontWeight: 600 }}>Google Play</b>
+            </a>
+
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{
+                display: 'block',
+                border: '1px solid #e3e0da',
+                borderRadius: '8px',
+                padding: '9px 14px',
+                margin: '0 auto 9px',
+                maxWidth: '186px',
+                textAlign: 'left',
+                background: '#f6f5f2',
+                textDecoration: 'none',
+                color: '#16150f'
+              }}
+            >
+              <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
+              <b style={{ fontSize: '15px', fontWeight: 600 }}>App Store</b>
+            </a>
+
+            <div style={{ fontSize: '13px', color: '#8d897f', marginTop: '18px', marginBottom: '10px' }}>हमें फ़ॉलो करें</div>
+            <div style={{ display: 'flex', gap: '9px', justifyContent: 'center' }}>
+              {['f', '𝕏', '◎', '▶'].map((icon, i) => (
+                <span 
+                  key={i} 
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: '#f6f5f2',
+                    border: '1px solid #e3e0da',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: '14px',
+                    color: '#5a574f',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {icon}
+                </span>
+              ))}
             </div>
           </div>
         </aside>
