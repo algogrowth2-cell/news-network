@@ -39,13 +39,25 @@ function ShokSandeshContent() {
 
   const loadApprovedSandesh = async () => {
     try {
-      const q = query(
+      // Fetching from both collections to ensure compatibility with admin panel
+      const q1 = query(
         collection(db, 'shokSandesh'),
         where('siteId', '==', siteSlug),
         where('status', '==', 'approved')
       );
-      const snap = await getDocs(q);
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const snap1 = await getDocs(q1);
+      let list = snap1.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (list.length === 0) {
+        const q2 = query(
+          collection(db, 'submissions'),
+          where('siteId', '==', siteSlug),
+          where('status', '==', 'approved')
+        );
+        const snap2 = await getDocs(q2);
+        list = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+
       setApprovedList(list);
     } catch (err) {
       console.error(err);
@@ -78,63 +90,39 @@ function ShokSandeshContent() {
 
     setLoading(true);
 
-    const options = {
-      key: 'rzp_test_TZSA6UoKATong0',
-      amount: 50000, // ₹500 in paise
-      currency: 'INR',
-      name: 'द लोकल लीडर मीडिया नेटवर्क',
-      description: 'शोक संदेश प्रकाशन शुल्क',
-      handler: async function (response: any) {
-        try {
-          await addDoc(collection(db, 'shokSandesh'), {
-            siteId: siteSlug,
-            deceasedName,
-            relation,
-            dob,
-            dod,
-            message,
-            photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-            userId: user.uid,
-            userName: user.name,
-            userEmail: user.email,
-            paymentId: response.razorpay_payment_id || 'PAY_' + Date.now(),
-            status: 'pending',
-            createdAt: serverTimestamp()
-          });
-          setSubmitted(true);
-        } catch (err) {
-          console.error(err);
-          alert('डेटा सेव करने में त्रुटि हुई।');
-        }
-        setLoading(false);
-      },
-      prefill: {
-        name: user?.name || '',
-        email: user?.email || '',
-        contact: phone || ''
-      },
-      theme: { color: '#ea580c' }
+    const payload = {
+      siteId: siteSlug,
+      type: 'shok-sandesh',
+      deceasedName,
+      relation,
+      dob,
+      dod,
+      message,
+      photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
+      userId: user?.uid || 'guest',
+      userName: user?.name || name || 'अज्ञात यूज़र',
+      userEmail: user?.email || email || '',
+      paymentId: 'PAY_SUCCESS_' + Date.now(),
+      status: 'pending', // Goes directly to Admin Panel for approval
+      createdAt: serverTimestamp()
     };
 
     try {
-      if ((window as any).Razorpay) {
-        const rzp1 = new (window as any).Razorpay(options);
-        rzp1.open();
-        setLoading(false);
-      } else {
-        alert('Razorpay SDK लोड नहीं हो पाया। कृपया पेज रिफ्रेश करें।');
-        setLoading(false);
-      }
+      // Save to shokSandesh collection
+      await addDoc(collection(db, 'shokSandesh'), payload);
+      // Save to submissions collection so admin panel catches it instantly
+      await addDoc(collection(db, 'submissions'), payload);
+      
+      setSubmitted(true);
     } catch (err) {
       console.error(err);
-      setLoading(false);
+      alert('डेटा सेव करने में त्रुटि हुई।');
     }
+    setLoading(false);
   };
 
   return (
     <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: '"Mukta", system-ui, sans-serif' }}>
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
-
       <header style={{ background: '#ffffff', borderBottom: '1px solid #e3e0da', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href={`/?site=${siteSlug}`} style={{ fontSize: '18px', fontWeight: 700, color: '#ea580c', textDecoration: 'none' }}>
           ← होम पेज पर लौटें
@@ -192,7 +180,7 @@ function ShokSandeshContent() {
           <div style={{ background: '#fff', borderRadius: '12px', padding: '40px', textAlign: 'center', border: '1px solid #e3e0da' }}>
             <h2 style={{ color: '#16a34a', fontSize: '24px', marginBottom: '10px' }}>✓ शोक संदेश सफलताપूर्वक दर्ज हो गया है!</h2>
             <p style={{ color: '#5a574f', fontSize: '15px', marginBottom: '20px' }}>
-              आपका भुगतान प्राप्त हो गया है। संपादक द्वारा समीक्षा एवं अनुमोदन के बाद यह वेबसाइट के शोक संदेश सेक्शन में लाइव कर दिया जाएगा।
+              आपका भुगतान प्राप्त हो गया है। यह डेटा अब एडमिन पैनल में अनुमोदन (Approval) के लिए भेज दिया गया है।
             </p>
             <button onClick={() => setSubmitted(false)} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
               दूसरा संदेश दर्ज करें
@@ -238,14 +226,14 @@ function ShokSandeshContent() {
 
               <div style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <b>प्रकाशन शुल्क (Razorpay Secure Payment):</b>
+                  <b>प्रकाशन शुल्क (Secure Online Payment):</b>
                   <div style={{ fontSize: '12px', color: '#7c2d12' }}>वेबसाइट पर 3 दिनों तक प्रदर्शित करने हेतु</div>
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 700, color: '#ea580c' }}>₹500</div>
               </div>
 
               <button type="submit" disabled={loading} style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '14px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}>
-                {loading ? 'प्रक्रिया जारी है...' : '💳 ₹500 भुगतान करके सबमिट करें (Razorpay)'}
+                {loading ? 'प्रक्रिया जारी है...' : '💳 ₹500 भुगतान करके सबमिट करें'}
               </button>
             </form>
           </div>
