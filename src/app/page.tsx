@@ -71,10 +71,8 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
 
-  // UI Drawer & Modal State for HTML Template parity
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-
   const [currentHindiDate, setCurrentHindiDate] = useState('');
 
   const [marketRates, setMarketRates] = useState<MarketRates>({
@@ -278,9 +276,14 @@ export default function HomePage() {
   const activeRashiInfo = rashifalData[selectedRashi];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: siteFont, fontSize: '16px', lineHeight: 1.6, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: siteFont, fontSize: '16px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       
       <style jsx global>{`
+        html, body {
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -320,18 +323,57 @@ export default function HomePage() {
           color: #1e242b;
         }
 
+        .header-main-row {
+          max-width: 1560px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 16px;
+          height: 64px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Responsive Leaderboard Container */
+        .ad-leaderboard-box {
+          background: #ffffff;
+          border: 1px solid #e3e0da;
+          border-radius: 10px;
+          width: 100%;
+          height: 90px;
+          max-height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 14px;
+          overflow: hidden;
+        }
+
+        .ad-leaderboard-box img {
+          max-width: 100%;
+          max-height: 90px;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+        }
+
         @media (max-width: 1360px) {
           .shell-container {
             grid-template-columns: 220px minmax(0, 1fr);
-            gap: 18px;
+            gap: 16px;
+            padding: 14px 16px;
           }
           .rail-col {
             display: none;
           }
         }
 
-        @media (max-width: 1050px) {
+        @media (max-width: 1100px) {
           .nav-portal-links {
+            display: none !important;
+          }
+          .hide-nav-desktop {
             display: none !important;
           }
         }
@@ -339,26 +381,47 @@ export default function HomePage() {
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
-            padding: 14px;
+            padding: 12px;
           }
           .side-col {
             position: fixed;
             top: 0;
             bottom: 0;
             left: 0;
-            width: min(78vw, 280px);
+            width: min(80vw, 300px);
             background: #ffffff;
             z-index: 300;
             padding: 18px;
             max-height: none;
-            box-shadow: 4px 0 24px rgba(22,21,15,.16);
+            box-shadow: 4px 0 24px rgba(22,21,15,.18);
             transform: ${drawerOpen ? 'translateX(0)' : 'translateX(-100%)'};
             transition: transform 0.25s ease;
           }
           .burger-toggle-btn {
             display: block;
           }
-          .hide-on-mobile {
+          .ad-leaderboard-box {
+            height: 70px;
+            max-height: 75px;
+          }
+          .ad-leaderboard-box img {
+            max-height: 65px;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .header-main-row {
+            padding: 0 10px;
+            gap: 8px;
+            height: 56px;
+          }
+          .site-title-text {
+            font-size: 17px !important;
+          }
+          .site-sub-text {
+            display: none !important;
+          }
+          .search-btn-label {
             display: none !important;
           }
         }
@@ -366,8 +429,8 @@ export default function HomePage() {
 
       {/* 1. TOP LIVE FINANCIAL TICKER & DATE */}
       <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid #282721' }}>
-        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="hide-scrollbar" style={{ display: 'flex', gap: '18px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="hide-scrollbar" style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap' }}>
             <span>Diesel: <b style={{ color: '#fff' }}>{marketRates.diesel}</b></span>
             <span>Petrol: <b style={{ color: '#fff' }}>{marketRates.petrol}</b></span>
             <span>
@@ -383,7 +446,7 @@ export default function HomePage() {
             <span>Silver: <b style={{ color: '#fff' }}>{marketRates.silver}</b></span>
             <span>Gold: <b style={{ color: '#fff' }}>{marketRates.gold}</b></span>
           </div>
-          <div style={{ whiteSpace: 'nowrap', paddingLeft: '14px', fontSize: '11.5px', color: '#94a3b8', flexShrink: 0 }}>
+          <div style={{ whiteSpace: 'nowrap', paddingLeft: '12px', fontSize: '11.5px', color: '#94a3b8', flexShrink: 0 }}>
             {currentHindiDate || 'लोड हो रहा है...'}
           </div>
         </div>
@@ -391,7 +454,7 @@ export default function HomePage() {
 
       {/* 2. MAIN HEADER & NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)' }}>
-        <div style={{ maxWidth: '1560px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '14px', padding: '0 22px', height: '64px' }}>
+        <div className="header-main-row">
           
           {/* Mobile Drawer Trigger */}
           <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
@@ -403,20 +466,20 @@ export default function HomePage() {
             <img 
               src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
               alt={siteConfig?.name || 'The Local Leader'} 
-              style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+              style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
             />
             <div>
-              <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '22px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block' }}>
+              <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '21px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block' }}>
                 {siteConfig?.name || 'द लोकल लीडर'}
               </span>
-              <small style={{ display: 'block', fontSize: '10.5px', color: '#8d897f' }}>
+              <small className="site-sub-text" style={{ display: 'block', fontSize: '10px', color: '#8d897f' }}>
                 {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
               </small>
             </div>
           </Link>
 
-          {/* Category Navigation Bar */}
-          <nav className="hide-scrollbar hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: '0 auto', overflowX: 'auto' }}>
+          {/* Category Navigation Bar (Desktop) */}
+          <nav className="hide-scrollbar hide-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: '2px', margin: '0 auto', overflowX: 'auto' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
               return (
@@ -426,8 +489,8 @@ export default function HomePage() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '8px 14px',
-                    fontSize: '15px',
+                    padding: '8px 12px',
+                    fontSize: '14.5px',
                     fontWeight: 500,
                     color: isActive ? primary : '#5a574f',
                     background: 'none',
@@ -444,7 +507,7 @@ export default function HomePage() {
           </nav>
 
           {/* Right Action Tools & Portals */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Top Navbar Portal Buttons */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -453,48 +516,48 @@ export default function HomePage() {
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '6px', 
-                  fontSize: '12.5px', 
+                  gap: '5px', 
+                  fontSize: '12px', 
                   fontWeight: 600, 
                   color: '#334155', 
                   background: '#f1f5f9', 
                   border: '1px solid #cbd5e1', 
-                  padding: '5px 11px', 
+                  padding: '5px 10px', 
                   borderRadius: '20px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
                 }}
               >
-                <span>✍️</span> <span>पत्रकार पोर्टल</span>
+                <span>✍️</span> <span>पत्रकार</span>
               </Link>
               <Link 
                 href="/advertiser/login" 
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '6px', 
-                  fontSize: '12.5px', 
+                  gap: '5px', 
+                  fontSize: '12px', 
                   fontWeight: 600, 
                   color: '#fff', 
                   background: '#1e293b', 
                   border: '1px solid #1e293b', 
-                  padding: '5px 12px', 
+                  padding: '5px 10px', 
                   borderRadius: '20px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
                 }}
               >
-                <span>📢</span> <span>विज्ञापनदाता डेस्क</span>
+                <span>📢</span> <span>विज्ञापन</span>
               </Link>
             </div>
 
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '20px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#5a574f', fontSize: '13px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '20px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#5a574f', fontSize: '13px' }}
             >
               <span>🔍</span>
-              <span className="hide-on-mobile">खोजें...</span>
+              <span className="search-btn-label">खोजें</span>
             </button>
 
             {/* Portal Switcher Dropdown (8 sites) */}
@@ -505,9 +568,9 @@ export default function HomePage() {
 
             {/* Reader Auth */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '22px', padding: '5px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '20px', padding: '4px 10px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name || 'पाठक'}</span>
-                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}>लॉग आउट</button>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10.5px', cursor: 'pointer', fontWeight: 700 }}>लॉग आउट</button>
               </div>
             ) : (
               <Link 
@@ -516,9 +579,9 @@ export default function HomePage() {
                   background: primary,
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '22px',
-                  padding: '7px 16px',
-                  fontSize: '13.5px',
+                  borderRadius: '20px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -535,7 +598,7 @@ export default function HomePage() {
       {/* SEARCH MODAL OVERLAY */}
       {searchModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '16px', paddingRight: '16px' }}>
-          <div style={{ width: '100%', maxWidth: '640px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(22,21,15,.25)', alignSelf: 'flex-start' }}>
+          <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(22,21,15,.25)', alignSelf: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderBottom: '1px solid #e3e0da' }}>
               <span style={{ fontSize: '18px', color: '#8d897f' }}>🔍</span>
               <input 
@@ -544,7 +607,7 @@ export default function HomePage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '16px', color: '#16150f' }}
+                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#16150f' }}
               />
               <button onClick={() => setSearchModalOpen(false)} style={{ background: 'none', border: '1px solid #e3e0da', borderRadius: '5px', padding: '2px 8px', fontSize: '11.5px', color: '#8d897f', cursor: 'pointer' }}>Esc</button>
             </div>
@@ -562,6 +625,17 @@ export default function HomePage() {
         
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
         <aside className="side-col">
+          
+          {/* Mobile Direct Portal Desks inside drawer */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+            <Link href="/patrakar/login" style={{ fontSize: '13px', color: '#1e293b', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e3e0da' }}>
+              <span>✍️</span> <b>पत्रकार पोर्टल</b>
+            </Link>
+            <Link href="/advertiser/login" style={{ fontSize: '13px', color: '#1e293b', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e3e0da' }}>
+              <span>📢</span> <b>विज्ञापनदाता डेस्क</b>
+            </Link>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
@@ -573,9 +647,9 @@ export default function HomePage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    fontSize: '15px',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    fontSize: '14.5px',
                     fontWeight: 500,
                     color: isActive ? primary : '#5a574f',
                     background: isActive ? '#fdeee6' : 'transparent',
@@ -584,7 +658,7 @@ export default function HomePage() {
                     cursor: 'pointer'
                   }}
                 >
-                  <span style={{ width: '30px', height: '30px', borderRadius: '8px', background: isActive ? primary : '#f0ede8', color: isActive ? '#fff' : '#8d897f', display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0 }}>
+                  <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: isActive ? primary : '#f0ede8', color: isActive ? '#fff' : '#8d897f', display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0 }}>
                     📰
                   </span>
                   <span>{cat}</span>
@@ -593,9 +667,9 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* APP DOWNLOAD BOX (From HTML UI) */}
-          <div style={{ textAlign: 'center', marginTop: '26px', paddingTop: '22px', borderTop: '1px solid #e3e0da' }}>
-            <div style={{ fontSize: '13px', color: '#8d897f', marginBottom: '11px' }}>ऐप डाउनलोड करें</div>
+          {/* APP DOWNLOAD BOX */}
+          <div style={{ textAlign: 'center', marginTop: '22px', paddingTop: '18px', borderTop: '1px solid #e3e0da' }}>
+            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें</div>
             
             <a 
               href="#" 
@@ -604,17 +678,17 @@ export default function HomePage() {
                 display: 'block',
                 border: '1px solid #e3e0da',
                 borderRadius: '8px',
-                padding: '9px 14px',
-                margin: '0 auto 9px',
-                maxWidth: '186px',
+                padding: '8px 12px',
+                margin: '0 auto 8px',
+                maxWidth: '180px',
                 textAlign: 'left',
                 background: '#f6f5f2',
                 textDecoration: 'none',
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
-              <b style={{ fontSize: '15px', fontWeight: 600 }}>Google Play</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play</b>
             </a>
 
             <a 
@@ -624,33 +698,33 @@ export default function HomePage() {
                 display: 'block',
                 border: '1px solid #e3e0da',
                 borderRadius: '8px',
-                padding: '9px 14px',
-                margin: '0 auto 9px',
-                maxWidth: '186px',
+                padding: '8px 12px',
+                margin: '0 auto 8px',
+                maxWidth: '180px',
                 textAlign: 'left',
                 background: '#f6f5f2',
                 textDecoration: 'none',
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
-              <b style={{ fontSize: '15px', fontWeight: 600 }}>App Store</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store</b>
             </a>
 
-            <div style={{ fontSize: '13px', color: '#8d897f', marginTop: '18px', marginBottom: '10px' }}>हमें फ़ॉलो करें</div>
-            <div style={{ display: 'flex', gap: '9px', justifyContent: 'center' }}>
+            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें</div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               {['f', '𝕏', '◎', '▶'].map((icon, i) => (
                 <span 
                   key={i} 
                   style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '50%',
                     background: '#f6f5f2',
                     border: '1px solid #e3e0da',
                     display: 'grid',
                     placeItems: 'center',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     color: '#5a574f',
                     cursor: 'pointer'
                   }}
@@ -665,14 +739,14 @@ export default function HomePage() {
         {/* CENTER COLUMN: MAIN CONTENT FEED */}
         <main style={{ minWidth: 0 }}>
           
-          {/* HEADER LEADERBOARD AD (728x90) */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', minHeight: '106px', display: 'grid', placeItems: 'center', marginBottom: '14px', overflow: 'hidden' }}>
+          {/* HEADER LEADERBOARD AD - FIXED RATIO */}
+          <div className="ad-leaderboard-box">
             {headerAd ? (
-              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
-                <img src={headerAd.imageUrl} alt={headerAd.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                <img src={headerAd.imageUrl} alt={headerAd.name} />
               </a>
             ) : (
-              <span style={{ color: '#8d897f', fontSize: '12.5px' }}>Responsive Header Leaderboard Ad (728 × 90)</span>
+              <span style={{ color: '#8d897f', fontSize: '12px' }}>Responsive Header Leaderboard Ad (728 × 90)</span>
             )}
           </div>
 
@@ -683,10 +757,10 @@ export default function HomePage() {
             </div>
           ) : filteredArticles.length === 0 ? (
             <div style={{ background: '#fff', border: '1px solid #e3e0da', padding: '50px 20px', borderRadius: '10px', textAlign: 'center' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#16150f' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#16150f' }}>
                 {searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
-              <p style={{ color: '#8d897f', fontSize: '13.5px', marginTop: '6px' }}>
+              <p style={{ color: '#8d897f', fontSize: '13px', marginTop: '6px' }}>
                 संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां लाइव प्रदर्शित होती हैं।
               </p>
             </div>
@@ -695,13 +769,13 @@ export default function HomePage() {
               
               {/* Featured Lead Hero Article */}
               {filteredArticles[0] && (
-                <article style={{ padding: '20px 22px', borderBottom: '1px solid #e3e0da' }}>
+                <article style={{ padding: '18px 20px', borderBottom: '1px solid #e3e0da' }}>
                   <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '25px', fontWeight: 400, lineHeight: 1.45, margin: '0 0 12px 0', color: '#16150f' }}>
+                    <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '23px', fontWeight: 500, lineHeight: 1.45, margin: '0 0 12px 0', color: '#16150f' }}>
                       <span style={{ color: primary }}>{filteredArticles[0].title}</span>
                     </h3>
 
-                    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '10px', overflow: 'hidden', background: '#e9e6e0', marginBottom: '14px' }}>
+                    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden', background: '#e9e6e0', marginBottom: '14px' }}>
                       <img 
                         src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} 
                         alt={filteredArticles[0].title} 
@@ -710,19 +784,19 @@ export default function HomePage() {
                     </div>
 
                     {filteredArticles[0].summary && (
-                      <p style={{ fontSize: '15.5px', color: '#5a574f', margin: '0 0 14px 0', lineHeight: 1.6 }}>
+                      <p style={{ fontSize: '15px', color: '#5a574f', margin: '0 0 14px 0', lineHeight: 1.6 }}>
                         {filteredArticles[0].summary}
                       </p>
                     )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500, border: '1px solid #e3e0da', borderRadius: '20px', padding: '4px 12px', color: '#5a574f' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 500, border: '1px solid #e3e0da', borderRadius: '20px', padding: '3px 10px', color: '#5a574f' }}>
                         {filteredArticles[0].category || 'ताज़ा खबर'}
                       </span>
-                      <span style={{ fontSize: '12.5px', color: '#8d897f' }}>
+                      <span style={{ fontSize: '12px', color: '#8d897f' }}>
                         {filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}
                       </span>
-                      <span style={{ fontSize: '12.5px', color: '#8d897f', marginLeft: 'auto' }}>
+                      <span style={{ fontSize: '12px', color: '#8d897f', marginLeft: 'auto' }}>
                         👁️ {filteredArticles[0].views || 0} बार पढ़ा गया
                       </span>
                     </div>
@@ -732,23 +806,23 @@ export default function HomePage() {
 
               {/* Remaining Articles in Feed */}
               {filteredArticles.slice(1).map((item) => (
-                <article key={item.id} style={{ padding: '18px 22px', borderBottom: '1px solid #e3e0da' }}>
-                  <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <article key={item.id} style={{ padding: '16px 20px', borderBottom: '1px solid #e3e0da' }}>
+                  <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: '11px', fontWeight: 700, color: primary, textTransform: 'uppercase' }}>
                         {item.category}
                       </span>
-                      <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 500, margin: '4px 0 8px 0', color: '#16150f', lineHeight: 1.4 }}>
+                      <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 500, margin: '4px 0 6px 0', color: '#16150f', lineHeight: 1.4 }}>
                         {item.title}
                       </h4>
-                      <div style={{ fontSize: '12px', color: '#8d897f', display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '11.5px', color: '#8d897f', display: 'flex', gap: '12px' }}>
                         <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
                         <span>👁️ {item.views || 0} बार पढ़ा गया</span>
                       </div>
                     </div>
 
                     {item.image && (
-                      <div style={{ width: '120px', height: '80px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e9e6e0' }}>
+                      <div style={{ width: '110px', height: '75px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#e9e6e0' }}>
                         <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     )}
@@ -766,19 +840,19 @@ export default function HomePage() {
           
           {/* Trending 01 to 05 Ranking Badges */}
           <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '13px 16px', borderBottom: '1px solid #e3e0da' }}>
-              <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
+              <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 600, margin: 0 }}>
                 सबसे ज़्यादा पढ़ी गईं
               </h3>
             </div>
             <div>
               {filteredArticles.slice(0, 5).map((art, idx) => (
-                <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '12px', padding: '12px 16px', borderBottom: idx !== 4 ? '1px solid #e3e0da' : 'none' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 800, color: primary, flexShrink: 0, width: '20px' }}>
+                <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '12px', padding: '11px 16px', borderBottom: idx !== 4 ? '1px solid #e3e0da' : 'none' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: primary, flexShrink: 0, width: '20px' }}>
                     0{idx + 1}
                   </span>
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: 500, margin: '0 0 4px 0', color: '#16150f', lineHeight: 1.4 }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 500, margin: '0 0 4px 0', color: '#16150f', lineHeight: 1.4 }}>
                       {art.title}
                     </h4>
                     <span style={{ fontSize: '11px', color: '#8d897f' }}>
@@ -791,13 +865,13 @@ export default function HomePage() {
           </div>
 
           {/* Daily Rashifal Card */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px', padding: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fdeee6', display: 'grid', placeItems: 'center', fontSize: '18px', flexShrink: 0 }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px', padding: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <span style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#fdeee6', display: 'grid', placeItems: 'center', fontSize: '18px', flexShrink: 0 }}>
                 {activeRashiItem.sign}
               </span>
               <div>
-                <b style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px' }}>{activeRashiItem.name} राशिफल</b>
+                <b style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15.5px' }}>{activeRashiItem.name} राशिफल</b>
                 <div style={{ fontSize: '11px', color: '#8d897f' }}>
                   शुभ अंक: {activeRashiInfo?.luckyNumber || '7'} | रंग: {activeRashiInfo?.luckyColor || 'केसरिया'}
                 </div>
@@ -805,20 +879,20 @@ export default function HomePage() {
               <select 
                 value={selectedRashi} 
                 onChange={(e) => setSelectedRashi(e.target.value)}
-                style={{ marginLeft: 'auto', background: '#fff', border: '1px solid #e3e0da', color: '#5a574f', borderRadius: '6px', padding: '5px 8px', fontSize: '13px', outline: 'none' }}
+                style={{ marginLeft: 'auto', background: '#fff', border: '1px solid #e3e0da', color: '#5a574f', borderRadius: '6px', padding: '4px 6px', fontSize: '12px', outline: 'none' }}
               >
                 {DEFAULT_RASHI_LIST.map(r => (
                   <option key={r.id} value={r.id}>{r.name} ({r.sign})</option>
                 ))}
               </select>
             </div>
-            <p style={{ fontSize: '14px', color: '#5a574f', margin: 0, lineHeight: 1.7 }}>
+            <p style={{ fontSize: '13.5px', color: '#5a574f', margin: 0, lineHeight: 1.65 }}>
               {activeRashiInfo?.prediction || `आज ${activeRashiItem.name} राशि के जातकों के लिए नए अवसर खुलेंगे। वाणी में मधुरता बनाए रखें।`}
             </p>
           </div>
 
           {/* Sidebar 300x250 Ad */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', height: '262px', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', height: '260px', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
             {sidebarAd ? (
               <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
                 <img src={sidebarAd.imageUrl} alt={sidebarAd.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
