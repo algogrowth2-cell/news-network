@@ -407,7 +407,7 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 CLEAN MOBILE RESPONSIVE NAVBAR & HEADER */
+        /* 📱 ULTRA RESPONSIVE MOBILE FIX: NO CUTTING, SCROLLABLE/COMPACT TOOLS */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -438,18 +438,13 @@ export default function HomePage() {
             display: none !important;
           }
           .header-main-row {
-            padding: 0 8px !important;
-            height: 60px !important;
-            gap: 6px !important;
-          }
-          .header-portal-switchers {
-            display: flex !important;
-            transform: scale(0.85);
-            transform-origin: right center;
+            padding: 0 6px !important;
+            height: 58px !important;
+            gap: 4px !important;
           }
           .site-title-text {
-            font-size: 14px !important;
-            max-width: 95px;
+            font-size: 13.5px !important;
+            max-width: 85px;
           }
           .site-sub-text {
             display: none !important;
@@ -459,6 +454,15 @@ export default function HomePage() {
           }
           .search-btn-mobile {
             display: flex !important;
+          }
+          .header-portal-switchers {
+            gap: 2px !important;
+            transform: scale(0.8);
+            transform-origin: right center;
+          }
+          .login-btn-header {
+            padding: 4px 8px !important;
+            font-size: 11.5px !important;
           }
         }
 
@@ -507,25 +511,25 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR & SINGLE SEARCH */}
+      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             {/* Mobile Drawer Trigger */}
             <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
             {/* Site Branding Logo */}
-            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}>
               <img 
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
                 alt={siteConfig?.name || 'The Local Leader'} 
-                style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+                style={{ height: '36px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
               />
               <div style={{ minWidth: 0 }}>
-                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '19px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
+                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
                 </span>
                 <small className="site-sub-text" style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', whiteSpace: 'nowrap' }}>
@@ -574,7 +578,7 @@ export default function HomePage() {
           </nav>
 
           {/* Right Action Tools & Portals */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -618,26 +622,26 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Mobile Search Icon Trigger */}
+            {/* Mobile Search Icon */}
             <button 
               onClick={() => setSearchModalOpen(true)}
               className="search-btn-mobile"
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '14px', flexShrink: 0 }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '13px', flexShrink: 0 }}
               aria-label="सर्च"
             >
               <span>🔍</span>
             </button>
 
             {/* Site Switcher & Language Translator */}
-            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
 
             {/* Reader Auth / Login */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 7px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 4) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
@@ -649,8 +653,8 @@ export default function HomePage() {
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
+                  padding: '5px 12px',
+                  fontSize: '12.5px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
