@@ -61,6 +61,21 @@ const DEFAULT_RASHI_LIST = [
 
 const TRENDING_TAGS = ["बजट सत्र", "पंचायत चुनाव", "बारिश का मौसम", "मंडी भाव", "भर्ती परिणाम", "बिजली दर", "क्रिकेट लीग"];
 
+const CATEGORY_ICONS: Record<string, string> = {
+  'होम': '🏠',
+  'ताज़ा खबरें': '≡',
+  'सर्च': '🔍',
+  'शोक संदेश': '🕯️',
+  'ई-पेपर': '📄',
+  'राजनीति': '🏛️',
+  'व्यापार': '📈',
+  'स्वास्थ्य': '🩺',
+  'जीवनशैली': '🌿',
+  'राज्य': '🇮🇳',
+  'अपराध': '🚨',
+  'खेल': '🏏'
+};
+
 export default function HomePage() {
   const router = useRouter();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
@@ -341,7 +356,7 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 8px;
+          gap: 12px;
           padding: 0 16px;
           height: 72px;
           width: 100%;
@@ -392,6 +407,7 @@ export default function HomePage() {
           }
         }
 
+        /* 📱 CLEAN MOBILE RESPONSIVE NAVBAR & HEADER */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -422,8 +438,9 @@ export default function HomePage() {
             display: none !important;
           }
           .header-main-row {
-            padding: 0 10px !important;
+            padding: 0 8px !important;
             height: 60px !important;
+            gap: 6px !important;
           }
           .header-portal-switchers {
             display: flex !important;
@@ -431,13 +448,22 @@ export default function HomePage() {
             transform-origin: right center;
           }
           .site-title-text {
-            font-size: 14.5px !important;
-            max-width: 100px;
+            font-size: 14px !important;
+            max-width: 95px;
           }
           .site-sub-text {
             display: none !important;
           }
-          .search-btn-text {
+          .search-btn-desktop {
+            display: none !important;
+          }
+          .search-btn-mobile {
+            display: flex !important;
+          }
+        }
+
+        @media (min-width: 901px) {
+          .search-btn-mobile {
             display: none !important;
           }
         }
@@ -481,7 +507,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
+      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR & SINGLE SEARCH */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
@@ -592,13 +618,14 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Search Trigger (Single instance with smart responsive label) */}
+            {/* Mobile Search Icon Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px', flexShrink: 0 }}
+              className="search-btn-mobile"
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '14px', flexShrink: 0 }}
+              aria-label="सर्च"
             >
               <span>🔍</span>
-              <span className="search-btn-text">खोजें</span>
             </button>
 
             {/* Site Switcher & Language Translator */}
@@ -639,7 +666,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* SEARCH MODAL OVERLAY WITH OUTSIDE CLICK / MOUSE LEAVE AUTO-CLOSE */}
+      {/* SEARCH MODAL OVERLAY WITH AUTO-CLOSE ON OUTSIDE CLICK OR MOUSE LEAVE */}
       {searchModalOpen && (
         <div 
           onMouseLeave={() => setSearchModalOpen(false)}
@@ -673,12 +700,13 @@ export default function HomePage() {
       {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
-        {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
+        {/* LEFT COLUMN: CATEGORIES WITH UNIQUE ICONS & APP DOWNLOAD */}
         <aside className="side-col">
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
+              const iconEmoji = CATEGORY_ICONS[cat] || '📰';
               return (
                 <button
                   key={cat}
@@ -699,7 +727,7 @@ export default function HomePage() {
                   }}
                 >
                   <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: isActive ? primary : '#f0ede8', color: isActive ? '#fff' : '#8d897f', display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0 }}>
-                    📰
+                    {iconEmoji}
                   </span>
                   <span>{cat}</span>
                 </button>
