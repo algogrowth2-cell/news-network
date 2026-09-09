@@ -59,6 +59,8 @@ const DEFAULT_RASHI_LIST = [
   { id: 'pisces', name: 'मीन', sign: '♓' }
 ];
 
+const TRENDING_TAGS = ["बजट सत्र", "पंचायत चुनाव", "बारिश का मौसम", "मंडी भाव", "भर्ती परिणाम", "बिजली दर", "क्रिकेट लीग"];
+
 export default function HomePage() {
   const router = useRouter();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
@@ -94,6 +96,14 @@ export default function HomePage() {
   const handleCategoryClick = (cat: string) => {
     if (cat === 'ई-पेपर') {
       router.push(`/epaper?site=${currentSlug}`);
+      return;
+    }
+    if (cat === 'शोक संदेश') {
+      router.push(`/?site=${currentSlug}#shok-sandesh`);
+      return;
+    }
+    if (cat === 'सर्च') {
+      setSearchModalOpen(true);
       return;
     }
     setActiveCategory(cat);
@@ -252,6 +262,7 @@ export default function HomePage() {
 
     const matchesCategory = 
       activeCategory === 'होम' || 
+      activeCategory === 'ताज़ा खबरें' ||
       activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
       (activeCategory === 'राजनीति' && art.category === 'Politics') ||
@@ -347,7 +358,7 @@ export default function HomePage() {
           width: 100%;
           height: 100px;
           display: block;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
           overflow: hidden;
           position: relative;
         }
@@ -380,9 +391,6 @@ export default function HomePage() {
 
         @media (max-width: 1100px) {
           .nav-portal-links {
-            display: none !important;
-          }
-          .hide-nav-desktop {
             display: none !important;
           }
         }
@@ -454,12 +462,6 @@ export default function HomePage() {
             height: 75px;
           }
         }
-
-        @media (max-width: 380px) {
-          .site-title-text {
-            max-width: 95px;
-          }
-        }
       `}</style>
 
       {/* 1. SCROLLABLE TOP LIVE MARKET TICKER */}
@@ -528,34 +530,6 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Category Navigation Bar (Desktop) */}
-          <nav className="hide-scrollbar hide-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: '2px', margin: '0 auto', overflowX: 'auto' }}>
-            {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'खेल'].map((cat) => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => handleCategoryClick(cat)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '8px 10px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: isActive ? primary : '#5a574f',
-                    background: 'none',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </nav>
-
           {/* Right Action Tools & Portals */}
           <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             
@@ -616,7 +590,7 @@ export default function HomePage() {
               <LanguageTranslator />
             </div>
 
-            {/* Reader Auth - Always in View */}
+            {/* Reader Auth */}
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
@@ -647,6 +621,48 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 3. CORRECT HTML TEMPLATE NAVBAR: होम, ताज़ा खबरें, सर्च, शोक संदेश, ई-पेपर */}
+      <nav style={{ background: '#ffffff', borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 2px rgba(22,21,15,0.03)' }}>
+        <div className="hide-scrollbar" style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '24px', overflowX: 'auto', whiteSpace: 'nowrap', height: '48px' }}>
+          
+          <button 
+            onClick={() => handleCategoryClick('होम')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 600, color: activeCategory === 'होम' ? primary : '#16150f', cursor: 'pointer' }}
+          >
+            <span style={{ color: activeCategory === 'होम' ? primary : '#d97706' }}>🏠</span> होम
+          </button>
+
+          <button 
+            onClick={() => handleCategoryClick('ताज़ा खबरें')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer' }}
+          >
+            <span>≡</span> ताज़ा खबरें
+          </button>
+
+          <button 
+            onClick={() => setSearchModalOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: '#5a574f', cursor: 'pointer' }}
+          >
+            <span>🔍</span> सर्च
+          </button>
+
+          <button 
+            onClick={() => handleCategoryClick('शोक संदेश')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: activeCategory === 'शोक संदेश' ? primary : '#5a574f', cursor: 'pointer' }}
+          >
+            <span>🕯️</span> शोक संदेश
+          </button>
+
+          <button 
+            onClick={() => handleCategoryClick('ई-पेपर')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: '#5a574f', cursor: 'pointer' }}
+          >
+            <span>📄</span> ई-पेपर
+          </button>
+
+        </div>
+      </nav>
+
       {/* SEARCH MODAL OVERLAY */}
       {searchModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '14px', paddingRight: '14px' }}>
@@ -672,7 +688,7 @@ export default function HomePage() {
         <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 290 }} />
       )}
 
-      {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
+      {/* 4. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
@@ -797,7 +813,7 @@ export default function HomePage() {
         {/* CENTER COLUMN: MAIN CONTENT FEED */}
         <main style={{ minWidth: 0 }}>
           
-          {/* HEADER LEADERBOARD AD - FULL CONTAINER COVER */}
+          {/* HEADER LEADERBOARD AD */}
           <div className="ad-leaderboard-box">
             {headerAd ? (
               <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer">
@@ -808,6 +824,35 @@ export default function HomePage() {
                 Responsive Header Leaderboard Ad (728 × 90)
               </div>
             )}
+          </div>
+
+          {/* 🎯 TRENDING TAGS BAR AFTER BANNER (FROM HTML TEMPLATE) */}
+          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: primary, flexShrink: 0 }}>ट्रेंडिंग</span>
+            <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
+              {TRENDING_TAGS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setSearchTerm(t)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '13.5px',
+                    fontWeight: 500,
+                    border: '1px solid #e3e0da',
+                    borderRadius: '20px',
+                    padding: '5px 14px',
+                    color: '#5a574f',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <span>{t}</span> <span style={{ color: '#8d897f', fontSize: '11px' }}>›</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* DYNAMIC ARTICLE LIST */}
@@ -966,12 +1011,13 @@ export default function HomePage() {
 
       </div>
 
-      {/* 4. DYNAMIC FOOTER */}
+      {/* 5. DYNAMIC FOOTER */}
       <Footer 
         siteName={siteConfig?.name || 'द लोकल लीडर'} 
         primaryColor={primary}
         logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
         tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
+        currentSlug={currentSlug}
       />
 
     </div>
