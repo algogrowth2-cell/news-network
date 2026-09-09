@@ -39,25 +39,13 @@ function ShokSandeshContent() {
 
   const loadApprovedSandesh = async () => {
     try {
-      // Fetching from both collections to ensure compatibility with admin panel
-      const q1 = query(
-        collection(db, 'shokSandesh'),
-        where('siteId', '==', siteSlug),
+      // Checking obituaries collection used by the admin panel
+      const q = query(
+        collection(db, 'obituaries'),
         where('status', '==', 'approved')
       );
-      const snap1 = await getDocs(q1);
-      let list = snap1.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      if (list.length === 0) {
-        const q2 = query(
-          collection(db, 'submissions'),
-          where('siteId', '==', siteSlug),
-          where('status', '==', 'approved')
-        );
-        const snap2 = await getDocs(q2);
-        list = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-
+      const snap = await getDocs(q);
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setApprovedList(list);
     } catch (err) {
       console.error(err);
@@ -92,26 +80,30 @@ function ShokSandeshContent() {
 
     const payload = {
       siteId: siteSlug,
-      type: 'shok-sandesh',
+      type: 'शोक संदेश',
+      deceased: deceasedName,
       deceasedName,
+      family: relation || 'परिवारजन',
       relation,
-      dob,
+      city: 'स्थानीय',
+      date: dod,
       dod,
+      dob,
       message,
       photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
       userId: user?.uid || 'guest',
       userName: user?.name || name || 'अज्ञात यूज़र',
       userEmail: user?.email || email || '',
       paymentId: 'PAY_SUCCESS_' + Date.now(),
-      status: 'pending', // Goes directly to Admin Panel for approval
+      status: 'pending', // Goes directly to /admin/obituaries for approval
       createdAt: serverTimestamp()
     };
 
     try {
-      // Save to shokSandesh collection
+      // Save directly to 'obituaries' collection so admin panel catches it instantly
+      await addDoc(collection(db, 'obituaries'), payload);
+      // Backup sync collection
       await addDoc(collection(db, 'shokSandesh'), payload);
-      // Save to submissions collection so admin panel catches it instantly
-      await addDoc(collection(db, 'submissions'), payload);
       
       setSubmitted(true);
     } catch (err) {
@@ -180,7 +172,7 @@ function ShokSandeshContent() {
           <div style={{ background: '#fff', borderRadius: '12px', padding: '40px', textAlign: 'center', border: '1px solid #e3e0da' }}>
             <h2 style={{ color: '#16a34a', fontSize: '24px', marginBottom: '10px' }}>✓ शोक संदेश सफलताપूर्वक दर्ज हो गया है!</h2>
             <p style={{ color: '#5a574f', fontSize: '15px', marginBottom: '20px' }}>
-              आपका भुगतान प्राप्त हो गया है। यह डेटा अब एडमिन पैनल में अनुमोदन (Approval) के लिए भेज दिया गया है।
+              आपका भुगतान प्राप्त हो गया है। यह डेटा अब एडमिन पैनल (`/admin/obituaries`) में अनुमोदन के लिए भेज दिया गया है।
             </p>
             <button onClick={() => setSubmitted(false)} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
               दूसरा संदेश दर्ज करें
@@ -252,11 +244,11 @@ function ShokSandeshContent() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {approvedList.map(item => (
                 <div key={item.id} style={{ background: '#fff', borderRadius: '10px', padding: '20px', border: '1px solid #e3e0da', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                  <img src={item.photoUrl} alt={item.deceasedName} style={{ width: '90px', height: '110px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  <img src={item.photoUrl || item.imageUrl} alt={item.deceasedName || item.deceased} style={{ width: '90px', height: '110px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                   <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 4px 0', color: '#16150f' }}>{item.deceasedName}</h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 4px 0', color: '#16150f' }}>{item.deceasedName || item.deceased}</h3>
                     <div style={{ fontSize: '13px', color: '#ea580c', fontWeight: 600, marginBottom: '8px' }}>
-                      स्वर्गवास तिथि: {item.dod} {item.relation ? `(${item.relation})` : ''}
+                      स्वर्गवास तिथि: {item.dod || item.date} {item.relation || item.family ? `(${item.relation || item.family})` : ''}
                     </div>
                     <p style={{ fontSize: '14.5px', color: '#5a574f', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{item.message}</p>
                   </div>
