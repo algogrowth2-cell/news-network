@@ -276,12 +276,14 @@ export default function HomePage() {
   const activeRashiInfo = rashifalData[selectedRashi];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: siteFont, fontSize: '16px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: siteFont, fontSize: '16px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
       
       <style jsx global>{`
         html, body {
           max-width: 100vw;
           overflow-x: hidden;
+          margin: 0;
+          padding: 0;
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -292,8 +294,8 @@ export default function HomePage() {
           margin: 0 auto;
           display: grid;
           grid-template-columns: 240px minmax(0, 1fr) 320px;
-          gap: 22px;
-          padding: 16px 22px 40px;
+          gap: 20px;
+          padding: 16px 20px 40px;
           box-sizing: border-box;
           width: 100%;
         }
@@ -328,26 +330,35 @@ export default function HomePage() {
           margin: 0 auto;
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           padding: 0 16px;
-          height: 64px;
+          height: 62px;
           width: 100%;
           box-sizing: border-box;
         }
 
-        /* Responsive Leaderboard Container */
+        /* 🎯 PRECISE HEADER LEADERBOARD AD BANNER */
         .ad-leaderboard-box {
-          background: #ffffff;
-          border: 1px solid #e3e0da;
-          border-radius: 10px;
+          background: #16150f;
+          border: 1px solid #2a2923;
+          border-radius: 8px;
           width: 100%;
           height: 90px;
-          max-height: 100px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 14px;
+          margin-bottom: 16px;
           overflow: hidden;
+          position: relative;
+        }
+
+        .ad-leaderboard-box a {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          text-decoration: none;
         }
 
         .ad-leaderboard-box img {
@@ -356,6 +367,7 @@ export default function HomePage() {
           width: auto;
           height: auto;
           object-fit: contain;
+          display: block;
         }
 
         @media (max-width: 1360px) {
@@ -402,21 +414,20 @@ export default function HomePage() {
           }
           .ad-leaderboard-box {
             height: 70px;
-            max-height: 75px;
           }
           .ad-leaderboard-box img {
-            max-height: 65px;
+            max-height: 70px;
           }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 640px) {
           .header-main-row {
             padding: 0 10px;
-            gap: 8px;
+            gap: 6px;
             height: 56px;
           }
           .site-title-text {
-            font-size: 17px !important;
+            font-size: 16px !important;
           }
           .site-sub-text {
             display: none !important;
@@ -424,13 +435,29 @@ export default function HomePage() {
           .search-btn-label {
             display: none !important;
           }
+          .top-ticker-date {
+            border-left: 1px solid #334155;
+            padding-left: 10px;
+            margin-left: 6px;
+          }
         }
       `}</style>
 
-      {/* 1. TOP LIVE FINANCIAL TICKER & DATE */}
-      <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '12px', padding: '6px 0', borderBottom: '1px solid #282721' }}>
-        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="hide-scrollbar" style={{ display: 'flex', gap: '16px', alignItems: 'center', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER WITH ZERO OVERFLOW */}
+      <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '11.5px', padding: '6px 0', borderBottom: '1px solid #282721', width: '100%', overflow: 'hidden' }}>
+        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 14px', boxSizing: 'border-box' }}>
+          <div 
+            className="hide-scrollbar" 
+            style={{ 
+              display: 'flex', 
+              gap: '14px', 
+              alignItems: 'center', 
+              overflowX: 'auto', 
+              whiteSpace: 'nowrap', 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x'
+            }}
+          >
             <span>Diesel: <b style={{ color: '#fff' }}>{marketRates.diesel}</b></span>
             <span>Petrol: <b style={{ color: '#fff' }}>{marketRates.petrol}</b></span>
             <span>
@@ -445,15 +472,15 @@ export default function HomePage() {
             </span>
             <span>Silver: <b style={{ color: '#fff' }}>{marketRates.silver}</b></span>
             <span>Gold: <b style={{ color: '#fff' }}>{marketRates.gold}</b></span>
-          </div>
-          <div style={{ whiteSpace: 'nowrap', paddingLeft: '12px', fontSize: '11.5px', color: '#94a3b8', flexShrink: 0 }}>
-            {currentHindiDate || 'लोड हो रहा है...'}
+            <span className="top-ticker-date" style={{ color: '#94a3b8', paddingRight: '12px' }}>
+              🗓️ {currentHindiDate || 'लोड हो रहा है...'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* 2. MAIN HEADER & NAVBAR */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)' }}>
+      {/* 2. MAIN HEADER & RESPONSIVE NAVBAR */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
           {/* Mobile Drawer Trigger */}
@@ -462,17 +489,17 @@ export default function HomePage() {
           </button>
 
           {/* Site Branding Logo */}
-          <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+          <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
             <img 
               src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
               alt={siteConfig?.name || 'The Local Leader'} 
-              style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+              style={{ height: '36px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
             />
             <div>
-              <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '21px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block' }}>
+              <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '19px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block' }}>
                 {siteConfig?.name || 'द लोकल लीडर'}
               </span>
-              <small className="site-sub-text" style={{ display: 'block', fontSize: '10px', color: '#8d897f' }}>
+              <small className="site-sub-text" style={{ display: 'block', fontSize: '9.5px', color: '#8d897f' }}>
                 {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
               </small>
             </div>
@@ -489,8 +516,8 @@ export default function HomePage() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '8px 12px',
-                    fontSize: '14.5px',
+                    padding: '8px 11px',
+                    fontSize: '14px',
                     fontWeight: 500,
                     color: isActive ? primary : '#5a574f',
                     background: 'none',
@@ -507,23 +534,23 @@ export default function HomePage() {
           </nav>
 
           {/* Right Action Tools & Portals */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Top Navbar Portal Buttons */}
-            <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link 
                 href="/patrakar/login" 
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '5px', 
-                  fontSize: '12px', 
+                  gap: '4px', 
+                  fontSize: '11.5px', 
                   fontWeight: 600, 
                   color: '#334155', 
                   background: '#f1f5f9', 
                   border: '1px solid #cbd5e1', 
-                  padding: '5px 10px', 
-                  borderRadius: '20px', 
+                  padding: '5px 9px', 
+                  borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
                 }}
@@ -535,14 +562,14 @@ export default function HomePage() {
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '5px', 
-                  fontSize: '12px', 
+                  gap: '4px', 
+                  fontSize: '11.5px', 
                   fontWeight: 600, 
                   color: '#fff', 
                   background: '#1e293b', 
                   border: '1px solid #1e293b', 
                   padding: '5px 10px', 
-                  borderRadius: '20px', 
+                  borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
                 }}
@@ -554,7 +581,7 @@ export default function HomePage() {
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '20px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#5a574f', fontSize: '13px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
             >
               <span>🔍</span>
               <span className="search-btn-label">खोजें</span>
@@ -568,9 +595,9 @@ export default function HomePage() {
 
             {/* Reader Auth */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '20px', padding: '4px 10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name || 'पाठक'}</span>
-                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10.5px', cursor: 'pointer', fontWeight: 700 }}>लॉग आउट</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 8px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name || 'पाठक'}</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
               <Link 
@@ -579,9 +606,9 @@ export default function HomePage() {
                   background: primary,
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '20px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
+                  borderRadius: '18px',
+                  padding: '5px 12px',
+                  fontSize: '12.5px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -597,9 +624,9 @@ export default function HomePage() {
 
       {/* SEARCH MODAL OVERLAY */}
       {searchModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '16px', paddingRight: '16px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '14px', paddingRight: '14px' }}>
           <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(22,21,15,.25)', alignSelf: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 18px', borderBottom: '1px solid #e3e0da' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
               <span style={{ fontSize: '18px', color: '#8d897f' }}>🔍</span>
               <input 
                 type="search" 
@@ -739,10 +766,10 @@ export default function HomePage() {
         {/* CENTER COLUMN: MAIN CONTENT FEED */}
         <main style={{ minWidth: 0 }}>
           
-          {/* HEADER LEADERBOARD AD - FIXED RATIO */}
+          {/* HEADER LEADERBOARD AD - CLEAN BLENDED RATIO */}
           <div className="ad-leaderboard-box">
             {headerAd ? (
-              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer">
                 <img src={headerAd.imageUrl} alt={headerAd.name} />
               </a>
             ) : (
