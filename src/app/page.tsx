@@ -397,12 +397,12 @@ export default function HomePage() {
             top: 0;
             bottom: 0;
             left: 0;
-            width: min(80vw, 300px);
+            width: min(82vw, 320px);
             background: #ffffff;
             z-index: 300;
             padding: 18px;
             max-height: none;
-            box-shadow: 4px 0 24px rgba(22,21,15,.18);
+            box-shadow: 4px 0 24px rgba(22,21,15,.2);
             transform: ${drawerOpen ? 'translateX(0)' : 'translateX(-100%)'};
             transition: transform 0.25s ease;
           }
@@ -414,16 +414,27 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 CLEAN MOBILE VIEW: ZERO OVERFLOW, PERFECT ACTIONS FIT */
-        @media (max-width: 640px) {
+        /* 📱 CLEAN MOBILE VIEW: ZERO OVERFLOW & GUARANTEED LOGIN BUTTON VISIBILITY */
+        @media (max-width: 768px) {
+          .header-portal-switchers {
+            display: none !important;
+          }
+          .mobile-drawer-top-switchers {
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e3e0da;
+          }
           .header-main-row {
-            padding: 0 8px;
-            gap: 4px;
-            height: 54px;
+            padding: 0 10px !important;
+            gap: 6px !important;
+            height: 56px !important;
           }
           .site-title-text {
-            font-size: 14.5px !important;
-            max-width: 100px;
+            font-size: 15px !important;
+            max-width: 130px;
           }
           .site-sub-text {
             display: none !important;
@@ -432,16 +443,22 @@ export default function HomePage() {
             display: none !important;
           }
           .nav-tools-group {
-            gap: 4px !important;
+            gap: 6px !important;
+            margin-left: auto !important;
+          }
+          .login-btn-header {
+            padding: 6px 14px !important;
+            font-size: 12.5px !important;
+            flex-shrink: 0 !important;
           }
           .ad-leaderboard-box {
             height: 75px;
           }
         }
 
-        @media (max-width: 420px) {
+        @media (max-width: 380px) {
           .site-title-text {
-            display: none !important;
+            max-width: 95px;
           }
         }
       `}</style>
@@ -459,6 +476,7 @@ export default function HomePage() {
               whiteSpace: 'nowrap', 
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-x',
+              cursor: 'grab',
               paddingRight: '16px'
             }}
           >
@@ -540,7 +558,7 @@ export default function HomePage() {
           </nav>
 
           {/* Right Action Tools & Portals */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -587,37 +605,39 @@ export default function HomePage() {
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 9px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
             >
               <span>🔍</span>
               <span className="search-btn-label">खोजें</span>
             </button>
 
-            {/* Portal Switcher Dropdown (8 sites) */}
-            <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            {/* Desktop Switchers: Hidden on mobile header to avoid cut-off, placed in drawer */}
+            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+              <LanguageTranslator />
+            </div>
 
-            {/* Language Translator */}
-            <LanguageTranslator />
-
-            {/* Reader Auth */}
+            {/* Reader Auth - Always in View! */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 7px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
               <Link 
                 href="/login" 
+                className="login-btn-header"
                 style={{
                   background: primary,
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '5px 10px',
-                  fontSize: '11.5px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   textDecoration: 'none',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  display: 'inline-block'
                 }}
               >
                 लॉगिन
@@ -659,14 +679,20 @@ export default function HomePage() {
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
         <aside className="side-col">
           
-          {/* Mobile Direct Portal Desks inside drawer */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-            <Link href="/patrakar/login" style={{ fontSize: '13px', color: '#1e293b', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e3e0da' }}>
-              <span>✍️</span> <b>पत्रकार पोर्टल</b>
-            </Link>
-            <Link href="/advertiser/login" style={{ fontSize: '13px', color: '#1e293b', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', background: '#f6f5f2', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e3e0da' }}>
-              <span>📢</span> <b>विज्ञापनदाता डेस्क</b>
-            </Link>
+          {/* Mobile Direct Switchers & Portal Desks inside drawer[cite: 1] */}
+          <div className="mobile-drawer-top-switchers" style={{ display: 'none' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
+              <div style={{ flex: 1 }}><SiteSwitcher currentSlug={currentSlug} primaryColor={primary} /></div>
+              <div style={{ flex: 1 }}><LanguageTranslator /></div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <Link href="/patrakar/login" style={{ flex: 1, textAlign: 'center', fontSize: '12.5px', color: '#1e293b', textDecoration: 'none', padding: '7px 8px', borderRadius: '8px', background: '#f6f5f2', border: '1px solid #e3e0da' }}>
+                ✍️ <b>पत्रकार पोर्टल</b>
+              </Link>
+              <Link href="/advertiser/login" style={{ flex: 1, textAlign: 'center', fontSize: '12.5px', color: '#1e293b', textDecoration: 'none', padding: '7px 8px', borderRadius: '8px', background: '#f6f5f2', border: '1px solid #e3e0da' }}>
+                📢 <b>विज्ञापन डेस्क</b>
+              </Link>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
