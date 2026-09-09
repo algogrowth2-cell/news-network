@@ -339,7 +339,7 @@ export default function HomePage() {
           box-sizing: border-box;
         }
 
-        /* 🎯 FULL-COVER HEADER LEADERBOARD BANNER */
+        /* FULL-COVER HEADER LEADERBOARD BANNER */
         .ad-leaderboard-box {
           background: #16150f;
           border: 1px solid #e3e0da;
@@ -402,7 +402,7 @@ export default function HomePage() {
             z-index: 300;
             padding: 18px;
             max-height: none;
-            box-shadow: 4px 0 24px rgba(22,21,15,.2);
+            box-shadow: 4px 0 24px rgba(22,21,15,.18);
             transform: ${drawerOpen ? 'translateX(0)' : 'translateX(-100%)'};
             transition: transform 0.25s ease;
           }
@@ -414,7 +414,6 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 CLEAN MOBILE VIEW: ZERO OVERFLOW & GUARANTEED LOGIN BUTTON VISIBILITY */
         @media (max-width: 768px) {
           .header-portal-switchers {
             display: none !important;
@@ -463,7 +462,7 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER (SWIPABLE ON MOBILE) */}
+      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER */}
       <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '11.5px', padding: '6px 0', borderBottom: '1px solid #282721', width: '100%', overflow: 'hidden' }}>
         <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 12px', boxSizing: 'border-box' }}>
           <div 
@@ -611,13 +610,13 @@ export default function HomePage() {
               <span className="search-btn-label">खोजें</span>
             </button>
 
-            {/* Desktop Switchers: Hidden on mobile header to avoid cut-off, placed in drawer */}
+            {/* Desktop Switchers */}
             <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
 
-            {/* Reader Auth - Always in View! */}
+            {/* Reader Auth - Always in View */}
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
@@ -679,7 +678,7 @@ export default function HomePage() {
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
         <aside className="side-col">
           
-          {/* Mobile Direct Switchers & Portal Desks inside drawer[cite: 1] */}
+          {/* Mobile Direct Switchers & Portal Desks inside drawer */}
           <div className="mobile-drawer-top-switchers" style={{ display: 'none' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
               <div style={{ flex: 1 }}><SiteSwitcher currentSlug={currentSlug} primaryColor={primary} /></div>
@@ -726,9 +725,9 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* APP DOWNLOAD BOX[cite: 1, 2] */}
+          {/* APP DOWNLOAD BOX */}
           <div style={{ textAlign: 'center', marginTop: '22px', paddingTop: '18px', borderTop: '1px solid #e3e0da' }}>
-            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें[cite: 1, 2]</div>
+            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें</div>
             
             <a 
               href="#" 
@@ -746,8 +745,8 @@ export default function HomePage() {
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON[cite: 1, 2]</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play[cite: 1, 2]</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play</b>
             </a>
 
             <a 
@@ -766,11 +765,11 @@ export default function HomePage() {
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the[cite: 1, 2]</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store[cite: 1, 2]</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store</b>
             </a>
 
-            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें[cite: 1, 2]</div>
+            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें</div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               {['f', '𝕏', '◎', '▶'].map((icon, i) => (
                 <span 
