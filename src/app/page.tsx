@@ -114,7 +114,7 @@ export default function HomePage() {
       return;
     }
     if (cat === 'शोक संदेश') {
-      router.push(`/?site=${currentSlug}#shok-sandesh`);
+      router.push(`/shok-sandesh?site=${currentSlug}`);
       return;
     }
     if (cat === 'सर्च') {
@@ -512,7 +512,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR (SINGLE SEARCH) */}
+      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
@@ -540,7 +540,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* EMBEDDED DESKTOP SUBNAVBAR (Without extra search button) */}
+          {/* EMBEDDED DESKTOP SUBNAVBAR */}
           <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
@@ -741,7 +741,7 @@ export default function HomePage() {
         <aside className="side-col">
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
+            {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'शोक संदेश', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
               const iconEmoji = CATEGORY_ICONS[cat] || '📰';
               return (
