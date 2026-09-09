@@ -7,6 +7,7 @@ interface FooterProps {
   primaryColor?: string;
   logoUrl?: string;
   tagline?: string;
+  currentSlug?: string;
 }
 
 const NETWORK_PORTALS = [
@@ -24,7 +25,8 @@ export default function Footer({
   siteName = 'द लोकल लीडर', 
   primaryColor = '#ea580c',
   logoUrl = '/logos/the-local-leader.jpeg',
-  tagline = '— जनता की आवाज़, सच्चाई के साथ —'
+  tagline = '— जनता की आवाज़, सच्चाई के साथ —',
+  currentSlug = 'the-local-leader'
 }: FooterProps) {
   const [logoErr, setLogoErr] = useState(false);
 
@@ -37,56 +39,17 @@ export default function Footer({
   return (
     <footer style={{ background: '#ffffff', color: '#16150f', borderTop: '1px solid #e3e0da', marginTop: 'auto', fontFamily: '"Mukta", system-ui, sans-serif', width: '100%', boxSizing: 'border-box' }}>
       
-      <style jsx>{`
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .footer-main-grid {
-          display: grid;
-          grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
-          gap: 32px;
-          padding-top: 38px;
-          padding-bottom: 34px;
-        }
-
-        @media (max-width: 1100px) {
-          .footer-main-grid {
-            grid-template-columns: 1.2fr 1fr 1fr;
-            gap: 28px;
-          }
-        }
-
-        @media (max-width: 850px) {
-          .footer-main-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .footer-main-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-            padding-top: 24px;
-            padding-bottom: 24px;
-          }
-          .footer-net-band-inner {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 10px !important;
-          }
-          .footer-bottom-flex {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 14px !important;
-          }
-        }
-      `}</style>
-
       <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', boxSizing: 'border-box', width: '100%' }}>
         
         {/* 1. MAIN FOUR COLUMN SECTION */}
-        <div className="footer-main-grid">
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '32px', 
+          paddingTop: '38px', 
+          paddingBottom: '34px',
+          borderBottom: '1px solid #e3e0da'
+        }}>
           
           {/* Column 1: Brand, Tagline, Social & App Stores */}
           <div>
@@ -151,7 +114,7 @@ export default function Footer({
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'].map(cat => (
                 <li key={cat}>
-                  <Link href={`/?category=${encodeURIComponent(cat)}`} style={{ background: 'none', border: 'none', color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  <Link href={`/?site=${currentSlug}&category=${encodeURIComponent(cat)}`} style={{ background: 'none', border: 'none', color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
                     {cat}
                   </Link>
                 </li>
@@ -159,16 +122,40 @@ export default function Footer({
             </ul>
           </div>
 
-          {/* Column 3: सेवाएं */}
+          {/* Column 3: सेवाएं (Working Links) */}
           <div>
             <span style={{ display: 'block', fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 600, marginBottom: '12px', paddingBottom: '4px', borderBottom: `2px solid ${primaryColor}`, width: 'fit-content', color: '#16150f' }}>सेवाएं</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><Link href="/epaper" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>ई-पेपर</Link></li>
-              <li><Link href="/shok-sandesh" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>शोक संदेश</Link></li>
-              <li><Link href="/classifieds" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>क्लासिफाइड</Link></li>
-              <li><Link href="/rashifal" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>राशिफल</Link></li>
-              <li><Link href="/mandi-bhav" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>मंडी भाव</Link></li>
-              <li><Link href="/breaking-alerts" style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>ब्रेकिंग अलर्ट</Link></li>
+              <li>
+                <Link href={`/epaper?site=${currentSlug}`} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  ई-पेपर
+                </Link>
+              </li>
+              <li>
+                <Link href={`/?site=${currentSlug}#shok-sandesh`} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  शोक संदेश
+                </Link>
+              </li>
+              <li>
+                <Link href={`/?site=${currentSlug}#classifieds`} onClick={(e) => { e.preventDefault(); alert('क्लासिफाइड बुकिंग पेज जल्द खुलेगा!'); }} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  क्लासिफाइड
+                </Link>
+              </li>
+              <li>
+                <Link href={`/?site=${currentSlug}#rashifal`} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  राशिफल
+                </Link>
+              </li>
+              <li>
+                <Link href={`/?site=${currentSlug}#mandi-bhav`} onClick={(e) => { e.preventDefault(); alert('मंडी भाव अपडेट जल्द लाइव होंगे!'); }} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  मंडी भाव
+                </Link>
+              </li>
+              <li>
+                <Link href={`/?site=${currentSlug}#breaking`} onClick={(e) => { e.preventDefault(); alert('ब्रेकिंग न्यूज़ अलर्ट सब्स्क्रिप्शन सक्रिय है!'); }} style={{ color: '#5a574f', fontSize: '14px', textDecoration: 'none', display: 'block' }}>
+                  ब्रेकिंग अलर्ट
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -223,7 +210,7 @@ export default function Footer({
 
       {/* 2. NETWORK PORTALS HORIZONTAL SCROLLABLE STRIP */}
       <div style={{ background: '#f6f5f2', borderTop: '1px solid #e3e0da', borderBottom: '1px solid #e3e0da', padding: '14px 0', width: '100%' }}>
-        <div className="footer-net-band-inner" style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
           <span style={{ fontSize: '12px', letterSpacing: '0.8px', color: '#8d897f', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
             नेटवर्क के अन्य पोर्टल
           </span>
@@ -257,7 +244,7 @@ export default function Footer({
 
       {/* 3. BOTTOM POLICY BAR & SCROLL-TOP BUTTON */}
       <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', boxSizing: 'border-box', width: '100%' }}>
-        <div className="footer-bottom-flex" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', padding: '16px 0 20px', fontSize: '12px', color: '#8d897f' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', padding: '16px 0 20px', fontSize: '12px', color: '#8d897f' }}>
           <div>
             © 2026 {siteName} न्यूज़ मीडिया · सर्वाधिकार सुरक्षित
           </div>
