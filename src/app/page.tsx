@@ -313,17 +313,17 @@ export default function HomePage() {
 
         .side-col {
           position: sticky;
-          top: 80px;
+          top: 130px;
           align-self: start;
-          max-height: calc(100vh - 96px);
+          max-height: calc(100vh - 140px);
           overflow-y: auto;
         }
 
         .rail-col {
           position: sticky;
-          top: 80px;
+          top: 130px;
           align-self: start;
-          max-height: calc(100vh - 96px);
+          max-height: calc(100vh - 140px);
           overflow-y: auto;
         }
 
@@ -343,9 +343,9 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 8px;
+          gap: 12px;
           padding: 0 16px;
-          height: 62px;
+          height: 72px;
           width: 100%;
           box-sizing: border-box;
         }
@@ -421,47 +421,6 @@ export default function HomePage() {
             height: 80px;
           }
         }
-
-        @media (max-width: 768px) {
-          .header-portal-switchers {
-            display: none !important;
-          }
-          .mobile-drawer-top-switchers {
-            display: flex !important;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #e3e0da;
-          }
-          .header-main-row {
-            padding: 0 10px !important;
-            gap: 6px !important;
-            height: 56px !important;
-          }
-          .site-title-text {
-            font-size: 15px !important;
-            max-width: 130px;
-          }
-          .site-sub-text {
-            display: none !important;
-          }
-          .search-btn-label {
-            display: none !important;
-          }
-          .nav-tools-group {
-            gap: 6px !important;
-            margin-left: auto !important;
-          }
-          .login-btn-header {
-            padding: 6px 14px !important;
-            font-size: 12.5px !important;
-            flex-shrink: 0 !important;
-          }
-          .ad-leaderboard-box {
-            height: 75px;
-          }
-        }
       `}</style>
 
       {/* 1. SCROLLABLE TOP LIVE MARKET TICKER */}
@@ -502,36 +461,74 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER & RESPONSIVE NAVBAR */}
+      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Mobile Drawer Trigger */}
             <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
             {/* Site Branding Logo */}
-            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}>
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
               <img 
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
                 alt={siteConfig?.name || 'The Local Leader'} 
-                style={{ height: '34px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+                style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
               />
               <div style={{ minWidth: 0 }}>
-                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '20px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
                 </span>
-                <small className="site-sub-text" style={{ display: 'block', fontSize: '9px', color: '#8d897f', whiteSpace: 'nowrap' }}>
+                <small className="site-sub-text" style={{ display: 'block', fontSize: '10px', color: '#8d897f', whiteSpace: 'nowrap' }}>
                   {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
                 </small>
               </div>
             </Link>
           </div>
 
+          {/* 🎯 EMBEDDED DESKTOP SUBNAVBAR (Fills the blank space in top header) */}
+          <nav className="hide-scrollbar hide-nav-mobile" style={{ display: 'flex', alignItems: 'center', gap: '20px', margin: '0 20px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
+            <button 
+              onClick={() => handleCategoryClick('होम')}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 600, color: activeCategory === 'होम' ? primary : '#16150f', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              <span style={{ color: activeCategory === 'होम' ? primary : '#d97706' }}>🏠</span> होम
+            </button>
+
+            <button 
+              onClick={() => handleCategoryClick('ताज़ा खबरें')}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              <span>≡</span> ताज़ा खबरें
+            </button>
+
+            <button 
+              onClick={() => setSearchModalOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              <span>🔍</span> सर्च
+            </button>
+
+            <button 
+              onClick={() => handleCategoryClick('शोक संदेश')}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'शोक संदेश' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              <span>🕯️</span> शोक संदेश
+            </button>
+
+            <button 
+              onClick={() => handleCategoryClick('ई-पेपर')}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              <span>📄</span> ई-पेपर
+            </button>
+          </nav>
+
           {/* Right Action Tools & Portals */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -541,12 +538,12 @@ export default function HomePage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '4px', 
-                  fontSize: '11.5px', 
+                  fontSize: '12px', 
                   fontWeight: 600, 
                   color: '#334155', 
                   background: '#f1f5f9', 
                   border: '1px solid #cbd5e1', 
-                  padding: '5px 9px', 
+                  padding: '6px 11px', 
                   borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -560,12 +557,12 @@ export default function HomePage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '4px', 
-                  fontSize: '11.5px', 
+                  fontSize: '12px', 
                   fontWeight: 600, 
                   color: '#fff', 
                   background: '#1e293b', 
                   border: '1px solid #1e293b', 
-                  padding: '5px 10px', 
+                  padding: '6px 12px', 
                   borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -578,7 +575,7 @@ export default function HomePage() {
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 9px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '6px 11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '13px' }}
             >
               <span>🔍</span>
               <span className="search-btn-label">खोजें</span>
@@ -592,8 +589,8 @@ export default function HomePage() {
 
             {/* Reader Auth */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 10px', flexShrink: 0 }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
@@ -605,8 +602,8 @@ export default function HomePage() {
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
+                  padding: '7px 16px',
+                  fontSize: '13.5px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
@@ -620,48 +617,6 @@ export default function HomePage() {
           </div>
         </div>
       </header>
-
-      {/* 3. CORRECT HTML TEMPLATE NAVBAR: होम, ताज़ा खबरें, सर्च, शोक संदेश, ई-पेपर */}
-      <nav style={{ background: '#ffffff', borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 2px rgba(22,21,15,0.03)' }}>
-        <div className="hide-scrollbar" style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '24px', overflowX: 'auto', whiteSpace: 'nowrap', height: '48px' }}>
-          
-          <button 
-            onClick={() => handleCategoryClick('होम')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 600, color: activeCategory === 'होम' ? primary : '#16150f', cursor: 'pointer' }}
-          >
-            <span style={{ color: activeCategory === 'होम' ? primary : '#d97706' }}>🏠</span> होम
-          </button>
-
-          <button 
-            onClick={() => handleCategoryClick('ताज़ा खबरें')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer' }}
-          >
-            <span>≡</span> ताज़ा खबरें
-          </button>
-
-          <button 
-            onClick={() => setSearchModalOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: '#5a574f', cursor: 'pointer' }}
-          >
-            <span>🔍</span> सर्च
-          </button>
-
-          <button 
-            onClick={() => handleCategoryClick('शोक संदेश')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: activeCategory === 'शोक संदेश' ? primary : '#5a574f', cursor: 'pointer' }}
-          >
-            <span>🕯️</span> शोक संदेश
-          </button>
-
-          <button 
-            onClick={() => handleCategoryClick('ई-पेपर')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', fontSize: '15px', fontWeight: 500, color: '#5a574f', cursor: 'pointer' }}
-          >
-            <span>📄</span> ई-पेपर
-          </button>
-
-        </div>
-      </nav>
 
       {/* SEARCH MODAL OVERLAY */}
       {searchModalOpen && (
@@ -688,7 +643,7 @@ export default function HomePage() {
         <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 290 }} />
       )}
 
-      {/* 4. RESPONSIVE THREE-COLUMN SHELL */}
+      {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
@@ -826,7 +781,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 🎯 TRENDING TAGS BAR AFTER BANNER (FROM HTML TEMPLATE) */}
+          {/* 🎯 TRENDING TAGS BAR AFTER BANNER */}
           <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: primary, flexShrink: 0 }}>ट्रेंडिंग</span>
             <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
