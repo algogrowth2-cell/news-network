@@ -489,7 +489,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* 🎯 EMBEDDED DESKTOP SUBNAVBAR (Fills the blank space in top header) */}
+          {/* EMBEDDED DESKTOP SUBNAVBAR */}
           <nav className="hide-scrollbar hide-nav-mobile" style={{ display: 'flex', alignItems: 'center', gap: '20px', margin: '0 20px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
@@ -527,7 +527,7 @@ export default function HomePage() {
             </button>
           </nav>
 
-          {/* Right Action Tools & Portals */}
+          {/* Right Action Tools & Portals (Fully Visible on Desktop & Mobile) */}
           <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
@@ -581,13 +581,13 @@ export default function HomePage() {
               <span className="search-btn-label">खोजें</span>
             </button>
 
-            {/* Desktop Switchers */}
-            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Site Switcher & Language Translator (Restored in Header) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
 
-            {/* Reader Auth */}
+            {/* Reader Auth / Login */}
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 10px', flexShrink: 0 }}>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
@@ -643,28 +643,12 @@ export default function HomePage() {
         <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 290 }} />
       )}
 
-      {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
+      {/* 4. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
         <aside className="side-col">
           
-          {/* Mobile Direct Switchers & Portal Desks inside drawer */}
-          <div className="mobile-drawer-top-switchers" style={{ display: 'none' }}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
-              <div style={{ flex: 1 }}><SiteSwitcher currentSlug={currentSlug} primaryColor={primary} /></div>
-              <div style={{ flex: 1 }}><LanguageTranslator /></div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              <Link href="/patrakar/login" style={{ flex: 1, textAlign: 'center', fontSize: '12.5px', color: '#1e293b', textDecoration: 'none', padding: '7px 8px', borderRadius: '8px', background: '#f6f5f2', border: '1px solid #e3e0da' }}>
-                ✍️ <b>पत्रकार पोर्टल</b>
-              </Link>
-              <Link href="/advertiser/login" style={{ flex: 1, textAlign: 'center', fontSize: '12.5px', color: '#1e293b', textDecoration: 'none', padding: '7px 8px', borderRadius: '8px', background: '#f6f5f2', border: '1px solid #e3e0da' }}>
-                📢 <b>विज्ञापन डेस्क</b>
-              </Link>
-            </div>
-          </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
