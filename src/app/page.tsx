@@ -330,6 +330,12 @@ export default function HomePage() {
           }
         }
 
+        @media (max-width: 1050px) {
+          .nav-portal-links {
+            display: none !important;
+          }
+        }
+
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -437,9 +443,51 @@ export default function HomePage() {
             })}
           </nav>
 
-          {/* Action Tools */}
+          {/* Right Action Tools & Portals */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
             
+            {/* Top Navbar Portal Buttons */}
+            <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link 
+                href="/patrakar/login" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '12.5px', 
+                  fontWeight: 600, 
+                  color: '#334155', 
+                  background: '#f1f5f9', 
+                  border: '1px solid #cbd5e1', 
+                  padding: '5px 11px', 
+                  borderRadius: '20px', 
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <span>✍️</span> <span>पत्रकार पोर्टल</span>
+              </Link>
+              <Link 
+                href="/advertiser/login" 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '12.5px', 
+                  fontWeight: 600, 
+                  color: '#fff', 
+                  background: '#1e293b', 
+                  border: '1px solid #1e293b', 
+                  padding: '5px 12px', 
+                  borderRadius: '20px', 
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <span>📢</span> <span>विज्ञापनदाता डेस्क</span>
+              </Link>
+            </div>
+
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
@@ -730,7 +778,7 @@ export default function HomePage() {
 
       </div>
 
-      {/* 4. FOOTER */}
+      {/* 4. DYNAMIC FOOTER */}
       <Footer 
         siteName={siteConfig?.name || 'द लोकल लीडर'} 
         primaryColor={primary}
