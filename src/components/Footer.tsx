@@ -35,209 +35,19 @@ export default function Footer({
   };
 
   return (
-    <footer style={{ background: '#ffffff', color: '#16150f', borderTop: '1px solid #e3e0da', marginTop: 'auto', fontFamily: '"Mukta", system-ui, sans-serif' }}>
+    <footer style={{ background: '#ffffff', color: '#16150f', borderTop: '1px solid #e3e0da', marginTop: 'auto', fontFamily: '"Mukta", system-ui, sans-serif', width: '100%', boxSizing: 'border-box' }}>
       
-      <style jsx>{`
-        .fwrap {
-          max-width: 1560px;
-          margin: 0 auto;
-          padding: 0 22px;
-          box-sizing: border-box;
-          width: 100%;
-        }
-
-        .footer-top-grid {
-          display: grid;
-          grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
-          gap: 42px;
-          padding-top: 38px;
-          padding-bottom: 34px;
-        }
-
-        .fcol-title {
-          display: block;
-          font-family: "Tiro Devanagari Hindi", Georgia, serif;
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 14px;
-          padding-bottom: 6px;
-          border-bottom: 2px solid ${primaryColor};
-          width: fit-content;
-          color: #16150f;
-        }
-
-        .fcol-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .fcol-btn {
-          background: none;
-          border: none;
-          color: #5a574f;
-          font-size: 14.5px;
-          padding: 3px 0;
-          text-align: left;
-          cursor: pointer;
-          font-family: inherit;
-          text-decoration: none;
-          display: block;
-          transition: color 0.15s;
-        }
-
-        .fcol-btn:hover {
-          color: ${primaryColor};
-        }
-
-        .social-circle-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          border: 1px solid #e3e0da;
-          background: #f6f5f2;
-          display: grid;
-          place-items: center;
-          font-size: 14px;
-          color: #5a574f;
-          text-decoration: none;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .social-circle-btn:hover {
-          border-color: ${primaryColor};
-          color: ${primaryColor};
-          background: #ffffff;
-        }
-
-        .fnetband {
-          background: #f6f5f2;
-          border-top: 1px solid #e3e0da;
-          border-bottom: 1px solid #e3e0da;
-          padding: 16px 0;
-        }
-
-        .fnetin {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          width: 100%;
-        }
-
-        /* 🎯 HORIZONTAL SCROLLABLE PORTALS STRIP */
-        .fnetlist {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          overflow-x: auto;
-          white-space: nowrap;
-          flex: 1;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          padding-bottom: 2px;
-        }
-
-        .fnetlist::-webkit-scrollbar {
-          display: none;
-        }
-
-        .fnet-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          border: 1px solid #e3e0da;
-          border-radius: 20px;
-          padding: 6px 14px;
-          font-size: 13.5px;
-          background: #ffffff;
-          color: #5a574f;
-          text-decoration: none;
-          cursor: pointer;
-          flex-shrink: 0;
-          transition: border-color 0.15s;
-        }
-
-        .fnet-pill:hover {
-          border-color: ${primaryColor};
-          color: #16150f;
-        }
-
-        .fbottom-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-          padding: 18px 0 22px;
-          font-size: 12.5px;
-          color: #8d897f;
-        }
-
-        .scroll-top-btn {
-          width: 42px;
-          height: 42px;
-          border-radius: 50%;
-          border: 1px solid #e3e0da;
-          background: #ffffff;
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-          color: #5a574f;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-          transition: all 0.2s;
-        }
-
-        .scroll-top-btn:hover {
-          border-color: ${primaryColor};
-          color: ${primaryColor};
-        }
-
-        @media (max-width: 1100px) {
-          .footer-top-grid {
-            grid-template-columns: 1.4fr 1fr 1fr;
-            gap: 32px;
-          }
-        }
-
-        @media (max-width: 800px) {
-          .footer-top-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 28px;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .fwrap {
-            padding: 0 16px;
-          }
-          .footer-top-grid {
-            grid-template-columns: 1fr;
-            gap: 26px;
-            padding-top: 28px;
-          }
-          .fnetin {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-          }
-          .fnetlist {
-            width: 100%;
-          }
-          .fbottom-bar {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-          }
-        }
-      `}</style>
-
-      {/* 1. MAIN FOUR COLUMN SECTION */}
-      <div className="fwrap">
-        <div className="footer-top-grid">
+      <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 22px', boxSizing: 'border-box', width: '100%' }}>
+        
+        {/* 1. MAIN FOUR COLUMN SECTION */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1.6fr 1fr 1fr 1.3fr', 
+          gap: '32px', 
+          paddingTop: '38px', 
+          paddingBottom: '34px',
+          borderBottom: '1px solid #e3e0da'
+        }}>
           
           {/* Column 1: Brand, Tagline, Social & App Stores */}
           <div>
@@ -263,11 +73,11 @@ export default function Footer({
             {/* Circular Social Icons */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '18px' }}>
               {['f', '𝕏', '◎', '▶'].map((icon, i) => (
-                <span key={i} className="social-circle-btn">
+                <span key={i} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #e3e0da', background: '#f6f5f2', display: 'grid', placeItems: 'center', fontSize: '14px', color: '#5a574f', cursor: 'pointer' }}>
                   {icon}
                 </span>
               ))}
-              <span className="social-circle-btn" style={{ color: '#25913f' }}>
+              <span style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #e3e0da', background: '#f6f5f2', display: 'grid', placeItems: 'center', fontSize: '14px', color: '#25913f', cursor: 'pointer' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.8c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.9 11.9 0 004.5 4 5 5 0 002.3.5 2.7 2.7 0 001.8-1.2 2.2 2.2 0 00.2-1.2c-.1-.1-.2-.2-.4-.3z"/>
                 </svg>
@@ -279,15 +89,7 @@ export default function Footer({
               <a 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
-                style={{
-                  border: '1px solid #e3e0da',
-                  borderRadius: '8px',
-                  padding: '7px 14px',
-                  background: '#f6f5f2',
-                  textDecoration: 'none',
-                  color: '#16150f',
-                  display: 'block'
-                }}
+                style={{ border: '1px solid #e3e0da', borderRadius: '8px', padding: '7px 14px', background: '#f6f5f2', textDecoration: 'none', color: '#16150f', display: 'block' }}
               >
                 <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.1 }}>यहाँ से पाएँ</small>
                 <b style={{ fontSize: '13.5px', fontWeight: 600 }}>Google Play</b>
@@ -296,15 +98,7 @@ export default function Footer({
               <a 
                 href="#" 
                 onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
-                style={{
-                  border: '1px solid #e3e0da',
-                  borderRadius: '8px',
-                  padding: '7px 14px',
-                  background: '#f6f5f2',
-                  textDecoration: 'none',
-                  color: '#16150f',
-                  display: 'block'
-                }}
+                style={{ border: '1px solid #e3e0da', borderRadius: '8px', padding: '7px 14px', background: '#f6f5f2', textDecoration: 'none', color: '#16150f', display: 'block' }}
               >
                 <small style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', lineHeight: 1.1 }}>डाउनलोड करें</small>
                 <b style={{ fontSize: '13.5px', fontWeight: 600 }}>App Store</b>
@@ -314,11 +108,11 @@ export default function Footer({
 
           {/* Column 2: खबरें */}
           <div>
-            <span className="fcol-title">खबरें</span>
-            <ul className="fcol-list">
+            <span style={{ display: 'block', fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, marginBottom: '14px', paddingBottom: '6px', borderBottom: `2px solid ${primaryColor}`, width: 'fit-content', color: '#16150f' }}>खबरें</span>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'].map(cat => (
                 <li key={cat}>
-                  <Link href={`/?category=${encodeURIComponent(cat)}`} className="fcol-btn">
+                  <Link href={`/?category=${encodeURIComponent(cat)}`} style={{ background: 'none', border: 'none', color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>
                     {cat}
                   </Link>
                 </li>
@@ -328,20 +122,20 @@ export default function Footer({
 
           {/* Column 3: सेवाएं */}
           <div>
-            <span className="fcol-title">सेवाएं</span>
-            <ul className="fcol-list">
-              <li><Link href="/epaper" className="fcol-btn">ई-पेपर</Link></li>
-              <li><Link href="/shok-sandesh" className="fcol-btn">शोक संदेश</Link></li>
-              <li><Link href="/classifieds" className="fcol-btn">क्लासिफाइड</Link></li>
-              <li><Link href="/rashifal" className="fcol-btn">राशिफल</Link></li>
-              <li><Link href="/mandi-bhav" className="fcol-btn">मंडी भाव</Link></li>
-              <li><Link href="/breaking-alerts" className="fcol-btn">ब्रेकिंग अलर्ट</Link></li>
+            <span style={{ display: 'block', fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, marginBottom: '14px', paddingBottom: '6px', borderBottom: `2px solid ${primaryColor}`, width: 'fit-content', color: '#16150f' }}>सेवाएं</span>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li><Link href="/epaper" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>ई-पेपर</Link></li>
+              <li><Link href="/shok-sandesh" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>शोक संदेश</Link></li>
+              <li><Link href="/classifieds" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>क्लासिफाइड</Link></li>
+              <li><Link href="/rashifal" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>राशिफल</Link></li>
+              <li><Link href="/mandi-bhav" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>मंडी भाव</Link></li>
+              <li><Link href="/breaking-alerts" style={{ color: '#5a574f', fontSize: '14.5px', textDecoration: 'none', display: 'block' }}>ब्रेकिंग अलर्ट</Link></li>
             </ul>
           </div>
 
           {/* Column 4: संपर्क */}
           <div>
-            <span className="fcol-title">संपर्क</span>
+            <span style={{ display: 'block', fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, marginBottom: '14px', paddingBottom: '6px', borderBottom: `2px solid ${primaryColor}`, width: 'fit-content', color: '#16150f' }}>संपर्क</span>
             <div style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <span style={{ color: primaryColor }}>📍</span>
@@ -361,7 +155,6 @@ export default function Footer({
               </div>
             </div>
 
-            {/* Tip Button */}
             <Link 
               href="/patrakar/login"
               style={{
@@ -389,18 +182,31 @@ export default function Footer({
         </div>
       </div>
 
-      {/* 2. NETWORK PORTALS HORIZONTAL SCROLLABLE STRIP */}
-      <div className="fnetband">
-        <div className="fwrap fnetin">
+      {/* 2. NETWORK PORTALS HORIZONTAL SCROLLABLE STRIP (FIXED PILLS) */}
+      <div style={{ background: '#f6f5f2', borderBottom: '1px solid #e3e0da', padding: '14px 0', width: '100%' }}>
+        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 22px', display: 'flex', alignItems: 'center', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
           <span style={{ fontSize: '12.5px', letterSpacing: '0.8px', color: '#8d897f', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
             नेटवर्क के अन्य पोर्टल
           </span>
-          <div className="fnetlist">
+          <div className="hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1, paddingBottom: '2px' }}>
             {NETWORK_PORTALS.filter(p => p.name !== siteName).map(portal => (
               <Link 
                 key={portal.slug} 
                 href={`/?site=${portal.slug}`} 
-                className="fnet-pill"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  border: '1px solid #e3e0da',
+                  borderRadius: '20px',
+                  padding: '6px 14px',
+                  fontSize: '13.5px',
+                  background: '#ffffff',
+                  color: '#5a574f',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
               >
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: portal.color, flexShrink: 0 }} />
                 <span>{portal.name}</span>
@@ -411,8 +217,8 @@ export default function Footer({
       </div>
 
       {/* 3. BOTTOM POLICY BAR & SCROLL-TOP BUTTON */}
-      <div className="fwrap">
-        <div className="fbottom-bar">
+      <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 22px', boxSizing: 'border-box', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', padding: '18px 0 22px', fontSize: '12.5px', color: '#8d897f' }}>
           <div>
             © 2026 {siteName} न्यूज़ मीडिया · सर्वाधिकार सुरक्षित
           </div>
@@ -427,8 +233,7 @@ export default function Footer({
             <Link href="/admin/login" style={{ color: primaryColor, textDecoration: 'none', fontWeight: 600 }}>स्टाफ़ मोड</Link>
           </div>
 
-          {/* Scroll to Top floating arrow button */}
-          <button onClick={scrollToTop} className="scroll-top-btn" aria-label="ऊपर जाएँ" title="ऊपर जाएँ">
+          <button onClick={scrollToTop} style={{ width: '42px', height: '42px', borderRadius: '50%', border: '1px solid #e3e0da', background: '#ffffff', display: 'grid', placeItems: 'center', cursor: 'pointer', color: '#5a574f', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }} aria-label="ऊपर जाएँ" title="ऊपर जाएँ">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M12 19V5M5 12l7-7 7 7"/>
             </svg>
