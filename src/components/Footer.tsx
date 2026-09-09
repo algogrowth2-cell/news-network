@@ -118,25 +118,35 @@ export default function Footer({
           background: #f6f5f2;
           border-top: 1px solid #e3e0da;
           border-bottom: 1px solid #e3e0da;
-          padding: 14px 0;
+          padding: 16px 0;
         }
 
         .fnetin {
           display: flex;
           align-items: center;
           gap: 16px;
-          flex-wrap: wrap;
+          width: 100%;
         }
 
+        /* 🎯 HORIZONTAL SCROLLABLE PORTALS STRIP */
         .fnetlist {
           display: flex;
-          flex-wrap: wrap;
-          gap: 9px;
+          align-items: center;
+          gap: 10px;
+          overflow-x: auto;
+          white-space: nowrap;
           flex: 1;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          padding-bottom: 2px;
+        }
+
+        .fnetlist::-webkit-scrollbar {
+          display: none;
         }
 
         .fnet-pill {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           gap: 8px;
           border: 1px solid #e3e0da;
@@ -147,6 +157,7 @@ export default function Footer({
           color: #5a574f;
           text-decoration: none;
           cursor: pointer;
+          flex-shrink: 0;
           transition: border-color 0.15s;
         }
 
@@ -208,6 +219,14 @@ export default function Footer({
             gap: 26px;
             padding-top: 28px;
           }
+          .fnetin {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          .fnetlist {
+            width: 100%;
+          }
           .fbottom-bar {
             flex-direction: column;
             align-items: flex-start;
@@ -228,7 +247,7 @@ export default function Footer({
                   src={logoUrl} 
                   alt={siteName} 
                   onError={() => setLogoErr(true)}
-                  style={{ height: '48px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                  style={{ height: '44px', width: 'auto', objectFit: 'contain', display: 'block' }}
                 />
               ) : (
                 <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '22px', fontWeight: 600, color: '#16150f' }}>
@@ -238,7 +257,7 @@ export default function Footer({
             </div>
 
             <p style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.6, margin: '0 0 16px 0', maxWidth: '340px' }}>
-              {tagline || `${siteName} — निष्पक्ष, सटीक और जनसरोकार की खबरें निरंतर आप तक पहुंचाने के लिए प्रतिबद्ध।`}
+              भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।
             </p>
 
             {/* Circular Social Icons */}
@@ -259,7 +278,7 @@ export default function Footer({
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <a 
                 href="#" 
-                onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द आ रहा है!'); }}
+                onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
                 style={{
                   border: '1px solid #e3e0da',
                   borderRadius: '8px',
@@ -276,7 +295,7 @@ export default function Footer({
 
               <a 
                 href="#" 
-                onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द आ रहा है!'); }}
+                onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
                 style={{
                   border: '1px solid #e3e0da',
                   borderRadius: '8px',
@@ -326,7 +345,7 @@ export default function Footer({
             <div style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <span style={{ color: primaryColor }}>📍</span>
-                <span>{siteName} भवन,<br />स्टेशन रोड, भरूच — 392001</span>
+                <span>द लोकल लीडर भवन,<br />स्टेशन रोड, भरूच — 392001</span>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ color: primaryColor }}>✉️</span>
@@ -370,10 +389,10 @@ export default function Footer({
         </div>
       </div>
 
-      {/* 2. NETWORK PORTALS STRIP */}
+      {/* 2. NETWORK PORTALS HORIZONTAL SCROLLABLE STRIP */}
       <div className="fnetband">
         <div className="fwrap fnetin">
-          <span style={{ fontSize: '12.5px', letterSpacing: '0.8px', color: '#8d897f', fontWeight: 600, flexShrink: 0 }}>
+          <span style={{ fontSize: '12.5px', letterSpacing: '0.8px', color: '#8d897f', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
             नेटवर्क के अन्य पोर्टल
           </span>
           <div className="fnetlist">
