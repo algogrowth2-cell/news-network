@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ShokSandeshPage() {
+function ShokSandeshContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const siteSlug = searchParams.get('site') || 'the-local-leader';
@@ -18,7 +18,6 @@ export default function ShokSandeshPage() {
   const [phone, setPhone] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Shok Sandesh Form States
   const [deceasedName, setDeceasedName] = useState('');
   const [relation, setRelation] = useState('');
   const [dob, setDob] = useState('');
@@ -28,7 +27,6 @@ export default function ShokSandeshPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Approved Shok Sandesh List
   const [approvedList, setApprovedList] = useState<any[]>([]);
 
   useEffect(() => {
@@ -82,7 +80,7 @@ export default function ShokSandeshPage() {
 
     const options = {
       key: 'rzp_test_mockkey',
-      amount: 50000, // ₹500 in paise
+      amount: 50000,
       currency: 'INR',
       name: 'द लोकल लीडर मीडिया नेटवर्क',
       description: 'शोक संदेश प्रकाशन शुल्क',
@@ -300,5 +298,13 @@ export default function ShokSandeshPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function ShokSandeshPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '50px', textAlign: 'center' }}>लोड हो रहा है...</div>}>
+      <ShokSandeshContent />
+    </Suspense>
   );
 }
