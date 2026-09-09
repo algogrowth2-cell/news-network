@@ -407,7 +407,6 @@ export default function HomePage() {
           }
         }
 
-        /* 📱 PERFECT MOBILE RESPONSIVE HEADER: SCROLLABLE TOOLS & NO CUTTING */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -447,9 +446,6 @@ export default function HomePage() {
             max-width: 90px;
           }
           .site-sub-text {
-            display: none !important;
-          }
-          .search-btn-desktop {
             display: none !important;
           }
           .search-btn-mobile {
@@ -516,7 +512,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
+      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR (SINGLE SEARCH) */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
@@ -544,7 +540,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* EMBEDDED DESKTOP SUBNAVBAR */}
+          {/* EMBEDDED DESKTOP SUBNAVBAR (Without extra search button) */}
           <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
@@ -558,13 +554,6 @@ export default function HomePage() {
               style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
               <span>≡</span> ताज़ा खबरें
-            </button>
-
-            <button 
-              onClick={() => setSearchModalOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              <span>🔍</span> सर्च
             </button>
 
             <button 
@@ -666,7 +655,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 📱 Mobile Right Action Tools & Portals (Scrollable & Fully Visible: Search, SiteSwitcher, Lang, Login) */}
+          {/* 📱 Mobile Right Action Tools & Portals */}
           <div className="header-portal-tools-mobile hide-scrollbar" style={{ display: 'none', marginLeft: 'auto' }}>
             <button 
               onClick={() => setSearchModalOpen(true)}
