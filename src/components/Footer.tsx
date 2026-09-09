@@ -54,7 +54,7 @@ export default function Footer({
           {/* Column 1: Brand Logo, Tagline, Social & App Stores */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              {!logoErr ? (
+              {logoUrl && !logoErr ? (
                 <img 
                   key={logoUrl}
                   src={logoUrl} 
@@ -70,7 +70,7 @@ export default function Footer({
             </div>
 
             <p style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.6, margin: '0 0 16px 0', maxWidth: '340px' }}>
-              भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।
+              {tagline || 'भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।'}
             </p>
 
             {/* Circular Social Icons */}
