@@ -79,8 +79,8 @@ function ShokSandeshContent() {
     setLoading(true);
 
     const options = {
-      key: 'rzp_test_mockkey',
-      amount: 50000,
+      key: 'rzp_test_TZSA6UoKATong0',
+      amount: 50000, // ₹500 in paise
       currency: 'INR',
       name: 'द लोकल लीडर मीडिया नेटवर्क',
       description: 'शोक संदेश प्रकाशन शुल्क',
@@ -122,25 +122,7 @@ function ShokSandeshContent() {
         rzp1.open();
         setLoading(false);
       } else {
-        const confirmPay = window.confirm('₹500 का भुगतान (Razorpay Sandbox) पूर्ण करें?');
-        if (confirmPay) {
-          await addDoc(collection(db, 'shokSandesh'), {
-            siteId: siteSlug,
-            deceasedName,
-            relation,
-            dob,
-            dod,
-            message,
-            photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-            userId: user.uid,
-            userName: user.name,
-            userEmail: user.email,
-            paymentId: 'MOCK_PAY_' + Date.now(),
-            status: 'pending',
-            createdAt: serverTimestamp()
-          });
-          setSubmitted(true);
-        }
+        alert('Razorpay SDK लोड नहीं हो पाया। कृपया पेज रिफ्रेश करें।');
         setLoading(false);
       }
     } catch (err) {
