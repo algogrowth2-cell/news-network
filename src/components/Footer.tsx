@@ -51,18 +51,19 @@ export default function Footer({
           borderBottom: '1px solid #e3e0da'
         }}>
           
-          {/* Column 1: Brand, Tagline, Social & App Stores */}
+          {/* Column 1: Brand Logo, Tagline, Social & App Stores */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               {!logoErr ? (
                 <img 
+                  key={logoUrl}
                   src={logoUrl} 
                   alt={siteName} 
                   onError={() => setLogoErr(true)}
-                  style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                  style={{ height: '44px', width: 'auto', objectFit: 'contain', display: 'block' }}
                 />
               ) : (
-                <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '20px', fontWeight: 600, color: '#16150f' }}>
+                <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '22px', fontWeight: 600, color: '#16150f' }}>
                   {siteName}
                 </span>
               )}
@@ -122,7 +123,7 @@ export default function Footer({
             </ul>
           </div>
 
-          {/* Column 3: सेवाएं (Working Links) */}
+          {/* Column 3: सेवाएं */}
           <div>
             <span style={{ display: 'block', fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 600, marginBottom: '12px', paddingBottom: '4px', borderBottom: `2px solid ${primaryColor}`, width: 'fit-content', color: '#16150f' }}>सेवाएं</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
