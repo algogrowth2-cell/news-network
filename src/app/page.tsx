@@ -195,7 +195,6 @@ export default function HomePage() {
         );
         const artSnap = await getDocs(qArt);
         
-        // STRICT DOUBLE-GUARD: Pending news is completely eliminated here
         const approvedArticles = artSnap.docs
           .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter(art => {
@@ -205,7 +204,6 @@ export default function HomePage() {
 
         setArticles(approvedArticles);
 
-        // Strict ads approval guard
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null);
@@ -343,14 +341,13 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          gap: 8px;
           padding: 0 16px;
           height: 72px;
           width: 100%;
           box-sizing: border-box;
         }
 
-        /* FULL-COVER HEADER LEADERBOARD BANNER */
         .ad-leaderboard-box {
           background: #16150f;
           border: 1px solid #e3e0da;
@@ -395,6 +392,7 @@ export default function HomePage() {
           }
         }
 
+        /* 📱 RESPONSIVE MOBILE FIX: COMPACT & NO BUTTON CUTOFF */
         @media (max-width: 900px) {
           .shell-container {
             grid-template-columns: 1fr;
@@ -413,12 +411,35 @@ export default function HomePage() {
             box-shadow: 4px 0 24px rgba(22,21,15,.18);
             transform: ${drawerOpen ? 'translateX(0)' : 'translateX(-100%)'};
             transition: transform 0.25s ease;
+            overflow-y: auto;
           }
           .burger-toggle-btn {
             display: block;
           }
           .ad-leaderboard-box {
             height: 80px;
+          }
+          .desktop-subnav-bar {
+            display: none !important;
+          }
+          .header-main-row {
+            padding: 0 10px !important;
+            height: 60px !important;
+          }
+          .header-portal-switchers {
+            display: flex !important;
+            transform: scale(0.9);
+            transform-origin: right center;
+          }
+          .site-title-text {
+            font-size: 15px !important;
+            max-width: 110px;
+          }
+          .site-sub-text {
+            display: none !important;
+          }
+          .search-btn-label {
+            display: none !important;
           }
         }
       `}</style>
@@ -476,21 +497,21 @@ export default function HomePage() {
               <img 
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
                 alt={siteConfig?.name || 'The Local Leader'} 
-                style={{ height: '40px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+                style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
               />
               <div style={{ minWidth: 0 }}>
-                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '20px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
+                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '19px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
                 </span>
-                <small className="site-sub-text" style={{ display: 'block', fontSize: '10px', color: '#8d897f', whiteSpace: 'nowrap' }}>
+                <small className="site-sub-text" style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', whiteSpace: 'nowrap' }}>
                   {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
                 </small>
               </div>
             </Link>
           </div>
 
-          {/* EMBEDDED DESKTOP SUBNAVBAR */}
-          <nav className="hide-scrollbar hide-nav-mobile" style={{ display: 'flex', alignItems: 'center', gap: '20px', margin: '0 20px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
+          {/* EMBEDDED DESKTOP SUBNAVBAR (Fills blank space on desktop, hidden on mobile) */}
+          <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
               style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 600, color: activeCategory === 'होम' ? primary : '#16150f', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -527,8 +548,8 @@ export default function HomePage() {
             </button>
           </nav>
 
-          {/* Right Action Tools & Portals (Fully Visible on Desktop & Mobile) */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+          {/* Right Action Tools & Portals */}
+          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -538,12 +559,12 @@ export default function HomePage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '4px', 
-                  fontSize: '12px', 
+                  fontSize: '11.5px', 
                   fontWeight: 600, 
                   color: '#334155', 
                   background: '#f1f5f9', 
                   border: '1px solid #cbd5e1', 
-                  padding: '6px 11px', 
+                  padding: '5px 10px', 
                   borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -557,12 +578,12 @@ export default function HomePage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '4px', 
-                  fontSize: '12px', 
+                  fontSize: '11.5px', 
                   fontWeight: 600, 
                   color: '#fff', 
                   background: '#1e293b', 
                   border: '1px solid #1e293b', 
-                  padding: '6px 12px', 
+                  padding: '5px 11px', 
                   borderRadius: '18px', 
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -575,22 +596,22 @@ export default function HomePage() {
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '6px 11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '13px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px' }}
             >
               <span>🔍</span>
               <span className="search-btn-label">खोजें</span>
             </button>
 
-            {/* Site Switcher & Language Translator (Restored in Header) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Site Switcher & Language Translator */}
+            <div className="header-portal-switchers" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
               <LanguageTranslator />
             </div>
 
             {/* Reader Auth / Login */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 10px', flexShrink: 0 }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
@@ -602,8 +623,8 @@ export default function HomePage() {
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '7px 16px',
-                  fontSize: '13.5px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
@@ -643,7 +664,7 @@ export default function HomePage() {
         <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 290 }} />
       )}
 
-      {/* 4. RESPONSIVE THREE-COLUMN SHELL */}
+      {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
         {/* LEFT COLUMN: CATEGORIES & APP DOWNLOAD */}
