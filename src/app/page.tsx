@@ -414,14 +414,16 @@ export default function HomePage() {
           }
         }
 
+        /* 📱 CLEAN MOBILE VIEW: ZERO OVERFLOW, PERFECT ACTIONS FIT */
         @media (max-width: 640px) {
           .header-main-row {
-            padding: 0 10px;
-            gap: 6px;
+            padding: 0 8px;
+            gap: 4px;
             height: 54px;
           }
           .site-title-text {
-            font-size: 15.5px !important;
+            font-size: 14.5px !important;
+            max-width: 100px;
           }
           .site-sub-text {
             display: none !important;
@@ -436,21 +438,28 @@ export default function HomePage() {
             height: 75px;
           }
         }
+
+        @media (max-width: 420px) {
+          .site-title-text {
+            display: none !important;
+          }
+        }
       `}</style>
 
-      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER */}
+      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER (SWIPABLE ON MOBILE) */}
       <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '11.5px', padding: '6px 0', borderBottom: '1px solid #282721', width: '100%', overflow: 'hidden' }}>
-        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 14px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 12px', boxSizing: 'border-box' }}>
           <div 
             className="hide-scrollbar" 
             style={{ 
               display: 'flex', 
-              gap: '14px', 
+              gap: '16px', 
               alignItems: 'center', 
               overflowX: 'auto', 
               whiteSpace: 'nowrap', 
               WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x'
+              touchAction: 'pan-x',
+              paddingRight: '16px'
             }}
           >
             <span>Diesel: <b style={{ color: '#fff' }}>{marketRates.diesel}</b></span>
@@ -467,25 +476,25 @@ export default function HomePage() {
             </span>
             <span>Silver: <b style={{ color: '#fff' }}>{marketRates.silver}</b></span>
             <span>Gold: <b style={{ color: '#fff' }}>{marketRates.gold}</b></span>
-            <span style={{ color: '#94a3b8', paddingLeft: '8px', borderLeft: '1px solid #334155', paddingRight: '12px' }}>
+            <span style={{ color: '#94a3b8', paddingLeft: '8px', borderLeft: '1px solid #334155' }}>
               🗓️ {currentHindiDate || 'लोड हो रहा है...'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. MAIN HEADER & FULLY RESPONSIVE NAVBAR */}
+      {/* 2. MAIN HEADER & RESPONSIVE NAVBAR */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             {/* Mobile Drawer Trigger */}
             <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
             {/* Site Branding Logo */}
-            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}>
               <img 
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
                 alt={siteConfig?.name || 'The Local Leader'} 
@@ -530,8 +539,8 @@ export default function HomePage() {
             })}
           </nav>
 
-          {/* Right Action Tools & Portals (Compact & Never Cut) */}
-          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {/* Right Action Tools & Portals */}
+          <div className="nav-tools-group" style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto', flexShrink: 0 }}>
             
             {/* Desktop Portal Links */}
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -578,7 +587,7 @@ export default function HomePage() {
             {/* Search Trigger */}
             <button 
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 9px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
+              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 8px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12px' }}
             >
               <span>🔍</span>
               <span className="search-btn-label">खोजें</span>
@@ -592,8 +601,8 @@ export default function HomePage() {
 
             {/* Reader Auth */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '3px 7px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
               </div>
             ) : (
@@ -604,8 +613,8 @@ export default function HomePage() {
                   color: '#fff',
                   border: 'none',
                   borderRadius: '18px',
-                  padding: '5px 11px',
-                  fontSize: '12px',
+                  padding: '5px 10px',
+                  fontSize: '11.5px',
                   fontWeight: 600,
                   textDecoration: 'none',
                   whiteSpace: 'nowrap'
@@ -693,7 +702,7 @@ export default function HomePage() {
 
           {/* APP DOWNLOAD BOX[cite: 1, 2] */}
           <div style={{ textAlign: 'center', marginTop: '22px', paddingTop: '18px', borderTop: '1px solid #e3e0da' }}>
-            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें</div>
+            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें[cite: 1, 2]</div>
             
             <a 
               href="#" 
@@ -711,8 +720,8 @@ export default function HomePage() {
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON[cite: 1, 2]</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play[cite: 1, 2]</b>
             </a>
 
             <a 
@@ -731,11 +740,11 @@ export default function HomePage() {
                 color: '#16150f'
               }}
             >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store</b>
+              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the[cite: 1, 2]</small>
+              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store[cite: 1, 2]</b>
             </a>
 
-            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें</div>
+            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें[cite: 1, 2]</div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
               {['f', '𝕏', '◎', '▶'].map((icon, i) => (
                 <span 
