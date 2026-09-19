@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, phone, otp, reqId } = body;
 
-    // 1. SEND OTP (MSG91 Widget API - WhatsApp first with fallback)
+    // 1. SEND OTP
     if (action === 'send') {
       if (!phone || phone.length < 10) {
         return NextResponse.json(
@@ -19,14 +19,13 @@ export async function POST(req: Request) {
 
       const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
 
-      // MSG91 Send OTP Endpoint
-      const url = `https://control.msg91.com/api/v5/widget/sendOtp`;
-      
-      const res = await fetch(url, {
+      // Method A: MSG91 Widget sendOtp with exact format
+      const widgetUrl = `https://control.msg91.com/api/v5/widget/sendOtp`;
+      const res = await fetch(widgetUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'authkey': MSG91_AUTH_KEY
+          'authkey': MSG91_AUTH_KEY,
         },
         body: JSON.stringify({
           widgetId: MSG91_WIDGET_ID,
@@ -36,15 +35,29 @@ export async function POST(req: Request) {
 
       const data = await res.json();
 
+      // Agar widget method me invalid request aaye, toh Direct OTP fallback
       if (data.type === 'success' || data.status === 'success') {
         return NextResponse.json({
           success: true,
-          reqId: data.message, // MSG91 returns request id / message reference
-          message: 'OTP आपके WhatsApp / मोबाइल पर भेज दिया गया है।'
+          reqId: data.message || '',
+          message: 'OTP सफलतापूर्वक भेज दिया गया है।'
         });
       } else {
+        // Fallback to direct SendOTP API
+        const directUrl = `https://control.msg91.com/api/v5/otp?template_id=${MSG91_WIDGET_ID}&mobile=91${cleanPhone}&authkey=${MSG91_AUTH_KEY}`;
+        const directRes = await fetch(directUrl, { method: 'POST' });
+        const directData = await directRes.json();
+
+        if (directData.type === 'success' || directData.status === 'success') {
+          return NextResponse.json({
+            success: true,
+            reqId: directData.message || '',
+            message: 'OTP सफलतापूर्वक भेज दिया गया है।'
+          });
+        }
+
         return NextResponse.json(
-          { success: false, message: data.message || 'OTP भेजने में विफलता हुई।' },
+          { success: false, message: data.message || directData.message || 'OTP भेजने में विफलता हुई।' },
           { status: 400 }
         );
       }
@@ -62,26 +75,11 @@ export async function POST(req: Request) {
       const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
       const cleanOtp = String(otp).trim();
 
-      // MSG91 Verify OTP Endpoint
-      const verifyUrl = `https://control.msg91.com/api/v5/widget/verifyOtp`;
-
-      const res = await fetch(verifyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authkey': MSG91_AUTH_KEY
-        },
-        body: JSON.stringify({
-          widgetId: MSG91_WIDGET_ID,
-          identifier: `91${cleanPhone}`,
-          otp: cleanOtp,
-          reqId: reqId || undefined
-        })
-      });
-
+      const verifyUrl = `https://control.msg91.com/api/v5/otp/verify?otp=${cleanOtp}&mobile=91${cleanPhone}&authkey=${MSG91_AUTH_KEY}`;
+      const res = await fetch(verifyUrl, { method: 'GET' });
       const data = await res.json();
 
-      if (data.type === 'success' || data.message === 'OTP verified success' || data.status === 'success') {
+      if (data.type === 'success' || data.message === 'OTP verified success') {
         return NextResponse.json({
           success: true,
           message: 'OTP सफलतापूर्वक सत्यापित हुआ।'
