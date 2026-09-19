@@ -1,63 +1,39 @@
 import { NextResponse } from 'next/server';
 
-const MSG91_AUTH_KEY = '572914AuoT3izr6aae5b41P1';
-const MSG91_WIDGET_ID = '366973693478393033383538';
+// Aapki 2Factor API Key
+const TWOFACTOR_API_KEY = 'aa7deb54-b3ef-11f1-af74-0200cd936042';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { action, phone, otp, reqId } = body;
+    const { action, phone, otp, sessionId } = body;
 
-    // 1. SEND OTP
+    // 1. SEND OTP (Direct Text SMS Route)
     if (action === 'send') {
       if (!phone || phone.length < 10) {
         return NextResponse.json(
-          { success: false, message: 'कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।' },
+          { success: false, message: 'Kripya 10 ankon ka sahi mobile number darj karein.' },
           { status: 400 }
         );
       }
 
       const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
 
-      // Method A: MSG91 Widget sendOtp with exact format
-      const widgetUrl = `https://control.msg91.com/api/v5/widget/sendOtp`;
-      const res = await fetch(widgetUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authkey': MSG91_AUTH_KEY,
-        },
-        body: JSON.stringify({
-          widgetId: MSG91_WIDGET_ID,
-          identifier: `91${cleanPhone}`
-        })
-      });
+      // 2Factor Direct Text SMS Endpoint (AUTOGEN template)
+      const url = `https://2factor.in/API/V1/${TWOFACTOR_API_KEY}/SMS/${cleanPhone}/AUTOGEN/OTP1`;
 
+      const res = await fetch(url, { method: 'GET' });
       const data = await res.json();
 
-      // Agar widget method me invalid request aaye, toh Direct OTP fallback
-      if (data.type === 'success' || data.status === 'success') {
+      if (data.Status === 'Success') {
         return NextResponse.json({
           success: true,
-          reqId: data.message || '',
-          message: 'OTP सफलतापूर्वक भेज दिया गया है।'
+          sessionId: data.Details, // 2Factor verification ke liye Session ID return karta hai
+          message: 'OTP safaltapoorvak SMS dwara bhej diya gaya hai.'
         });
       } else {
-        // Fallback to direct SendOTP API
-        const directUrl = `https://control.msg91.com/api/v5/otp?template_id=${MSG91_WIDGET_ID}&mobile=91${cleanPhone}&authkey=${MSG91_AUTH_KEY}`;
-        const directRes = await fetch(directUrl, { method: 'POST' });
-        const directData = await directRes.json();
-
-        if (directData.type === 'success' || directData.status === 'success') {
-          return NextResponse.json({
-            success: true,
-            reqId: directData.message || '',
-            message: 'OTP सफलतापूर्वक भेज दिया गया है।'
-          });
-        }
-
         return NextResponse.json(
-          { success: false, message: data.message || directData.message || 'OTP भेजने में विफलता हुई।' },
+          { success: false, message: data.Details || 'OTP bhejne me vifalta hui.' },
           { status: 400 }
         );
       }
@@ -65,28 +41,29 @@ export async function POST(req: Request) {
 
     // 2. VERIFY OTP
     if (action === 'verify') {
-      if (!phone || !otp) {
+      if (!sessionId || !otp) {
         return NextResponse.json(
-          { success: false, message: 'मोबाइल नंबर या OTP अनुपलब्ध है।' },
+          { success: false, message: 'Session ID ya OTP uplabdh nahi hai.' },
           { status: 400 }
         );
       }
 
-      const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
       const cleanOtp = String(otp).trim();
 
-      const verifyUrl = `https://control.msg91.com/api/v5/otp/verify?otp=${cleanOtp}&mobile=91${cleanPhone}&authkey=${MSG91_AUTH_KEY}`;
+      // 2Factor Verify Endpoint
+      const verifyUrl = `https://2factor.in/API/V1/${TWOFACTOR_API_KEY}/SMS/VERIFY/${sessionId}/${cleanOtp}`;
+
       const res = await fetch(verifyUrl, { method: 'GET' });
       const data = await res.json();
 
-      if (data.type === 'success' || data.message === 'OTP verified success') {
+      if (data.Status === 'Success' && data.Details === 'OTP Matched') {
         return NextResponse.json({
           success: true,
-          message: 'OTP सफलतापूर्वक सत्यापित हुआ।'
+          message: 'OTP safaltapoorvak satyapit hua.'
         });
       } else {
         return NextResponse.json(
-          { success: false, message: data.message || 'गलत OTP दर्ज किया गया है।' },
+          { success: false, message: data.Details || 'Galat OTP darj kiya gaya hai.' },
           { status: 400 }
         );
       }
