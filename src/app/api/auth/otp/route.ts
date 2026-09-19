@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 
 const FAST2SMS_API_KEY = 'wAoYu8jRgpms3U9HibQqJWd6NS2kGZrC51EzMvPXa4B0ye7TLtPgUEkAzXhxFYTH1RiNdryuf0GoLZ5j';
 
-// In-memory OTP storage (valid for 5 minutes)
 const otpStorage = new Map<string, { otp: string; expires: number }>();
 
 export async function POST(req: Request) {
@@ -10,21 +9,19 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, phone, sessionId, otp } = body;
 
-    // 1. SEND TEXT SMS OTP VIA FAST2SMS (NO VOICE, 100% TEXT SMS)
     if (action === 'send') {
       if (!phone || phone.length < 10) {
         return NextResponse.json(
-          { success: false, message: 'कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।' },
+          { success: false, message: 'Kripya 10 ankon ka sahi mobile number darj karein.' },
           { status: 400 }
         );
       }
 
       const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
-      // Generate 6-digit secure numeric OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // Fast2SMS OTP Route API call
-      const res = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+      // Fast2SMS standard OTP route payload
+      const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
         method: 'POST',
         headers: {
           'authorization': FAST2SMS_API_KEY,
@@ -37,33 +34,62 @@ export async function POST(req: Request) {
         })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (data.return === true || data.status_code === 200) {
+      if (data.return === true || data.status_code === 200 || data.message?.includes('successful')) {
         const sessionKey = 'F2S_' + cleanPhone + '_' + Date.now();
         otpStorage.set(sessionKey, {
           otp: generatedOtp,
-          expires: Date.now() + 5 * 60 * 1000 // 5 minutes validity
+          expires: Date.now() + 5 * 60 * 1000
         });
 
         return NextResponse.json({
           success: true,
           sessionId: sessionKey,
-          message: 'मोबाइल नंबर पर Text SMS द्वारा OTP भेज दिया गया है।'
+          message: 'Mobile number par Text SMS dwara OTP bhej diya gaya hai.'
         });
-      } else {
-        return NextResponse.json(
-          { success: false, message: data.message?.[0] || data.message || 'SMS भेजने में विफलता हुई।' },
-          { status: 400 }
-        );
       }
+
+      // Quick SMS route fallback if route 'otp' requires specific approval
+      const quickRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: {
+          'authorization': FAST2SMS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          route: 'q',
+          message: `Aapka verification OTP code hai: ${generatedOtp}`,
+          language: 'english',
+          flash: 0,
+          numbers: cleanPhone
+        })
+      });
+
+      const quickData = await quickRes.json();
+
+      if (quickData.return === true || quickData.status_code === 200) {
+        const sessionKey = 'F2S_' + cleanPhone + '_' + Date.now();
+        otpStorage.set(sessionKey, {
+          otp: generatedOtp,
+          expires: Date.now() + 5 * 60 * 1000
+        });
+
+        return NextResponse.json({
+          success: true,
+          sessionId: sessionKey,
+          message: 'Mobile number par Text SMS dwara OTP bhej diya gaya hai.'
+        });
+      }
+
+      const errMsg = Array.isArray(data.message) ? data.message[0] : (data.message || quickData.message || 'SMS send fail hua');
+      return NextResponse.json({ success: false, message: String(errMsg) }, { status: 400 });
     }
 
-    // 2. VERIFY SMS OTP
     if (action === 'verify') {
       if (!sessionId || !otp) {
         return NextResponse.json(
-          { success: false, message: 'Session ID या OTP अनुपलब्ध है।' },
+          { success: false, message: 'Session ID ya OTP anupalabdh hai.' },
           { status: 400 }
         );
       }
@@ -73,7 +99,7 @@ export async function POST(req: Request) {
 
       if (!record) {
         return NextResponse.json(
-          { success: false, message: 'OTP सत्र अमान्य या समाप्त हो चुका है।' },
+          { success: false, message: 'OTP session expired ya invalid hai.' },
           { status: 400 }
         );
       }
@@ -81,7 +107,7 @@ export async function POST(req: Request) {
       if (Date.now() > record.expires) {
         otpStorage.delete(sessionId);
         return NextResponse.json(
-          { success: false, message: 'OTP की समय सीमा समाप्त (Expired) हो चुकी है।' },
+          { success: false, message: 'OTP ki samay seema (expire) samapt ho chuki hai.' },
           { status: 400 }
         );
       }
@@ -90,12 +116,12 @@ export async function POST(req: Request) {
         otpStorage.delete(sessionId);
         return NextResponse.json({
           success: true,
-          message: 'OTP सफलतापूर्वक सत्यापित हुआ।'
+          message: 'OTP saphalta-purvak satyapit hua.'
         });
       }
 
       return NextResponse.json(
-        { success: false, message: 'गलत OTP दर्ज किया गया है।' },
+        { success: false, message: 'Galat OTP darj kiya gaya hai.' },
         { status: 400 }
       );
     }
@@ -103,7 +129,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, message: error.message || 'सर्वर एरर' },
+      { success: false, message: error.message || 'Server error' },
       { status: 500 }
     );
   }
