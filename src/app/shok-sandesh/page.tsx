@@ -10,14 +10,18 @@ function ShokSandeshContent() {
   const searchParams = useSearchParams();
   const siteSlug = searchParams.get('site') || 'the-local-leader';
 
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  // Mandatory OTP states
   const [user, setUser] = useState<any>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [authStep, setAuthStep] = useState<'details' | 'otp'>('details');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [authError, setAuthError] = useState('');
+  const [otp, setOtp] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [authMsg, setAuthMsg] = useState({ text: '', type: '' });
+  const [authLoading, setAuthLoading] = useState(false);
 
+  // Shok Sandesh Form States
   const [deceasedName, setDeceasedName] = useState('');
   const [relation, setRelation] = useState('');
   const [dob, setDob] = useState('');
@@ -30,43 +34,108 @@ function ShokSandeshContent() {
   const [approvedList, setApprovedList] = useState<any[]>([]);
 
   useEffect(() => {
-    const cached = localStorage.getItem('shok_user');
+    const cached = localStorage.getItem('shok_user') || localStorage.getItem('reader_user');
     if (cached) {
-      try { setUser(JSON.parse(cached)); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(cached);
+        if (parsed?.verified) {
+          setUser(parsed);
+        }
+      } catch (e) {}
     }
     loadApprovedSandesh();
   }, [siteSlug]);
 
   const loadApprovedSandesh = async () => {
     try {
-      // Checking obituaries collection used by the admin panel
-      const q = query(
-        collection(db, 'obituaries'),
-        where('status', '==', 'approved')
-      );
+      const q = query(collection(db, 'obituaries'), where('status', '==', 'approved'));
       const snap = await getDocs(q);
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setApprovedList(list);
+      setApprovedList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError('');
-    if (!email || !password) {
-      setAuthError('कृपया ईमेल और पासवर्ड भरें।');
+    setAuthMsg({ text: '', type: '' });
+
+    if (!name.trim()) {
+      setAuthMsg({ text: 'कृपया अपना पूरा नाम लिखें।', type: 'error' });
       return;
     }
-    const mockUser = { uid: 'u_' + Date.now(), email, name: name || email.split('@')[0], phone };
-    localStorage.setItem('shok_user', JSON.stringify(mockUser));
-    setUser(mockUser);
+    if (!email.trim() || !email.includes('@')) {
+      setAuthMsg({ text: 'कृपया सही ईमेल आईडी दर्ज करें।', type: 'error' });
+      return;
+    }
+    if (!phone || phone.length !== 10) {
+      setAuthMsg({ text: 'कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।', type: 'error' });
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', phone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSessionId(data.sessionId);
+        setAuthStep('otp');
+        setAuthMsg({ text: 'SMS द्वारा 6 अंकों का OTP भेज दिया गया है।', type: 'success' });
+      } else {
+        setAuthMsg({ text: data.message || 'OTP भेजने में विफलता हुई।', type: 'error' });
+      }
+    } catch (err) {
+      setAuthMsg({ text: 'सर्वर कनेक्शन में त्रुटि।', type: 'error' });
+    }
+    setAuthLoading(false);
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthMsg({ text: '', type: '' });
+
+    if (!otp || otp.length < 4) {
+      setAuthMsg({ text: 'कृपया प्राप्त OTP दर्ज करें।', type: 'error' });
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', sessionId, otp })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const u = {
+          uid: 'u_' + phone,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          verified: true
+        };
+        localStorage.setItem('shok_user', JSON.stringify(u));
+        localStorage.setItem('reader_user', JSON.stringify(u));
+        setUser(u);
+      } else {
+        setAuthMsg({ text: data.message || 'गलत OTP दर्ज किया गया है।', type: 'error' });
+      }
+    } catch (err) {
+      setAuthMsg({ text: 'सत्यापन विफल रहा।', type: 'error' });
+    }
+    setAuthLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('shok_user');
+    localStorage.removeItem('reader_user');
     setUser(null);
+    setAuthStep('details');
   };
 
   const handlePaymentAndSubmit = async (e: React.FormEvent) => {
@@ -91,20 +160,18 @@ function ShokSandeshContent() {
       dob,
       message,
       photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-      userId: user?.uid || 'guest',
-      userName: user?.name || name || 'अज्ञात यूज़र',
-      userEmail: user?.email || email || '',
+      userId: user?.uid || 'u_' + phone,
+      userName: user?.name || name,
+      userEmail: user?.email || email,
+      phone: user?.phone || phone,
       paymentId: 'PAY_SUCCESS_' + Date.now(),
-      status: 'pending', // Goes directly to /admin/obituaries for approval
+      status: 'pending',
       createdAt: serverTimestamp()
     };
 
     try {
-      // Save directly to 'obituaries' collection so admin panel catches it instantly
       await addDoc(collection(db, 'obituaries'), payload);
-      // Backup sync collection
       await addDoc(collection(db, 'shokSandesh'), payload);
-      
       setSubmitted(true);
     } catch (err) {
       console.error(err);
@@ -125,54 +192,68 @@ function ShokSandeshContent() {
       <div style={{ maxWidth: '900px', margin: '30px auto', padding: '0 16px' }}>
         {!user ? (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', border: '1px solid #e3e0da', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #e3e0da', paddingBottom: '10px' }}>
-              <button 
-                onClick={() => setAuthMode('login')} 
-                style={{ background: authMode === 'login' ? '#ea580c' : '#f1f5f9', color: authMode === 'login' ? '#fff' : '#334155', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                लॉगिन करें
-              </button>
-              <button 
-                onClick={() => setAuthMode('signup')} 
-                style={{ background: authMode === 'signup' ? '#ea580c' : '#f1f5f9', color: authMode === 'signup' ? '#fff' : '#334155', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                नया खाता बनाएं (Signup)
-              </button>
-            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px', color: '#16150f' }}>
+              अनिवार्य मोबाइल SMS OTP सत्यापन
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '18px' }}>
+              शोक संदेश प्रकाशित करने से पहले आपका मोबाइल नंबर सत्यापित होना अनिवार्य है
+            </p>
 
-            {authError && <div style={{ color: '#ef4444', marginBottom: '12px', fontSize: '14px' }}>{authError}</div>}
+            {authMsg.text && (
+              <div style={{
+                background: authMsg.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                color: authMsg.type === 'success' ? '#166534' : '#991b1b',
+                border: `1px solid ${authMsg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+                borderRadius: '6px',
+                padding: '10px',
+                fontSize: '13px',
+                marginBottom: '14px'
+              }}>
+                {authMsg.text}
+              </div>
+            )}
 
-            <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {authMode === 'signup' && (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>पूरा नाम</label>
-                    <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="अपना नाम दर्ज करें" required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+            {authStep === 'details' ? (
+              <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>पूरा नाम *</label>
+                  <input type="text" placeholder="उदा. पंकज पाटीदार" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>ईमेल आईडी *</label>
+                  <input type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>मोबाइल नंबर (Text SMS OTP प्राप्त करने हेतु) *</label>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
+                    <span style={{ background: '#f8fafc', padding: '10px 12px', fontSize: '14px', fontWeight: 600, color: '#475569', borderRight: '1px solid #cbd5e1' }}>+91</span>
+                    <input type="tel" maxLength={10} placeholder="10 अंकों का मोबाइल नंबर" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))} required style={{ width: '100%', padding: '10px', border: 'none', outline: 'none', fontSize: '14px' }} />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>मोबाइल नंबर</label>
-                    <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="10 अंकों का मोबाइल नंबर" required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-                  </div>
-                </>
-              )}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>ईमेल आईडी</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>पासवर्ड</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-              </div>
-              <button type="submit" style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '12px', borderRadius: '6px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', marginTop: '10px' }}>
-                {authMode === 'login' ? 'लॉगिन करें' : 'खाता रजिस्टर करें'}
-              </button>
-            </form>
+                </div>
+                <button type="submit" disabled={authLoading} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '12px', borderRadius: '6px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}>
+                  {authLoading ? 'SMS भेजा जा रहा है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>+91 {phone} पर प्राप्त 6 अंकों का OTP दर्ज करें *</label>
+                  <input type="text" maxLength={6} placeholder="• • • • • •" value={otp} onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} autoFocus required style={{ width: '100%', padding: '12px', textAlign: 'center', fontSize: '20px', letterSpacing: '6px', fontWeight: 700, borderRadius: '6px', border: '2px solid #ea580c' }} />
+                </div>
+                <button type="submit" disabled={authLoading} style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '12px', borderRadius: '6px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}>
+                  {authLoading ? 'सत्यापन जारी है...' : '✓ OTP सत्यापित करें और आगे बढ़ें'}
+                </button>
+                <button type="button" onClick={() => setAuthStep('details')} style={{ background: 'none', border: 'none', color: '#ea580c', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}>
+                  मोबाइल नंबर बदलें
+                </button>
+              </form>
+            )}
           </div>
         ) : submitted ? (
           <div style={{ background: '#fff', borderRadius: '12px', padding: '40px', textAlign: 'center', border: '1px solid #e3e0da' }}>
             <h2 style={{ color: '#16a34a', fontSize: '24px', marginBottom: '10px' }}>✓ शोक संदेश सफलताપूर्वक दर्ज हो गया है!</h2>
             <p style={{ color: '#5a574f', fontSize: '15px', marginBottom: '20px' }}>
-              आपका भुगतान प्राप्त हो गया है। यह डेटा अब एडमिन पैनल (`/admin/obituaries`) में अनुमोदन के लिए भेज दिया गया है।
+              आपका संदेश एडमिन पैनल में अनुमोदन (Approval) के लिए भेज दिया गया है।
             </p>
             <button onClick={() => setSubmitted(false)} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
               दूसरा संदेश दर्ज करें
@@ -182,7 +263,7 @@ function ShokSandeshContent() {
           <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', border: '1px solid #e3e0da' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e3e0da', paddingBottom: '10px' }}>
               <div>
-                <span style={{ fontSize: '14px', color: '#8d897f' }}>लॉगिन यूज़र: <b>{user.name}</b> ({user.email})</span>
+                <span style={{ fontSize: '14px', color: '#8d897f' }}>सत्यापित यूज़र: <b>{user.name}</b> (+91 {user.phone})</span>
               </div>
               <button onClick={handleLogout} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}>
                 लॉगआउट
@@ -218,7 +299,7 @@ function ShokSandeshContent() {
 
               <div style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <b>प्रकाशन शुल्क (Secure Online Payment):</b>
+                  <b>प्रकाशन शुल्क:</b>
                   <div style={{ fontSize: '12px', color: '#7c2d12' }}>वेबसाइट पर 3 दिनों तक प्रदर्शित करने हेतु</div>
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: 700, color: '#ea580c' }}>₹500</div>
