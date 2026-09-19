@@ -2,183 +2,250 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 export default function PatrakarLoginPage() {
-  const [isEnglish, setIsEnglish] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
+  const [step, setStep] = useState<'details' | 'otp'>('details');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState({ text: '', type: '' });
 
-  const t = {
-    toggleBtn: isEnglish ? '文A हिंदी' : '文A English',
-    heading: isEnglish ? 'Journalist Login' : 'पत्रकार लॉगिन',
-    subHeading: isEnglish ? 'Journalist Portal' : 'Journalist Portal',
-    tagline: isEnglish ? 'Log in to submit and track news reports' : 'खबरें प्रेषित और ट्रैक करने के लिए लॉगिन करें',
-    emailLabel: isEnglish ? 'Registered Email' : 'पंजीकृत ईमेल',
-    emailPh: isEnglish ? 'Enter registered email' : 'reporter@news.com',
-    passLabel: isEnglish ? 'Password' : 'पासवर्ड',
-    passPh: '••••••••••••',
-    loginBtn: isEnglish ? 'Log In to Portal' : 'पोर्टल में प्रवेश करें',
-    loggingIn: isEnglish ? 'Logging in...' : 'प्रवेश किया जा रहा है...',
-    noAccount: isEnglish ? "Don't have an account?" : 'नया खाता बनाना है?',
-    registerLink: isEnglish ? 'Register here' : 'पंजीकरण करें',
-    backLink: isEnglish ? '← Go Back' : '← वापस जाएं',
-    errorInvalid: isEnglish ? 'Invalid email or password!' : 'गलत ईमेल या पासवर्ड दर्ज किया गया है।',
-    errorPending: isEnglish ? 'Your account is under admin verification.' : 'आपका आवेदन अभी एडमिन सत्यापन के अधीन है।'
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMsg({ text: '', type: '' });
+
+    if (!name.trim()) {
+      setMsg({ text: 'Kripya apna naam darj karein.', type: 'error' });
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setMsg({ text: 'Kripya sahi email ID darj karein.', type: 'error' });
+      return;
+    }
+    if (!phone || phone.length !== 10) {
+      setMsg({ text: 'Kripya 10 ankon ka mobile number darj karein.', type: 'error' });
+      return;
+    }
+
     setLoading(true);
-    setErrorMsg('');
-
     try {
-      const q = query(
-        collection(db, 'reporters'),
-        where('email', '==', email.trim().toLowerCase())
-      );
-      const snap = await getDocs(q);
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', phone })
+      });
+      const data = await res.json();
 
-      if (snap.empty) {
-        setErrorMsg(t.errorInvalid);
+      if (data.success) {
+        setSessionId(data.sessionId);
+        setStep('otp');
+        setMsg({ text: 'SMS dwara 6 ankon ka OTP bhej diya gaya hai.', type: 'success' });
       } else {
-        const reporterData = snap.docs[0].data();
-        if (reporterData.password === password) {
-          if (reporterData.status === 'pending') {
-            setErrorMsg(t.errorPending);
-          } else {
-            localStorage.setItem('patrakar_user', JSON.stringify({ id: snap.docs[0].id, ...reporterData }));
-            router.push('/patrakar/dashboard');
-          }
-        } else {
-          setErrorMsg(t.errorInvalid);
-        }
+        setMsg({ text: data.message || 'OTP bhejne me samasya aayi.', type: 'error' });
       }
     } catch (err) {
-      console.error(err);
-      setErrorMsg(t.errorInvalid);
+      setMsg({ text: 'Server connection error.', type: 'error' });
+    }
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg({ text: '', type: '' });
+
+    if (!otp || otp.length < 4) {
+      setMsg({ text: 'Kripya sahi OTP darj karein.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', sessionId, otp })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const userObj = {
+          uid: 'patrakar_' + phone,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          role: 'patrakar',
+          verified: true
+        };
+
+        localStorage.setItem('patrakar_user', JSON.stringify(userObj));
+        setMsg({ text: 'OTP satyapit! Dashboard par bheja ja raha hai...', type: 'success' });
+        setTimeout(() => {
+          router.push('/patrakar/dashboard');
+        }, 1000);
+      } else {
+        setMsg({ text: data.message || 'Galat OTP darj kiya gaya hai.', type: 'error' });
+      }
+    } catch (err) {
+      setMsg({ text: 'Satypan vifal raha.', type: 'error' });
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      
-      <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '32px 28px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '"Mukta", system-ui, sans-serif' }}>
+      <div style={{ background: '#1e293b', width: '100%', maxWidth: '440px', borderRadius: '14px', border: '1px solid #334155', padding: '32px', color: '#f8fafc', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
         
-        {/* Language Toggle Button */}
-        <button
-          type="button"
-          onClick={() => setIsEnglish(!isEnglish)}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: '#fff',
-            border: '1px solid #ea580c',
-            color: '#ea580c',
-            borderRadius: '20px',
-            padding: '4px 12px',
-            fontSize: '11.5px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(234, 88, 12, 0.1)'
-          }}
-        >
-          {t.toggleBtn}
-        </button>
-
-        {/* Center Icon & Titles */}
-        <div style={{ textAlign: 'center', marginBottom: '24px', marginTop: '6px' }}>
-          <div style={{ width: '48px', height: '48px', background: '#f1f5f9', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', marginBottom: '10px' }}>
-            🪪
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ width: '48px', height: '48px', background: '#3b82f620', border: '1px solid #3b82f640', borderRadius: '12px', display: 'grid', placeItems: 'center', margin: '0 auto 10px', fontSize: '22px', color: '#60a5fa' }}>
+            ✍️
           </div>
-          <h1 style={{ fontSize: '21px', fontWeight: 900, color: '#0f172a', margin: '0 0 4px 0' }}>
-            {t.heading}
-          </h1>
-          <div style={{ fontSize: '11.5px', color: '#ea580c', fontWeight: 700 }}>
-            {t.subHeading}
-          </div>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
-            {t.tagline}
+          <h2 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px', color: '#f8fafc' }}>
+            पत्रकार लॉगिन (Reporter Portal)
+          </h2>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+            खबरें और लेख सबमिट करने हेतु OTP लॉगिन
           </p>
         </div>
 
-        {errorMsg && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>
-            {errorMsg}
+        {msg.text && (
+          <div style={{
+            background: msg.type === 'success' ? '#064e3b' : '#7f1d1d',
+            color: msg.type === 'success' ? '#6ee7b7' : '#fca5a5',
+            border: `1px solid ${msg.type === 'success' ? '#059669' : '#b91c1c'}`,
+            borderRadius: '8px',
+            padding: '10px 14px',
+            fontSize: '13px',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            {msg.text}
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-              {t.emailLabel}
-            </label>
-            <input
-              type="email"
-              required
-              placeholder={t.emailPh}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ width: '100%', padding: '11px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
+        {step === 'details' ? (
+          <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#cbd5e1' }}>
+                पूरा नाम *
+              </label>
+              <input
+                type="text"
+                placeholder="उदा. पंकज पाटीदार"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: '14px', outline: 'none' }}
+              />
+            </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-              {t.passLabel}
-            </label>
-            <input
-              type="password"
-              required
-              placeholder={t.passPh}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '11px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#cbd5e1' }}>
+                ईमेल आईडी *
+              </label>
+              <input
+                type="email"
+                placeholder="reporter@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: '14px', outline: 'none' }}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: '#ea580c',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 800,
-              fontSize: '14px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '6px'
-            }}
-          >
-            {loading ? t.loggingIn : t.loginBtn}
-          </button>
-        </form>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#cbd5e1' }}>
+                मोबाइल नंबर (Text SMS OTP हेतु) *
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #334155', borderRadius: '8px', overflow: 'hidden', background: '#0f172a' }}>
+                <span style={{ padding: '10px 12px', fontSize: '14px', fontWeight: 600, color: '#94a3b8', borderRight: '1px solid #334155' }}>+91</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  placeholder="10 अंकों का मोबाइल नंबर"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  required
+                  style={{ width: '100%', padding: '10px 12px', border: 'none', background: 'transparent', color: '#fff', fontSize: '15px', outline: 'none' }}
+                />
+              </div>
+            </div>
 
-        {/* Footer Links */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '22px', fontSize: '12px', color: '#64748b' }}>
-          <div>
-            {t.noAccount}{' '}
-            <Link href="/patrakar/register" style={{ color: '#ea580c', fontWeight: 700, textDecoration: 'none' }}>
-              {t.registerLink}
-            </Link>
-          </div>
-          <Link href="/" style={{ color: '#64748b', textDecoration: 'none' }}>
-            {t.backLink}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                marginTop: '6px'
+              }}
+            >
+              {loading ? 'SMS OTP भेजा जा रहा है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '13.5px', color: '#94a3b8' }}>
+                नंबर <b>+91 {phone}</b> पर भेजा गया OTP दर्ज करें
+              </span>
+              <button
+                type="button"
+                onClick={() => setStep('details')}
+                style={{ display: 'block', margin: '4px auto 0', background: 'none', border: 'none', color: '#60a5fa', fontSize: '12px', cursor: 'pointer' }}
+              >
+                नंबर बदलें
+              </button>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="• • • • • •"
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                autoFocus
+                required
+                style={{ width: '100%', padding: '12px', textAlign: 'center', letterSpacing: '8px', fontSize: '22px', fontWeight: 700, borderRadius: '8px', border: '2px solid #3b82f6', background: '#0f172a', color: '#fff', outline: 'none' }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background: '#16a34a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              {loading ? 'जाँच जारी है...' : '✓ OTP सत्यापित करें'}
+            </button>
+          </form>
+        )}
+
+        <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #334155', paddingTop: '16px' }}>
+          <Link href="/" style={{ color: '#94a3b8', fontSize: '13px', textDecoration: 'none' }}>
+            ← होम पेज पर वापस जाएं
           </Link>
         </div>
 
       </div>
-
     </div>
   );
 }
