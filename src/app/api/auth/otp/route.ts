@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 
-const FAST2SMS_API_KEY = 'wAoYu8jRgpms3U9HibQqJWd6NS2kGZrC51EzMvPXa4B0ye7TLtPgUEkAzXhxFYTH1RiNdryuf0GoLZ5j';
-
-const otpStorage = new Map<string, { otp: string; expires: number }>();
+const TWO_FACTOR_API_KEY = 'aa7deb54-b3ef-11f1-af74-0200cd936042';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { action, phone, sessionId, otp } = body;
 
-    // 1. SEND TEXT SMS OTP VIA QUICK SMS (NO WEBSITE VERIFICATION REQUIRED)
+    // 1. SEND STRICT TEXT SMS OTP (USING 2FACTOR DLT OTP1 TEMPLATE)
     if (action === 'send') {
       if (!phone || phone.length < 10) {
         return NextResponse.json(
@@ -19,45 +17,28 @@ export async function POST(req: Request) {
       }
 
       const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
-      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // Using Quick SMS 'q' route which does not require website or DLT verification
-      const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-        method: 'POST',
-        headers: {
-          'authorization': FAST2SMS_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          route: 'q',
-          message: `Your verification code is ${generatedOtp}. Valid for 5 minutes.`,
-          language: 'english',
-          flash: 0,
-          numbers: cleanPhone
-        })
-      });
+      // 2Factor DLT Pre-Approved Template Endpoint (Guaranteed Text SMS)
+      const url = `https://2factor.in/API/V1/${TWO_FACTOR_API_KEY}/SMS/+91${cleanPhone}/AUTOGEN/OTP1`;
 
-      const data = await response.json();
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
 
-      if (data.return === true || data.status_code === 200) {
-        const sessionKey = 'F2S_' + cleanPhone + '_' + Date.now();
-        otpStorage.set(sessionKey, {
-          otp: generatedOtp,
-          expires: Date.now() + 5 * 60 * 1000
-        });
-
+      if (data.Status === 'Success') {
         return NextResponse.json({
           success: true,
-          sessionId: sessionKey,
+          sessionId: data.Details, // Session ID returned by 2Factor
           message: 'मोबाइल पर Text SMS द्वारा OTP भेज दिया गया है।'
         });
       } else {
-        const err = Array.isArray(data.message) ? data.message[0] : (data.message || 'SMS भेजने में विफलता हुई।');
-        return NextResponse.json({ success: false, message: String(err) }, { status: 400 });
+        return NextResponse.json(
+          { success: false, message: data.Details || 'OTP भेजने में विफलता हुई।' },
+          { status: 400 }
+        );
       }
     }
 
-    // 2. VERIFY SMS OTP
+    // 2. VERIFY OTP VIA 2FACTOR ENGINE
     if (action === 'verify') {
       if (!sessionId || !otp) {
         return NextResponse.json(
@@ -67,35 +48,25 @@ export async function POST(req: Request) {
       }
 
       const cleanOtp = String(otp).trim();
-      const record = otpStorage.get(sessionId);
+      const verifyUrl = `https://2factor.in/API/V1/${TWO_FACTOR_API_KEY}/SMS/VERIFY/${sessionId}/${cleanOtp}`;
 
-      if (!record) {
-        return NextResponse.json(
-          { success: false, message: 'OTP सत्र अमान्य या समाप्त हो चुका है।' },
-          { status: 400 }
-        );
-      }
+      const res = await fetch(verifyUrl, { method: 'GET' });
+      const data = await res.json();
 
-      if (Date.now() > record.expires) {
-        otpStorage.delete(sessionId);
-        return NextResponse.json(
-          { success: false, message: 'OTP की समय सीमा समाप्त (Expired) हो चुकी है।' },
-          { status: 400 }
-        );
-      }
-
-      if (record.otp === cleanOtp) {
-        otpStorage.delete(sessionId);
+      if (
+        data.Status === 'Success' &&
+        (data.Details === 'OTP Matched' || String(data.Details).includes('Match'))
+      ) {
         return NextResponse.json({
           success: true,
           message: 'OTP सफलतापूर्वक सत्यापित हुआ।'
         });
+      } else {
+        return NextResponse.json(
+          { success: false, message: 'गलत OTP दर्ज किया गया है। कृपया पुनः प्रयास करें।' },
+          { status: 400 }
+        );
       }
-
-      return NextResponse.json(
-        { success: false, message: 'गलत OTP दर्ज किया गया है।' },
-        { status: 400 }
-      );
     }
 
     return NextResponse.json({ success: false, message: 'Invalid action' }, { status: 400 });
