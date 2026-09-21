@@ -268,6 +268,27 @@ export default function HomePage() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── FIX: LanguageTranslator hover text visibility ── */
+        .lang-fix button,
+        .lang-fix [role="button"],
+        .lang-fix > div {
+          color: #333 !important;
+        }
+        .lang-fix button:hover,
+        .lang-fix button:hover *,
+        .lang-fix [role="button"]:hover,
+        .lang-fix [role="button"]:hover *,
+        .lang-fix > div:hover,
+        .lang-fix > div:hover * {
+          color: #1a1a1a !important;
+          opacity: 1 !important;
+        }
+        .lang-fix button:hover,
+        .lang-fix [role="button"]:hover,
+        .lang-fix > div:hover {
+          background-color: #f0efec !important;
+        }
+
         .shell {
           max-width: 1400px; margin: 0 auto; display: grid;
           grid-template-columns: 230px minmax(0, 1fr) 310px;
@@ -426,11 +447,12 @@ export default function HomePage() {
               खोजें
             </button>
 
-            {/* SiteSwitcher + LanguageTranslator — clean z-index wrapper, NO aggressive CSS overrides */}
+            {/* SiteSwitcher — unchanged */}
             <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
+            {/* LanguageTranslator — lang-fix class added to fix hover text visibility */}
+            <div className="lang-fix" style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
 
@@ -455,7 +477,8 @@ export default function HomePage() {
             <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
+            {/* LanguageTranslator mobile — lang-fix class added */}
+            <div className="lang-fix" style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <LanguageTranslator />
             </div>
             {readerUser ? (
