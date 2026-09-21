@@ -268,25 +268,39 @@ export default function HomePage() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── FIX: LanguageTranslator hover text visibility ── */
+        /* ── FIX: Force light theme on LanguageTranslator (button + dropdown) ── */
+        .lang-fix div,
+        .lang-fix span,
+        .lang-fix p,
+        .lang-fix a,
         .lang-fix button,
-        .lang-fix [role="button"],
-        .lang-fix > div {
-          color: #333 !important;
-        }
-        .lang-fix button:hover,
-        .lang-fix button:hover *,
-        .lang-fix [role="button"]:hover,
-        .lang-fix [role="button"]:hover *,
-        .lang-fix > div:hover,
-        .lang-fix > div:hover * {
-          color: #1a1a1a !important;
+        .lang-fix ul,
+        .lang-fix ol,
+        .lang-fix li,
+        .lang-fix label,
+        .lang-fix input,
+        .lang-fix select,
+        .lang-fix option,
+        .lang-fix [role="listbox"],
+        .lang-fix [role="menu"],
+        .lang-fix [role="option"],
+        .lang-fix [role="menuitem"],
+        .lang-fix [role="button"] {
+          background-color: #ffffff !important;
+          color: #333333 !important;
           opacity: 1 !important;
         }
         .lang-fix button:hover,
+        .lang-fix button:hover > span,
+        .lang-fix li:hover,
+        .lang-fix a:hover,
+        .lang-fix [role="option"]:hover,
+        .lang-fix [role="menuitem"]:hover,
         .lang-fix [role="button"]:hover,
-        .lang-fix > div:hover {
+        .lang-fix [role="button"]:hover > span,
+        .lang-fix option:hover {
           background-color: #f0efec !important;
+          color: #1a1a1a !important;
         }
 
         .shell {
