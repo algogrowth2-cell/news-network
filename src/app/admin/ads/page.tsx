@@ -18,14 +18,17 @@ interface AdItem {
   zone: string;
   type: string;
   device: string;
-  status: 'active' | 'paused';
+  status: 'active' | 'paused' | 'pending' | 'rejected';
   priority: number;
   impressions: number;
   clicks: number;
   advertiserName?: string;
+  advertiserEmail?: string;
   budget?: string | number;
   targetUrl?: string;
   imageUrl?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default function AdsRevenuePage() {
@@ -35,7 +38,7 @@ export default function AdsRevenuePage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    zone: 'header-leaderboard',
+    zone: '728x90 Header Leaderboard',
     type: 'image',
     device: 'all',
     priority: 1,
@@ -46,103 +49,95 @@ export default function AdsRevenuePage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // 1. Fetch Real-time Ads
   useEffect(() => {
     setLoading(true);
-    const unsub1 = onSnapshot(
-      collection(db, 'advertisements'),
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const list: AdItem[] = snapshot.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              name: data.name || data.title || 'Untitled Ad',
-              zone: data.zone || data.adZone || 'header-leaderboard',
-              type: data.type || 'image',
-              device: data.device || 'all',
-              status: data.status === 'paused' ? 'paused' : 'active',
-              priority: Number(data.priority) || 1,
-              impressions: Number(data.impressions ?? data.views ?? data.impressionCount ?? data.viewsCount ?? 0),
-              clicks: Number(data.clicks ?? data.clickCount ?? 0),
-              advertiserName: data.advertiserName || data.clientName || '',
-              budget: data.budget || 5000,
-              targetUrl: data.targetUrl || '',
-              imageUrl: data.imageUrl || ''
-            };
-          });
-          setAds(list);
-          setLoading(false);
-        } else {
-          const unsub2 = onSnapshot(collection(db, 'ads'), (snap2) => {
-            const list2: AdItem[] = snap2.docs.map((d) => {
-              const data = d.data();
-              return {
-                id: d.id,
-                name: data.name || data.title || 'Untitled Ad',
-                zone: data.zone || data.adZone || 'header-leaderboard',
-                type: data.type || 'image',
-                device: data.device || 'all',
-                status: data.status === 'paused' ? 'paused' : 'active',
-                priority: Number(data.priority) || 1,
-                impressions: Number(data.impressions ?? data.views ?? data.impressionCount ?? data.viewsCount ?? 0),
-                clicks: Number(data.clicks ?? data.clickCount ?? 0),
-                advertiserName: data.advertiserName || data.clientName || '',
-                budget: data.budget || 5000,
-                targetUrl: data.targetUrl || '',
-                imageUrl: data.imageUrl || ''
-              };
-            });
-            setAds(list2);
-            setLoading(false);
-          });
-          return () => unsub2();
-        }
-      },
-      (error) => {
-        console.error('Firestore Read Error:', error);
-        setLoading(false);
-      }
-    );
+    const unsub = onSnapshot(collection(db, 'ads'), (snap) => {
+      const list: AdItem[] = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name || data.title || 'Untitled Ad',
+          zone: data.zone || data.adZone || '728x90 Header Leaderboard',
+          type: data.type || 'image',
+          device: data.device || 'all',
+          status: data.status || 'pending',
+          priority: Number(data.priority) || 1,
+          impressions: Number(data.impressions ?? data.views ?? 0),
+          clicks: Number(data.clicks || 0),
+          advertiserName: data.advertiserName || data.clientName || 'Direct Client',
+          advertiserEmail: data.advertiserEmail || '',
+          budget: data.budget || 5000,
+          targetUrl: data.targetUrl || '',
+          imageUrl: data.imageUrl || '',
+          startDate: data.startDate || '',
+          endDate: data.endDate || ''
+        };
+      });
+      setAds(list);
+      setLoading(false);
+    }, (error) => {
+      console.error('Firestore Read Error:', error);
+      setLoading(false);
+    });
 
-    return () => unsub1();
+    return () => unsub();
   }, []);
 
-  const handleToggleStatus = async (id: string, currentStatus: 'active' | 'paused') => {
+  // 2. Approve Ad Request (Make it Live)
+  const handleApproveAd = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'ads', id), { 
+        status: 'active',
+        priority: 1 
+      });
+      alert('विज्ञापन सफलतापूर्वक लाइव कर दिया गया है!');
+    } catch (err: any) {
+      alert('Approve error: ' + err.message);
+    }
+  };
+
+  // 3. Reject Ad Request
+  const handleRejectAd = async (id: string) => {
+    if (!confirm('क्या आप इस विज्ञापन अनुरोध को अस्वीकार करना चाहते हैं?')) return;
+    try {
+      await updateDoc(doc(db, 'ads', id), { status: 'rejected' });
+    } catch (err: any) {
+      alert('Reject error: ' + err.message);
+    }
+  };
+
+  // 4. Toggle Status (Active / Paused)
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const nextStatus = currentStatus === 'active' ? 'paused' : 'active';
-      try {
-        await updateDoc(doc(db, 'advertisements', id), { status: nextStatus });
-      } catch {
-        await updateDoc(doc(db, 'ads', id), { status: nextStatus });
-      }
+      await updateDoc(doc(db, 'ads', id), { status: nextStatus });
     } catch (err: any) {
       alert('Status change error: ' + err.message);
     }
   };
 
+  // 5. Delete Ad
   const handleDeleteAd = async (id: string, name: string) => {
-    if (!confirm(`Kya aap "${name}" ko delete karna chahte hain?`)) return;
+    if (!confirm(`क्या आप "${name}" को हटाना चाहते हैं?`)) return;
     try {
-      try {
-        await deleteDoc(doc(db, 'advertisements', id));
-      } catch {
-        await deleteDoc(doc(db, 'ads', id));
-      }
+      await deleteDoc(doc(db, 'ads', id));
     } catch (err: any) {
       alert('Delete error: ' + err.message);
     }
   };
 
+  // 6. Admin Create Ad Submit
   const handleCreateAd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) {
-      alert('Kripya Ad ka naam darj karein.');
+      alert('कृपया विज्ञापन का नाम दर्ज करें।');
       return;
     }
 
     try {
       setSubmitting(true);
-      await addDoc(collection(db, 'advertisements'), {
+      await addDoc(collection(db, 'ads'), {
         name: formData.name,
         zone: formData.zone,
         type: formData.type,
@@ -153,14 +148,14 @@ export default function AdsRevenuePage() {
         clicks: 0,
         imageUrl: formData.imageUrl,
         targetUrl: formData.targetUrl,
-        advertiserName: formData.advertiserName,
+        advertiserName: formData.advertiserName || 'Admin Created',
         budget: formData.budget,
         createdAt: serverTimestamp()
       });
 
       setFormData({
         name: '',
-        zone: 'header-leaderboard',
+        zone: '728x90 Header Leaderboard',
         type: 'image',
         device: 'all',
         priority: 1,
@@ -173,14 +168,17 @@ export default function AdsRevenuePage() {
       setActiveTab('ads');
     } catch (err: any) {
       setSubmitting(false);
-      alert('Ad create error: ' + err.message);
+      alert('Error: ' + err.message);
     }
   };
 
+  const pendingRequests = ads.filter(a => a.status === 'pending');
+  const liveAds = ads.filter(a => a.status !== 'pending');
   const uniqueAdvertisers = Array.from(new Set(ads.map((a) => a.advertiserName).filter(Boolean)));
 
   return (
     <div style={{ backgroundColor: '#070b14', minHeight: '100vh', padding: '28px', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      
       {/* Title */}
       <div style={{ marginBottom: '22px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>Ads & Revenue</h1>
@@ -203,7 +201,7 @@ export default function AdsRevenuePage() {
             cursor: 'pointer'
           }}
         >
-          Ads ({ads.length})
+          Ads ({liveAds.length})
         </button>
 
         <button
@@ -244,17 +242,17 @@ export default function AdsRevenuePage() {
           type="button"
           onClick={() => setActiveTab('requests')}
           style={{
-            backgroundColor: activeTab === 'requests' ? '#1d4ed8' : '#111827',
-            color: activeTab === 'requests' ? '#ffffff' : '#94a3b8',
-            border: '1px solid #1f293d',
+            backgroundColor: activeTab === 'requests' ? '#f59e0b' : '#111827',
+            color: activeTab === 'requests' ? '#000000' : '#fbbf24',
+            border: '1px solid #f59e0b',
             borderRadius: '8px',
             padding: '8px 16px',
             fontSize: '13px',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer'
           }}
         >
-          Requests (0)
+          Requests ({pendingRequests.length})
         </button>
 
         <button
@@ -275,16 +273,16 @@ export default function AdsRevenuePage() {
         </button>
       </div>
 
-      {/* Main Table Content */}
+      {/* TAB 1: ALL LIVE / PAUSED ADS */}
       {activeTab === 'ads' && (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
-              Firebase se data load ho raha hai...
+              डेटा लोड हो रहा है...
             </div>
-          ) : ads.length === 0 ? (
+          ) : liveAds.length === 0 ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
-              Koi ads nahi mile. 'Create Ad' tab se naya Ad banayein.
+              कोई लाइव विज्ञापन उपलब्ध नहीं है।
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -302,12 +300,11 @@ export default function AdsRevenuePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ads.map((ad, idx) => (
+                  {liveAds.map((ad, idx) => (
                     <tr 
                       key={ad.id} 
                       style={{ 
-                        borderBottom: idx === ads.length - 1 ? 'none' : '1px solid #162238',
-                        backgroundColor: 'transparent'
+                        borderBottom: idx === liveAds.length - 1 ? 'none' : '1px solid #162238'
                       }}
                     >
                       <td style={{ padding: '14px 20px', color: '#ffffff', fontWeight: 500 }}>
@@ -360,17 +357,6 @@ export default function AdsRevenuePage() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center' }}>
                           <button
                             type="button"
-                            onClick={() => alert(`Ad ID: ${ad.id}\nName: ${ad.name}\nZone: ${ad.zone}`)}
-                            title="Edit Ad"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#38bdf8', padding: '4px', display: 'flex' }}
-                          >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => handleToggleStatus(ad.id, ad.status)}
                             title={ad.status === 'active' ? 'Pause Ad' : 'Activate Ad'}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fbbf24', padding: '4px', display: 'flex' }}
@@ -409,10 +395,84 @@ export default function AdsRevenuePage() {
         </div>
       )}
 
-      {/* Tab 2: Create Ad */}
+      {/* TAB 4: ADVERTISER PENDING REQUESTS */}
+      {activeTab === 'requests' && (
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+          <div style={{ marginBottom: '18px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: 0 }}>विज्ञापनदाता अप्रूवल अनुरोध (Pending Requests)</h2>
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0' }}>विज्ञापनदाता पोर्टल से आए नए अनुरोधों को रिव्यू करें और वेबसाइट पर लाइव करें।</p>
+          </div>
+
+          {pendingRequests.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', background: '#0a101d', borderRadius: '8px' }}>
+              ✓ कोई भी अनुरोध पेंडिंग नहीं है। सभी विज्ञापन स्वीकृत हैं।
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {pendingRequests.map((req) => (
+                <div key={req.id} style={{ backgroundColor: '#131d33', border: '1px solid #27354f', borderRadius: '8px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                    {req.imageUrl && (
+                      <img src={req.imageUrl} alt={req.name} style={{ width: '80px', height: '55px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #475569' }} />
+                    )}
+                    <div>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#ffffff' }}>{req.name}</h4>
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        <span>भेजने वाला: <b style={{ color: '#e2e8f0' }}>{req.advertiserName}</b> ({req.advertiserEmail})</span> · 
+                        <span style={{ marginLeft: '6px', color: '#38bdf8' }}>{req.zone}</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                        अवधि: {req.startDate} से {req.endDate} · लिंक: {req.targetUrl}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleApproveAd(req.id)}
+                      style={{
+                        backgroundColor: '#10b981',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ✓ Approve & Live
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectAd(req.id)}
+                      style={{
+                        backgroundColor: '#ef4444',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 14px',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      अस्वीकार करें
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: CREATE AD */}
       {activeTab === 'create' && (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', maxWidth: '650px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 18px 0' }}>Naya Advertisement Banayein</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 18px 0' }}>नया विज्ञापन बनाएं</h2>
           <form onSubmit={handleCreateAd} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Ad Name *</label>
@@ -421,7 +481,7 @@ export default function AdsRevenuePage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Business Promotion - Header Ad"
+                placeholder="e.g. Leaderboard Header Ad"
                 style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
               />
             </div>
@@ -434,47 +494,16 @@ export default function AdsRevenuePage() {
                   onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
                 >
-                  <option value="header-leaderboard">header-leaderboard</option>
-                  <option value="sidebar-top">sidebar-top</option>
-                  <option value="sidebar-middle">sidebar-middle</option>
+                  <option value="728x90 Header Leaderboard">728x90 Header Leaderboard</option>
+                  <option value="300x250 (साइडबार)">300x250 (साइडबार)</option>
                   <option value="in-article-1">in-article-1</option>
-                  <option value="in-article-2">in-article-2</option>
-                  <option value="footer-banner">footer-banner</option>
+                  <option value="classifieds-feed">classifieds-feed</option>
                   <option value="popup">popup</option>
-                  <option value="breaking-below">breaking-below</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Device Targeting</label>
-                <select
-                  value={formData.device}
-                  onChange={(e) => setFormData({ ...formData, device: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                >
-                  <option value="all">all</option>
-                  <option value="mobile">mobile</option>
-                  <option value="desktop">desktop</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Type</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                >
-                  <option value="image">image</option>
-                  <option value="google-adsense">google-adsense</option>
-                  <option value="custom-html">custom-html</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Priority (1 to 10)</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Priority</label>
                 <input
                   type="number"
                   min="1"
@@ -528,34 +557,22 @@ export default function AdsRevenuePage() {
         </div>
       )}
 
-      {/* Tab 3: Advertisers */}
+      {/* TAB 3: ADVERTISERS */}
       {activeTab === 'advertisers' && (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 16px 0' }}>Registered Advertisers ({uniqueAdvertisers.length})</h2>
-          {uniqueAdvertisers.length === 0 ? (
-            <p style={{ color: '#94a3b8', fontSize: '13px' }}>Abhi koi advertiser data linked nahi hai.</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
-              {uniqueAdvertisers.map((adv, idx) => (
-                <div key={idx} style={{ backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '8px', padding: '16px' }}>
-                  <p style={{ fontWeight: 600, color: '#ffffff', margin: '0 0 4px 0' }}>{adv}</p>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Active campaign linked</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+            {uniqueAdvertisers.map((adv, idx) => (
+              <div key={idx} style={{ backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '8px', padding: '16px' }}>
+                <p style={{ fontWeight: 600, color: '#ffffff', margin: '0 0 4px 0' }}>{adv}</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Active campaigns linked</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Tab 4: Requests */}
-      {activeTab === 'requests' && (
-        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '40px', textAlign: 'center' }}>
-          <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: '0 0 6px 0' }}>Pending Ad Approvals</p>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>Sabhi live requests approve ho chuki hain.</p>
-        </div>
-      )}
-
-      {/* Tab 5: Revenue Config */}
+      {/* TAB 5: REVENUE CONFIG */}
       {activeTab === 'revenue' && (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', maxWidth: '550px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 16px 0' }}>Banner Slot Pricing Settings</h2>
@@ -568,13 +585,10 @@ export default function AdsRevenuePage() {
               <span style={{ color: '#cbd5e1' }}>Sidebar Top Slot</span>
               <span style={{ fontWeight: 600, color: '#34d399' }}>₹8,000</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
-              <span style={{ color: '#cbd5e1' }}>In-Article Inline Ad</span>
-              <span style={{ fontWeight: 600, color: '#34d399' }}>₹5,000</span>
-            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

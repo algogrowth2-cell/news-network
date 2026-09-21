@@ -8,7 +8,8 @@ import {
   where, 
   onSnapshot, 
   addDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  doc 
 } from 'firebase/firestore';
 import Link from 'next/link';
 
@@ -37,24 +38,42 @@ export default function AdvertiserDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  // Dynamic Site Theme Brand Color
+  const [themeColor, setThemeColor] = useState<string>('#ea580c');
+  const [siteName, setSiteName] = useState<string>('द लोकल लीडर');
+  const [siteLogo, setSiteLogo] = useState<string>('/logos/the-local-leader.jpeg');
+
   // User session state
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
 
   // Form State
   const [name, setName] = useState('');
   const [format, setFormat] = useState<'banner' | 'sidebar' | 'classified' | 'popup'>('banner');
-  const [zone, setZone] = useState('header-leaderboard');
+  const [zone, setZone] = useState('728x90 Header Leaderboard');
   const [targetUrl, setTargetUrl] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [budget, setBudget] = useState('5000');
   
-  // Image Upload State (URL or Local File)
+  // Image Upload State
   const [imageUploadType, setImageUploadType] = useState<'url' | 'file'>('url');
   const [imageUrl, setImageUrl] = useState('');
   const [selectedFilePreview, setSelectedFilePreview] = useState<string>('');
 
-  // 1. Check logged in advertiser session
+  // 1. Fetch Site Config for Brand Color matching Logo
+  useEffect(() => {
+    const unsubSite = onSnapshot(doc(db, 'sites', 'the-local-leader'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.primaryColor) setThemeColor(data.primaryColor);
+        if (data.name) setSiteName(data.name);
+        if (data.logoUrl) setSiteLogo(data.logoUrl);
+      }
+    });
+    return () => unsubSite();
+  }, []);
+
+  // 2. Check logged in advertiser session
   useEffect(() => {
     const cachedUser = localStorage.getItem('advertiser_user');
     if (cachedUser) {
@@ -65,15 +84,14 @@ export default function AdvertiserDashboard() {
         console.error(e);
       }
     } else {
-      // Default fallback advertiser profile for direct access
       setCurrentUser({
-        email: 'advertiser@thelocalleader.in',
-        name: 'विज्ञापनदाता'
+        email: 'algogrowth2@gmail.com',
+        name: 'pankaj'
       });
     }
   }, []);
 
-  // 2. Fetch only this advertiser's ads in real-time
+  // 3. Fetch only this advertiser's ads in real-time
   useEffect(() => {
     if (!currentUser?.email) return;
 
@@ -88,18 +106,18 @@ export default function AdvertiserDashboard() {
         const data = docSnap.data();
         return {
           id: docSnap.id,
-          name: data.name || 'Untitled Ad',
-          zone: data.zone || 'header-leaderboard',
+          name: data.name || data.title || 'Untitled Ad',
+          zone: data.zone || '728x90 Header Leaderboard',
           type: data.type || 'image',
           format: data.format || 'banner',
           imageUrl: data.imageUrl || '',
           targetUrl: data.targetUrl || '',
-          startDate: data.startDate || '',
-          endDate: data.endDate || '',
+          startDate: data.startDate || 'तत्काल',
+          endDate: data.endDate || 'खुला',
           status: data.status || 'pending',
           impressions: Number(data.impressions || data.views || 0),
           clicks: Number(data.clicks || 0),
-          budget: data.budget || 0,
+          budget: data.budget || 5000,
           advertiserEmail: data.advertiserEmail || '',
           advertiserName: data.advertiserName || ''
         };
@@ -115,13 +133,12 @@ export default function AdvertiserDashboard() {
     return () => unsubscribe();
   }, [currentUser?.email]);
 
-  // Handle local image file selection and conversion to Base64
   const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('कृपया 2 MB से छोटी इमेज अपलोड करें।');
+      alert('कृपया 2 MB से छोटी इमेज चुनें।');
       return;
     }
 
@@ -134,16 +151,15 @@ export default function AdvertiserDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // Format change handler (Auto updates placement zone)
   const handleFormatChange = (selected: 'banner' | 'sidebar' | 'classified' | 'popup') => {
     setFormat(selected);
-    if (selected === 'banner') setZone('header-leaderboard');
-    if (selected === 'sidebar') setZone('sidebar-top');
+    if (selected === 'banner') setZone('728x90 Header Leaderboard');
+    if (selected === 'sidebar') setZone('300x250 (साइडबार)');
     if (selected === 'classified') setZone('classifieds-feed');
     if (selected === 'popup') setZone('popup');
   };
 
-  // 3. Submit New Ad Request for Admin Approval
+  // Submit Ad request to Firestore
   const handleSubmitAd = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -153,12 +169,7 @@ export default function AdvertiserDashboard() {
     }
 
     if (!imageUrl) {
-      alert('कृपया विज्ञापन इमेज URL दर्ज करें या डिवाइस से फाइल चुनें।');
-      return;
-    }
-
-    if (!startDate || !endDate) {
-      alert('कृपया विज्ञापन की शुरू और समाप्त होने की तारीख चुनें।');
+      alert('कृपया विज्ञापन इमेज URL दर्ज करें या फाइल चुनें।');
       return;
     }
 
@@ -167,27 +178,26 @@ export default function AdvertiserDashboard() {
 
       await addDoc(collection(db, 'ads'), {
         name: name.trim(),
+        title: name.trim(),
         format,
         zone,
         type: 'image',
         device: 'all',
         imageUrl,
         targetUrl: targetUrl.trim() || '#',
-        startDate,
-        endDate,
+        startDate: startDate || 'तत्काल',
+        endDate: endDate || 'खुला',
         budget: budget || '5000',
         status: 'pending', // Sent for Admin approval
         priority: 1,
         impressions: 0,
         clicks: 0,
-        advertiserEmail: currentUser?.email || 'advertiser@thelocalleader.in',
-        advertiserName: currentUser?.name || 'विज्ञापनदाता',
+        advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
+        advertiserName: currentUser?.name || 'pankaj',
         createdAt: serverTimestamp()
       });
 
-      alert('विज्ञापन अनुरोध सफलतापूर्वक भेज दिया गया है! एडमिन द्वारा अप्रूवल मिलते ही यह वेबसाइट पर लाइव हो जाएगा।');
-
-      // Reset form
+      alert('विज्ञापन अनुरोध सफलतापूर्वक एडमिन को भेज दिया गया है!');
       setName('');
       setImageUrl('');
       setSelectedFilePreview('');
@@ -198,11 +208,10 @@ export default function AdvertiserDashboard() {
       setActiveTab('my-ads');
     } catch (err: any) {
       setSubmitting(false);
-      alert('विज्ञापन अनुरोध भेजने में त्रुटि: ' + err.message);
+      alert('Error: ' + err.message);
     }
   };
 
-  // Calculate Metrics
   const activeCount = ads.filter(a => a.status === 'active').length;
   const pendingCount = ads.filter(a => a.status === 'pending').length;
   const totalViews = ads.reduce((acc, curr) => acc + (curr.impressions || 0), 0);
@@ -212,16 +221,21 @@ export default function AdvertiserDashboard() {
     <div style={{ backgroundColor: '#070b14', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {/* Top Navbar */}
-      <header style={{ backgroundColor: '#0e1626', borderBottom: '1px solid #1e293b', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <span style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>विज्ञापनदाता पोर्टल</span>
-          <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '12px' }}>{currentUser?.name} ({currentUser?.email})</span>
+      <header style={{ backgroundColor: '#0e1626', borderBottom: '1px solid #1e293b', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {siteLogo && (
+            <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+          )}
+          <div>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>विज्ञापनदाता पोर्टल</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '10px' }}>
+              {currentUser?.name} ({currentUser?.email})
+            </span>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Link href="/" style={{ fontSize: '13px', color: '#38bdf8', textDecoration: 'none' }}>
-            ← मुख्य वेबसाइट देखें
-          </Link>
-        </div>
+        <Link href="/" style={{ fontSize: '13px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
+          ← मुख्य वेबसाइट देखें
+        </Link>
       </header>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
@@ -231,39 +245,39 @@ export default function AdvertiserDashboard() {
           
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>लाइव / सक्रिय विज्ञापन</span>
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#34d399', marginTop: '6px' }}>{activeCount}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#34d399', marginTop: '6px' }}>{activeCount}</div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>वर्तमान में पोर्टल पर लाइव</span>
           </div>
 
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>स्वीकृति हेतु लंबित (Pending)</span>
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#fbbf24', marginTop: '6px' }}>{pendingCount}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#fbbf24', marginTop: '6px' }}>{pendingCount}</div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>एडमिन अप्रूवल की प्रतीक्षा में</span>
           </div>
 
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>कुल इम्प्रेशन्स (Views)</span>
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#38bdf8', marginTop: '6px' }}>{totalViews}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#38bdf8', marginTop: '6px' }}>{totalViews}</div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>पाठकों द्वारा देखे गए</span>
           </div>
 
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>कुल क्लिक्स (Clicks)</span>
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#a78bfa', marginTop: '6px' }}>{totalClicks}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#a78bfa', marginTop: '6px' }}>{totalClicks}</div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>वेबसाइट ट्रैफ़िक एंगेजमेंट</span>
           </div>
 
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs with Dynamic Brand Color */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
           <button
             type="button"
             onClick={() => setActiveTab('my-ads')}
             style={{
-              backgroundColor: activeTab === 'my-ads' ? '#2563eb' : '#0e1626',
-              color: activeTab === 'my-ads' ? '#ffffff' : '#94a3b8',
-              border: '1px solid #1e293b',
+              backgroundColor: activeTab === 'my-ads' ? themeColor : '#0e1626',
+              color: '#ffffff',
+              border: `1px solid ${activeTab === 'my-ads' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 18px',
               fontSize: '13px',
@@ -278,9 +292,9 @@ export default function AdvertiserDashboard() {
             type="button"
             onClick={() => setActiveTab('create-ad')}
             style={{
-              backgroundColor: activeTab === 'create-ad' ? '#2563eb' : '#0e1626',
-              color: activeTab === 'create-ad' ? '#ffffff' : '#94a3b8',
-              border: '1px solid #1e293b',
+              backgroundColor: activeTab === 'create-ad' ? themeColor : '#0e1626',
+              color: '#ffffff',
+              border: `1px solid ${activeTab === 'create-ad' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 18px',
               fontSize: '13px',
@@ -302,7 +316,7 @@ export default function AdvertiserDashboard() {
             ) : ads.length === 0 ? (
               <div style={{ padding: '50px 20px', textAlign: 'center', color: '#94a3b8' }}>
                 <p style={{ fontSize: '15px', color: '#ffffff', marginBottom: '8px' }}>कोई विज्ञापन उपलब्ध नहीं है</p>
-                <p style={{ fontSize: '13px', margin: 0 }}>अपना पहला विज्ञापन लाइव करने के लिए ऊपर "+ नया विज्ञापन अनुरोध भेजें" बटन पर क्लिक करें।</p>
+                <p style={{ fontSize: '13px', margin: 0 }}>नया विज्ञापन बनाने के लिए ऊपर बटन पर क्लिक करें।</p>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -354,8 +368,8 @@ export default function AdvertiserDashboard() {
                         </td>
 
                         <td style={{ padding: '14px 18px', fontSize: '12px', color: '#94a3b8' }}>
-                          <div>शुरू: {ad.startDate || 'तत्काल'}</div>
-                          <div style={{ color: '#f87171' }}>समाप्त: {ad.endDate || 'खुला'}</div>
+                          <div>शुरू: {ad.startDate}</div>
+                          <div style={{ color: '#f87171' }}>समाप्त: {ad.endDate}</div>
                         </td>
 
                         <td style={{ padding: '14px 18px' }}>
@@ -401,12 +415,11 @@ export default function AdvertiserDashboard() {
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', maxWidth: '750px', margin: '0 auto' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0' }}>नया विज्ञापन अनुरोध सबमिट करें</h2>
             <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 24px 0' }}>
-              अनुरोध सबमिट करने के बाद नेटवर्क एडमिनिस्ट्रेटर द्वारा समीक्षा की जाएगी। अप्रूवल के बाद आपका विज्ञापन चयनित तिथियों में वेबसाइट पर लाइव प्रदर्शित होगा।
+              अनुरोध सबमिट होने के बाद एडमिन द्वारा रिव्यू किया जाएगा। अप्रूवल के बाद यह तुरंत लाइव हो जाएगा।
             </p>
 
             <form onSubmit={handleSubmitAd} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
-              {/* Ad Name */}
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>विज्ञापन का शीर्षक / नाम *</label>
                 <input
@@ -419,10 +432,9 @@ export default function AdvertiserDashboard() {
                 />
               </div>
 
-              {/* Format & Placement Selection */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>विज्ञापन प्रारूप (Format)</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्रारूप (Format)</label>
                   <select
                     value={format}
                     onChange={(e) => handleFormatChange(e.target.value as any)}
@@ -442,20 +454,18 @@ export default function AdvertiserDashboard() {
                     onChange={(e) => setZone(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
                   >
-                    <option value="header-leaderboard">हेडर मुख्य बैनर (728×90)</option>
-                    <option value="sidebar-top">साइडबार ऊपरी भाग (300×250)</option>
-                    <option value="sidebar-middle">साइडबार मध्य भाग</option>
+                    <option value="728x90 Header Leaderboard">728x90 Header Leaderboard</option>
+                    <option value="300x250 (साइडबार)">300x250 (साइडबार)</option>
                     <option value="in-article-1">खबर के अंदर (In-Article)</option>
-                    <option value="classifieds-feed">क्लासिफाइड सूची</option>
-                    <option value="popup">पॉप-अप स्लॉट</option>
+                    <option value="classifieds-feed">classifieds-feed</option>
+                    <option value="popup">popup</option>
                   </select>
                 </div>
               </div>
 
-              {/* Start and End Dates */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्रसारण शुरू होने की तारीख *</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्रसारण शुरू तारीख *</label>
                   <input
                     type="date"
                     required
@@ -477,7 +487,6 @@ export default function AdvertiserDashboard() {
                 </div>
               </div>
 
-              {/* Target Landing URL */}
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>विज्ञापन क्लिक लिंक (Target URL)</label>
                 <input
@@ -489,7 +498,6 @@ export default function AdvertiserDashboard() {
                 />
               </div>
 
-              {/* Image Input Selection (URL or Local Upload) */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '12px', color: '#94a3b8' }}>विज्ञापन इमेज *</label>
@@ -500,7 +508,7 @@ export default function AdvertiserDashboard() {
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: imageUploadType === 'url' ? '#38bdf8' : '#64748b',
+                        color: imageUploadType === 'url' ? themeColor : '#64748b',
                         fontSize: '12px',
                         cursor: 'pointer',
                         fontWeight: imageUploadType === 'url' ? 700 : 400
@@ -515,7 +523,7 @@ export default function AdvertiserDashboard() {
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: imageUploadType === 'file' ? '#38bdf8' : '#64748b',
+                        color: imageUploadType === 'file' ? themeColor : '#64748b',
                         fontSize: '12px',
                         cursor: 'pointer',
                         fontWeight: imageUploadType === 'file' ? 700 : 400
@@ -546,10 +554,9 @@ export default function AdvertiserDashboard() {
                   />
                 )}
 
-                {/* Preview */}
                 {selectedFilePreview && (
                   <div style={{ marginTop: '12px', padding: '8px', border: '1px dashed #334155', borderRadius: '8px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>इमेज पूर्वावलोकन (Preview)</span>
+                    <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>इमेज पूर्वावलोकन</span>
                     <img 
                       src={selectedFilePreview} 
                       alt="Banner Preview" 
@@ -559,7 +566,6 @@ export default function AdvertiserDashboard() {
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
                 <button
                   type="button"
@@ -581,7 +587,7 @@ export default function AdvertiserDashboard() {
                   type="submit"
                   disabled={submitting}
                   style={{
-                    backgroundColor: '#2563eb',
+                    backgroundColor: themeColor,
                     border: 'none',
                     color: '#ffffff',
                     padding: '10px 24px',
