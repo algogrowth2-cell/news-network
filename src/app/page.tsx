@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -107,6 +107,20 @@ export default function HomePage() {
 
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
+
+  // Ad Tracker: Click update handler
+  const handleAdClick = async (ad: AdItem) => {
+    if (!ad?.id) return;
+    try {
+      await updateDoc(doc(db, 'ads', ad.id), { clicks: increment(1) });
+    } catch {
+      try {
+        await updateDoc(doc(db, 'advertisements', ad.id), { clicks: increment(1) });
+      } catch (err) {
+        console.error('Click error:', err);
+      }
+    }
+  };
 
   const handleCategoryClick = (cat: string) => {
     if (cat === 'ई-पेपर') {
@@ -237,9 +251,16 @@ export default function HomePage() {
               targetUrl: rawData.targetUrl || '',
               status: adStatus
             };
-            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर')) {
+
+            // Impression count (+1 jab page par ad milta hai)
+            const adRef = doc(db, 'ads', docSnap.id);
+            updateDoc(adRef, { impressions: increment(1) }).catch(() => {
+              updateDoc(doc(db, 'advertisements', docSnap.id), { impressions: increment(1) }).catch(() => {});
+            });
+
+            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर') || cleanAd.zone?.includes('header')) {
               setHeaderAd(cleanAd);
-            } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार')) {
+            } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार') || cleanAd.zone?.includes('sidebar')) {
               setSidebarAd(cleanAd);
             }
           }
@@ -275,8 +296,8 @@ export default function HomePage() {
 
     const matchesCategory = 
       activeCategory === 'होम' || 
-      activeCategory === 'ताज़ा खबरें' ||
-      activeCategory === 'राशिफल' ||
+      activeCategory === 'ताज़ा खबरें' || 
+      activeCategory === 'राशिफल' || 
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
       (activeCategory === 'राजनीति' && art.category === 'Politics') ||
       (activeCategory === 'व्यापार' && art.category === 'Business') ||
@@ -512,17 +533,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. MAIN HEADER WITH EMBEDDED DESKTOP SUBNAVBAR */}
+      {/* 2. MAIN HEADER */}
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
         <div className="header-main-row">
-          
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            {/* Mobile Drawer Trigger */}
             <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
-            {/* Site Branding Logo */}
             <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}>
               <img 
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
@@ -540,7 +558,6 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* EMBEDDED DESKTOP SUBNAVBAR */}
           <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
             <button 
               onClick={() => handleCategoryClick('होम')}
@@ -548,21 +565,18 @@ export default function HomePage() {
             >
               <span style={{ color: activeCategory === 'होम' ? primary : '#d97706' }}>🏠</span> होम
             </button>
-
             <button 
               onClick={() => handleCategoryClick('ताज़ा खबरें')}
               style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
               <span>≡</span> ताज़ा खबरें
             </button>
-
             <button 
               onClick={() => handleCategoryClick('शोक संदेश')}
               style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'शोक संदेश' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
               <span>🕯️</span> शोक संदेश
             </button>
-
             <button 
               onClick={() => handleCategoryClick('ई-पेपर')}
               style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -571,45 +585,17 @@ export default function HomePage() {
             </button>
           </nav>
 
-          {/* Desktop Right Action Tools & Portals */}
           <div className="nav-tools-group header-portal-tools-desktop" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
-            
             <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link 
                 href="/patrakar/login" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  fontSize: '11.5px', 
-                  fontWeight: 600, 
-                  color: '#334155', 
-                  background: '#f1f5f9', 
-                  border: '1px solid #cbd5e1', 
-                  padding: '5px 10px', 
-                  borderRadius: '18px', 
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap'
-                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 600, color: '#334155', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '18px', textDecoration: 'none', whiteSpace: 'nowrap' }}
               >
                 <span>✍️</span> <span>पत्रकार</span>
               </Link>
               <Link 
                 href="/advertiser/login" 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px', 
-                  fontSize: '11.5px', 
-                  fontWeight: 600, 
-                  color: '#fff', 
-                  background: '#1e293b', 
-                  border: '1px solid #1e293b', 
-                  padding: '5px 11px', 
-                  borderRadius: '18px', 
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap'
-                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 600, color: '#fff', background: '#1e293b', border: '1px solid #1e293b', padding: '5px 11px', borderRadius: '18px', textDecoration: 'none', whiteSpace: 'nowrap' }}
               >
                 <span>📢</span> <span>विज्ञापन</span>
               </Link>
@@ -636,26 +622,13 @@ export default function HomePage() {
             ) : (
               <Link 
                 href="/login" 
-                style={{
-                  background: primary,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '18px',
-                  padding: '6px 14px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-block',
-                  flexShrink: 0
-                }}
+                style={{ background: primary, color: '#fff', border: 'none', borderRadius: '18px', padding: '6px 14px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}
               >
                 लॉगिन
               </Link>
             )}
           </div>
 
-          {/* 📱 Mobile Right Action Tools & Portals */}
           <div className="header-portal-tools-mobile hide-scrollbar" style={{ display: 'none', marginLeft: 'auto' }}>
             <button 
               onClick={() => setSearchModalOpen(true)}
@@ -664,15 +637,12 @@ export default function HomePage() {
             >
               <span>🔍</span>
             </button>
-
             <div style={{ flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-
             <div style={{ flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
-
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '16px', padding: '3px 6px', flexShrink: 0 }}>
                 <span style={{ fontSize: '10.5px', fontWeight: 600, color: primary }}>👤</span>
@@ -681,29 +651,16 @@ export default function HomePage() {
             ) : (
               <Link 
                 href="/login" 
-                style={{
-                  background: primary,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '16px',
-                  padding: '5px 10px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-block',
-                  flexShrink: 0
-                }}
+                style={{ background: primary, color: '#fff', border: 'none', borderRadius: '16px', padding: '5px 10px', fontSize: '12px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}
               >
                 लॉगिन
               </Link>
             )}
           </div>
-
         </div>
       </header>
 
-      {/* SEARCH MODAL OVERLAY WITH AUTO-CLOSE ON OUTSIDE CLICK OR MOUSE LEAVE */}
+      {/* SEARCH MODAL */}
       {searchModalOpen && (
         <div 
           onMouseLeave={() => setSearchModalOpen(false)}
@@ -737,9 +694,8 @@ export default function HomePage() {
       {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
       <div className="shell-container">
         
-        {/* LEFT COLUMN: CATEGORIES WITH UNIQUE ICONS & APP DOWNLOAD */}
+        {/* LEFT COLUMN: CATEGORIES */}
         <aside className="side-col">
-          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'शोक संदेश', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
               const isActive = activeCategory === cat;
@@ -772,82 +728,39 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* APP DOWNLOAD BOX */}
           <div style={{ textAlign: 'center', marginTop: '22px', paddingTop: '18px', borderTop: '1px solid #e3e0da' }}>
             <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें</div>
-            
             <a 
               href="#" 
               onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
-              style={{
-                display: 'block',
-                border: '1px solid #e3e0da',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                margin: '0 auto 8px',
-                maxWidth: '180px',
-                textAlign: 'left',
-                background: '#f6f5f2',
-                textDecoration: 'none',
-                color: '#16150f'
-              }}
+              style={{ display: 'block', border: '1px solid #e3e0da', borderRadius: '8px', padding: '8px 12px', margin: '0 auto 8px', maxWidth: '180px', textAlign: 'left', background: '#f6f5f2', textDecoration: 'none', color: '#16150f' }}
             >
               <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
               <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play</b>
             </a>
-
             <a 
               href="#" 
               onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
-              style={{
-                display: 'block',
-                border: '1px solid #e3e0da',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                margin: '0 auto 8px',
-                maxWidth: '180px',
-                textAlign: 'left',
-                background: '#f6f5f2',
-                textDecoration: 'none',
-                color: '#16150f'
-              }}
+              style={{ display: 'block', border: '1px solid #e3e0da', borderRadius: '8px', padding: '8px 12px', margin: '0 auto 8px', maxWidth: '180px', textAlign: 'left', background: '#f6f5f2', textDecoration: 'none', color: '#16150f' }}
             >
               <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
               <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store</b>
             </a>
-
-            <div style={{ fontSize: '12px', color: '#8d897f', marginTop: '16px', marginBottom: '8px' }}>हमें फ़ॉलो करें</div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-              {['f', '𝕏', '◎', '▶'].map((icon, i) => (
-                <span 
-                  key={i} 
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: '#f6f5f2',
-                    border: '1px solid #e3e0da',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: '13px',
-                    color: '#5a574f',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {icon}
-                </span>
-              ))}
-            </div>
           </div>
         </aside>
 
         {/* CENTER COLUMN: MAIN CONTENT FEED */}
         <main style={{ minWidth: 0 }}>
           
-          {/* HEADER LEADERBOARD AD */}
+          {/* HEADER LEADERBOARD AD WITH AUTO-CLICK & IMPRESSION TRACKING */}
           <div className="ad-leaderboard-box">
             {headerAd ? (
-              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer">
+              <a 
+                href={headerAd.targetUrl || '#'} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => handleAdClick(headerAd)}
+              >
                 <img src={headerAd.imageUrl} alt={headerAd.name} />
               </a>
             ) : (
@@ -857,7 +770,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 🎯 TRENDING TAGS BAR AFTER BANNER */}
+          {/* TRENDING TAGS */}
           <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: primary, flexShrink: 0 }}>ट्रेंडिंग</span>
             <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
@@ -865,20 +778,7 @@ export default function HomePage() {
                 <button
                   key={t}
                   onClick={() => setSearchTerm(t)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '13.5px',
-                    fontWeight: 500,
-                    border: '1px solid #e3e0da',
-                    borderRadius: '20px',
-                    padding: '5px 14px',
-                    color: '#5a574f',
-                    background: '#ffffff',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13.5px', fontWeight: 500, border: '1px solid #e3e0da', borderRadius: '20px', padding: '5px 14px', color: '#5a574f', background: '#ffffff', cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   <span>{t}</span> <span style={{ color: '#8d897f', fontSize: '11px' }}>›</span>
                 </button>
@@ -902,8 +802,6 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden' }}>
-              
-              {/* Featured Lead Hero Article */}
               {filteredArticles[0] && (
                 <article style={{ padding: '18px 20px', borderBottom: '1px solid #e3e0da' }}>
                   <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -940,7 +838,6 @@ export default function HomePage() {
                 </article>
               )}
 
-              {/* Remaining Articles in Feed */}
               {filteredArticles.slice(1).map((item) => (
                 <article key={item.id} style={{ padding: '16px 20px', borderBottom: '1px solid #e3e0da' }}>
                   <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
@@ -965,7 +862,6 @@ export default function HomePage() {
                   </Link>
                 </article>
               ))}
-
             </div>
           )}
 
@@ -973,8 +869,6 @@ export default function HomePage() {
 
         {/* RIGHT COLUMN: TRENDING BADGES + RASHIFAL + SIDEBAR AD */}
         <aside className="rail-col">
-          
-          {/* Trending 01 to 05 Ranking Badges */}
           <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
               <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 600, margin: 0 }}>
@@ -1027,10 +921,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Sidebar 300x250 Ad */}
+          {/* SIDEBAR 300x250 AD WITH AUTO-CLICK & IMPRESSION TRACKING */}
           <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', height: '260px', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
             {sidebarAd ? (
-              <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
+              <a 
+                href={sidebarAd.targetUrl || '#'} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                onClick={() => handleAdClick(sidebarAd)}
+                style={{ display: 'block', width: '100%', height: '100%' }}
+              >
                 <img src={sidebarAd.imageUrl} alt={sidebarAd.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </a>
             ) : (
@@ -1042,7 +942,7 @@ export default function HomePage() {
 
       </div>
 
-      {/* 5. DYNAMIC FOOTER */}
+      {/* 5. FOOTER */}
       <Footer 
         siteName={siteConfig?.name || 'द लोकल लीडर'} 
         primaryColor={primary}
