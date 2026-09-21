@@ -84,6 +84,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('होम');
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTrendTag, setActiveTrendTag] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -134,7 +135,19 @@ export default function HomePage() {
       return;
     }
     setActiveCategory(cat);
+    setActiveTrendTag('');
+    setSearchTerm('');
     setDrawerOpen(false);
+  };
+
+  const handleTrendTagClick = (tag: string) => {
+    if (activeTrendTag === tag) {
+      setActiveTrendTag('');
+      setSearchTerm('');
+    } else {
+      setActiveTrendTag(tag);
+      setSearchTerm(tag);
+    }
   };
 
   /* ─── Hindi date ─── */
@@ -313,7 +326,6 @@ export default function HomePage() {
   const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
 
-  /* ─── helper: light tint from primary ─── */
   const tint = (hex: string, opacity: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -327,7 +339,6 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: siteFont, fontSize: '15px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
 
-      {/* ── GLOBAL STYLES ── */}
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -338,7 +349,7 @@ export default function HomePage() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* ---------- layout shell ---------- */
+        /* ── layout shell ── */
         .shell {
           max-width: 1400px;
           margin: 0 auto;
@@ -348,7 +359,6 @@ export default function HomePage() {
           padding: 20px 24px 48px;
           width: 100%;
         }
-
         .col-left {
           position: sticky;
           top: 76px;
@@ -356,7 +366,6 @@ export default function HomePage() {
           max-height: calc(100vh - 90px);
           overflow-y: auto;
         }
-
         .col-right {
           position: sticky;
           top: 76px;
@@ -365,7 +374,7 @@ export default function HomePage() {
           overflow-y: auto;
         }
 
-        /* ---------- card base ---------- */
+        /* ── card ── */
         .card {
           background: #ffffff;
           border: 1px solid #eae8e4;
@@ -375,11 +384,11 @@ export default function HomePage() {
         }
         .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
 
-        /* ---------- article row hover ---------- */
+        /* ── article row ── */
         .art-row { transition: background .15s ease; }
-        .art-row:hover { background: #fafaf8; }
+        .art-row:hover { background: #fafaf8 !important; }
 
-        /* ---------- cat-btn ---------- */
+        /* ── category button ── */
         .cat-btn {
           display: flex;
           align-items: center;
@@ -396,10 +405,34 @@ export default function HomePage() {
         }
         .cat-btn:hover { background: #f5f4f1; }
 
-        /* ---------- burger ---------- */
+        /* ── trending tag ── */
+        .trend-tag {
+          font-size: 12.5px;
+          font-weight: 500;
+          border: 1px solid #eae8e4;
+          border-radius: 20px;
+          padding: 5px 14px;
+          color: #555;
+          background: #fff;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: border-color .15s ease, color .15s ease, background .15s ease;
+        }
+        .trend-tag:hover {
+          border-color: ${primary};
+          color: ${primary};
+          background: ${tint(primary, 0.04)};
+        }
+        .trend-tag-active {
+          border-color: ${primary} !important;
+          color: #fff !important;
+          background: ${primary} !important;
+        }
+
+        /* ── burger ── */
         .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
 
-        /* ---------- header-row ---------- */
+        /* ── header row ── */
         .header-row {
           max-width: 1400px;
           margin: 0 auto;
@@ -412,7 +445,7 @@ export default function HomePage() {
           width: 100%;
         }
 
-        /* ---------- nav pills (desktop) ---------- */
+        /* ── nav pills ── */
         .nav-pills {
           display: flex;
           align-items: center;
@@ -437,7 +470,7 @@ export default function HomePage() {
         }
         .nav-pill:hover { background: #f5f4f1; }
 
-        /* ---------- ad leaderboard ---------- */
+        /* ── ad leaderboard ── */
         .ad-leader {
           width: 100%;
           height: 96px;
@@ -449,7 +482,7 @@ export default function HomePage() {
         }
         .ad-leader a, .ad-leader img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-        /* ---------- portal link ---------- */
+        /* ── portal link ── */
         .portal-link {
           display: inline-flex;
           align-items: center;
@@ -463,19 +496,50 @@ export default function HomePage() {
         }
         .portal-link:hover { opacity: .85; }
 
-        /* ========== responsive ========== */
+        /* ── hero image zoom ── */
+        .hero-img { transition: transform .4s ease; }
+        .hero-img:hover { transform: scale(1.03); }
+
+        /* ══════ LANGUAGE TRANSLATOR / SITE SWITCHER DROPDOWN FIX ══════ */
+        .lang-wrap,
+        .lang-wrap *,
+        .site-switch-wrap,
+        .site-switch-wrap * {
+          position: relative;
+        }
+        .lang-wrap > div,
+        .site-switch-wrap > div {
+          z-index: 999 !important;
+        }
+        .lang-wrap [class*="dropdown"],
+        .lang-wrap [class*="menu"],
+        .lang-wrap [class*="list"],
+        .lang-wrap [class*="popup"],
+        .lang-wrap [class*="popover"],
+        .lang-wrap ul,
+        .lang-wrap select,
+        .site-switch-wrap [class*="dropdown"],
+        .site-switch-wrap [class*="menu"],
+        .site-switch-wrap [class*="list"],
+        .site-switch-wrap [class*="popup"],
+        .site-switch-wrap [class*="popover"],
+        .site-switch-wrap ul,
+        .site-switch-wrap select {
+          z-index: 9999 !important;
+          position: absolute !important;
+          overflow: visible !important;
+        }
+
+        /* ══════ responsive ══════ */
         @media (max-width: 1280px) {
           .shell { grid-template-columns: 210px minmax(0,1fr); gap: 18px; padding: 16px 18px 40px; }
           .col-right { display: none; }
         }
-
         @media (max-width: 1060px) {
           .portal-links-wrap { display: none !important; }
         }
-
         @media (max-width: 860px) {
           .shell { grid-template-columns: 1fr; padding: 14px 12px 36px; }
-
           .col-left {
             position: fixed;
             top: 0; bottom: 0; left: 0;
@@ -490,19 +554,15 @@ export default function HomePage() {
             border-radius: 0 18px 18px 0;
           }
           .col-left.open { transform: translateX(0); }
-
           .burger { display: block; }
           .nav-pills { display: none !important; }
           .desktop-tools { display: none !important; }
           .mobile-tools { display: flex !important; }
-
           .header-row { padding: 0 10px; height: 58px; gap: 6px; }
           .ad-leader { height: 72px; border-radius: 10px; margin-bottom: 14px; }
-
           .site-name { font-size: 14px !important; max-width: 100px; }
           .site-tag { display: none !important; }
         }
-
         @media (min-width: 861px) {
           .mobile-tools { display: none !important; }
         }
@@ -547,7 +607,6 @@ export default function HomePage() {
             <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-
             <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img
                 src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
@@ -611,8 +670,12 @@ export default function HomePage() {
               खोजें
             </button>
 
-            <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
-            <LanguageTranslator />
+            <div className="site-switch-wrap" style={{ position: 'relative', zIndex: 999, flexShrink: 0 }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            </div>
+            <div className="lang-wrap" style={{ position: 'relative', zIndex: 999, flexShrink: 0 }}>
+              <LanguageTranslator />
+            </div>
 
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: tint(primary, 0.06), border: `1px solid ${tint(primary, 0.25)}`, borderRadius: '22px', padding: '5px 12px' }}>
@@ -635,8 +698,12 @@ export default function HomePage() {
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
-            <div style={{ flexShrink: 0 }}><SiteSwitcher currentSlug={currentSlug} primaryColor={primary} /></div>
-            <div style={{ flexShrink: 0 }}><LanguageTranslator /></div>
+            <div className="site-switch-wrap" style={{ flexShrink: 0, position: 'relative', zIndex: 999 }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            </div>
+            <div className="lang-wrap" style={{ flexShrink: 0, position: 'relative', zIndex: 999 }}>
+              <LanguageTranslator />
+            </div>
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
@@ -666,7 +733,7 @@ export default function HomePage() {
                 type="search"
                 placeholder="खबर, विषय या कीवर्ड लिखें..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setActiveTrendTag(''); }}
                 autoFocus
                 style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#1a1a1a', background: 'transparent' }}
               />
@@ -698,7 +765,6 @@ export default function HomePage() {
 
         {/* ──── LEFT SIDEBAR ──── */}
         <aside className={`col-left ${drawerOpen ? 'open' : ''}`}>
-          {/* close btn for mobile drawer */}
           <div style={{ display: drawerOpen ? 'flex' : 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
             <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600 }}>श्रेणियाँ</span>
             <button onClick={() => setDrawerOpen(false)} style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', width: '30px', height: '30px', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '14px', color: '#888' }}>✕</button>
@@ -733,26 +799,42 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* app download */}
+          {/* App download */}
           <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #eae8e4' }}>
-            <div style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: '10px', textAlign: 'center' }}>ऐप डाउनलोड करें</div>
-            {[
-              { label: 'Google Play', sub: 'GET IT ON', emoji: '▶' },
-              { label: 'App Store', sub: 'Download on the', emoji: '🍎' },
-            ].map(({ label, sub, emoji }) => (
-              <a
-                key={label}
-                href="#"
-                onClick={(e) => { e.preventDefault(); alert(`${label} लिंक जल्द उपलब्ध होगा!`); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8', transition: 'background .15s ease' }}
-              >
-                <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{emoji}</span>
-                <div>
-                  <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>{sub}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{label}</div>
-                </div>
-              </a>
-            ))}
+            <div style={{ fontSize: '11px', color: '#aaa', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '.04em' }}>ऐप डाउनलोड करें</div>
+
+            {/* Google Play */}
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8', transition: 'background .15s ease' }}
+            >
+              <svg width="22" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3.61 1.814L13.793 12 3.61 22.186A1.99 1.99 0 013 20.6V3.4c0-.586.228-1.136.61-1.586z" fill="#4285F4"/>
+                <path d="M17.09 8.352L5.08.658C4.61.384 4.07.25 3.51.25L13.793 12l3.297-3.648z" fill="#EA4335"/>
+                <path d="M3.51 23.75c.56 0 1.1-.134 1.57-.408l12.01-7.694L13.793 12 3.51 23.75z" fill="#34A853"/>
+                <path d="M20.8 10.248l-3.71-1.896L13.793 12l3.297 3.648 3.71-1.896c1.012-.593 1.012-2.11 0-2.504z" fill="#FBBC04"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>GET IT ON</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Google Play</div>
+              </div>
+            </a>
+
+            {/* App Store */}
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8', transition: 'background .15s ease' }}
+            >
+              <svg width="20" height="24" viewBox="0 0 814 1000" fill="#1a1a1a">
+                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76.5 0-103.7 40.8-165.9 40.8s-105.6-57.8-155.5-130.3C30.9 753.7 0 googol 611.3c0-120.3 78.1-183.6 154.2-183.6 60.9 0 99.9 40.2 150.5 40.2 49.3 0 79.4-40.2 150.5-40.2 41.5 0 116.4 18.4 161.6 69.2zM554.1 159.4c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8.6 15.7 1.3 18.2 2.6.6 6.4 1.3 10.8 1.3 45.8 0 104.2-30.4 138.9-71.4z"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>Download on the</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>App Store</div>
+              </div>
+            </a>
           </div>
         </aside>
 
@@ -772,7 +854,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Trending tags */}
+          {/* Trending tags — with active state */}
           <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -782,10 +864,8 @@ export default function HomePage() {
               {TRENDING_TAGS.map((t) => (
                 <button
                   key={t}
-                  onClick={() => setSearchTerm(t)}
-                  style={{ fontSize: '12.5px', fontWeight: 500, border: '1px solid #eae8e4', borderRadius: '20px', padding: '5px 14px', color: '#555', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'border-color .15s ease, color .15s ease' }}
-                  onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = primary; (e.target as HTMLElement).style.color = primary; }}
-                  onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = '#eae8e4'; (e.target as HTMLElement).style.color = '#555'; }}
+                  className={`trend-tag ${activeTrendTag === t ? 'trend-tag-active' : ''}`}
+                  onClick={() => handleTrendTagClick(t)}
                 >
                   {t}
                 </button>
@@ -818,13 +898,12 @@ export default function HomePage() {
                   <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`}>
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
                       <img
+                        className="hero-img"
                         src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'}
                         alt={filteredArticles[0].title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s ease' }}
-                        onMouseEnter={(e) => { (e.target as HTMLElement).style.transform = 'scale(1.03)'; }}
-                        onMouseLeave={(e) => { (e.target as HTMLElement).style.transform = 'scale(1)'; }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.65))', padding: '40px 20px 16px' }}>
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.7))', padding: '40px 20px 16px' }}>
                         <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', marginBottom: '8px', letterSpacing: '.02em' }}>
                           {filteredArticles[0].category || 'ताज़ा खबर'}
                         </span>
@@ -841,7 +920,7 @@ export default function HomePage() {
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#aaa' }}>
                         <span>{filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}</span>
-                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ccc' }} />
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ccc', flexShrink: 0 }} />
                         <span>👁 {filteredArticles[0].views || 0} बार पढ़ा गया</span>
                       </div>
                     </div>
@@ -862,7 +941,7 @@ export default function HomePage() {
                       </h4>
                       <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
-                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd' }} />
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
                         <span>👁 {item.views || 0}</span>
                       </div>
                     </div>
@@ -896,7 +975,7 @@ export default function HomePage() {
                     {idx + 1}
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 3px', color: '#1a1a1a', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 3px', color: '#1a1a1a', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
                       {art.title}
                     </h4>
                     <span style={{ fontSize: '10.5px', color: '#bbb' }}>
