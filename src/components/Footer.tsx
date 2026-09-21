@@ -434,15 +434,15 @@ export default function Footer({
           </div>
 
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link href="/privacy-policy" className="gp-ft-policy-link">गोपनीयता नीति</Link>
+            <Link href={`/privacy-policy?site=${currentSlug}`} className="gp-ft-policy-link">गोपनीयता नीति</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/terms" className="gp-ft-policy-link">उपयोग की शर्तें</Link>
+            <Link href={`/terms?site=${currentSlug}`} className="gp-ft-policy-link">उपयोग की शर्तें</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/editorial-guidelines" className="gp-ft-policy-link">संपादकीय दिशानिर्देश</Link>
+            <Link href={`/editorial-guidelines?site=${currentSlug}`} className="gp-ft-policy-link">संपादकीय दिशानिर्देश</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/grievance" className="gp-ft-policy-link">शिकायत निवारण</Link>
+            <Link href={`/grievance?site=${currentSlug}`} className="gp-ft-policy-link">शिकायत निवारण</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/rss" className="gp-ft-policy-link">RSS</Link>
+            <Link href={`/rss?site=${currentSlug}`} className="gp-ft-policy-link">RSS</Link>
             <span style={{ color: '#ddd9d1', margin: '0 2px' }}>|</span>
             <Link href="/admin/login" style={{ color: primaryColor, textDecoration: 'none', fontWeight: 700, fontSize: '12px', letterSpacing: '0.3px', transition: 'opacity 0.2s' }}>
               स्टाफ़ मोड
