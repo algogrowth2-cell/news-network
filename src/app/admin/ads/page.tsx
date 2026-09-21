@@ -33,7 +33,6 @@ export default function AdsRevenuePage() {
   const [ads, setAds] = useState<AdItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Form State for "Create Ad"
   const [formData, setFormData] = useState({
     name: '',
     zone: 'header-leaderboard',
@@ -47,12 +46,9 @@ export default function AdsRevenuePage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // 1. Dynamic Firestore Fetch (Auto-detects ads or advertisements collection)
   useEffect(() => {
     setLoading(true);
-
-    // Primary check on 'advertisements'
-    const unsubscribe1 = onSnapshot(
+    const unsub1 = onSnapshot(
       collection(db, 'advertisements'),
       (snapshot) => {
         if (!snapshot.empty) {
@@ -77,8 +73,7 @@ export default function AdsRevenuePage() {
           setAds(list);
           setLoading(false);
         } else {
-          // Fallback check on 'ads' collection
-          const unsubscribe2 = onSnapshot(collection(db, 'ads'), (snap2) => {
+          const unsub2 = onSnapshot(collection(db, 'ads'), (snap2) => {
             const list2: AdItem[] = snap2.docs.map((d) => {
               const data = d.data();
               return {
@@ -100,7 +95,7 @@ export default function AdsRevenuePage() {
             setAds(list2);
             setLoading(false);
           });
-          return () => unsubscribe2();
+          return () => unsub2();
         }
       },
       (error) => {
@@ -109,14 +104,12 @@ export default function AdsRevenuePage() {
       }
     );
 
-    return () => unsubscribe1();
+    return () => unsub1();
   }, []);
 
-  // 2. Toggle Status (Active / Paused)
   const handleToggleStatus = async (id: string, currentStatus: 'active' | 'paused') => {
     try {
       const nextStatus = currentStatus === 'active' ? 'paused' : 'active';
-      // Pehle advertisements try karega
       try {
         await updateDoc(doc(db, 'advertisements', id), { status: nextStatus });
       } catch {
@@ -127,7 +120,6 @@ export default function AdsRevenuePage() {
     }
   };
 
-  // 3. Delete Ad
   const handleDeleteAd = async (id: string, name: string) => {
     if (!confirm(`Kya aap "${name}" ko delete karna chahte hain?`)) return;
     try {
@@ -141,7 +133,6 @@ export default function AdsRevenuePage() {
     }
   };
 
-  // 4. Create New Ad
   const handleCreateAd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) {
@@ -189,22 +180,28 @@ export default function AdsRevenuePage() {
   const uniqueAdvertisers = Array.from(new Set(ads.map((a) => a.advertiserName).filter(Boolean)));
 
   return (
-    <div style={{ backgroundColor: '#090e17', minHeight: '100vh' }} className="w-full text-slate-200 p-6">
+    <div style={{ backgroundColor: '#070b14', minHeight: '100vh', padding: '28px', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white tracking-wide">Ads & Revenue</h1>
-        <p className="text-xs text-slate-400 mt-1">Review advertiser registrations and approve sponsored banners</p>
+      <div style={{ marginBottom: '22px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>Ads & Revenue</h1>
+        <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>Review advertiser registrations and approve sponsored banners</p>
       </div>
 
-      {/* Tabs Header */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      {/* Tabs Bar */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
         <button
           type="button"
           onClick={() => setActiveTab('ads')}
-          style={{ backgroundColor: activeTab === 'ads' ? '#1d4ed8' : '#111827' }}
-          className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
-            activeTab === 'ads' ? 'text-white' : 'text-slate-400 hover:text-white'
-          }`}
+          style={{
+            backgroundColor: activeTab === 'ads' ? '#1d4ed8' : '#111827',
+            color: activeTab === 'ads' ? '#ffffff' : '#94a3b8',
+            border: '1px solid #1f293d',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
         >
           Ads ({ads.length})
         </button>
@@ -212,10 +209,16 @@ export default function AdsRevenuePage() {
         <button
           type="button"
           onClick={() => setActiveTab('create')}
-          style={{ backgroundColor: activeTab === 'create' ? '#1d4ed8' : '#111827' }}
-          className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
-            activeTab === 'create' ? 'text-white' : 'text-slate-400 hover:text-white'
-          }`}
+          style={{
+            backgroundColor: activeTab === 'create' ? '#1d4ed8' : '#111827',
+            color: activeTab === 'create' ? '#ffffff' : '#94a3b8',
+            border: '1px solid #1f293d',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
         >
           Create Ad
         </button>
@@ -223,10 +226,16 @@ export default function AdsRevenuePage() {
         <button
           type="button"
           onClick={() => setActiveTab('advertisers')}
-          style={{ backgroundColor: activeTab === 'advertisers' ? '#1d4ed8' : '#111827' }}
-          className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
-            activeTab === 'advertisers' ? 'text-white' : 'text-slate-400 hover:text-white'
-          }`}
+          style={{
+            backgroundColor: activeTab === 'advertisers' ? '#1d4ed8' : '#111827',
+            color: activeTab === 'advertisers' ? '#ffffff' : '#94a3b8',
+            border: '1px solid #1f293d',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
         >
           Advertisers ({uniqueAdvertisers.length})
         </button>
@@ -234,10 +243,16 @@ export default function AdsRevenuePage() {
         <button
           type="button"
           onClick={() => setActiveTab('requests')}
-          style={{ backgroundColor: activeTab === 'requests' ? '#1d4ed8' : '#111827' }}
-          className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
-            activeTab === 'requests' ? 'text-white' : 'text-slate-400 hover:text-white'
-          }`}
+          style={{
+            backgroundColor: activeTab === 'requests' ? '#1d4ed8' : '#111827',
+            color: activeTab === 'requests' ? '#ffffff' : '#94a3b8',
+            border: '1px solid #1f293d',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
         >
           Requests (0)
         </button>
@@ -245,88 +260,122 @@ export default function AdsRevenuePage() {
         <button
           type="button"
           onClick={() => setActiveTab('revenue')}
-          style={{ backgroundColor: activeTab === 'revenue' ? '#1d4ed8' : '#111827' }}
-          className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
-            activeTab === 'revenue' ? 'text-white' : 'text-slate-400 hover:text-white'
-          }`}
+          style={{
+            backgroundColor: activeTab === 'revenue' ? '#1d4ed8' : '#111827',
+            color: activeTab === 'revenue' ? '#ffffff' : '#94a3b8',
+            border: '1px solid #1f293d',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
         >
           Revenue Config
         </button>
       </div>
 
-      {/* Tab 1: Ads Table */}
+      {/* Main Content Area */}
       {activeTab === 'ads' && (
-        <div style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} className="w-full border rounded-lg overflow-hidden shadow-xl">
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
           {loading ? (
-            <div className="p-12 text-center text-slate-400 text-sm">
-              <p>Firebase se data load ho raha hai...</p>
+            <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+              Firebase se data load ho raha hai...
             </div>
           ) : ads.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 text-sm">
-              <p>Koi ad nahi mila. Create Ad tab se pehla Ad create karein.</p>
+            <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+              Koi ads nahi mile. 'Create Ad' tab se naya Ad banayein.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#090e17', borderColor: '#1e293b' }} className="border-b text-slate-400 text-xs font-semibold">
-                    <th className="py-3 px-5">Name</th>
-                    <th className="py-3 px-5">Zone</th>
-                    <th className="py-3 px-5">Type</th>
-                    <th className="py-3 px-5">Device</th>
-                    <th className="py-3 px-5">Status</th>
-                    <th className="py-3 px-5 text-center">Priority</th>
-                    <th className="py-3 px-5">Served</th>
-                    <th className="py-3 px-5 text-right">Actions</th>
+                  <tr style={{ backgroundColor: '#0a101d', borderBottom: '1px solid #1e293b', color: '#94a3b8', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Zone</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Type</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Device</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600, textAlign: 'center' }}>Priority</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600 }}>Served</th>
+                    <th style={{ padding: '14px 20px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {ads.map((ad) => (
-                    <tr key={ad.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3 px-5 font-medium text-white whitespace-nowrap">
+                <tbody>
+                  {ads.map((ad, idx) => (
+                    <tr 
+                      key={ad.id} 
+                      style={{ 
+                        borderBottom: idx === ads.length - 1 ? 'none' : '1px solid #162238',
+                        backgroundColor: 'transparent'
+                      }}
+                    >
+                      {/* Name */}
+                      <td style={{ padding: '14px 20px', color: '#ffffff', fontWeight: 500 }}>
                         <div>{ad.name}</div>
                         {ad.advertiserName && (
-                          <span className="text-[11px] text-slate-500">{ad.advertiserName}</span>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{ad.advertiserName}</div>
                         )}
                       </td>
-                      <td className="py-3 px-5 text-slate-400 font-mono text-xs whitespace-nowrap">
+
+                      {/* Zone */}
+                      <td style={{ padding: '14px 20px', color: '#94a3b8', fontFamily: 'monospace', fontSize: '12px' }}>
                         {ad.zone}
                       </td>
-                      <td className="py-3 px-5 text-slate-300 capitalize">
+
+                      {/* Type */}
+                      <td style={{ padding: '14px 20px', color: '#cbd5e1', textTransform: 'capitalize' }}>
                         {ad.type}
                       </td>
-                      <td className="py-3 px-5 text-slate-400 capitalize">
+
+                      {/* Device */}
+                      <td style={{ padding: '14px 20px', color: '#94a3b8', textTransform: 'capitalize' }}>
                         {ad.device}
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+
+                      {/* Status */}
+                      <td style={{ padding: '14px 20px' }}>
                         <span
                           style={{
+                            display: 'inline-block',
+                            padding: '3px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            textTransform: 'capitalize',
                             backgroundColor: ad.status === 'active' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                             color: ad.status === 'active' ? '#34d399' : '#fbbf24',
                             border: `1px solid ${ad.status === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
                           }}
-                          className="px-2.5 py-0.5 rounded text-xs font-medium"
                         >
                           {ad.status}
                         </span>
                       </td>
-                      <td className="py-3 px-5 text-center text-slate-300">
+
+                      {/* Priority */}
+                      <td style={{ padding: '14px 20px', textAlign: 'center', color: '#cbd5e1', fontWeight: 600 }}>
                         {ad.priority}
                       </td>
-                      <td className="py-3 px-5 text-xs text-slate-400 whitespace-nowrap">
+
+                      {/* Served */}
+                      <td style={{ padding: '14px 20px', fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
                         <div>{ad.impressions} impr</div>
-                        <div className="text-slate-500">{ad.clicks} clicks</div>
+                        {ad.clicks > 0 && (
+                          <div style={{ color: '#64748b' }}>{ad.clicks} clicks</div>
+                        )}
                       </td>
-                      <td className="py-3 px-5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-3">
+
+                      {/* Actions */}
+                      <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center' }}>
                           {/* Edit */}
                           <button
                             type="button"
                             onClick={() => alert(`Edit config for: ${ad.name}`)}
                             title="Edit Ad"
-                            className="text-sky-400 hover:text-sky-300"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#38bdf8', padding: '4px', display: 'flex' }}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
@@ -336,15 +385,15 @@ export default function AdsRevenuePage() {
                             type="button"
                             onClick={() => handleToggleStatus(ad.id, ad.status)}
                             title={ad.status === 'active' ? 'Pause Ad' : 'Activate Ad'}
-                            className="text-amber-400 hover:text-amber-300"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fbbf24', padding: '4px', display: 'flex' }}
                           >
                             {ad.status === 'active' ? (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <rect x="6" y="4" width="4" height="16" rx="1" />
                                 <rect x="14" y="4" width="4" height="16" rx="1" />
                               </svg>
                             ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
@@ -356,9 +405,9 @@ export default function AdsRevenuePage() {
                             type="button"
                             onClick={() => handleDeleteAd(ad.id, ad.name)}
                             title="Delete Ad"
-                            className="text-rose-400 hover:text-rose-300"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f43f5e', padding: '4px', display: 'flex' }}
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
@@ -373,32 +422,30 @@ export default function AdsRevenuePage() {
         </div>
       )}
 
-      {/* Tab 2: Create Ad Form */}
+      {/* Tab 2: Create Ad */}
       {activeTab === 'create' && (
-        <div style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} className="border rounded-lg p-6 max-w-2xl mx-auto shadow-xl">
-          <h2 className="text-lg font-bold text-white mb-4">Naya Advertisement Banayein</h2>
-          <form onSubmit={handleCreateAd} className="space-y-4">
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', maxWidth: '650px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 18px 0' }}>Naya Advertisement Banayein</h2>
+          <form onSubmit={handleCreateAd} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Ad Name *</label>
+              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Ad Name *</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Business Promotion - Header Ad"
-                style={{ backgroundColor: '#1e293b' }}
-                className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Placement Zone</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Placement Zone</label>
                 <select
                   value={formData.zone}
                   onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
-                  style={{ backgroundColor: '#1e293b' }}
-                  className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
                 >
                   <option value="header-leaderboard">header-leaderboard</option>
                   <option value="sidebar-top">sidebar-top</option>
@@ -412,12 +459,11 @@ export default function AdsRevenuePage() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Device Targeting</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Device Targeting</label>
                 <select
                   value={formData.device}
                   onChange={(e) => setFormData({ ...formData, device: e.target.value })}
-                  style={{ backgroundColor: '#1e293b' }}
-                  className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
                 >
                   <option value="all">all</option>
                   <option value="mobile">mobile</option>
@@ -426,14 +472,13 @@ export default function AdsRevenuePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Type</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  style={{ backgroundColor: '#1e293b' }}
-                  className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
                 >
                   <option value="image">image</option>
                   <option value="google-adsense">google-adsense</option>
@@ -442,55 +487,52 @@ export default function AdsRevenuePage() {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Priority (1 to 10)</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Priority (1 to 10)</label>
                 <input
                   type="number"
                   min="1"
                   max="10"
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
-                  style={{ backgroundColor: '#1e293b' }}
-                  className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Target Click URL</label>
+              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Target Click URL</label>
               <input
                 type="url"
                 value={formData.targetUrl}
                 onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
                 placeholder="https://clientwebsite.com"
-                style={{ backgroundColor: '#1e293b' }}
-                className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
               />
             </div>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Banner Image URL</label>
+              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Banner Image URL</label>
               <input
                 type="text"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 placeholder="https://..."
-                style={{ backgroundColor: '#1e293b' }}
-                className="w-full border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button
                 type="button"
                 onClick={() => setActiveTab('ads')}
-                className="px-4 py-2 text-sm rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-500 transition disabled:opacity-50"
+                style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', fontWeight: 600, cursor: 'pointer', fontSize: '13px', opacity: submitting ? 0.6 : 1 }}
               >
                 {submitting ? 'Save ho raha hai...' : 'Save & Publish Ad'}
               </button>
@@ -501,16 +543,16 @@ export default function AdsRevenuePage() {
 
       {/* Tab 3: Advertisers */}
       {activeTab === 'advertisers' && (
-        <div style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} className="border rounded-lg p-6 shadow-xl">
-          <h2 className="text-lg font-bold text-white mb-4">Registered Advertisers ({uniqueAdvertisers.length})</h2>
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 16px 0' }}>Registered Advertisers ({uniqueAdvertisers.length})</h2>
           {uniqueAdvertisers.length === 0 ? (
-            <p className="text-sm text-slate-400">Abhi koi advertiser data registered nahi hai.</p>
+            <p style={{ color: '#94a3b8', fontSize: '13px' }}>Abhi koi advertiser data linked nahi hai.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
               {uniqueAdvertisers.map((adv, idx) => (
-                <div key={idx} style={{ backgroundColor: '#1e293b' }} className="p-4 rounded border border-slate-700">
-                  <p className="font-semibold text-white">{adv}</p>
-                  <p className="text-xs text-slate-400 mt-1">Active campaign linked</p>
+                <div key={idx} style={{ backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '8px', padding: '16px' }}>
+                  <p style={{ fontWeight: 600, color: '#ffffff', margin: '0 0 4px 0' }}>{adv}</p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>Active campaign linked</p>
                 </div>
               ))}
             </div>
@@ -520,28 +562,28 @@ export default function AdsRevenuePage() {
 
       {/* Tab 4: Requests */}
       {activeTab === 'requests' && (
-        <div style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} className="border rounded-lg p-8 text-center text-slate-400 shadow-xl">
-          <p className="text-base font-semibold text-white">Pending Ad Approvals</p>
-          <p className="text-xs text-slate-500 mt-1">Sabhi live requests approve ho chuki hain.</p>
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '40px', textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: '0 0 6px 0' }}>Pending Ad Approvals</p>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>Sabhi live requests approve ho chuki hain.</p>
         </div>
       )}
 
       {/* Tab 5: Revenue Config */}
       {activeTab === 'revenue' && (
-        <div style={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} className="border rounded-lg p-6 max-w-xl shadow-xl">
-          <h2 className="text-lg font-bold text-white mb-4">Banner Slot Pricing Settings</h2>
-          <div className="space-y-4 text-sm">
-            <div className="flex justify-between items-center py-2 border-b border-slate-800">
-              <span className="text-slate-300">Header Leaderboard (Monthly)</span>
-              <span className="font-semibold text-emerald-400">₹15,000</span>
+        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', maxWidth: '550px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: '0 0 16px 0' }}>Banner Slot Pricing Settings</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
+              <span style={{ color: '#cbd5e1' }}>Header Leaderboard (Monthly)</span>
+              <span style={{ fontWeight: 600, color: '#34d399' }}>₹15,000</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-800">
-              <span className="text-slate-300">Sidebar Top Slot</span>
-              <span className="font-semibold text-emerald-400">₹8,000</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
+              <span style={{ color: '#cbd5e1' }}>Sidebar Top Slot</span>
+              <span style={{ fontWeight: 600, color: '#34d399' }}>₹8,000</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-800">
-              <span className="text-slate-300">In-Article Inline Ad</span>
-              <span className="font-semibold text-emerald-400">₹5,000</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
+              <span style={{ color: '#cbd5e1' }}>In-Article Inline Ad</span>
+              <span style={{ fontWeight: 600, color: '#34d399' }}>₹5,000</span>
             </div>
           </div>
         </div>
