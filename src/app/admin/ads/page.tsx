@@ -62,8 +62,8 @@ export default function AdsRevenuePage() {
               device: data.device || 'all',
               status: data.status === 'paused' ? 'paused' : 'active',
               priority: Number(data.priority) || 1,
-              impressions: Number(data.impressions || data.views || 0),
-              clicks: Number(data.clicks || 0),
+              impressions: Number(data.impressions ?? data.views ?? data.impressionCount ?? data.viewsCount ?? 0),
+              clicks: Number(data.clicks ?? data.clickCount ?? 0),
               advertiserName: data.advertiserName || data.clientName || '',
               budget: data.budget || 5000,
               targetUrl: data.targetUrl || '',
@@ -84,8 +84,8 @@ export default function AdsRevenuePage() {
                 device: data.device || 'all',
                 status: data.status === 'paused' ? 'paused' : 'active',
                 priority: Number(data.priority) || 1,
-                impressions: Number(data.impressions || data.views || 0),
-                clicks: Number(data.clicks || 0),
+                impressions: Number(data.impressions ?? data.views ?? data.impressionCount ?? data.viewsCount ?? 0),
+                clicks: Number(data.clicks ?? data.clickCount ?? 0),
                 advertiserName: data.advertiserName || data.clientName || '',
                 budget: data.budget || 5000,
                 targetUrl: data.targetUrl || '',
@@ -275,7 +275,7 @@ export default function AdsRevenuePage() {
         </button>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Table Content */}
       {activeTab === 'ads' && (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
           {loading ? (
@@ -310,7 +310,6 @@ export default function AdsRevenuePage() {
                         backgroundColor: 'transparent'
                       }}
                     >
-                      {/* Name */}
                       <td style={{ padding: '14px 20px', color: '#ffffff', fontWeight: 500 }}>
                         <div>{ad.name}</div>
                         {ad.advertiserName && (
@@ -318,22 +317,18 @@ export default function AdsRevenuePage() {
                         )}
                       </td>
 
-                      {/* Zone */}
                       <td style={{ padding: '14px 20px', color: '#94a3b8', fontFamily: 'monospace', fontSize: '12px' }}>
                         {ad.zone}
                       </td>
 
-                      {/* Type */}
                       <td style={{ padding: '14px 20px', color: '#cbd5e1', textTransform: 'capitalize' }}>
                         {ad.type}
                       </td>
 
-                      {/* Device */}
                       <td style={{ padding: '14px 20px', color: '#94a3b8', textTransform: 'capitalize' }}>
                         {ad.device}
                       </td>
 
-                      {/* Status */}
                       <td style={{ padding: '14px 20px' }}>
                         <span
                           style={{
@@ -352,26 +347,20 @@ export default function AdsRevenuePage() {
                         </span>
                       </td>
 
-                      {/* Priority */}
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#cbd5e1', fontWeight: 600 }}>
                         {ad.priority}
                       </td>
 
-                      {/* Served */}
                       <td style={{ padding: '14px 20px', fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
-                        <div>{ad.impressions} impr</div>
-                        {ad.clicks > 0 && (
-                          <div style={{ color: '#64748b' }}>{ad.clicks} clicks</div>
-                        )}
+                        <div style={{ fontWeight: 600, color: ad.impressions > 0 ? '#38bdf8' : '#94a3b8' }}>{ad.impressions} impr</div>
+                        <div style={{ color: ad.clicks > 0 ? '#34d399' : '#64748b' }}>{ad.clicks} clicks</div>
                       </td>
 
-                      {/* Actions */}
                       <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', alignItems: 'center' }}>
-                          {/* Edit */}
                           <button
                             type="button"
-                            onClick={() => alert(`Edit config for: ${ad.name}`)}
+                            onClick={() => alert(`Ad ID: ${ad.id}\nName: ${ad.name}\nZone: ${ad.zone}`)}
                             title="Edit Ad"
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#38bdf8', padding: '4px', display: 'flex' }}
                           >
@@ -380,7 +369,6 @@ export default function AdsRevenuePage() {
                             </svg>
                           </button>
 
-                          {/* Pause / Play */}
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(ad.id, ad.status)}
@@ -400,7 +388,6 @@ export default function AdsRevenuePage() {
                             )}
                           </button>
 
-                          {/* Delete */}
                           <button
                             type="button"
                             onClick={() => handleDeleteAd(ad.id, ad.name)}
