@@ -61,20 +61,18 @@ const DEFAULT_RASHI_LIST = [
 
 const TRENDING_TAGS = ["बजट सत्र", "पंचायत चुनाव", "बारिश का मौसम", "मंडी भाव", "भर्ती परिणाम", "बिजली दर", "क्रिकेट लीग"];
 
-const CATEGORY_ICONS: Record<string, string> = {
-  'होम': '🏠',
-  'ताज़ा खबरें': '≡',
-  'सर्च': '🔍',
-  'शोक संदेश': '🕯️',
-  'ई-पेपर': '📄',
-  'राजनीति': '🏛️',
-  'व्यापार': '📈',
-  'स्वास्थ्य': '🩺',
-  'जीवनशैली': '🌿',
-  'राज्य': '🇮🇳',
-  'अपराध': '🚨',
-  'खेल': '🏏'
-};
+const CATEGORY_LIST: { key: string; icon: string }[] = [
+  { key: 'होम', icon: '🏠' },
+  { key: 'राजनीति', icon: '🏛️' },
+  { key: 'व्यापार', icon: '📈' },
+  { key: 'स्वास्थ्य', icon: '🩺' },
+  { key: 'जीवनशैली', icon: '🌿' },
+  { key: 'राज्य', icon: '🇮🇳' },
+  { key: 'शोक संदेश', icon: '🕯️' },
+  { key: 'ई-पेपर', icon: '📄' },
+  { key: 'अपराध', icon: '🚨' },
+  { key: 'खेल', icon: '🏏' },
+];
 
 export default function HomePage() {
   const router = useRouter();
@@ -108,7 +106,7 @@ export default function HomePage() {
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
-  // Ad Tracker: Click update handler
+  /* ─── Ad click handler ─── */
   const handleAdClick = async (ad: AdItem) => {
     if (!ad?.id) return;
     try {
@@ -139,6 +137,7 @@ export default function HomePage() {
     setDrawerOpen(false);
   };
 
+  /* ─── Hindi date ─── */
   useEffect(() => {
     const updateDate = () => {
       const days = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
@@ -147,19 +146,14 @@ export default function HomePage() {
         'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'
       ];
       const now = new Date();
-      const dayName = days[now.getDay()];
-      const dateNum = now.getDate();
-      const monthName = months[now.getMonth()];
-      const year = now.getFullYear();
-
-      setCurrentHindiDate(`${dayName}, ${dateNum} ${monthName} ${year}`);
+      setCurrentHindiDate(`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
     };
-
     updateDate();
     const interval = setInterval(updateDate, 60000);
     return () => clearInterval(interval);
   }, []);
 
+  /* ─── Market rates live ─── */
   useEffect(() => {
     const unsubMarket = onSnapshot(doc(db, 'settings', 'market'), (snap) => {
       if (snap.exists()) {
@@ -178,10 +172,10 @@ export default function HomePage() {
         });
       }
     });
-
     return () => unsubMarket();
   }, []);
 
+  /* ─── Reader user from localStorage ─── */
   useEffect(() => {
     const cached = localStorage.getItem('reader_user');
     if (cached) {
@@ -194,6 +188,7 @@ export default function HomePage() {
     setReaderUser(null);
   };
 
+  /* ─── Site config + articles + ads + rashifal ─── */
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const activeSiteSlug = urlParams.get('site') || 'the-local-leader';
@@ -223,7 +218,7 @@ export default function HomePage() {
           where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase()])
         );
         const artSnap = await getDocs(qArt);
-        
+
         const approvedArticles = artSnap.docs
           .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter(art => {
@@ -241,7 +236,7 @@ export default function HomePage() {
         adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
           const adStatus = String(rawData.status || '').trim().toLowerCase();
-          
+
           if (adStatus === 'active') {
             const cleanAd: AdItem = {
               id: docSnap.id,
@@ -252,7 +247,6 @@ export default function HomePage() {
               status: adStatus
             };
 
-            // Impression count (+1 jab page par ad milta hai)
             const adRef = doc(db, 'ads', docSnap.id);
             updateDoc(adRef, { impressions: increment(1) }).catch(() => {
               updateDoc(doc(db, 'advertisements', docSnap.id), { impressions: increment(1) }).catch(() => {});
@@ -284,20 +278,19 @@ export default function HomePage() {
     };
   }, []);
 
+  /* ─── Derived ─── */
   const primary = siteConfig?.primaryColor || '#ea580c';
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
   const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
-    if (rawStatus !== 'published' && rawStatus !== 'approved') {
-      return false;
-    }
+    if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
-    const matchesCategory = 
-      activeCategory === 'होम' || 
-      activeCategory === 'ताज़ा खबरें' || 
-      activeCategory === 'राशिफल' || 
+    const matchesCategory =
+      activeCategory === 'होम' ||
+      activeCategory === 'ताज़ा खबरें' ||
+      activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
       (activeCategory === 'राजनीति' && art.category === 'Politics') ||
       (activeCategory === 'व्यापार' && art.category === 'Business') ||
@@ -308,7 +301,7 @@ export default function HomePage() {
       (activeCategory === 'राज्य' && art.category === 'National');
 
     const cleanSearch = searchTerm.trim().toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       !cleanSearch ||
       (art.title && art.title.toLowerCase().includes(cleanSearch)) ||
       (art.titleHi && art.titleHi.toLowerCase().includes(cleanSearch)) ||
@@ -320,339 +313,337 @@ export default function HomePage() {
   const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
 
+  /* ─── helper: light tint from primary ─── */
+  const tint = (hex: string, opacity: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${opacity})`;
+  };
+
+  /* ================================================================
+     RENDER
+     ================================================================ */
   return (
-    <div style={{ minHeight: '100vh', background: '#f2f1ee', color: '#16150f', fontFamily: siteFont, fontSize: '16px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
-      
+    <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: siteFont, fontSize: '15px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
+
+      {/* ── GLOBAL STYLES ── */}
       <style jsx global>{`
-        html, body {
-          max-width: 100vw;
-          overflow-x: hidden;
-          margin: 0;
-          padding: 0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@300;400;500;600;700;800&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { max-width: 100vw; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .shell-container {
-          max-width: 1560px;
+        /* ---------- layout shell ---------- */
+        .shell {
+          max-width: 1400px;
           margin: 0 auto;
           display: grid;
-          grid-template-columns: 240px minmax(0, 1fr) 320px;
-          gap: 20px;
-          padding: 16px 20px 40px;
-          box-sizing: border-box;
+          grid-template-columns: 230px minmax(0, 1fr) 310px;
+          gap: 22px;
+          padding: 20px 24px 48px;
           width: 100%;
         }
 
-        .side-col {
+        .col-left {
           position: sticky;
-          top: 130px;
+          top: 76px;
           align-self: start;
-          max-height: calc(100vh - 140px);
+          max-height: calc(100vh - 90px);
           overflow-y: auto;
         }
 
-        .rail-col {
+        .col-right {
           position: sticky;
-          top: 130px;
+          top: 76px;
           align-self: start;
-          max-height: calc(100vh - 140px);
+          max-height: calc(100vh - 90px);
           overflow-y: auto;
         }
 
-        .burger-toggle-btn {
-          display: none;
-          background: none;
+        /* ---------- card base ---------- */
+        .card {
+          background: #ffffff;
+          border: 1px solid #eae8e4;
+          border-radius: 14px;
+          overflow: hidden;
+          transition: box-shadow .2s ease;
+        }
+        .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+
+        /* ---------- article row hover ---------- */
+        .art-row { transition: background .15s ease; }
+        .art-row:hover { background: #fafaf8; }
+
+        /* ---------- cat-btn ---------- */
+        .cat-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 10px 14px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 500;
           border: none;
-          padding: 4px;
+          text-align: left;
           cursor: pointer;
-          color: #1e242b;
-          flex-shrink: 0;
+          transition: background .15s ease, color .15s ease;
         }
+        .cat-btn:hover { background: #f5f4f1; }
 
-        .header-main-row {
-          max-width: 1560px;
+        /* ---------- burger ---------- */
+        .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
+
+        /* ---------- header-row ---------- */
+        .header-row {
+          max-width: 1400px;
           margin: 0 auto;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          padding: 0 16px;
-          height: 72px;
+          gap: 14px;
+          padding: 0 24px;
+          height: 68px;
           width: 100%;
-          box-sizing: border-box;
         }
 
-        .ad-leaderboard-box {
-          background: #16150f;
-          border: 1px solid #e3e0da;
-          border-radius: 8px;
+        /* ---------- nav pills (desktop) ---------- */
+        .nav-pills {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin: 0 20px;
+          flex: 1;
+          justify-content: center;
+        }
+        .nav-pill {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: none;
+          border: none;
+          font-size: 13.5px;
+          font-weight: 600;
+          padding: 6px 14px;
+          border-radius: 20px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: background .15s ease, color .15s ease;
+        }
+        .nav-pill:hover { background: #f5f4f1; }
+
+        /* ---------- ad leaderboard ---------- */
+        .ad-leader {
           width: 100%;
-          height: 100px;
-          display: block;
-          margin-bottom: 14px;
+          height: 96px;
+          border-radius: 12px;
           overflow: hidden;
+          margin-bottom: 18px;
+          background: #1a1a1a;
           position: relative;
         }
+        .ad-leader a, .ad-leader img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-        .ad-leaderboard-box a {
-          display: block;
-          width: 100%;
-          height: 100%;
-          text-decoration: none;
+        /* ---------- portal link ---------- */
+        .portal-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 11.5px;
+          font-weight: 600;
+          padding: 6px 13px;
+          border-radius: 20px;
+          white-space: nowrap;
+          transition: opacity .15s ease;
+        }
+        .portal-link:hover { opacity: .85; }
+
+        /* ========== responsive ========== */
+        @media (max-width: 1280px) {
+          .shell { grid-template-columns: 210px minmax(0,1fr); gap: 18px; padding: 16px 18px 40px; }
+          .col-right { display: none; }
         }
 
-        .ad-leaderboard-box img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-          display: block;
+        @media (max-width: 1060px) {
+          .portal-links-wrap { display: none !important; }
         }
 
-        @media (max-width: 1360px) {
-          .shell-container {
-            grid-template-columns: 220px minmax(0, 1fr);
-            gap: 16px;
-            padding: 14px 16px;
-          }
-          .rail-col {
-            display: none;
-          }
-        }
+        @media (max-width: 860px) {
+          .shell { grid-template-columns: 1fr; padding: 14px 12px 36px; }
 
-        @media (max-width: 1100px) {
-          .nav-portal-links {
-            display: none !important;
-          }
-        }
-
-        @media (max-width: 900px) {
-          .shell-container {
-            grid-template-columns: 1fr;
-            padding: 12px;
-          }
-          .side-col {
+          .col-left {
             position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: min(82vw, 320px);
-            background: #ffffff;
-            z-index: 300;
-            padding: 18px;
+            top: 0; bottom: 0; left: 0;
+            width: min(80vw, 300px);
+            background: #fff;
+            z-index: 400;
+            padding: 20px 16px;
             max-height: none;
-            box-shadow: 4px 0 24px rgba(22,21,15,.18);
-            transform: ${drawerOpen ? 'translateX(0)' : 'translateX(-100%)'};
-            transition: transform 0.25s ease;
-            overflow-y: auto;
+            box-shadow: 6px 0 30px rgba(0,0,0,.15);
+            transform: translateX(-100%);
+            transition: transform .25s cubic-bezier(.4,0,.2,1);
+            border-radius: 0 18px 18px 0;
           }
-          .burger-toggle-btn {
-            display: block;
-          }
-          .ad-leaderboard-box {
-            height: 80px;
-          }
-          .desktop-subnav-bar {
-            display: none !important;
-          }
-          .header-main-row {
-            padding: 0 8px !important;
-            height: 64px !important;
-            gap: 4px !important;
-          }
-          .site-title-text {
-            font-size: 13.5px !important;
-            max-width: 90px;
-          }
-          .site-sub-text {
-            display: none !important;
-          }
-          .search-btn-mobile {
-            display: flex !important;
-          }
-          .header-portal-tools-mobile {
-            display: flex !important;
-            align-items: center;
-            gap: 6px;
-            overflow-x: auto;
-            max-width: 58vw;
-            padding-bottom: 2px;
-          }
-          .header-portal-tools-desktop {
-            display: none !important;
-          }
+          .col-left.open { transform: translateX(0); }
+
+          .burger { display: block; }
+          .nav-pills { display: none !important; }
+          .desktop-tools { display: none !important; }
+          .mobile-tools { display: flex !important; }
+
+          .header-row { padding: 0 10px; height: 58px; gap: 6px; }
+          .ad-leader { height: 72px; border-radius: 10px; margin-bottom: 14px; }
+
+          .site-name { font-size: 14px !important; max-width: 100px; }
+          .site-tag { display: none !important; }
         }
 
-        @media (min-width: 901px) {
-          .search-btn-mobile {
-            display: none !important;
-          }
-          .header-portal-tools-mobile {
-            display: none !important;
-          }
+        @media (min-width: 861px) {
+          .mobile-tools { display: none !important; }
         }
       `}</style>
 
-      {/* 1. SCROLLABLE TOP LIVE MARKET TICKER */}
-      <div style={{ background: '#16150f', color: '#cbd5e1', fontSize: '11.5px', padding: '6px 0', borderBottom: '1px solid #282721', width: '100%', overflow: 'hidden' }}>
-        <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 12px', boxSizing: 'border-box' }}>
-          <div 
-            className="hide-scrollbar" 
-            style={{ 
-              display: 'flex', 
-              gap: '16px', 
-              alignItems: 'center', 
-              overflowX: 'auto', 
-              whiteSpace: 'nowrap', 
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x',
-              cursor: 'grab',
-              paddingRight: '16px'
-            }}
-          >
-            <span>Diesel: <b style={{ color: '#fff' }}>{marketRates.diesel}</b></span>
-            <span>Petrol: <b style={{ color: '#fff' }}>{marketRates.petrol}</b></span>
-            <span>
-              Nifty: <b style={{ color: marketRates.niftyPositive ? '#4ade80' : '#f87171' }}>
-                {marketRates.nifty} {marketRates.niftyPositive ? '↗' : '↘'} {marketRates.niftyChange}
-              </b>
-            </span>
-            <span>
-              Sensex: <b style={{ color: marketRates.sensexPositive ? '#4ade80' : '#f87171' }}>
-                {marketRates.sensex} {marketRates.sensexPositive ? '↗' : '↘'} {marketRates.sensexChange}
-              </b>
-            </span>
-            <span>Silver: <b style={{ color: '#fff' }}>{marketRates.silver}</b></span>
-            <span>Gold: <b style={{ color: '#fff' }}>{marketRates.gold}</b></span>
-            <span style={{ color: '#94a3b8', paddingLeft: '8px', borderLeft: '1px solid #334155' }}>
-              🗓️ {currentHindiDate || 'लोड हो रहा है...'}
+      {/* ════════════════════════════════════════════════════════════
+           1 ▸ LIVE MARKET TICKER
+           ════════════════════════════════════════════════════════════ */}
+      <div style={{ background: 'linear-gradient(90deg,#141414,#1e1e1e)', color: '#b0b0b0', fontSize: '11px', letterSpacing: '.01em', width: '100%', overflow: 'hidden', borderBottom: '1px solid #2a2a2a' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
+          <div className="hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x', padding: '7px 0' }}>
+            {[
+              { label: 'पेट्रोल', value: marketRates.petrol, color: '#fff' },
+              { label: 'डीज़ल', value: marketRates.diesel, color: '#fff' },
+              { label: 'निफ्टी', value: `${marketRates.nifty} ${marketRates.niftyPositive ? '▲' : '▼'} ${marketRates.niftyChange}`, color: marketRates.niftyPositive ? '#34d399' : '#f87171' },
+              { label: 'सेंसेक्स', value: `${marketRates.sensex} ${marketRates.sensexPositive ? '▲' : '▼'} ${marketRates.sensexChange}`, color: marketRates.sensexPositive ? '#34d399' : '#f87171' },
+              { label: 'सोना', value: marketRates.gold, color: '#fbbf24' },
+              { label: 'चांदी', value: marketRates.silver, color: '#cbd5e1' },
+            ].map((item, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                {i > 0 && <span style={{ color: '#333', margin: '0 6px' }}>│</span>}
+                <span style={{ color: '#888' }}>{item.label}</span>
+                <span style={{ color: item.color, fontWeight: 600 }}>{item.value}</span>
+              </span>
+            ))}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginLeft: '14px', paddingLeft: '14px', borderLeft: '1px solid #333' }}>
+              <span style={{ fontSize: '12px' }}>📅</span>
+              <span style={{ color: '#999' }}>{currentHindiDate || '...'}</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. MAIN HEADER */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e3e0da', boxShadow: '0 1px 3px rgba(22,21,15,.05)', width: '100%' }}>
-        <div className="header-main-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <button className="burger-toggle-btn" onClick={() => setDrawerOpen(true)} aria-label="Menu">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      {/* ════════════════════════════════════════════════════════════
+           2 ▸ STICKY HEADER
+           ════════════════════════════════════════════════════════════ */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e8e6e2', boxShadow: '0 1px 4px rgba(0,0,0,.04)', width: '100%' }}>
+        <div className="header-row">
+
+          {/* left: burger + logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
-            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}>
-              <img 
-                src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
-                alt={siteConfig?.name || 'The Local Leader'} 
-                style={{ height: '36px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img
+                src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
+                alt={siteConfig?.name || 'The Local Leader'}
+                style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }}
               />
               <div style={{ minWidth: 0 }}>
-                <span className="site-title-text" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#16150f', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
+                <span className="site-name" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
                 </span>
-                <small className="site-sub-text" style={{ display: 'block', fontSize: '9.5px', color: '#8d897f', whiteSpace: 'nowrap' }}>
+                <span className="site-tag" style={{ display: 'block', fontSize: '9px', color: '#999', whiteSpace: 'nowrap', letterSpacing: '.02em' }}>
                   {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
-                </small>
+                </span>
               </div>
             </Link>
           </div>
 
-          <nav className="hide-scrollbar desktop-subnav-bar" style={{ display: 'flex', alignItems: 'center', gap: '18px', margin: '0 15px', overflowX: 'auto', flex: 1, justifyContent: 'center' }}>
-            <button 
-              onClick={() => handleCategoryClick('होम')}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 600, color: activeCategory === 'होम' ? primary : '#16150f', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              <span style={{ color: activeCategory === 'होम' ? primary : '#d97706' }}>🏠</span> होम
-            </button>
-            <button 
-              onClick={() => handleCategoryClick('ताज़ा खबरें')}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'ताज़ा खबरें' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              <span>≡</span> ताज़ा खबरें
-            </button>
-            <button 
-              onClick={() => handleCategoryClick('शोक संदेश')}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: activeCategory === 'शोक संदेश' ? primary : '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              <span>🕯️</span> शोक संदेश
-            </button>
-            <button 
-              onClick={() => handleCategoryClick('ई-पेपर')}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', fontSize: '14.5px', fontWeight: 500, color: '#5a574f', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              <span>📄</span> ई-पेपर
-            </button>
+          {/* center: nav pills (desktop) */}
+          <nav className="nav-pills hide-scrollbar">
+            {[
+              { key: 'होम', emoji: '🏠' },
+              { key: 'ताज़ा खबरें', emoji: '⚡' },
+              { key: 'शोक संदेश', emoji: '🕯️' },
+              { key: 'ई-पेपर', emoji: '📄' },
+            ].map(({ key, emoji }) => {
+              const isActive = activeCategory === key;
+              return (
+                <button
+                  key={key}
+                  className="nav-pill"
+                  onClick={() => handleCategoryClick(key)}
+                  style={{
+                    color: isActive ? primary : '#555',
+                    background: isActive ? tint(primary, 0.08) : 'transparent',
+                    fontWeight: isActive ? 700 : 500,
+                  }}
+                >
+                  <span style={{ fontSize: '13px' }}>{emoji}</span>
+                  {key}
+                </button>
+              );
+            })}
           </nav>
 
-          <div className="nav-tools-group header-portal-tools-desktop" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
-            <div className="nav-portal-links" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Link 
-                href="/patrakar/login" 
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 600, color: '#334155', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '18px', textDecoration: 'none', whiteSpace: 'nowrap' }}
-              >
-                <span>✍️</span> <span>पत्रकार</span>
+          {/* right: desktop tools */}
+          <div className="desktop-tools" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+            <div className="portal-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
+                ✍️ पत्रकार
               </Link>
-              <Link 
-                href="/advertiser/login" 
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: 600, color: '#fff', background: '#1e293b', border: '1px solid #1e293b', padding: '5px 11px', borderRadius: '18px', textDecoration: 'none', whiteSpace: 'nowrap' }}
-              >
-                <span>📢</span> <span>विज्ञापन</span>
+              <Link href="/advertiser/login" className="portal-link" style={{ color: '#fff', background: '#1e293b', border: '1px solid #1e293b' }}>
+                📢 विज्ञापन
               </Link>
             </div>
 
-            <button 
+            <button
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '18px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#5a574f', fontSize: '12.5px', flexShrink: 0 }}
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12.5px', transition: 'border-color .15s ease' }}
             >
-              <span>🔍</span>
-              <span>खोजें</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              खोजें
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
-              <LanguageTranslator />
-            </div>
+            <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            <LanguageTranslator />
 
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 5) : 'यूज़र'}</span>
-                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: tint(primary, 0.06), border: `1px solid ${tint(primary, 0.25)}`, borderRadius: '22px', padding: '5px 12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 6) : 'यूज़र'}</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', fontWeight: 800, lineHeight: 1 }}>✕</button>
               </div>
             ) : (
-              <Link 
-                href="/login" 
-                style={{ background: primary, color: '#fff', border: 'none', borderRadius: '18px', padding: '6px 14px', fontSize: '13px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}
-              >
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '22px', padding: '7px 18px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block', transition: 'opacity .15s ease' }}>
                 लॉगिन
               </Link>
             )}
           </div>
 
-          <div className="header-portal-tools-mobile hide-scrollbar" style={{ display: 'none', marginLeft: 'auto' }}>
-            <button 
+          {/* right: mobile tools */}
+          <div className="mobile-tools hide-scrollbar" style={{ display: 'none', alignItems: 'center', gap: '6px', marginLeft: 'auto', overflowX: 'auto' }}>
+            <button
               onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f0eee9', border: '1px solid #e3e0da', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a574f', fontSize: '13px', flexShrink: 0 }}
               aria-label="सर्च"
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
             >
-              <span>🔍</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
-            <div style={{ flexShrink: 0 }}>
-              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <LanguageTranslator />
-            </div>
+            <div style={{ flexShrink: 0 }}><SiteSwitcher currentSlug={currentSlug} primaryColor={primary} /></div>
+            <div style={{ flexShrink: 0 }}><LanguageTranslator /></div>
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: '#fff7ed', border: `1px solid ${primary}`, borderRadius: '16px', padding: '3px 6px', flexShrink: 0 }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 600, color: primary }}>👤</span>
-                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
               </div>
             ) : (
-              <Link 
-                href="/login" 
-                style={{ background: primary, color: '#fff', border: 'none', borderRadius: '16px', padding: '5px 10px', fontSize: '12px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}
-              >
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
@@ -660,202 +651,223 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* SEARCH MODAL */}
+      {/* ════════════════════════════════════════════════════════════
+           SEARCH MODAL
+           ════════════════════════════════════════════════════════════ */}
       {searchModalOpen && (
-        <div 
-          onMouseLeave={() => setSearchModalOpen(false)}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSearchModalOpen(false);
-          }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 350, display: 'flex', justifyContent: 'center', paddingTop: '80px', paddingLeft: '14px', paddingRight: '14px' }}
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setSearchModalOpen(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(4px)', zIndex: 500, display: 'flex', justifyContent: 'center', paddingTop: '90px', padding: '90px 16px 0' }}
         >
-          <div style={{ width: '100%', maxWidth: '600px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(22,21,15,.25)', alignSelf: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
-              <span style={{ fontSize: '18px', color: '#8d897f' }}>🔍</span>
-              <input 
-                type="search" 
-                placeholder="खबर, विषय या कीवर्ड लिखें..." 
+          <div style={{ width: '100%', maxWidth: '580px', background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,.2)', alignSelf: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', borderBottom: '1px solid #eee' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                type="search"
+                placeholder="खबर, विषय या कीवर्ड लिखें..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#16150f' }}
+                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#1a1a1a', background: 'transparent' }}
               />
-              <button onClick={() => setSearchModalOpen(false)} style={{ background: 'none', border: '1px solid #e3e0da', borderRadius: '5px', padding: '2px 8px', fontSize: '11.5px', color: '#8d897f', cursor: 'pointer' }}>बंद करें</button>
+              <button
+                onClick={() => setSearchModalOpen(false)}
+                style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', padding: '4px 12px', fontSize: '11.5px', color: '#888', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}
+              >
+                Esc
+              </button>
             </div>
+            {searchTerm && (
+              <div style={{ padding: '12px 18px', fontSize: '13px', color: '#999' }}>
+                &ldquo;{searchTerm}&rdquo; के लिए परिणाम देखें…
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* MOBILE DRAWER BACKDROP */}
       {drawerOpen && (
-        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,21,15,0.45)', zIndex: 290 }} />
+        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(2px)', zIndex: 390 }} />
       )}
 
-      {/* 3. RESPONSIVE THREE-COLUMN SHELL */}
-      <div className="shell-container">
-        
-        {/* LEFT COLUMN: CATEGORIES */}
-        <aside className="side-col">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {['होम', 'राजनीति', 'व्यापार', 'स्वास्थ्य', 'जीवनशैली', 'राज्य', 'शोक संदेश', 'ई-पेपर', 'अपराध', 'खेल'].map((cat) => {
-              const isActive = activeCategory === cat;
-              const iconEmoji = CATEGORY_ICONS[cat] || '📰';
+      {/* ════════════════════════════════════════════════════════════
+           3 ▸ THREE-COLUMN SHELL
+           ════════════════════════════════════════════════════════════ */}
+      <div className="shell">
+
+        {/* ──── LEFT SIDEBAR ──── */}
+        <aside className={`col-left ${drawerOpen ? 'open' : ''}`}>
+          {/* close btn for mobile drawer */}
+          <div style={{ display: drawerOpen ? 'flex' : 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600 }}>श्रेणियाँ</span>
+            <button onClick={() => setDrawerOpen(false)} style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', width: '30px', height: '30px', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '14px', color: '#888' }}>✕</button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {CATEGORY_LIST.map(({ key, icon }) => {
+              const isActive = activeCategory === key;
               return (
                 <button
-                  key={cat}
-                  onClick={() => handleCategoryClick(cat)}
+                  key={key}
+                  className="cat-btn"
+                  onClick={() => handleCategoryClick(key)}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    fontSize: '14.5px',
-                    fontWeight: 500,
-                    color: isActive ? primary : '#5a574f',
-                    background: isActive ? '#fdeee6' : 'transparent',
-                    border: 'none',
-                    textAlign: 'left',
-                    cursor: 'pointer'
+                    color: isActive ? primary : '#555',
+                    background: isActive ? tint(primary, 0.07) : 'transparent',
+                    fontWeight: isActive ? 600 : 500,
                   }}
                 >
-                  <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: isActive ? primary : '#f0ede8', color: isActive ? '#fff' : '#8d897f', display: 'grid', placeItems: 'center', fontSize: '13px', flexShrink: 0 }}>
-                    {iconEmoji}
+                  <span style={{
+                    width: '30px', height: '30px', borderRadius: '8px',
+                    background: isActive ? primary : '#f0efec',
+                    color: isActive ? '#fff' : '#888',
+                    display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0,
+                    transition: 'background .15s ease, color .15s ease'
+                  }}>
+                    {icon}
                   </span>
-                  <span>{cat}</span>
+                  {key}
                 </button>
               );
             })}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '22px', paddingTop: '18px', borderTop: '1px solid #e3e0da' }}>
-            <div style={{ fontSize: '12.5px', color: '#8d897f', marginBottom: '10px' }}>ऐप डाउनलोड करें</div>
-            <a 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
-              style={{ display: 'block', border: '1px solid #e3e0da', borderRadius: '8px', padding: '8px 12px', margin: '0 auto 8px', maxWidth: '180px', textAlign: 'left', background: '#f6f5f2', textDecoration: 'none', color: '#16150f' }}
-            >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>GET IT ON</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>Google Play</b>
-            </a>
-            <a 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
-              style={{ display: 'block', border: '1px solid #e3e0da', borderRadius: '8px', padding: '8px 12px', margin: '0 auto 8px', maxWidth: '180px', textAlign: 'left', background: '#f6f5f2', textDecoration: 'none', color: '#16150f' }}
-            >
-              <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.2 }}>Download on the</small>
-              <b style={{ fontSize: '14px', fontWeight: 600 }}>App Store</b>
-            </a>
+          {/* app download */}
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #eae8e4' }}>
+            <div style={{ fontSize: '11px', color: '#aaa', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: '10px', textAlign: 'center' }}>ऐप डाउनलोड करें</div>
+            {[
+              { label: 'Google Play', sub: 'GET IT ON', emoji: '▶' },
+              { label: 'App Store', sub: 'Download on the', emoji: '🍎' },
+            ].map(({ label, sub, emoji }) => (
+              <a
+                key={label}
+                href="#"
+                onClick={(e) => { e.preventDefault(); alert(`${label} लिंक जल्द उपलब्ध होगा!`); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8', transition: 'background .15s ease' }}
+              >
+                <span style={{ fontSize: '18px', width: '28px', textAlign: 'center' }}>{emoji}</span>
+                <div>
+                  <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>{sub}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{label}</div>
+                </div>
+              </a>
+            ))}
           </div>
         </aside>
 
-        {/* CENTER COLUMN: MAIN CONTENT FEED */}
+        {/* ──── CENTER COLUMN ──── */}
         <main style={{ minWidth: 0 }}>
-          
-          {/* HEADER LEADERBOARD AD WITH AUTO-CLICK & IMPRESSION TRACKING */}
-          <div className="ad-leaderboard-box">
+
+          {/* Header Ad */}
+          <div className="ad-leader">
             {headerAd ? (
-              <a 
-                href={headerAd.targetUrl || '#'} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={() => handleAdClick(headerAd)}
-              >
+              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(headerAd)}>
                 <img src={headerAd.imageUrl} alt={headerAd.name} />
               </a>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#8d897f', fontSize: '12px' }}>
-                Responsive Header Leaderboard Ad (728 × 90)
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#555', fontSize: '11px', letterSpacing: '.02em' }}>
+                विज्ञापन · 728 × 90
               </div>
             )}
           </div>
 
-          {/* TRENDING TAGS */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: primary, flexShrink: 0 }}>ट्रेंडिंग</span>
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
+          {/* Trending tags */}
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              ट्रेंडिंग
+            </span>
+            <div className="hide-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
               {TRENDING_TAGS.map((t) => (
                 <button
                   key={t}
                   onClick={() => setSearchTerm(t)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '13.5px', fontWeight: 500, border: '1px solid #e3e0da', borderRadius: '20px', padding: '5px 14px', color: '#5a574f', background: '#ffffff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  style={{ fontSize: '12.5px', fontWeight: 500, border: '1px solid #eae8e4', borderRadius: '20px', padding: '5px 14px', color: '#555', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'border-color .15s ease, color .15s ease' }}
+                  onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = primary; (e.target as HTMLElement).style.color = primary; }}
+                  onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = '#eae8e4'; (e.target as HTMLElement).style.color = '#555'; }}
                 >
-                  <span>{t}</span> <span style={{ color: '#8d897f', fontSize: '11px' }}>›</span>
+                  {t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* DYNAMIC ARTICLE LIST */}
+          {/* Articles */}
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: '#8d897f', background: '#fff', borderRadius: '10px', border: '1px solid #e3e0da' }}>
-              लाइव अपडेट लोड हो रहे हैं...
+            <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
+              <span style={{ color: '#999', fontSize: '14px' }}>खबरें लोड हो रही हैं…</span>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : filteredArticles.length === 0 ? (
-            <div style={{ background: '#fff', border: '1px solid #e3e0da', padding: '50px 20px', borderRadius: '10px', textAlign: 'center' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#16150f' }}>
+            <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
                 {searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
-              <p style={{ color: '#8d897f', fontSize: '13px', marginTop: '6px' }}>
-                संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां लाइव प्रदर्शित होती हैं।
+              <p style={{ color: '#999', fontSize: '13px' }}>
+                संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।
               </p>
             </div>
           ) : (
-            <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden' }}>
+            <div className="card">
+              {/* Hero article */}
               {filteredArticles[0] && (
-                <article style={{ padding: '18px 20px', borderBottom: '1px solid #e3e0da' }}>
-                  <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '23px', fontWeight: 500, lineHeight: 1.45, margin: '0 0 12px 0', color: '#16150f' }}>
-                      <span style={{ color: primary }}>{filteredArticles[0].title}</span>
-                    </h3>
-
-                    <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden', background: '#e9e6e0', marginBottom: '14px' }}>
-                      <img 
-                        src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} 
-                        alt={filteredArticles[0].title} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                <article style={{ borderBottom: '1px solid #eae8e4' }}>
+                  <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`}>
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
+                      <img
+                        src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'}
+                        alt={filteredArticles[0].title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform .3s ease' }}
+                        onMouseEnter={(e) => { (e.target as HTMLElement).style.transform = 'scale(1.03)'; }}
+                        onMouseLeave={(e) => { (e.target as HTMLElement).style.transform = 'scale(1)'; }}
                       />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.65))', padding: '40px 20px 16px' }}>
+                        <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', marginBottom: '8px', letterSpacing: '.02em' }}>
+                          {filteredArticles[0].category || 'ताज़ा खबर'}
+                        </span>
+                        <h2 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '22px', fontWeight: 500, lineHeight: 1.45, color: '#fff', margin: 0 }}>
+                          {filteredArticles[0].title}
+                        </h2>
+                      </div>
                     </div>
-
-                    {filteredArticles[0].summary && (
-                      <p style={{ fontSize: '15px', color: '#5a574f', margin: '0 0 14px 0', lineHeight: 1.6 }}>
-                        {filteredArticles[0].summary}
-                      </p>
-                    )}
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 500, border: '1px solid #e3e0da', borderRadius: '20px', padding: '3px 10px', color: '#5a574f' }}>
-                        {filteredArticles[0].category || 'ताज़ा खबर'}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#8d897f' }}>
-                        {filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#8d897f', marginLeft: 'auto' }}>
-                        👁️ {filteredArticles[0].views || 0} बार पढ़ा गया
-                      </span>
+                    <div style={{ padding: '14px 20px 16px' }}>
+                      {filteredArticles[0].summary && (
+                        <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.65, margin: '0 0 12px' }}>
+                          {filteredArticles[0].summary}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#aaa' }}>
+                        <span>{filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}</span>
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ccc' }} />
+                        <span>👁 {filteredArticles[0].views || 0} बार पढ़ा गया</span>
+                      </div>
                     </div>
                   </Link>
                 </article>
               )}
 
+              {/* Rest of articles */}
               {filteredArticles.slice(1).map((item) => (
-                <article key={item.id} style={{ padding: '16px 20px', borderBottom: '1px solid #e3e0da' }}>
-                  <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <article key={item.id} className="art-row" style={{ borderBottom: '1px solid #eae8e4' }}>
+                  <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 20px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: primary, textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: primary, letterSpacing: '.03em' }}>
                         {item.category}
                       </span>
-                      <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 500, margin: '4px 0 6px 0', color: '#16150f', lineHeight: 1.4 }}>
+                      <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 500, margin: '3px 0 8px', color: '#1a1a1a', lineHeight: 1.45 }}>
                         {item.title}
                       </h4>
-                      <div style={{ fontSize: '11.5px', color: '#8d897f', display: 'flex', gap: '12px' }}>
+                      <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
-                        <span>👁️ {item.views || 0} बार पढ़ा गया</span>
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd' }} />
+                        <span>👁 {item.views || 0}</span>
                       </div>
                     </div>
-
                     {item.image && (
-                      <div style={{ width: '110px', height: '75px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#e9e6e0' }}>
+                      <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
                         <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     )}
@@ -864,93 +876,99 @@ export default function HomePage() {
               ))}
             </div>
           )}
-
         </main>
 
-        {/* RIGHT COLUMN: TRENDING BADGES + RASHIFAL + SIDEBAR AD */}
-        <aside className="rail-col">
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #e3e0da' }}>
-              <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '17px', fontWeight: 600, margin: 0 }}>
+        {/* ──── RIGHT SIDEBAR ──── */}
+        <aside className="col-right">
+
+          {/* Most Read */}
+          <div className="card" style={{ marginBottom: '18px' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #eae8e4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600, margin: 0 }}>
                 सबसे ज़्यादा पढ़ी गईं
               </h3>
             </div>
             <div>
               {filteredArticles.slice(0, 5).map((art, idx) => (
-                <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '12px', padding: '11px 16px', borderBottom: idx !== 4 ? '1px solid #e3e0da' : 'none' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: primary, flexShrink: 0, width: '20px' }}>
-                    0{idx + 1}
+                <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} className="art-row" style={{ display: 'flex', gap: '12px', padding: '12px 18px', borderBottom: idx < 4 ? '1px solid #f0efec' : 'none', alignItems: 'flex-start' }}>
+                  <span style={{ fontFamily: '"Mukta", sans-serif', fontSize: '22px', fontWeight: 800, color: tint(primary, 0.25), lineHeight: 1, flexShrink: 0, width: '24px' }}>
+                    {idx + 1}
                   </span>
-                  <div>
-                    <h4 style={{ fontSize: '13.5px', fontWeight: 500, margin: '0 0 4px 0', color: '#16150f', lineHeight: 1.4 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 3px', color: '#1a1a1a', lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {art.title}
                     </h4>
-                    <span style={{ fontSize: '11px', color: '#8d897f' }}>
-                      👁️ {art.views || 0} बार पढ़ा गया
+                    <span style={{ fontSize: '10.5px', color: '#bbb' }}>
+                      👁 {art.views || 0} बार पढ़ा गया
                     </span>
                   </div>
                 </Link>
               ))}
+              {filteredArticles.length === 0 && (
+                <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: '#ccc' }}>कोई खबर नहीं</div>
+              )}
             </div>
           </div>
 
-          {/* Daily Rashifal Card */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px', padding: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <span style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#fdeee6', display: 'grid', placeItems: 'center', fontSize: '18px', flexShrink: 0 }}>
+          {/* Rashifal */}
+          <div className="card" style={{ marginBottom: '18px', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${tint(primary, 0.12)}, ${tint(primary, 0.04)})`, display: 'grid', placeItems: 'center', fontSize: '20px', flexShrink: 0 }}>
                 {activeRashiItem.sign}
               </span>
-              <div>
-                <b style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15.5px' }}>{activeRashiItem.name} राशिफल</b>
-                <div style={{ fontSize: '11px', color: '#8d897f' }}>
-                  शुभ अंक: {activeRashiInfo?.luckyNumber || '7'} | रंग: {activeRashiInfo?.luckyColor || 'केसरिया'}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15px', fontWeight: 600, lineHeight: 1.2 }}>
+                  {activeRashiItem.name} राशिफल
+                </div>
+                <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>
+                  शुभ अंक: {activeRashiInfo?.luckyNumber || '7'} · रंग: {activeRashiInfo?.luckyColor || 'केसरिया'}
                 </div>
               </div>
-              <select 
-                value={selectedRashi} 
+              <select
+                value={selectedRashi}
                 onChange={(e) => setSelectedRashi(e.target.value)}
-                style={{ marginLeft: 'auto', background: '#fff', border: '1px solid #e3e0da', color: '#5a574f', borderRadius: '6px', padding: '4px 6px', fontSize: '12px', outline: 'none' }}
+                style={{ background: '#f5f4f1', border: '1px solid #e5e3df', color: '#555', borderRadius: '8px', padding: '5px 8px', fontSize: '11.5px', outline: 'none', cursor: 'pointer' }}
               >
                 {DEFAULT_RASHI_LIST.map(r => (
-                  <option key={r.id} value={r.id}>{r.name} ({r.sign})</option>
+                  <option key={r.id} value={r.id}>{r.name} {r.sign}</option>
                 ))}
               </select>
             </div>
-            <p style={{ fontSize: '13.5px', color: '#5a574f', margin: 0, lineHeight: 1.65 }}>
+            <p style={{ fontSize: '13px', color: '#666', margin: 0, lineHeight: 1.7 }}>
               {activeRashiInfo?.prediction || `आज ${activeRashiItem.name} राशि के जातकों के लिए नए अवसर खुलेंगे। वाणी में मधुरता बनाए रखें।`}
             </p>
           </div>
 
-          {/* SIDEBAR 300x250 AD WITH AUTO-CLICK & IMPRESSION TRACKING */}
-          <div style={{ background: '#ffffff', border: '1px solid #e3e0da', borderRadius: '10px', height: '260px', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+          {/* Sidebar Ad */}
+          <div className="card" style={{ height: '260px', display: 'grid', placeItems: 'center' }}>
             {sidebarAd ? (
-              <a 
-                href={sidebarAd.targetUrl || '#'} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={sidebarAd.targetUrl || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => handleAdClick(sidebarAd)}
                 style={{ display: 'block', width: '100%', height: '100%' }}
               >
                 <img src={sidebarAd.imageUrl} alt={sidebarAd.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </a>
             ) : (
-              <span style={{ color: '#8d897f', fontSize: '12px' }}>विज्ञापन · 300 × 250</span>
+              <span style={{ color: '#ccc', fontSize: '11px', letterSpacing: '.02em' }}>विज्ञापन · 300 × 250</span>
             )}
           </div>
-
         </aside>
-
       </div>
 
-      {/* 5. FOOTER */}
-      <Footer 
-        siteName={siteConfig?.name || 'द लोकल लीडर'} 
+      {/* ════════════════════════════════════════════════════════════
+           FOOTER
+           ════════════════════════════════════════════════════════════ */}
+      <Footer
+        siteName={siteConfig?.name || 'द लोकल लीडर'}
         primaryColor={primary}
         logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
         tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
         currentSlug={currentSlug}
       />
-
     </div>
   );
 }
