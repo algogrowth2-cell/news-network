@@ -16,7 +16,6 @@ export default function AdminLayout({
 
   // 1. STRICT AUTH CHECK: Bina ID-Password ke dashboard kabhi nahi khulega
   useEffect(() => {
-    // Agar user pehle se login page par hai toh layout check bypass karein
     if (pathname === '/admin/login') {
       setIsCheckingAuth(false);
       return;
@@ -26,7 +25,6 @@ export default function AdminLayout({
     const adminToken = localStorage.getItem('admin_token');
 
     if (!adminUser || !adminToken) {
-      // User logged in nahi hai -> Direct login page par bhejo
       setIsAuthenticated(false);
       router.replace('/admin/login');
     } else {
@@ -47,34 +45,60 @@ export default function AdminLayout({
     router.replace('/admin/login');
   };
 
-  // Agar user '/admin/login' page par hai, toh sidebar ke bina sirf login page render karein
+  // Login page — render without sidebar
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
-  // Jab tak check chal raha hai, sleek loading screen dikhayein (taaki dashboard blink na ho)
+  // Loading screen while auth check runs
   if (isCheckingAuth || !isAuthenticated) {
     return (
-      <div style={{ minHeight: '100vh', background: '#090d16', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid #1e293b', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
+      <div className="na-auth-screen">
         <style jsx global>{`
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          .na-auth-screen {
+            min-height: 100vh;
+            background: #06090f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+          }
+          .na-auth-spinner {
+            width: 36px;
+            height: 36px;
+            border: 2.5px solid rgba(99, 132, 255, 0.12);
+            border-top-color: #6384ff;
+            border-radius: 50%;
+            animation: naSpinAuth 0.7s linear infinite;
+            margin-bottom: 18px;
+          }
+          .na-auth-text {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: rgba(148, 163, 184, 0.7);
+            letter-spacing: 0.6px;
+          }
+          @keyframes naSpinAuth {
+            to { transform: rotate(360deg); }
+          }
         `}</style>
-        <span style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Verifying Admin Credentials...</span>
+        <div className="na-auth-spinner" />
+        <span className="na-auth-text">Verifying credentials…</span>
       </div>
     );
   }
 
-  // Navigation sections with News Videos included
+  // Navigation sections — unchanged
   const navSections = [
     {
-      heading: 'MAIN',
+      heading: 'Main',
       items: [
         { label: 'Dashboard', icon: '⊞', href: '/admin' },
       ]
     },
     {
-      heading: 'CONTENT',
+      heading: 'Content',
       items: [
         { label: 'Articles', icon: '📄', href: '/admin/articles' },
         { label: 'Categories', icon: '📁', href: '/admin/categories' },
@@ -89,7 +113,7 @@ export default function AdminLayout({
       ]
     },
     {
-      heading: 'MODULES',
+      heading: 'Modules',
       items: [
         { label: 'Reporters', icon: '🪪', href: '/admin/reporters' },
         { label: 'Ads & Revenue', icon: '📢', href: '/admin/ads' },
@@ -101,7 +125,7 @@ export default function AdminLayout({
       ]
     },
     {
-      heading: 'SYSTEM',
+      heading: 'System',
       items: [
         { label: 'Sites', icon: '🌐', href: '/admin/sites' },
         { label: 'Page Builder', icon: '🧱', href: '/admin/page-builder' },
@@ -113,14 +137,26 @@ export default function AdminLayout({
   ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#090d16', color: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      
-      {/* Mobile Responsive Injected Styling */}
+    <div className="na-shell">
       <style jsx global>{`
-        .admin-sidebar-container {
-          width: 240px;
-          background: #0d1322;
-          border-right: 1px solid #1e293b;
+        /* ───────────── RESET & BASE ───────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .na-shell {
+          display: flex;
+          min-height: 100vh;
+          background: #070a11;
+          color: #e2e8f0;
+          font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ───────────── SIDEBAR ───────────── */
+        .na-sidebar {
+          width: 252px;
+          background: linear-gradient(180deg, #0c1020 0%, #080c18 100%);
+          border-right: 1px solid rgba(148, 163, 184, 0.06);
           display: flex;
           flex-direction: column;
           position: sticky;
@@ -128,20 +164,269 @@ export default function AdminLayout({
           height: 100vh;
           flex-shrink: 0;
           z-index: 1000;
-          transition: transform 0.25s ease-in-out;
+          transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .admin-main-wrapper {
+
+        /* ───────────── SIDEBAR BRAND HEADER ───────────── */
+        .na-brand {
+          padding: 20px 18px 16px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+        }
+
+        .na-brand-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .na-brand-logo-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .na-brand-icon {
+          width: 30px;
+          height: 30px;
+          background: linear-gradient(135deg, #4f6ef7 0%, #6c3bdb 100%);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 700;
+          box-shadow: 0 2px 12px rgba(79, 110, 247, 0.25);
+        }
+
+        .na-brand-name {
+          font-size: 15.5px;
+          font-weight: 700;
+          color: #f1f5f9;
+          letter-spacing: -0.2px;
+        }
+
+        .na-brand-close {
+          background: none;
+          border: none;
+          color: rgba(148, 163, 184, 0.5);
+          font-size: 17px;
+          cursor: pointer;
+          padding: 2px 4px;
+          border-radius: 4px;
+          line-height: 1;
+          transition: color 0.15s, background 0.15s;
+          display: none;
+        }
+        .na-brand-close:hover {
+          color: #e2e8f0;
+          background: rgba(148, 163, 184, 0.08);
+        }
+        .na-sidebar.open .na-brand-close {
+          display: block;
+        }
+
+        /* ───────────── USER CARD ───────────── */
+        .na-user-card {
+          margin: 14px 14px 0;
+          padding: 10px 12px;
+          background: rgba(148, 163, 184, 0.04);
+          border: 1px solid rgba(148, 163, 184, 0.06);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .na-user-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: #6384ff;
+          flex-shrink: 0;
+        }
+
+        .na-user-info {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .na-user-email {
+          font-size: 11.5px;
+          color: rgba(148, 163, 184, 0.7);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          line-height: 1.3;
+        }
+
+        .na-user-badge {
+          display: inline-block;
+          font-size: 9px;
+          font-weight: 600;
+          background: rgba(99, 132, 255, 0.1);
+          color: #7c9aff;
+          padding: 2px 7px;
+          border-radius: 4px;
+          margin-top: 3px;
+          letter-spacing: 0.3px;
+        }
+
+        /* ───────────── NAV SCROLL AREA ───────────── */
+        .na-nav-scroll {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 10px 10px 20px;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(148, 163, 184, 0.08) transparent;
+        }
+        .na-nav-scroll::-webkit-scrollbar {
+          width: 4px;
+        }
+        .na-nav-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .na-nav-scroll::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.1);
+          border-radius: 4px;
+        }
+        .na-nav-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(148, 163, 184, 0.18);
+        }
+
+        /* ───────────── NAV SECTIONS ───────────── */
+        .na-nav-section {
+          margin-bottom: 18px;
+        }
+        .na-nav-section:last-child {
+          margin-bottom: 0;
+        }
+
+        .na-nav-heading {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: rgba(148, 163, 184, 0.35);
+          letter-spacing: 0.4px;
+          padding: 0 10px;
+          margin-bottom: 5px;
+        }
+
+        .na-nav-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+        }
+
+        /* ───────────── NAV ITEMS ───────────── */
+        .na-nav-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 7px 10px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 450;
+          text-decoration: none;
+          color: rgba(148, 163, 184, 0.75);
+          position: relative;
+          transition: color 0.15s, background 0.15s;
+        }
+        .na-nav-item:hover {
+          color: #cbd5e1;
+          background: rgba(148, 163, 184, 0.05);
+        }
+
+        .na-nav-item.active {
+          color: #fff;
+          background: rgba(99, 132, 255, 0.1);
+          font-weight: 550;
+        }
+        .na-nav-item.active::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 3px;
+          height: 18px;
+          background: #6384ff;
+          border-radius: 0 3px 3px 0;
+        }
+
+        .na-nav-icon {
+          font-size: 13px;
+          width: 18px;
+          text-align: center;
+          flex-shrink: 0;
+          line-height: 1;
+        }
+
+        .na-nav-label {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* ───────────── LOGOUT FOOTER ───────────── */
+        .na-sidebar-footer {
+          padding: 14px;
+          border-top: 1px solid rgba(148, 163, 184, 0.06);
+        }
+
+        .na-logout-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          background: rgba(239, 68, 68, 0.06);
+          border: 1px solid rgba(239, 68, 68, 0.08);
+          color: #f87171;
+          font-size: 12.5px;
+          font-weight: 550;
+          cursor: pointer;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-family: inherit;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .na-logout-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: rgba(239, 68, 68, 0.15);
+        }
+
+        .na-logout-icon {
+          font-size: 14px;
+          line-height: 1;
+        }
+
+        /* ───────────── MAIN CONTENT ───────────── */
+        .na-main {
           flex: 1;
           display: flex;
           flex-direction: column;
           min-width: 0;
           overflow-x: hidden;
-          background: #090d16;
+          background: #070a11;
         }
-        .admin-mobile-header {
+
+        .na-content {
+          flex: 1;
+          padding: clamp(16px, 2.5vw, 28px);
+          width: 100%;
+        }
+
+        /* ───────────── MOBILE TOP BAR ───────────── */
+        .na-mobile-bar {
           display: none;
-          background: #0d1322;
-          border-bottom: 1px solid #1e293b;
+          background: linear-gradient(180deg, #0c1020 0%, #0a0e1a 100%);
+          border-bottom: 1px solid rgba(148, 163, 184, 0.06);
           padding: 10px 16px;
           justify-content: space-between;
           align-items: center;
@@ -149,173 +434,198 @@ export default function AdminLayout({
           top: 0;
           z-index: 990;
         }
-        .admin-sidebar-overlay {
+
+        .na-mobile-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .na-hamburger {
+          background: rgba(148, 163, 184, 0.06);
+          color: #e2e8f0;
+          border: 1px solid rgba(148, 163, 184, 0.08);
+          border-radius: 8px;
+          padding: 7px 10px;
+          font-size: 16px;
+          cursor: pointer;
+          line-height: 1;
+          transition: background 0.15s;
+          font-family: inherit;
+        }
+        .na-hamburger:hover {
+          background: rgba(148, 163, 184, 0.1);
+        }
+
+        .na-mobile-brand {
+          font-weight: 700;
+          font-size: 14.5px;
+          color: #f1f5f9;
+          letter-spacing: -0.2px;
+        }
+
+        .na-mobile-live-link {
+          color: #6384ff;
+          font-size: 11.5px;
+          text-decoration: none;
+          font-weight: 600;
+          padding: 5px 10px;
+          border-radius: 6px;
+          background: rgba(99, 132, 255, 0.06);
+          border: 1px solid rgba(99, 132, 255, 0.1);
+          transition: background 0.15s;
+        }
+        .na-mobile-live-link:hover {
+          background: rgba(99, 132, 255, 0.12);
+        }
+
+        /* ───────────── OVERLAY ───────────── */
+        .na-overlay {
           display: none;
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(2px);
+          background: rgba(4, 6, 12, 0.75);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
           z-index: 998;
+          opacity: 0;
+          transition: opacity 0.25s;
+        }
+        .na-overlay.active {
+          display: block;
+          opacity: 1;
         }
 
-        /* Mobile Screens */
+        /* ───────────── RESPONSIVE ───────────── */
         @media (max-width: 900px) {
-          .admin-sidebar-container {
+          .na-sidebar {
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
             transform: translateX(-100%);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            box-shadow: 8px 0 40px rgba(0, 0, 0, 0.45);
+            width: 264px;
           }
-          .admin-sidebar-container.open {
+          .na-sidebar.open {
             transform: translateX(0);
           }
-          .admin-mobile-header {
+          .na-mobile-bar {
             display: flex;
           }
-          .admin-sidebar-overlay.active {
+          .na-brand-close {
             display: block;
+          }
+        }
+
+        /* ───────────── EXTRA SMALL SCREENS ───────────── */
+        @media (max-width: 400px) {
+          .na-sidebar {
+            width: 100%;
+            max-width: 280px;
+          }
+          .na-content {
+            padding: 12px;
+          }
+          .na-mobile-bar {
+            padding: 8px 12px;
           }
         }
       `}</style>
 
-      {/* Backdrop overlay for mobile drawer */}
-      <div 
-        className={`admin-sidebar-overlay ${mobileMenuOpen ? 'active' : ''}`}
+      {/* Backdrop overlay for mobile */}
+      <div
+        className={`na-overlay ${mobileMenuOpen ? 'active' : ''}`}
         onClick={() => setMobileMenuOpen(false)}
       />
 
-      {/* COMPLETE SIDEBAR */}
-      <aside className={`admin-sidebar-container ${mobileMenuOpen ? 'open' : ''}`}>
-        
-        {/* Brand & User Profile Header */}
-        <div style={{ padding: '16px', borderBottom: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '28px', height: '28px', background: '#2563eb', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '15px', fontWeight: 800 }}>
-                ✎
-              </div>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#fff', letterSpacing: '0.3px' }}>NewsAdmin</span>
-            </div>
+      {/* SIDEBAR */}
+      <aside className={`na-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
 
-            {/* Mobile close button */}
-            <button 
+        {/* Brand Header */}
+        <div className="na-brand">
+          <div className="na-brand-row">
+            <div className="na-brand-logo-group">
+              <div className="na-brand-icon">✎</div>
+              <span className="na-brand-name">NewsAdmin</span>
+            </div>
+            <button
+              className="na-brand-close"
               onClick={() => setMobileMenuOpen(false)}
-              style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer', padding: '0 4px', display: mobileMenuOpen ? 'block' : 'none' }}
             >
               ✕
             </button>
           </div>
+        </div>
 
-          <div>
-            <div style={{ fontSize: '11px', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              admin@news.com
-            </div>
-            <span style={{ display: 'inline-block', fontSize: '9px', fontWeight: 800, background: '#1e3a8a', color: '#93c5fd', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-              SUPER ADMIN
-            </span>
+        {/* User Card */}
+        <div className="na-user-card">
+          <div className="na-user-avatar">A</div>
+          <div className="na-user-info">
+            <div className="na-user-email">admin@news.com</div>
+            <span className="na-user-badge">Super Admin</span>
           </div>
         </div>
 
-        {/* Full Nav Sections List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px', scrollbarWidth: 'thin' }}>
+        {/* Navigation */}
+        <nav className="na-nav-scroll">
           {navSections.map((sec) => (
-            <div key={sec.heading} style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#475569', letterSpacing: '0.8px', padding: '0 10px', marginBottom: '6px' }}>
-                {sec.heading}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div key={sec.heading} className="na-nav-section">
+              <div className="na-nav-heading">{sec.heading}</div>
+              <div className="na-nav-list">
                 {sec.items.map((item) => {
-                  const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/admin' && pathname.startsWith(item.href));
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '8px 10px',
-                        borderRadius: '6px',
-                        fontSize: '12.5px',
-                        fontWeight: isActive ? 700 : 500,
-                        textDecoration: 'none',
-                        color: isActive ? '#ffffff' : '#94a3b8',
-                        background: isActive ? '#2563eb' : 'transparent',
-                        transition: 'background 0.15s, color 0.15s'
-                      }}
+                      className={`na-nav-item ${isActive ? 'active' : ''}`}
                     >
-                      <span style={{ fontSize: '13px', width: '16px', textAlign: 'center' }}>{item.icon}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                      <span className="na-nav-icon">{item.icon}</span>
+                      <span className="na-nav-label">{item.label}</span>
                     </Link>
                   );
                 })}
               </div>
             </div>
           ))}
-        </div>
+        </nav>
 
-        {/* Bottom Logout Button */}
-        <div style={{ padding: '12px 14px', borderTop: '1px solid #1e293b', background: '#0a0f1d' }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              color: '#ef4444',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              padding: '6px 0'
-            }}
-          >
-            <span>[→</span>
+        {/* Logout */}
+        <div className="na-sidebar-footer">
+          <button className="na-logout-btn" onClick={handleLogout}>
+            <span className="na-logout-icon">↗</span>
             <span>Logout</span>
           </button>
         </div>
-
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="admin-main-wrapper">
-        
-        {/* Mobile Top Header with Hamburger Icon */}
-        <header className="admin-mobile-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {/* MAIN CONTENT */}
+      <div className="na-main">
+
+        {/* Mobile Top Bar */}
+        <header className="na-mobile-bar">
+          <div className="na-mobile-left">
             <button
+              className="na-hamburger"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{
-                background: '#1e293b',
-                color: '#fff',
-                border: '1px solid #334155',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                fontSize: '16px',
-                cursor: 'pointer'
-              }}
             >
               ☰
             </button>
-            <span style={{ fontWeight: 800, fontSize: '14.5px', color: '#fff' }}>NewsAdmin</span>
+            <span className="na-mobile-brand">NewsAdmin</span>
           </div>
-
-          <Link href="/" target="_blank" style={{ color: '#38bdf8', fontSize: '11.5px', textDecoration: 'none', fontWeight: 700 }}>
+          <Link href="/" target="_blank" className="na-mobile-live-link">
             Live Portal ↗
           </Link>
         </header>
 
-        {/* Children Pages */}
-        <main style={{ flex: 1, padding: 'clamp(14px, 2.5vw, 24px)', width: '100%', boxSizing: 'border-box' }}>
+        {/* Page Content */}
+        <main className="na-content">
           {children}
         </main>
       </div>
-
     </div>
   );
 }
