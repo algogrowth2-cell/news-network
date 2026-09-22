@@ -1,175 +1,217 @@
 'use client';
-import { useState } from 'react';
-import Link from 'next/link';
+
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AdvertiserLoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'details' | 'otp'>('details');
-  const [name, setName] = useState('');
+
+  // 1. Check if already logged in -> Immediately Redirect to Advertiser Dashboard
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('advertiser_user');
+      if (cached) {
+        const user = JSON.parse(cached);
+        if (user && (user.email || user.phone)) {
+          // Already logged in! Redirect instantly to advertiser dashboard
+          router.replace('/advertiser/dashboard');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Session parse error:', e);
+    }
+    setCheckingAuth(false);
+  }, [router]);
+
+  // Form State
+  const [agencyName, setAgencyName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [sessionId, setSessionId] = useState('');
+  const [step, setStep] = useState<'details' | 'otp'>('details');
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState({ text: '', type: '' });
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
+  // 2. Send SMS OTP
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsg({ text: '', type: '' });
+    setError('');
+    setMessage('');
 
-    if (!name.trim()) {
-      setMsg({ text: 'कृपया अपना नाम या एजेंसी का नाम दर्ज करें।', type: 'error' });
-      return;
-    }
-    if (!email.trim() || !email.includes('@')) {
-      setMsg({ text: 'कृपया सही बिजनेस ईमेल आईडी दर्ज करें।', type: 'error' });
-      return;
-    }
-    if (!phone || phone.length !== 10) {
-      setMsg({ text: 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।', type: 'error' });
+    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      setError('कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।');
       return;
     }
 
-    setLoading(true);
+    if (!agencyName.trim()) {
+      setError('कृपया नाम / विज्ञापन एजेंसी का नाम दर्ज करें।');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('कृपया अपनी ईमेल आईडी दर्ज करें।');
+      return;
+    }
+
     try {
+      setLoading(true);
       const res = await fetch('/api/auth/otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', phone })
+        body: JSON.stringify({ action: 'send', phone: cleanPhone })
       });
       const data = await res.json();
 
       if (data.success) {
         setSessionId(data.sessionId);
         setStep('otp');
-        setMsg({ text: 'SMS द्वारा 6 अंकों का OTP भेज दिया गया है।', type: 'success' });
+        setMessage('मोबाइल नंबर पर SMS द्वारा OTP भेज दिया गया है।');
       } else {
-        setMsg({ text: data.message || 'OTP भेजने में समस्या आई।', type: 'error' });
+        setError(data.message || 'OTP भेजने में विफलता हुई।');
       }
-    } catch (err) {
-      setMsg({ text: 'सर्वर कनेक्शन में त्रुटि।', type: 'error' });
+    } catch (err: any) {
+      setError('सर्वर से संपर्क नहीं हो पाया: ' + err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  // 3. Verify OTP & Save Advertiser Session
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsg({ text: '', type: '' });
+    setError('');
+    setMessage('');
 
-    if (!otp || otp.length < 4) {
-      setMsg({ text: 'कृपया सही OTP दर्ज करें।', type: 'error' });
+    if (!otp.trim()) {
+      setError('कृपया 6 अंकों का OTP दर्ज करें।');
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
       const res = await fetch('/api/auth/otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', sessionId, otp })
+        body: JSON.stringify({ action: 'verify', sessionId, otp: otp.trim() })
       });
       const data = await res.json();
 
       if (data.success) {
-        const userObj = {
-          uid: 'advertiser_' + phone,
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          role: 'advertiser',
-          verified: true
+        // Save advertiser session permanently in localStorage
+        const advertiserData = {
+          name: agencyName.trim() || 'विज्ञापनदाता',
+          email: email.trim().toLowerCase(),
+          phone: phone.replace(/[^0-9]/g, '').slice(-10),
+          createdAt: new Date().toISOString()
         };
 
-        localStorage.setItem('advertiser_user', JSON.stringify(userObj));
-        setMsg({ text: 'OTP सत्यापित! डैशबोर्ड पर भेजा जा रहा है...', type: 'success' });
+        localStorage.setItem('advertiser_user', JSON.stringify(advertiserData));
+        setMessage('लॉगिन सफल! विज्ञापनदाता डैशबोर्ड पर भेजा जा रहा है...');
+
         setTimeout(() => {
-          router.push('/advertiser/dashboard');
-        }, 1000);
+          router.replace('/advertiser/dashboard');
+        }, 300);
       } else {
-        setMsg({ text: data.message || 'गलत OTP दर्ज किया गया है।', type: 'error' });
+        setError(data.message || 'गलत OTP दर्ज किया गया है।');
       }
-    } catch (err) {
-      setMsg({ text: 'सत्यापन विफल रहा।', type: 'error' });
+    } catch (err: any) {
+      setError('सत्यापन त्रुटि: ' + err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  if (checkingAuth) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef2f6', color: '#64748b', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        सत्र की जांच की जा रही है...
+      </div>
+    );
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#f2f1ee', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '"Mukta", system-ui, sans-serif' }}>
-      <div style={{ background: '#ffffff', width: '100%', maxWidth: '440px', borderRadius: '14px', border: '1px solid #e3e0da', padding: '32px', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef2f6', padding: '20px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '16px', padding: '36px 30px', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', boxSizing: 'border-box' }}>
         
+        {/* Header Icon & Title */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ width: '48px', height: '48px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '12px', display: 'grid', placeItems: 'center', margin: '0 auto 10px', fontSize: '22px', color: '#ea580c' }}>
+          <div style={{ width: '48px', height: '48px', margin: '0 auto 12px', background: '#fff7ed', borderRadius: '12px', display: 'grid', placeItems: 'center', fontSize: '24px' }}>
             📢
           </div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px', color: '#16150f' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
             विज्ञापनदाता लॉगिन (Advertiser Portal)
-          </h2>
-          <p style={{ fontSize: '13px', color: '#8d897f', margin: 0 }}>
-            विज्ञापन बुकिंग एवं कैंपेन प्रबंधन पोर्टल
+          </h1>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+            {step === 'details' ? 'विज्ञापन बुकिंग एवं कैंपेन प्रबंधन पोर्टल' : 'मोबाइल पर प्राप्त OTP दर्ज करें'}
           </p>
         </div>
 
-        {msg.text && (
-          <div style={{
-            background: msg.type === 'success' ? '#f0fdf4' : '#fef2f2',
-            color: msg.type === 'success' ? '#166534' : '#991b1b',
-            border: `1px solid ${msg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-            borderRadius: '8px',
-            padding: '10px 14px',
-            fontSize: '13px',
-            marginBottom: '16px',
-            textAlign: 'center'
-          }}>
-            {msg.text}
+        {/* Notifications */}
+        {message && (
+          <div style={{ backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
+            {message}
+          </div>
+        )}
+        {error && (
+          <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
+            {error}
           </div>
         )}
 
-        {step === 'details' ? (
-          <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* STEP 1: DETAILS FORM */}
+        {step === 'details' && (
+          <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#16150f' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' }}>
                 नाम / विज्ञापन एजेंसी का नाम *
               </label>
               <input
                 type="text"
-                placeholder="उदा. पाटीदार मीडिया"
-                value={name}
-                onChange={e => setName(e.target.value)}
                 required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                placeholder="उदा. पाटीदार मीडिया"
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', fontSize: '14px', outline: 'none' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#16150f' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' }}>
                 ईमेल आईडी *
               </label>
               <input
                 type="email"
+                required
                 placeholder="ads@example.com"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', fontSize: '14px', outline: 'none' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '4px', color: '#16150f' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' }}>
                 मोबाइल नंबर (Text SMS OTP हेतु) *
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
-                <span style={{ background: '#f8fafc', padding: '10px 12px', fontSize: '14px', fontWeight: 600, color: '#475569', borderRight: '1px solid #cbd5e1' }}>+91</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', color: '#475569', fontSize: '14px', fontWeight: 600 }}>
+                  +91
+                </span>
                 <input
                   type="tel"
+                  required
                   maxLength={10}
                   placeholder="10 अंकों का मोबाइल नंबर"
                   value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                  required
-                  style={{ width: '100%', padding: '10px 12px', border: 'none', fontSize: '15px', outline: 'none' }}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', fontSize: '14px', outline: 'none' }}
                 />
               </div>
             </div>
@@ -178,45 +220,39 @@ export default function AdvertiserLoginPage() {
               type="submit"
               disabled={loading}
               style={{
-                background: '#ea580c',
-                color: '#fff',
+                backgroundColor: '#ea580c',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '12px',
+                padding: '13px',
                 fontSize: '15px',
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: 'pointer',
-                marginTop: '6px'
+                marginTop: '6px',
+                opacity: loading ? 0.7 : 1
               }}
             >
-              {loading ? 'SMS OTP भेजा जा रहा है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
+              {loading ? 'OTP भेजा जा रहा है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
             </button>
           </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13.5px', color: '#64748b' }}>
-                नंबर <b>+91 {phone}</b> पर भेजा गया OTP दर्ज करें
-              </span>
-              <button
-                type="button"
-                onClick={() => setStep('details')}
-                style={{ display: 'block', margin: '4px auto 0', background: 'none', border: 'none', color: '#ea580c', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
-              >
-                नंबर बदलें
-              </button>
-            </div>
+        )}
 
+        {/* STEP 2: VERIFY OTP FORM */}
+        {step === 'otp' && (
+          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' }}>
+                6 अंकों का SMS OTP दर्ज करें *
+              </label>
               <input
                 type="text"
-                maxLength={6}
-                placeholder="• • • • • •"
-                value={otp}
-                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                autoFocus
                 required
-                style={{ width: '100%', padding: '12px', textAlign: 'center', letterSpacing: '8px', fontSize: '22px', fontWeight: 700, borderRadius: '8px', border: '2px solid #ea580c', outline: 'none' }}
+                maxLength={6}
+                placeholder="उदा. 482910"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '12px 14px', fontSize: '16px', letterSpacing: '4px', textAlign: 'center', outline: 'none' }}
+                autoFocus
               />
             </div>
 
@@ -224,23 +260,32 @@ export default function AdvertiserLoginPage() {
               type="submit"
               disabled={loading}
               style={{
-                background: '#16a34a',
-                color: '#fff',
+                backgroundColor: '#ea580c',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '12px',
+                padding: '13px',
                 fontSize: '15px',
-                fontWeight: 700,
-                cursor: 'pointer'
+                fontWeight: 600,
+                cursor: 'pointer',
+                opacity: loading ? 0.7 : 1
               }}
             >
-              {loading ? 'जाँच जारी है...' : '✓ OTP सत्यापित करें'}
+              {loading ? 'सत्यापित हो रहा है...' : 'सत्यापित करें एवं डैशबोर्ड खोलें'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setStep('details'); setError(''); }}
+              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '12.5px', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              ← नंबर या विवरण बदलें
             </button>
           </form>
         )}
 
-        <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #e3e0da', paddingTop: '16px' }}>
-          <Link href="/" style={{ color: '#64748b', fontSize: '13px', textDecoration: 'none' }}>
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <Link href="/" style={{ fontSize: '12.5px', color: '#64748b', textDecoration: 'none' }}>
             ← होम पेज पर वापस जाएं
           </Link>
         </div>
