@@ -29,9 +29,21 @@ interface ReporterArticle {
   views?: number;
 }
 
+// Complete list of all 8 network websites
+const NETWORK_WEBSITES = [
+  { name: 'द लोकल लीडर', slug: 'the-local-leader' },
+  { name: 'बाज़ार कारोबार', slug: 'bazar-karobar' },
+  { name: 'गोल्डन पर्ल क्रॉनिकल्स', slug: 'golden-pearl-chronicles' },
+  { name: 'द प्रोव्यू टाइम्स', slug: 'state-express' },
+  { name: 'देश की आवाज़', slug: 'desh-ki-aawaz' },
+  { name: 'जन भारत न्यूज़', slug: 'jan-chetna-news' },
+  { name: 'NEWS INFO 24', slug: 'city-bulletin' },
+  { name: 'डिफेंस न्यूज़', slug: 'national-spotlight' }
+];
+
 export default function PatrakarDashboard() {
   const [reporter, setReporter] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'create-article' | 'id-card' | 'membership' | 'delivery'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'create-article' | 'id-card' | 'membership' | 'delivery'>('create-article');
   const [articles, setArticles] = useState<ReporterArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +99,7 @@ export default function PatrakarDashboard() {
         name: 'pankaj patidar',
         phone: '8839287421',
         email: 'reporter@thelocalleader.in',
-        membershipActive: false,
+        membershipActive: true,
         idNumber: 'LL-PRESS-7821',
         designation: 'वरिष्ठ संवाददाता (Chief Bureau)',
         validTill: '31 Dec 2027',
@@ -157,7 +169,7 @@ export default function PatrakarDashboard() {
 
     const options = {
       key: RAZORPAY_KEY,
-      amount: 499 * 100, // in paise
+      amount: 499 * 100,
       currency: 'INR',
       name: siteName,
       description: 'वार्षिक पत्रकार सदस्यता (Unlimited Articles Publishing)',
@@ -265,7 +277,7 @@ export default function PatrakarDashboard() {
         image: artImage.trim() || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200',
         authorName: reporter.name,
         authorIdentifier: reporter.phone || reporter.email,
-        status: 'pending', // Verified by admin before going live
+        status: 'pending',
         views: 0,
         createdAt: serverTimestamp()
       });
@@ -288,29 +300,29 @@ export default function PatrakarDashboard() {
   const pendingArticles = articles.filter(a => a.status === 'pending').length;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#070b14', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Header */}
-      <header style={{ backgroundColor: '#0e1626', borderBottom: '1px solid #1e293b', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      {/* Top Header - White Theme */}
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
-            <img src={siteLogo} alt={siteName} style={{ height: '34px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+            <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
           )}
           <div>
-            <b style={{ fontSize: '17px', color: '#ffffff' }}>पत्रकार संवाददाता पोर्टल</b>
-            <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              संवाददाता: <b style={{ color: themeColor }}>{reporter?.name}</b> · {reporter?.phone} · आईडी: {reporter?.idNumber}
+            <b style={{ fontSize: '18px', color: '#0f172a' }}>पत्रकार संवाददाता पोर्टल</b>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>
+              संवाददाता: <b style={{ color: themeColor }}>{reporter?.name}</b> · {reporter?.phone} · आईडी: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{reporter?.idNumber}</span>
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/" style={{ fontSize: '13px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
+          <Link href="/" style={{ fontSize: '13.5px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
             ← मुख्य वेबसाइट देखें
           </Link>
           <button 
             onClick={handleLogout}
-            style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#f87171', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}
+            style={{ backgroundColor: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', padding: '6px 14px', borderRadius: '6px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
           >
             लॉगआउट
           </button>
@@ -319,52 +331,53 @@ export default function PatrakarDashboard() {
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         
-        {/* Metric Cards Row */}
+        {/* Metric Cards Row - Clean White Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>कुल सबमिट की गई खबरें</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginTop: '6px' }}>{totalArticles}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>आपके द्वारा भेजी गई कुल खबरें</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>कुल सबमिट की गई खबरें</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>{totalArticles}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>आपके द्वारा भेजी गई कुल खबरें</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>लाइव / स्वीकृत (Published)</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#34d399', marginTop: '6px' }}>{approvedArticles}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>संपादक द्वारा सत्यापित एवं लाइव</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>लाइव / स्वीकृत (Published)</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#16a34a', marginTop: '4px' }}>{approvedArticles}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>संपादक द्वारा सत्यापित एवं लाइव</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>समीक्षा हेतु लंबित (Pending)</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#fbbf24', marginTop: '6px' }}>{pendingArticles}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>एडमिन सत्यापन की प्रतीक्षा में</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>समीक्षा हेतु लंबित (Pending)</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#d97706', marginTop: '4px' }}>{pendingArticles}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>एडमिन सत्यापन की प्रतीक्षा में</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>सदस्यता स्थिति (Plan)</span>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: reporter?.membershipActive ? '#34d399' : '#f87171', marginTop: '10px' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>सदस्यता स्थिति (Plan)</span>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: reporter?.membershipActive ? '#16a34a' : '#dc2626', marginTop: '8px' }}>
               {reporter?.membershipActive ? '✓ सक्रिय (Active)' : 'अक्रिय (Inactive)'}
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
               {reporter?.membershipActive ? 'असीमित खबर प्रकाशन चालू' : 'खबर भेजने हेतु प्लान आवश्यक'}
             </span>
           </div>
 
         </div>
 
-        {/* Tab Navigation with Dynamic Theme Color */}
+        {/* Tab Navigation with Dynamic Brand Color */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
           <button
             onClick={() => setActiveTab('overview')}
             style={{
-              backgroundColor: activeTab === 'overview' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'overview' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'overview' ? themeColor : '#ffffff',
+              color: activeTab === 'overview' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'overview' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
-              padding: '9px 16px',
-              fontSize: '13px',
+              padding: '9px 18px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'overview' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             मेरी खबरें ({articles.length})
@@ -380,14 +393,15 @@ export default function PatrakarDashboard() {
               }
             }}
             style={{
-              backgroundColor: activeTab === 'create-article' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'create-article' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'create-article' ? themeColor : '#ffffff',
+              color: activeTab === 'create-article' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'create-article' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
-              padding: '9px 16px',
-              fontSize: '13px',
+              padding: '9px 18px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'create-article' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             + नई खबर भेजें
@@ -396,14 +410,15 @@ export default function PatrakarDashboard() {
           <button
             onClick={() => setActiveTab('id-card')}
             style={{
-              backgroundColor: activeTab === 'id-card' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'id-card' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'id-card' ? themeColor : '#ffffff',
+              color: activeTab === 'id-card' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'id-card' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
-              padding: '9px 16px',
-              fontSize: '13px',
+              padding: '9px 18px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'id-card' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             🪪 प्रेस आईडी कार्ड & प्रमाणपत्र
@@ -412,14 +427,15 @@ export default function PatrakarDashboard() {
           <button
             onClick={() => setActiveTab('delivery')}
             style={{
-              backgroundColor: activeTab === 'delivery' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'delivery' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'delivery' ? themeColor : '#ffffff',
+              color: activeTab === 'delivery' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'delivery' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
-              padding: '9px 16px',
-              fontSize: '13px',
+              padding: '9px 18px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'delivery' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             📦 होम डिलीवरी किट (₹299)
@@ -429,12 +445,12 @@ export default function PatrakarDashboard() {
             <button
               onClick={() => setActiveTab('membership')}
               style={{
-                backgroundColor: activeTab === 'membership' ? '#10b981' : '#064e3b',
-                color: '#ffffff',
-                border: '1px solid #10b981',
+                backgroundColor: activeTab === 'membership' ? '#16a34a' : '#ecfdf5',
+                color: activeTab === 'membership' ? '#ffffff' : '#15803d',
+                border: '1.5px solid #16a34a',
                 borderRadius: '8px',
-                padding: '9px 16px',
-                fontSize: '13px',
+                padding: '9px 18px',
+                fontSize: '13.5px',
                 fontWeight: 700,
                 cursor: 'pointer'
               }}
@@ -444,21 +460,21 @@ export default function PatrakarDashboard() {
           )}
         </div>
 
-        {/* TAB 1: MY ARTICLES */}
+        {/* TAB 1: MY ARTICLES - Clean White Table */}
         {activeTab === 'overview' && (
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>डेटा लोड हो रहा है...</div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>डेटा लोड हो रहा है...</div>
             ) : articles.length === 0 ? (
-              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                <p style={{ fontSize: '16px', color: '#ffffff', marginBottom: '8px' }}>आपने अभी तक कोई खबर सबमिट नहीं की है</p>
-                <p style={{ fontSize: '13px', margin: 0 }}>खबर भेजने के लिए ऊपर "+ नई खबर भेजें" बटन पर क्लिक करें।</p>
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+                <p style={{ fontSize: '17px', color: '#0f172a', fontWeight: 600, marginBottom: '6px' }}>आपने अभी तक कोई खबर सबमिट नहीं की है</p>
+                <p style={{ fontSize: '13.5px', margin: 0, color: '#64748b' }}>खबर भेजने के लिए ऊपर "+ नई खबर भेजें" बटन पर क्लिक करें।</p>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#0a101d', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>
+                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                       <th style={{ padding: '14px 18px' }}>शीर्षक (Title)</th>
                       <th style={{ padding: '14px 18px' }}>श्रेणी</th>
                       <th style={{ padding: '14px 18px' }}>पोर्टल (Target Site)</th>
@@ -468,33 +484,33 @@ export default function PatrakarDashboard() {
                   </thead>
                   <tbody>
                     {articles.map((art, idx) => (
-                      <tr key={art.id} style={{ borderBottom: idx === articles.length - 1 ? 'none' : '1px solid #162238' }}>
-                        <td style={{ padding: '14px 18px', color: '#ffffff', fontWeight: 500 }}>
+                      <tr key={art.id} style={{ borderBottom: idx === articles.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '14px 18px', color: '#0f172a', fontWeight: 600 }}>
                           {art.title}
                         </td>
-                        <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>
                           {art.category}
                         </td>
-                        <td style={{ padding: '14px 18px', color: themeColor, fontFamily: 'monospace' }}>
+                        <td style={{ padding: '14px 18px', color: themeColor, fontFamily: 'monospace', fontWeight: 600 }}>
                           {art.siteId}
                         </td>
                         <td style={{ padding: '14px 18px' }}>
                           <span
                             style={{
                               display: 'inline-block',
-                              padding: '3px 10px',
+                              padding: '3px 12px',
                               borderRadius: '20px',
-                              fontSize: '11px',
+                              fontSize: '11.5px',
                               fontWeight: 600,
-                              backgroundColor: art.status === 'published' || art.status === 'approved' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                              color: art.status === 'published' || art.status === 'approved' ? '#34d399' : '#fbbf24',
-                              border: `1px solid ${art.status === 'published' || art.status === 'approved' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`
+                              backgroundColor: art.status === 'published' || art.status === 'approved' ? '#dcfce7' : '#fef3c7',
+                              color: art.status === 'published' || art.status === 'approved' ? '#15803d' : '#b45309',
+                              border: `1px solid ${art.status === 'published' || art.status === 'approved' ? '#bbf7d0' : '#fde68a'}`
                             }}
                           >
                             {art.status === 'published' || art.status === 'approved' ? '✓ लाइव (Approved)' : '⏳ समीक्षाधीन (Pending)'}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 18px', color: '#38bdf8' }}>
+                        <td style={{ padding: '14px 18px', color: '#0284c7', fontWeight: 600 }}>
                           👁️ {art.views || 0}
                         </td>
                       </tr>
@@ -506,92 +522,93 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 2: CREATE & SUBMIT ARTICLE */}
+        {/* TAB 2: CREATE & SUBMIT ARTICLE - Light Clean Box with all 8 sites */}
         {activeTab === 'create-article' && (
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>नई खबर सबमिट करें (सत्यापन हेतु)</h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '820px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>नई खबर सबमिट करें (सत्यापन हेतु)</h2>
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0' }}>
               आपके द्वारा भेजी गई खबर संपादक की समीक्षा के बाद पोर्टल पर आपके नाम से लाइव प्रकाशित होगी।
             </p>
 
-            <form onSubmit={handleSubmitArticle} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmitArticle} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>खबर का मुख्य शीर्षक (Headline) *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>खबर का मुख्य शीर्षक (Headline) *</label>
                 <input
                   type="text"
                   required
                   placeholder="उदा. भरूच में विकास योजनाओं का शुभारंभ, जनता में भारी उत्साह..."
                   value={artTitle}
                   onChange={(e) => setArtTitle(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '14px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पोर्टल चयन (Target Website) *</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>पोर्टल चयन (किस वेबसाइट पर लगाना है) *</label>
                   <select
                     value={artSiteId}
                     onChange={(e) => setArtSiteId(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
-                    <option value="the-local-leader">द लोकल लीडर (the-local-leader)</option>
-                    <option value="bazar-karobar">बाज़ार कारोबार (bazar-karobar)</option>
-                    <option value="golden-pearl-chronicles">गोल्डन पर्ल क्रॉनिकल्स</option>
-                    <option value="desh-ki-aawaz">देश की आवाज़</option>
-                    <option value="state-express">द प्रोव्यू टाइम्स</option>
+                    {NETWORK_WEBSITES.map(w => (
+                      <option key={w.slug} value={w.slug}>
+                        {w.name} ({w.slug})
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>श्रेणी (Category)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>श्रेणी (Category)</label>
                   <select
                     value={artCategory}
                     onChange={(e) => setArtCategory(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
-                    <option value="राजनीति">राजनीति</option>
+                    <option value="राजनीति">राजनीति (Politics)</option>
                     <option value="अपराध">अपराध (Crime)</option>
-                    <option value="व्यापार">व्यापार</option>
-                    <option value="राज्य">राज्य / ज़िला</option>
-                    <option value="खेल">खेल</option>
-                    <option value="स्वास्थ्य">स्वास्थ्य</option>
+                    <option value="व्यापार">व्यापार (Business)</option>
+                    <option value="राज्य">राज्य / ज़िला (National/State)</option>
+                    <option value="खेल">खेल (Sports)</option>
+                    <option value="स्वास्थ्य">स्वास्थ्य (Health)</option>
+                    <option value="जीवनशैली">जीवनशैली (Lifestyle)</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>संक्षिप्त विवरण (Summary)</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>संक्षिप्त विवरण (Summary)</label>
                 <textarea
                   rows={2}
                   placeholder="खबर का 1-2 लाइन का मुख्य सार लिखें..."
                   value={artSummary}
                   onChange={(e) => setArtSummary(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पूरी खबर का विवरण (Full Content) *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>पूरी खबर का विवरण (Full Content) *</label>
                 <textarea
                   rows={6}
                   required
                   placeholder="विस्तार से पूरी खबर लिखें..."
                   value={artContent}
                   onChange={(e) => setArtContent(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px', lineHeight: 1.6 }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', lineHeight: 1.6, outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>फ़ोटो इमेज लिंक (Image URL)</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>फ़ोटो इमेज लिंक (Image URL)</label>
                 <input
                   type="url"
                   placeholder="https://example.com/news-photo.jpg"
                   value={artImage}
                   onChange={(e) => setArtImage(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
@@ -599,14 +616,14 @@ export default function PatrakarDashboard() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('overview')}
-                  style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#94a3b8', padding: '10px 18px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+                  style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '10px 20px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   रद्द करें
                 </button>
                 <button
                   type="submit"
                   disabled={submittingArticle}
-                  style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '10px 24px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '11px 26px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
                 >
                   {submittingArticle ? 'सबमिट हो रहा है...' : 'सबमिट करें (सत्यापन हेतु)'}
                 </button>
@@ -619,66 +636,65 @@ export default function PatrakarDashboard() {
         {/* TAB 3: ID CARD & CERTIFICATE */}
         {activeTab === 'id-card' && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: 0 }}>पत्रकार प्रेस आईडी कार्ड & प्रमाणपत्र</h2>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0' }}>डिजिटल डाउनलोड करें या घर बैठे ओरिजिनल लैमिनेटेड किट मंगवाएं।</p>
+                <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: 0 }}>पत्रकार प्रेस आईडी कार्ड & प्रमाणपत्र</h2>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>डिजिटल डाउनलोड करें या घर बैठे ओरिजिनल लैमिनेटेड किट मंगवाएं।</p>
               </div>
               <button
                 onClick={() => window.print()}
-                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer' }}
               >
                 📥 डिजिटल डाउनलोड / प्रिंट
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
               
               {/* ID Card */}
-              <div style={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: `2px solid ${themeColor}` }}>
-                <div style={{ backgroundColor: themeColor, padding: '14px', textAlign: 'center', color: '#ffffff' }}>
-                  <b style={{ fontSize: '17px', letterSpacing: '0.5px' }}>{siteName} डिजिटल मीडिया</b>
-                  <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '1px' }}>Official Press Identity Card</div>
+              <div style={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: `2px solid ${themeColor}` }}>
+                <div style={{ backgroundColor: themeColor, padding: '16px', textAlign: 'center', color: '#ffffff' }}>
+                  <b style={{ fontSize: '18px', letterSpacing: '0.5px' }}>{siteName} डिजिटल मीडिया</b>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.9 }}>Official Press Identity Card</div>
                 </div>
 
-                <div style={{ padding: '20px', textAlign: 'center' }}>
+                <div style={{ padding: '22px', textAlign: 'center' }}>
                   <img 
                     src={reporter?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'} 
                     alt={reporter?.name} 
-                    style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }} 
+                    style={{ width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }} 
                   />
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter?.name}</h3>
-                  <div style={{ fontSize: '12px', color: themeColor, fontWeight: 600 }}>{reporter?.designation}</div>
+                  <h3 style={{ fontSize: '19px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter?.name}</h3>
+                  <div style={{ fontSize: '12.5px', color: themeColor, fontWeight: 700 }}>{reporter?.designation}</div>
 
-                  <div style={{ marginTop: '16px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', textAlign: 'left', fontSize: '12px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div><b>प्रेस आईडी सं:</b> {reporter?.idNumber}</div>
+                  <div style={{ marginTop: '18px', borderTop: '1px dashed #cbd5e1', paddingTop: '14px', textAlign: 'left', fontSize: '12.5px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div><b>प्रेस आईडी सं:</b> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{reporter?.idNumber}</span></div>
                     <div><b>संपर्क:</b> +91 {reporter?.phone}</div>
                     <div><b>वैधता (Validity):</b> {reporter?.validTill}</div>
                     <div><b>मुख्यालय:</b> स्टेशन रोड, भरूच (गुजरात)</div>
                   </div>
 
-                  <div style={{ marginTop: '16px', background: '#f8fafc', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#64748b' }}>
+                  <div style={{ marginTop: '16px', background: '#f8fafc', padding: '10px', borderRadius: '8px', fontSize: '10.5px', color: '#64748b' }}>
                     यह कार्ड अधिकृत समाचार संकलन हेतु मान्य है। कानून व्यवस्था के अनुपालन में सहयोग अपेक्षित है।
                   </div>
                 </div>
               </div>
 
               {/* Certificate */}
-              <div style={{ backgroundColor: '#fffdfa', color: '#1e293b', borderRadius: '14px', padding: '24px', border: `6px double ${themeColor}`, boxShadow: '0 10px 25px rgba(0,0,0,0.4)', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: themeColor, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: '#fffdfa', color: '#1e293b', borderRadius: '16px', padding: '26px', border: `6px double ${themeColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+                <div style={{ fontSize: '11.5px', color: themeColor, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                   Certificate of Accreditation
                 </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '8px 0', color: '#78350f', fontFamily: 'Georgia, serif' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '10px 0', color: '#78350f', fontFamily: 'Georgia, serif' }}>
                   प्रमाणपत्र एवं अधिमान्यता
                 </h3>
-                <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#451a03', margin: '14px 0' }}>
+                <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#451a03', margin: '16px 0' }}>
                   प्रमाणित किया जाता है कि <b>श्री/श्रीमती {reporter?.name}</b> हमारे डिजिटल मीडिया नेटवर्क '{siteName}' के अधिकृत पत्रकार के रूप में पंजीकृत हैं।
                 </p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', borderTop: `1px solid ${themeColor}`, paddingTop: '10px', fontSize: '11px', color: '#78350f' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '32px', borderTop: `1px solid ${themeColor}`, paddingTop: '12px', fontSize: '11.5px', color: '#78350f' }}>
                   <div>
-                    <b>आईडी सं:</b> {reporter?.idNumber}
+                    <b>आईडी सं:</b> <span style={{ fontFamily: 'monospace' }}>{reporter?.idNumber}</span>
                   </div>
                   <div>
                     <b>हस्ताक्षर:</b> मुख्य संपादक
@@ -689,14 +705,14 @@ export default function PatrakarDashboard() {
             </div>
 
             {/* Delivery CTA */}
-            <div style={{ marginTop: '24px', backgroundColor: '#0e1626', border: `1px solid ${themeColor}`, borderRadius: '12px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ marginTop: '24px', backgroundColor: '#ffffff', border: `1.5px solid ${themeColor}`, borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
               <div>
-                <b style={{ color: '#ffffff', fontSize: '15px' }}>क्या आपको ओरिजिनल लैमिनेटेड कार्ड + डोरी + सील प्रमाणपत्र घर पर चाहिए?</b>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>मात्र ₹299 डिलीवरी व प्रिंटिंग शुल्क में स्पीड पोस्ट द्वारा आपके पते पर भेज दिया जाएगा।</p>
+                <b style={{ color: '#0f172a', fontSize: '16px' }}>क्या आपको ओरिजिनल लैमिनेटेड कार्ड + डोरी + सील प्रमाणपत्र घर पर चाहिए?</b>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>मात्र ₹299 डिलीवरी व प्रिंटिंग शुल्क में स्पीड पोस्ट द्वारा आपके पते पर भेज दिया जाएगा।</p>
               </div>
               <button
                 onClick={() => setActiveTab('delivery')}
-                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '11px 22px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer' }}
               >
                 घर मंगवाएं (₹299)
               </button>
@@ -707,50 +723,49 @@ export default function PatrakarDashboard() {
 
         {/* TAB 4: DELIVERY FORM (₹299) */}
         {activeTab === 'delivery' && (
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', maxWidth: '650px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>प्रेस किट होम डिलीवरी ऑर्डर (₹299)</h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '650px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>प्रेस किट होम डिलीवरी ऑर्डर (₹299)</h2>
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 22px 0' }}>
               किट में शामिल: हार्ड लैमिनेटेड प्रेस कार्ड, ब्रांडेड नेक डोरी (Lanyard), आधिकारिक अधिमान्यता प्रमाणपत्र व वाहन प्रेस स्टिकर।
             </p>
 
             <form onSubmit={handleDeliveryPayment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पत्रकार का पूरा नाम *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>पत्रकार का पूरा नाम *</label>
                 <input
                   type="text"
                   required
                   defaultValue={reporter?.name}
                   onChange={(e) => setDelName(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>डिलीवरी संपर्क नंबर (WhatsApp) *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>डिलीवरी संपर्क नंबर (WhatsApp) *</label>
                 <input
                   type="tel"
                   required
                   defaultValue={reporter?.phone}
                   onChange={(e) => setDelPhone(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पूरा कूरियर पता (मकान नं, गली, लैंडमार्क, तहसील व ज़िला) *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>पूरा कूरियर पता (मकान नं, गली, लैंडमार्क, तहसील व ज़िला) *</label>
                 <textarea
                   rows={3}
                   required
                   placeholder="उदा. मकान नं 45, पटेल नगर, नज़दीक बस स्टैंड, भरूच, गुजरात"
                   value={delAddress}
                   onChange={(e) => setDelAddress(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पिनकोड (Pincode) *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>पिनकोड (Pincode) *</label>
                 <input
                   type="text"
                   required
@@ -758,38 +773,37 @@ export default function PatrakarDashboard() {
                   placeholder="392001"
                   value={delPincode}
                   onChange={(e) => setDelPincode(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
-              <div style={{ backgroundColor: '#131d33', border: '1px solid #27354f', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#cbd5e1' }}>कुल डिलीवरी व प्रिंटिंग शुल्क:</span>
-                <b style={{ fontSize: '18px', color: '#34d399' }}>₹299</b>
+              <div style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '14px', color: '#334155', fontWeight: 600 }}>कुल डिलीवरी व प्रिंटिंग शुल्क:</span>
+                <b style={{ fontSize: '20px', color: '#16a34a' }}>₹299</b>
               </div>
 
               <button
                 type="submit"
                 disabled={payingDelivery}
-                style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '12px', borderRadius: '6px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
+                style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
               >
                 {payingDelivery ? 'पेमेंट शुरू हो रहा है...' : '₹299 का ऑनलाइन भुगतान करें'}
               </button>
-
             </form>
           </div>
         )}
 
         {/* TAB 5: MEMBERSHIP PURCHASE (₹499) */}
         {activeTab === 'membership' && (
-          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#0e1626', border: `2px solid ${themeColor}`, borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
-            <span style={{ backgroundColor: 'rgba(234,88,12,0.15)', color: themeColor, border: `1px solid ${themeColor}`, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff', border: `2px solid ${themeColor}`, borderRadius: '16px', padding: '36px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+            <span style={{ backgroundColor: '#fff7ed', color: themeColor, border: `1px solid ${themeColor}`, padding: '4px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
               वार्षिक पत्रकार सदस्यता (ANNUAL PLAN)
             </span>
-            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '14px 0 6px 0' }}>असीमित खबर प्रकाशन सदस्यता</h2>
-            <div style={{ fontSize: '36px', fontWeight: 800, color: themeColor, margin: '12px 0' }}>₹499 <small style={{ fontSize: '14px', color: '#94a3b8' }}>/ वर्ष</small></div>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '16px 0 6px 0' }}>असीमित खबर प्रकाशन सदस्यता</h2>
+            <div style={{ fontSize: '38px', fontWeight: 800, color: themeColor, margin: '14px 0' }}>₹499 <small style={{ fontSize: '14px', color: '#64748b' }}>/ वर्ष</small></div>
 
-            <div style={{ textAlign: 'left', margin: '20px 0', borderTop: '1px solid #1e293b', borderBottom: '1px solid #1e293b', padding: '16px 0', fontSize: '13.5px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>✓ सभी न्यूज़ नेटवर्क वेबसाइट्स पर खबरें पोस्ट करने की अनुमति</div>
+            <div style={{ textAlign: 'left', margin: '22px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '18px 0', fontSize: '14px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>✓ सभी 8 न्यूज़ नेटवर्क वेबसाइट्स पर खबरें पोस्ट करने की अनुमति</div>
               <div>✓ डिजिटल प्रेस आईडी कार्ड एवं अधिकृत रिपोर्टर प्रमाणपत्र</div>
               <div>✓ लाइव न्यूज़ फीड में लेखक के नाम से बायलाइन (Byline)</div>
               <div>✓ 24/7 एडिटोरियल डेस्क सपोर्ट</div>
@@ -797,7 +811,7 @@ export default function PatrakarDashboard() {
 
             <button
               onClick={handleBuyMembership}
-              style={{ backgroundColor: themeColor, color: '#ffffff', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
+              style={{ backgroundColor: themeColor, color: '#ffffff', border: 'none', padding: '13px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
             >
               सदस्यता लें एवं ₹499 भुगतान करें
             </button>
