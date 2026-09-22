@@ -86,31 +86,18 @@ export default function PublicVideosPage() {
     return vid.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
   });
 
-  // Auto-detect YouTube Links regardless of videoType selected in admin
-  const isYouTubeUrl = (url: string) => {
-    if (!url) return false;
-    return url.includes('youtube.com') || url.includes('youtu.be');
+  // Universal YouTube Video ID Extractor
+  const extractYouTubeId = (url: string): string | null => {
+    if (!url) return null;
+    const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
   };
 
-  const getEmbedUrl = (url: string) => {
-    if (!url) return '';
-    try {
-      if (url.includes('youtube.com/watch?v=')) {
-        const id = url.split('watch?v=')[1]?.split('&')[0];
-        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
-      }
-      if (url.includes('youtu.be/')) {
-        const id = url.split('youtu.be/')[1]?.split('?')[0];
-        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
-      }
-      if (url.includes('youtube.com/shorts/')) {
-        const id = url.split('youtube.com/shorts/')[1]?.split('?')[0];
-        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return url;
+  const getYouTubeEmbedUrl = (url: string): string => {
+    const id = extractYouTubeId(url);
+    if (!id) return url;
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
   };
 
   return (
@@ -212,121 +199,139 @@ export default function PublicVideosPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '22px' }}>
-            {filteredVideos.map((vid) => (
-              <div
-                key={vid.id}
-                onClick={() => setPlayingVideo(vid)}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-3px)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-              >
-                {/* Video Thumbnail */}
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', overflow: 'hidden' }}>
-                  <img
-                    src={vid.thumbnailUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800'}
-                    alt={vid.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+            {filteredVideos.map((vid) => {
+              const ytId = extractYouTubeId(vid.videoUrl);
+              const thumb = vid.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800');
 
-                  {/* Play Button Overlay */}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.28)' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: themeColor, display: 'grid', placeItems: 'center', color: '#ffffff', fontSize: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}>
-                      ▶
-                    </div>
-                  </div>
+              return (
+                <div
+                  key={vid.id}
+                  onClick={() => setPlayingVideo(vid)}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-3px)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+                >
+                  {/* Video Thumbnail */}
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', overflow: 'hidden' }}>
+                    <img
+                      src={thumb}
+                      alt={vid.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
 
-                  {/* Duration Badge */}
-                  {vid.duration && (
-                    <span style={{ position: 'absolute', bottom: '8px', right: '8px', backgroundColor: 'rgba(0,0,0,0.85)', color: '#ffffff', fontSize: '11px', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
-                      {vid.duration}
-                    </span>
-                  )}
-
-                  {/* Video Type Badge */}
-                  <span style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(15,23,42,0.85)', color: '#38bdf8', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>
-                    {isYouTubeUrl(vid.videoUrl) ? 'YOUTUBE' : 'DIRECT'}
-                  </span>
-                </div>
-
-                {/* Card Content */}
-                <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: themeColor, fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                      <span>{vid.category}</span>
-                      {vid.cityName && <span style={{ color: '#94a3b8' }}>• {vid.cityName}</span>}
+                    {/* Play Button Overlay */}
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.28)' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: themeColor, display: 'grid', placeItems: 'center', color: '#ffffff', fontSize: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}>
+                        ▶
+                      </div>
                     </div>
 
-                    <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {vid.title}
-                    </h3>
+                    {/* Duration Badge */}
+                    {vid.duration && (
+                      <span style={{ position: 'absolute', bottom: '8px', right: '8px', backgroundColor: 'rgba(0,0,0,0.85)', color: '#ffffff', fontSize: '11px', padding: '2px 7px', borderRadius: '4px', fontWeight: 600 }}>
+                        {vid.duration}
+                      </span>
+                    )}
+
+                    {/* Video Type Badge */}
+                    <span style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(15,23,42,0.85)', color: '#38bdf8', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>
+                      {ytId ? 'YOUTUBE' : (vid.videoType || 'VIDEO')}
+                    </span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '12px', color: '#64748b' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      👁️ {vid.views || 0} व्यूज़
-                    </span>
-                    <span style={{ color: themeColor, fontWeight: 600 }}>
-                      अभी देखें →
-                    </span>
+                  {/* Card Content */}
+                  <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: themeColor, fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                        <span>{vid.category}</span>
+                        {vid.cityName && <span style={{ color: '#94a3b8' }}>• {vid.cityName}</span>}
+                      </div>
+
+                      <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: '#0f172a', margin: 0, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {vid.title}
+                      </h3>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', fontSize: '12px', color: '#64748b' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        👁️ {vid.views || 0} व्यूज़
+                      </span>
+                      <span style={{ color: themeColor, fontWeight: 600 }}>
+                        अभी देखें →
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
       </main>
 
-      {/* ── AUTO-DETECT VIDEO PLAYER MODAL ── */}
-      {playingVideo && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '18px', width: '100%', maxWidth: '820px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: themeColor, fontWeight: 700, textTransform: 'uppercase' }}>
-                  {playingVideo.category} {playingVideo.cityName ? `· ${playingVideo.cityName}` : ''}
-                </span>
-                <h3 style={{ color: '#0f172a', fontSize: '16px', fontWeight: 700, margin: '2px 0 0 0' }}>
-                  {playingVideo.title}
-                </h3>
+      {/* ── AUTO-DETECT BULLETPROOF VIDEO PLAYER MODAL ── */}
+      {playingVideo && (() => {
+        const isYt = Boolean(extractYouTubeId(playingVideo.videoUrl));
+        const isShorts = playingVideo.videoType === 'shorts' || playingVideo.videoUrl.includes('/shorts/');
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '18px', width: '100%', maxWidth: isShorts ? '450px' : '820px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '11px', color: themeColor, fontWeight: 700, textTransform: 'uppercase' }}>
+                    {playingVideo.category} {playingVideo.cityName ? `· ${playingVideo.cityName}` : ''}
+                  </span>
+                  <h3 style={{ color: '#0f172a', fontSize: '15.5px', fontWeight: 700, margin: '2px 0 0 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {playingVideo.title}
+                  </h3>
+                </div>
+
+                <button
+                  onClick={() => setPlayingVideo(null)}
+                  style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', flexShrink: 0 }}
+                >
+                  ✕ बंद करें
+                </button>
               </div>
 
-              <button
-                onClick={() => setPlayingVideo(null)}
-                style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', padding: '6px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px' }}
-              >
-                ✕ बंद करें
-              </button>
-            </div>
+              <div style={{ width: '100%', aspectRatio: isShorts ? '9/16' : '16/9', maxHeight: '72vh', backgroundColor: '#000', margin: '0 auto', overflow: 'hidden', borderRadius: '8px' }}>
+                {isYt ? (
+                  <iframe
+                    src={getYouTubeEmbedUrl(playingVideo.videoUrl)}
+                    title={playingVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                  />
+                ) : (
+                  <video 
+                    controls 
+                    autoPlay 
+                    playsInline
+                    style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                  >
+                    <source src={playingVideo.videoUrl} type="video/mp4" />
+                    आपका ब्राउज़र इस वीडियो प्रारूप का समर्थन नहीं करता है।
+                  </video>
+                )}
+              </div>
 
-            <div style={{ width: '100%', aspectRatio: playingVideo.videoType === 'shorts' ? '9/16' : '16/9', maxHeight: '72vh', backgroundColor: '#000', margin: '0 auto', overflow: 'hidden', borderRadius: '8px' }}>
-              {isYouTubeUrl(playingVideo.videoUrl) ? (
-                <iframe
-                  src={getEmbedUrl(playingVideo.videoUrl)}
-                  title={playingVideo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                />
-              ) : (
-                <video src={playingVideo.videoUrl} controls autoPlay style={{ width: '100%', height: '100%' }} />
-              )}
             </div>
-
           </div>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );
