@@ -35,7 +35,6 @@ interface ShokSandeshItem {
   createdAt?: any;
 }
 
-// Initial demo cards for rich look
 const INITIAL_DEMO_POSTS: ShokSandeshItem[] = [
   {
     id: 'demo-1',
@@ -96,8 +95,37 @@ export default function ShokSandeshPage() {
   // Payment & Submit State
   const [hasMembership, setHasMembership] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
+  // Razorpay Key Fallback
   const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
+
+  // Ensure Razorpay Script Loads reliably
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const existing = document.getElementById('razorpay-checkout-js');
+      if (existing) {
+        existing.onload = () => resolve(true);
+        existing.onerror = () => resolve(false);
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-js';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+    loadRazorpayScript();
+  }, []);
 
   // 1. Fetch Approved Shok Sandesh from Firestore
   useEffect(() => {
@@ -154,34 +182,53 @@ export default function ShokSandeshPage() {
     reader.readAsDataURL(file);
   };
 
-  // Razorpay Payment (₹199 Publication Fee)
-  const handleBuyPlan = () => {
-    if (!window.Razorpay) {
-      alert('पेमेंट गेटवे लोड हो रहा है, कृपया 2 सेकंड बाद पुनः प्रयास करें।');
+  // Razorpay Payment Handler (Fixed Instant Popup)
+  const handleBuyPlan = async () => {
+    setPaymentLoading(true);
+    const isLoaded = await loadRazorpayScript();
+
+    if (!isLoaded || !window.Razorpay) {
+      setPaymentLoading(false);
+      alert('इंटरनेट कनेक्टिविटी या स्क्रिप्ट लोड होने में समस्या आ रही है। कृपया एक बार पेज रिफ्रेश (F5) करें।');
       return;
     }
 
-    const options = {
-      key: RAZORPAY_KEY,
-      amount: 199 * 100, // ₹199
-      currency: 'INR',
-      name: 'द लोकल लीडर डिजिटल मीडिया',
-      description: 'शोक संदेश ई-श्रद्धांजलि प्रकाशन शुल्क',
-      handler: function () {
-        alert('भुगतान सफल! अब आप अपना शोक संदेश सबमिट कर सकते हैं।');
-        setHasMembership(true);
-        localStorage.setItem('shok_membership_active', 'true');
-      },
-      prefill: {
-        contact: contactNumber || '9876543210'
-      },
-      theme: {
-        color: '#b45309'
-      }
-    };
+    try {
+      const options = {
+        key: RAZORPAY_KEY,
+        amount: 199 * 100, // ₹199 in paise
+        currency: 'INR',
+        name: 'द लोकल लीडर डिजिटल मीडिया',
+        description: 'शोक संदेश ई-श्रद्धांजलि प्रकाशन शुल्क',
+        handler: function (response: any) {
+          setPaymentLoading(false);
+          alert('भुगतान सफल! अब आप अपना शोक संदेश सबमिट कर सकते हैं।');
+          setHasMembership(true);
+          localStorage.setItem('shok_membership_active', 'true');
+        },
+        prefill: {
+          contact: contactNumber || '9876543210'
+        },
+        theme: {
+          color: '#b45309'
+        },
+        modal: {
+          ondismiss: function () {
+            setPaymentLoading(false);
+          }
+        }
+      };
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp: any) {
+        setPaymentLoading(false);
+        alert('भुगतान असफल रहा: ' + (resp.error?.description || 'कृपया पुनः प्रयास करें'));
+      });
+      rzp.open();
+    } catch (e: any) {
+      setPaymentLoading(false);
+      alert('गेटवे खोलने में त्रुटि: ' + e.message);
+    }
   };
 
   // Submit to Firestore for Admin Approval
@@ -194,7 +241,7 @@ export default function ShokSandeshPage() {
     }
 
     if (!hasMembership) {
-      alert('शोक संदेश प्रकाशित करने हेतु पहले प्रकाशन प्लान (₹199) सक्रिय करें।');
+      alert('शोक संदेश प्रकाशित करने हेतु पहले प्रकाशन प्लान (₹199) का भुगतान करें।');
       handleBuyPlan();
       return;
     }
@@ -227,11 +274,11 @@ export default function ShokSandeshPage() {
     }
   };
 
-  // ── RENDER 5 UNIQUE CANVA TEMPLATE DESIGNS ──
+  // RENDER 5 UNIQUE CANVA TEMPLATE DESIGNS
   const renderCard = (data: Partial<ShokSandeshItem>, isPreview: boolean = false) => {
     const tId = data.templateId || 'floral-white';
 
-    // 1. TEMPLATE: FLORAL WHITE (Circular frame with delicate corners)
+    // 1. TEMPLATE: FLORAL WHITE
     if (tId === 'floral-white') {
       return (
         <div style={{
@@ -248,7 +295,6 @@ export default function ShokSandeshPage() {
           position: 'relative',
           fontFamily: '"Mukta", system-ui, sans-serif'
         }}>
-          {/* Floral Corner Accent */}
           <div style={{ position: 'absolute', top: '10px', left: '12px', fontSize: '20px', opacity: 0.8 }}>🌸</div>
           <div style={{ position: 'absolute', top: '10px', right: '12px', fontSize: '20px', opacity: 0.8 }}>🌸</div>
           <div style={{ position: 'absolute', bottom: '10px', left: '12px', fontSize: '20px', opacity: 0.8 }}>🌿</div>
@@ -296,7 +342,7 @@ export default function ShokSandeshPage() {
       );
     }
 
-    // 2. TEMPLATE: GOLDEN FRAME (Square framed portrait with incense sticks and border)
+    // 2. TEMPLATE: GOLDEN FRAME
     if (tId === 'golden-frame') {
       return (
         <div style={{
@@ -316,7 +362,6 @@ export default function ShokSandeshPage() {
             ॥ ॐ शांति ॐ ॥
           </div>
 
-          {/* Square Photo with Golden Frame and Agarbatti sticks */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '14px' }}>
             <span style={{ fontSize: '22px' }}>🕯️</span>
             <div style={{ width: '120px', height: '145px', border: '3px solid #b45309', padding: '3px', background: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
@@ -356,7 +401,7 @@ export default function ShokSandeshPage() {
       );
     }
 
-    // 3. TEMPLATE: DIVINE BLUE (Soft celestial light sunburst with calm blue vibes)
+    // 3. TEMPLATE: DIVINE BLUE
     if (tId === 'divine-blue') {
       return (
         <div style={{
@@ -407,7 +452,7 @@ export default function ShokSandeshPage() {
       );
     }
 
-    // 4. TEMPLATE: ROSE FLORAL BORDER (Full floral decorated festive border with warm tones)
+    // 4. TEMPLATE: ROSE FLORAL BORDER
     if (tId === 'rose-border') {
       return (
         <div style={{
@@ -462,7 +507,7 @@ export default function ShokSandeshPage() {
       );
     }
 
-    // 5. TEMPLATE: CLASSIC SILVER (Minimal slate and silver gradient)
+    // 5. TEMPLATE: CLASSIC SILVER
     return (
       <div style={{
         width: '100%',
@@ -863,10 +908,21 @@ export default function ShokSandeshPage() {
                   {!hasMembership && (
                     <button
                       type="button"
+                      disabled={paymentLoading}
                       onClick={handleBuyPlan}
-                      style={{ backgroundColor: '#b45309', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      style={{
+                        backgroundColor: '#b45309',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: paymentLoading ? 'not-allowed' : 'pointer',
+                        opacity: paymentLoading ? 0.7 : 1
+                      }}
                     >
-                      भुगतान करें (₹199)
+                      {paymentLoading ? 'लोड हो रहा है...' : 'भुगतान करें (₹199)'}
                     </button>
                   )}
                 </div>
