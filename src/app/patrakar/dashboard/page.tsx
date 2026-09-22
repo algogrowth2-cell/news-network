@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { 
   collection, 
@@ -9,8 +9,7 @@ import {
   onSnapshot, 
   addDoc, 
   serverTimestamp,
-  doc,
-  updateDoc
+  doc 
 } from 'firebase/firestore';
 import Link from 'next/link';
 
@@ -36,6 +35,11 @@ export default function PatrakarDashboard() {
   const [articles, setArticles] = useState<ReporterArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Dynamic Site Theme
+  const [themeColor, setThemeColor] = useState<string>('#ea580c');
+  const [siteName, setSiteName] = useState<string>('द लोकल लीडर');
+  const [siteLogo, setSiteLogo] = useState<string>('/logos/the-local-leader.jpeg');
+
   // Article Form State
   const [artTitle, setArtTitle] = useState('');
   const [artCategory, setArtCategory] = useState('राजनीति');
@@ -52,7 +56,23 @@ export default function PatrakarDashboard() {
   const [delPincode, setDelPincode] = useState('');
   const [payingDelivery, setPayingDelivery] = useState(false);
 
-  // 1. Persistent Login Session Check
+  // Razorpay Test Key Config
+  const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
+
+  // 1. Fetch Dynamic Site Color & Config
+  useEffect(() => {
+    const unsubSite = onSnapshot(doc(db, 'sites', 'the-local-leader'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.primaryColor) setThemeColor(data.primaryColor);
+        if (data.name) setSiteName(data.name);
+        if (data.logoUrl) setSiteLogo(data.logoUrl);
+      }
+    });
+    return () => unsubSite();
+  }, []);
+
+  // 2. Persistent Login Session
   useEffect(() => {
     const cached = localStorage.getItem('patrakar_user');
     if (cached) {
@@ -63,14 +83,13 @@ export default function PatrakarDashboard() {
         console.error(e);
       }
     } else {
-      // Default Reporter fallback if redirected
       const defaultReporter = {
-        name: 'संवाददाता',
-        phone: '9876543210',
+        name: 'pankaj patidar',
+        phone: '8839287421',
         email: 'reporter@thelocalleader.in',
         membershipActive: false,
         idNumber: 'LL-PRESS-7821',
-        designation: 'वरिष्ठ संवाददाता (Crime & Politics)',
+        designation: 'वरिष्ठ संवाददाता (Chief Bureau)',
         validTill: '31 Dec 2027',
         photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'
       };
@@ -79,15 +98,15 @@ export default function PatrakarDashboard() {
     }
   }, []);
 
-  // 2. Fetch reporter's submitted articles in real-time
+  // 3. Fetch real-time articles submitted by this reporter
   useEffect(() => {
     if (!reporter?.phone && !reporter?.email) return;
 
     setLoading(true);
-    const reporterIdentifier = reporter.phone || reporter.email;
+    const identifier = reporter.phone || reporter.email;
     const q = query(
       collection(db, 'articles'),
-      where('authorIdentifier', '==', reporterIdentifier)
+      where('authorIdentifier', '==', identifier)
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
@@ -113,43 +132,41 @@ export default function PatrakarDashboard() {
     return () => unsub();
   }, [reporter]);
 
-  // Load Razorpay Script dynamically if missing
+  // Load Razorpay Script
   useEffect(() => {
-    if (!document.getElementById('razorpay-script')) {
+    if (!document.getElementById('razorpay-checkout-js')) {
       const script = document.createElement('script');
-      script.id = 'razorpay-script';
+      script.id = 'razorpay-checkout-js';
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
       document.body.appendChild(script);
     }
   }, []);
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('patrakar_user');
     window.location.href = '/patrakar/login';
   };
 
-  // 3. Razorpay Membership Payment (₹499)
+  // 4. Membership Payment (₹499)
   const handleBuyMembership = () => {
     if (!window.Razorpay) {
-      alert('Razorpay पेमेंट गेटवे लोड हो रहा है, कृपया 2 सेकंड प्रतीक्षा करें।');
+      alert('Razorpay gateway load ho raha hai, kripya 2 second rukiye...');
       return;
     }
 
     const options = {
-      key: 'rzp_test_YourTestKeyHere', // Replace with test key or generic test ID
-      amount: 499 * 100, // amount in paisa
+      key: RAZORPAY_KEY,
+      amount: 499 * 100, // in paise
       currency: 'INR',
-      name: 'द लोकल लीडर प्रेस नेटवर्क',
-      description: 'वार्षिक पत्रकार सदस्यता (Unlimited News Publishing)',
+      name: siteName,
+      description: 'वार्षिक पत्रकार सदस्यता (Unlimited Articles Publishing)',
       handler: async function (response: any) {
-        alert('सदस्यता भुगतान सफल! अब आप खबरें सबमिट कर सकते हैं।');
+        alert('सदस्यता भुगतान सफल! अब आप असीमित खबरें सबमिट कर सकते हैं।');
         const updated = { ...reporter, membershipActive: true };
         setReporter(updated);
         localStorage.setItem('patrakar_user', JSON.stringify(updated));
 
-        // Save transaction to Firebase
         await addDoc(collection(db, 'membership_transactions'), {
           reporterPhone: reporter.phone,
           reporterName: reporter.name,
@@ -167,7 +184,7 @@ export default function PatrakarDashboard() {
         email: reporter?.email
       },
       theme: {
-        color: '#ea580c'
+        color: themeColor
       }
     };
 
@@ -175,37 +192,36 @@ export default function PatrakarDashboard() {
     rzp.open();
   };
 
-  // 4. Razorpay Physical ID & Certificate Home Delivery (₹299)
+  // 5. ID Card & Certificate Home Delivery (₹299)
   const handleDeliveryPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!delAddress || !delPincode || !delPhone) {
-      alert('कृपया पूरा डिलीवरी पता, पिनकोड और संपर्क नंबर भरें।');
+      alert('कृपया पूरा पता, पिनकोड और फ़ोन नंबर दर्ज करें।');
       return;
     }
 
     if (!window.Razorpay) {
-      alert('पेमेंट गेटवे लोड हो रहा है...');
+      alert('Razorpay gateway load ho raha hai...');
       return;
     }
 
     setPayingDelivery(true);
     const options = {
-      key: 'rzp_test_YourTestKeyHere',
-      amount: 299 * 100, // ₹299
+      key: RAZORPAY_KEY,
+      amount: 299 * 100,
       currency: 'INR',
-      name: 'द लोकल लीडर प्रेस नेटवर्क',
+      name: siteName,
       description: 'प्रेस आईडी कार्ड एवं प्रमाणपत्र होम डिलीवरी शुल्क',
       handler: async function (response: any) {
         setPayingDelivery(false);
-        alert('डिलीवरी शुल्क ₹299 का भुगतान सफल! आपकी किट 5-7 कार्यदिवसों में आपके पते पर भेज दी जाएगी।');
+        alert('डिलीवरी शुल्क ₹299 का भुगतान सफल! आपकी किट 5-7 कार्यदिवसों में भेज दी जाएगी।');
 
-        // Save delivery request to Firebase for Admin dispatch
         await addDoc(collection(db, 'delivery_requests'), {
           reporterName: delName || reporter.name,
           reporterPhone: delPhone,
           address: delAddress,
           pincode: delPincode,
-          idNumber: reporter.idNumber,
+          idNumber: reporter.idNumber || 'LL-PRESS-7821',
           amountPaid: 299,
           paymentId: response.razorpay_payment_id || 'test_del_' + Date.now(),
           status: 'pending_dispatch',
@@ -219,7 +235,7 @@ export default function PatrakarDashboard() {
         contact: delPhone || reporter.phone
       },
       theme: {
-        color: '#ea580c'
+        color: themeColor
       }
     };
 
@@ -228,7 +244,7 @@ export default function PatrakarDashboard() {
     setPayingDelivery(false);
   };
 
-  // 5. Submit News Article (Goes to Admin for Verification)
+  // 6. Submit Article to Admin for Approval
   const handleSubmitArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!artTitle.trim()) {
@@ -249,14 +265,12 @@ export default function PatrakarDashboard() {
         image: artImage.trim() || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200',
         authorName: reporter.name,
         authorIdentifier: reporter.phone || reporter.email,
-        status: 'pending', // Awaiting Admin verification
+        status: 'pending', // Verified by admin before going live
         views: 0,
         createdAt: serverTimestamp()
       });
 
-      alert('खबर सफलतापूर्वक सबमिट कर दी गई है! एडमिन द्वारा सत्यापन (Verification) के बाद यह लाइव हो जाएगी।');
-      
-      // Reset form
+      alert('खबर सबमिट हो चुकी है! एडमिन द्वारा सत्यापन के बाद यह वेबसाइट पर लाइव दिखेगी।');
       setArtTitle('');
       setArtSummary('');
       setArtContent('');
@@ -265,11 +279,10 @@ export default function PatrakarDashboard() {
       setActiveTab('overview');
     } catch (err: any) {
       setSubmittingArticle(false);
-      alert('खबर सबमिट करने में त्रुटि: ' + err.message);
+      alert('खबर भेजने में त्रुटि: ' + err.message);
     }
   };
 
-  // Statistics
   const totalArticles = articles.length;
   const approvedArticles = articles.filter(a => a.status === 'published' || a.status === 'approved').length;
   const pendingArticles = articles.filter(a => a.status === 'pending').length;
@@ -277,21 +290,23 @@ export default function PatrakarDashboard() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#070b14', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Navbar */}
+      {/* Top Header */}
       <header style={{ backgroundColor: '#0e1626', borderBottom: '1px solid #1e293b', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>✍️</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {siteLogo && (
+            <img src={siteLogo} alt={siteName} style={{ height: '34px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+          )}
           <div>
             <b style={{ fontSize: '17px', color: '#ffffff' }}>पत्रकार संवाददाता पोर्टल</b>
             <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              संवाददाता: <b style={{ color: '#ea580c' }}>{reporter?.name}</b> · {reporter?.phone} · आईडी: {reporter?.idNumber}
+              संवाददाता: <b style={{ color: themeColor }}>{reporter?.name}</b> · {reporter?.phone} · आईडी: {reporter?.idNumber}
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Link href="/" style={{ fontSize: '13px', color: '#ea580c', textDecoration: 'none', fontWeight: 600 }}>
-            ← मुख्य वेबसाइट
+          <Link href="/" style={{ fontSize: '13px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
+            ← मुख्य वेबसाइट देखें
           </Link>
           <button 
             onClick={handleLogout}
@@ -337,14 +352,14 @@ export default function PatrakarDashboard() {
 
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tab Navigation with Dynamic Theme Color */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
           <button
             onClick={() => setActiveTab('overview')}
             style={{
-              backgroundColor: activeTab === 'overview' ? '#ea580c' : '#0e1626',
+              backgroundColor: activeTab === 'overview' ? themeColor : '#0e1626',
               color: '#ffffff',
-              border: '1px solid #1e293b',
+              border: `1px solid ${activeTab === 'overview' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 16px',
               fontSize: '13px',
@@ -365,9 +380,9 @@ export default function PatrakarDashboard() {
               }
             }}
             style={{
-              backgroundColor: activeTab === 'create-article' ? '#ea580c' : '#0e1626',
+              backgroundColor: activeTab === 'create-article' ? themeColor : '#0e1626',
               color: '#ffffff',
-              border: '1px solid #1e293b',
+              border: `1px solid ${activeTab === 'create-article' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 16px',
               fontSize: '13px',
@@ -381,9 +396,9 @@ export default function PatrakarDashboard() {
           <button
             onClick={() => setActiveTab('id-card')}
             style={{
-              backgroundColor: activeTab === 'id-card' ? '#ea580c' : '#0e1626',
+              backgroundColor: activeTab === 'id-card' ? themeColor : '#0e1626',
               color: '#ffffff',
-              border: '1px solid #1e293b',
+              border: `1px solid ${activeTab === 'id-card' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 16px',
               fontSize: '13px',
@@ -397,9 +412,9 @@ export default function PatrakarDashboard() {
           <button
             onClick={() => setActiveTab('delivery')}
             style={{
-              backgroundColor: activeTab === 'delivery' ? '#ea580c' : '#0e1626',
+              backgroundColor: activeTab === 'delivery' ? themeColor : '#0e1626',
               color: '#ffffff',
-              border: '1px solid #1e293b',
+              border: `1px solid ${activeTab === 'delivery' ? themeColor : '#1e293b'}`,
               borderRadius: '8px',
               padding: '9px 16px',
               fontSize: '13px',
@@ -429,7 +444,7 @@ export default function PatrakarDashboard() {
           )}
         </div>
 
-        {/* TAB 1: MY ARTICLES LIST */}
+        {/* TAB 1: MY ARTICLES */}
         {activeTab === 'overview' && (
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' }}>
             {loading ? (
@@ -460,7 +475,7 @@ export default function PatrakarDashboard() {
                         <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
                           {art.category}
                         </td>
-                        <td style={{ padding: '14px 18px', color: '#ea580c', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '14px 18px', color: themeColor, fontFamily: 'monospace' }}>
                           {art.siteId}
                         </td>
                         <td style={{ padding: '14px 18px' }}>
@@ -515,7 +530,7 @@ export default function PatrakarDashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पोर्टल चयन (किस वेबसाइट पर लगाना है) *</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>पोर्टल चयन (Target Website) *</label>
                   <select
                     value={artSiteId}
                     onChange={(e) => setArtSiteId(e.target.value)}
@@ -530,7 +545,7 @@ export default function PatrakarDashboard() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>खबर श्रेणी (Category)</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>श्रेणी (Category)</label>
                   <select
                     value={artCategory}
                     onChange={(e) => setArtCategory(e.target.value)}
@@ -547,7 +562,7 @@ export default function PatrakarDashboard() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>खबर का संक्षिप्त विवरण (Summary)</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>संक्षिप्त विवरण (Summary)</label>
                 <textarea
                   rows={2}
                   placeholder="खबर का 1-2 लाइन का मुख्य सार लिखें..."
@@ -562,7 +577,7 @@ export default function PatrakarDashboard() {
                 <textarea
                   rows={6}
                   required
-                  placeholder="विस्तार से खबर लिखें..."
+                  placeholder="विस्तार से पूरी खबर लिखें..."
                   value={artContent}
                   onChange={(e) => setArtContent(e.target.value)}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px', lineHeight: 1.6 }}
@@ -591,7 +606,7 @@ export default function PatrakarDashboard() {
                 <button
                   type="submit"
                   disabled={submittingArticle}
-                  style={{ backgroundColor: '#ea580c', border: 'none', color: '#ffffff', padding: '10px 24px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '10px 24px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   {submittingArticle ? 'सबमिट हो रहा है...' : 'सबमिट करें (सत्यापन हेतु)'}
                 </button>
@@ -601,7 +616,7 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 3: PRESS ID CARD & CERTIFICATE */}
+        {/* TAB 3: ID CARD & CERTIFICATE */}
         {activeTab === 'id-card' && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             
@@ -612,7 +627,7 @@ export default function PatrakarDashboard() {
               </div>
               <button
                 onClick={() => window.print()}
-                style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
               >
                 📥 डिजिटल डाउनलोड / प्रिंट
               </button>
@@ -620,26 +635,26 @@ export default function PatrakarDashboard() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
               
-              {/* PRESS ID CARD PREVIEW */}
-              <div style={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '2px solid #ea580c' }}>
-                <div style={{ backgroundColor: '#ea580c', padding: '14px', textAlign: 'center', color: '#ffffff' }}>
-                  <b style={{ fontSize: '17px', letterSpacing: '0.5px' }}>द लोकल लीडर डिजिटल मीडिया</b>
+              {/* ID Card */}
+              <div style={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: `2px solid ${themeColor}` }}>
+                <div style={{ backgroundColor: themeColor, padding: '14px', textAlign: 'center', color: '#ffffff' }}>
+                  <b style={{ fontSize: '17px', letterSpacing: '0.5px' }}>{siteName} डिजिटल मीडिया</b>
                   <div style={{ fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '1px' }}>Official Press Identity Card</div>
                 </div>
 
                 <div style={{ padding: '20px', textAlign: 'center' }}>
                   <img 
-                    src={reporter.photo} 
-                    alt={reporter.name} 
-                    style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #ea580c', margin: '0 auto 12px' }} 
+                    src={reporter?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'} 
+                    alt={reporter?.name} 
+                    style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }} 
                   />
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter.name}</h3>
-                  <div style={{ fontSize: '12px', color: '#ea580c', fontWeight: 600 }}>{reporter.designation}</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter?.name}</h3>
+                  <div style={{ fontSize: '12px', color: themeColor, fontWeight: 600 }}>{reporter?.designation}</div>
 
                   <div style={{ marginTop: '16px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', textAlign: 'left', fontSize: '12px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div><b>प्रेस आईडी सं:</b> {reporter.idNumber}</div>
-                    <div><b>संपर्क:</b> +91 {reporter.phone}</div>
-                    <div><b>वैधता (Validity):</b> {reporter.validTill}</div>
+                    <div><b>प्रेस आईडी सं:</b> {reporter?.idNumber}</div>
+                    <div><b>संपर्क:</b> +91 {reporter?.phone}</div>
+                    <div><b>वैधता (Validity):</b> {reporter?.validTill}</div>
                     <div><b>मुख्यालय:</b> स्टेशन रोड, भरूच (गुजरात)</div>
                   </div>
 
@@ -649,21 +664,21 @@ export default function PatrakarDashboard() {
                 </div>
               </div>
 
-              {/* CERTIFICATE PREVIEW */}
-              <div style={{ backgroundColor: '#fffdfa', color: '#1e293b', borderRadius: '14px', padding: '24px', border: '6px double #b45309', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#b45309', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+              {/* Certificate */}
+              <div style={{ backgroundColor: '#fffdfa', color: '#1e293b', borderRadius: '14px', padding: '24px', border: `6px double ${themeColor}`, boxShadow: '0 10px 25px rgba(0,0,0,0.4)', textAlign: 'center' }}>
+                <div style={{ fontSize: '11px', color: themeColor, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                   Certificate of Accreditation
                 </div>
                 <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '8px 0', color: '#78350f', fontFamily: 'Georgia, serif' }}>
                   प्रमाणपत्र एवं अधिमान्यता
                 </h3>
                 <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#451a03', margin: '14px 0' }}>
-                  प्रमाणित किया जाता है कि <b>श्री/श्रीमती {reporter.name}</b> हमारे डिजिटल मीडिया नेटवर्क 'द लोकल लीडर' के अधिकृत पत्रकार के रूप में पंजीकृत हैं।
+                  प्रमाणित किया जाता है कि <b>श्री/श्रीमती {reporter?.name}</b> हमारे डिजिटल मीडिया नेटवर्क '{siteName}' के अधिकृत पत्रकार के रूप में पंजीकृत हैं।
                 </p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', borderTop: '1px solid #d97706', paddingTop: '10px', fontSize: '11px', color: '#78350f' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', borderTop: `1px solid ${themeColor}`, paddingTop: '10px', fontSize: '11px', color: '#78350f' }}>
                   <div>
-                    <b>आईडी सं:</b> {reporter.idNumber}
+                    <b>आईडी सं:</b> {reporter?.idNumber}
                   </div>
                   <div>
                     <b>हस्ताक्षर:</b> मुख्य संपादक
@@ -673,15 +688,15 @@ export default function PatrakarDashboard() {
 
             </div>
 
-            {/* Delivery CTA Box */}
-            <div style={{ marginTop: '24px', backgroundColor: '#0e1626', border: '1px solid #ea580c', borderRadius: '12px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            {/* Delivery CTA */}
+            <div style={{ marginTop: '24px', backgroundColor: '#0e1626', border: `1px solid ${themeColor}`, borderRadius: '12px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <b style={{ color: '#ffffff', fontSize: '15px' }}>क्या आपको ओरिजिनल लैमिनेटेड कार्ड + डोरी + सील प्रमाणपत्र घर पर चाहिए?</b>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>मात्र ₹299 डिलीवरी व प्रिंटिंग शुल्क में स्पीड पोस्ट द्वारा आपके पते पर भेज दिया जाएगा।</p>
               </div>
               <button
                 onClick={() => setActiveTab('delivery')}
-                style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
               >
                 घर मंगवाएं (₹299)
               </button>
@@ -690,7 +705,7 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 4: PHYSICAL HOME DELIVERY FORM (₹299) */}
+        {/* TAB 4: DELIVERY FORM (₹299) */}
         {activeTab === 'delivery' && (
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', maxWidth: '650px', margin: '0 auto' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>प्रेस किट होम डिलीवरी ऑर्डर (₹299)</h2>
@@ -712,7 +727,7 @@ export default function PatrakarDashboard() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>डिलीवरी संपर्क नंबर (Calling & WhatsApp) *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>डिलीवरी संपर्क नंबर (WhatsApp) *</label>
                 <input
                   type="tel"
                   required
@@ -755,7 +770,7 @@ export default function PatrakarDashboard() {
               <button
                 type="submit"
                 disabled={payingDelivery}
-                style={{ backgroundColor: '#ea580c', border: 'none', color: '#ffffff', padding: '12px', borderRadius: '6px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
+                style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '12px', borderRadius: '6px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
               >
                 {payingDelivery ? 'पेमेंट शुरू हो रहा है...' : '₹299 का ऑनलाइन भुगतान करें'}
               </button>
@@ -764,14 +779,14 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 5: MEMBERSHIP PLAN PURCHASE */}
+        {/* TAB 5: MEMBERSHIP PURCHASE (₹499) */}
         {activeTab === 'membership' && (
-          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#0e1626', border: '2px solid #ea580c', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
-            <span style={{ backgroundColor: 'rgba(234,88,12,0.15)', color: '#ea580c', border: '1px solid #ea580c', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#0e1626', border: `2px solid ${themeColor}`, borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
+            <span style={{ backgroundColor: 'rgba(234,88,12,0.15)', color: themeColor, border: `1px solid ${themeColor}`, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
               वार्षिक पत्रकार सदस्यता (ANNUAL PLAN)
             </span>
             <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '14px 0 6px 0' }}>असीमित खबर प्रकाशन सदस्यता</h2>
-            <div style={{ fontSize: '36px', fontWeight: 800, color: '#ea580c', margin: '12px 0' }}>₹499 <small style={{ fontSize: '14px', color: '#94a3b8' }}>/ वर्ष</small></div>
+            <div style={{ fontSize: '36px', fontWeight: 800, color: themeColor, margin: '12px 0' }}>₹499 <small style={{ fontSize: '14px', color: '#94a3b8' }}>/ वर्ष</small></div>
 
             <div style={{ textAlign: 'left', margin: '20px 0', borderTop: '1px solid #1e293b', borderBottom: '1px solid #1e293b', padding: '16px 0', fontSize: '13.5px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div>✓ सभी न्यूज़ नेटवर्क वेबसाइट्स पर खबरें पोस्ट करने की अनुमति</div>
@@ -782,7 +797,7 @@ export default function PatrakarDashboard() {
 
             <button
               onClick={handleBuyMembership}
-              style={{ backgroundColor: '#ea580c', color: '#ffffff', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
+              style={{ backgroundColor: themeColor, color: '#ffffff', border: 'none', padding: '12px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
             >
               सदस्यता लें एवं ₹499 भुगतान करें
             </button>
