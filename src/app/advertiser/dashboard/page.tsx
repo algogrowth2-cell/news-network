@@ -212,59 +212,72 @@ export default function AdvertiserDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('advertiser_user');
+    window.location.href = '/advertiser/login';
+  };
+
   const activeCount = ads.filter(a => a.status === 'active').length;
   const pendingCount = ads.filter(a => a.status === 'pending').length;
   const totalViews = ads.reduce((acc, curr) => acc + (curr.impressions || 0), 0);
   const totalClicks = ads.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
 
   return (
-    <div style={{ backgroundColor: '#070b14', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Navbar */}
-      <header style={{ backgroundColor: '#0e1626', borderBottom: '1px solid #1e293b', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Top Navbar - Clean Light Theme */}
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
             <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
           )}
           <div>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>विज्ञापनदाता पोर्टल</span>
-            <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '10px' }}>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>विज्ञापनदाता पोर्टल</span>
+            <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '10px' }}>
               {currentUser?.name} ({currentUser?.email})
             </span>
           </div>
         </div>
-        <Link href="/" style={{ fontSize: '13px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
-          ← मुख्य वेबसाइट देखें
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <Link href="/" style={{ fontSize: '13.5px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
+            ← मुख्य वेबसाइट देखें
+          </Link>
+          <button 
+            onClick={handleLogout}
+            style={{ backgroundColor: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626', padding: '6px 14px', borderRadius: '6px', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            लॉगआउट
+          </button>
+        </div>
       </header>
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         
-        {/* Metric Cards Row */}
+        {/* Metric Cards Row - Clean White Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>लाइव / सक्रिय विज्ञापन</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#34d399', marginTop: '6px' }}>{activeCount}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>वर्तमान में पोर्टल पर लाइव</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>लाइव / सक्रिय विज्ञापन</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#16a34a', marginTop: '4px' }}>{activeCount}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>वर्तमान में पोर्टल पर लाइव</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>स्वीकृति हेतु लंबित (Pending)</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#fbbf24', marginTop: '6px' }}>{pendingCount}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>एडमिन अप्रूवल की प्रतीक्षा में</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>स्वीकृति हेतु लंबित (Pending)</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#d97706', marginTop: '4px' }}>{pendingCount}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>एडमिन अप्रूवल की प्रतीक्षा में</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>कुल इम्प्रेशन्स (Views)</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#38bdf8', marginTop: '6px' }}>{totalViews}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>पाठकों द्वारा देखे गए</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>कुल इम्प्रेशन्स (Views)</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#0284c7', marginTop: '4px' }}>{totalViews}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>पाठकों द्वारा देखे गए</span>
           </div>
 
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>कुल क्लिक्स (Clicks)</span>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#a78bfa', marginTop: '6px' }}>{totalClicks}</div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>वेबसाइट ट्रैफ़िक एंगेजमेंट</span>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+            <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>कुल क्लिक्स (Clicks)</span>
+            <div style={{ fontSize: '30px', fontWeight: 800, color: '#7c3aed', marginTop: '4px' }}>{totalClicks}</div>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>वेबसाइट ट्रैफ़िक एंगेजमेंट</span>
           </div>
 
         </div>
@@ -275,14 +288,15 @@ export default function AdvertiserDashboard() {
             type="button"
             onClick={() => setActiveTab('my-ads')}
             style={{
-              backgroundColor: activeTab === 'my-ads' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'my-ads' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'my-ads' ? themeColor : '#ffffff',
+              color: activeTab === 'my-ads' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'my-ads' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
               padding: '9px 18px',
-              fontSize: '13px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'my-ads' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             मेरे सभी विज्ञापन ({ads.length})
@@ -292,37 +306,38 @@ export default function AdvertiserDashboard() {
             type="button"
             onClick={() => setActiveTab('create-ad')}
             style={{
-              backgroundColor: activeTab === 'create-ad' ? themeColor : '#0e1626',
-              color: '#ffffff',
-              border: `1px solid ${activeTab === 'create-ad' ? themeColor : '#1e293b'}`,
+              backgroundColor: activeTab === 'create-ad' ? themeColor : '#ffffff',
+              color: activeTab === 'create-ad' ? '#ffffff' : '#475569',
+              border: `1.5px solid ${activeTab === 'create-ad' ? themeColor : '#cbd5e1'}`,
               borderRadius: '8px',
               padding: '9px 18px',
-              fontSize: '13px',
+              fontSize: '13.5px',
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'create-ad' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
             + नया विज्ञापन अनुरोध भेजें
           </button>
         </div>
 
-        {/* TAB 1: MY ADS LIST */}
+        {/* TAB 1: MY ADS LIST - Clean White Table */}
         {activeTab === 'my-ads' && (
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
                 डेटा लोड हो रहा है...
               </div>
             ) : ads.length === 0 ? (
-              <div style={{ padding: '50px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                <p style={{ fontSize: '15px', color: '#ffffff', marginBottom: '8px' }}>कोई विज्ञापन उपलब्ध नहीं है</p>
-                <p style={{ fontSize: '13px', margin: 0 }}>नया विज्ञापन बनाने के लिए ऊपर बटन पर क्लिक करें।</p>
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748b' }}>
+                <p style={{ fontSize: '17px', color: '#0f172a', fontWeight: 600, marginBottom: '6px' }}>कोई विज्ञापन उपलब्ध नहीं है</p>
+                <p style={{ fontSize: '13.5px', margin: 0, color: '#64748b' }}>नया विज्ञापन बनाने के लिए ऊपर "+ नया विज्ञापन अनुरोध भेजें" बटन पर क्लिक करें।</p>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#0a101d', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase' }}>
+                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                       <th style={{ padding: '14px 18px' }}>विज्ञापन विवरण</th>
                       <th style={{ padding: '14px 18px' }}>प्रारूप (Format)</th>
                       <th style={{ padding: '14px 18px' }}>प्लेसमेंट ज़ोन</th>
@@ -336,7 +351,7 @@ export default function AdvertiserDashboard() {
                       <tr 
                         key={ad.id} 
                         style={{ 
-                          borderBottom: idx === ads.length - 1 ? 'none' : '1px solid #162238'
+                          borderBottom: idx === ads.length - 1 ? 'none' : '1px solid #f1f5f9'
                         }}
                       >
                         <td style={{ padding: '14px 18px' }}>
@@ -345,51 +360,51 @@ export default function AdvertiserDashboard() {
                               <img 
                                 src={ad.imageUrl} 
                                 alt={ad.name} 
-                                style={{ width: '48px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #334155' }} 
+                                style={{ width: '48px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
                               />
                             )}
                             <div>
-                              <div style={{ fontWeight: 600, color: '#ffffff' }}>{ad.name}</div>
+                              <div style={{ fontWeight: 600, color: '#0f172a' }}>{ad.name}</div>
                               {ad.targetUrl && (
-                                <a href={ad.targetUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#38bdf8', textDecoration: 'none' }}>
-                                  {ad.targetUrl.slice(0, 30)}...
+                                <a href={ad.targetUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11.5px', color: '#0284c7', textDecoration: 'none' }}>
+                                  {ad.targetUrl.slice(0, 32)}...
                                 </a>
                               )}
                             </div>
                           </div>
                         </td>
 
-                        <td style={{ padding: '14px 18px', textTransform: 'capitalize', color: '#cbd5e1' }}>
+                        <td style={{ padding: '14px 18px', textTransform: 'capitalize', color: '#475569' }}>
                           {ad.format} Ad
                         </td>
 
-                        <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: '12px', color: '#94a3b8' }}>
+                        <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: '12.5px', color: '#64748b' }}>
                           {ad.zone}
                         </td>
 
-                        <td style={{ padding: '14px 18px', fontSize: '12px', color: '#94a3b8' }}>
+                        <td style={{ padding: '14px 18px', fontSize: '12.5px', color: '#64748b' }}>
                           <div>शुरू: {ad.startDate}</div>
-                          <div style={{ color: '#f87171' }}>समाप्त: {ad.endDate}</div>
+                          <div style={{ color: '#dc2626' }}>समाप्त: {ad.endDate}</div>
                         </td>
 
                         <td style={{ padding: '14px 18px' }}>
                           <span
                             style={{
                               display: 'inline-block',
-                              padding: '3px 10px',
+                              padding: '3px 12px',
                               borderRadius: '20px',
-                              fontSize: '11px',
+                              fontSize: '11.5px',
                               fontWeight: 600,
                               textTransform: 'capitalize',
                               backgroundColor: 
-                                ad.status === 'active' ? 'rgba(16, 185, 129, 0.15)' :
-                                ad.status === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                ad.status === 'active' ? '#dcfce7' :
+                                ad.status === 'pending' ? '#fef3c7' : '#fee2e2',
                               color: 
-                                ad.status === 'active' ? '#34d399' :
-                                ad.status === 'pending' ? '#fbbf24' : '#f87171',
+                                ad.status === 'active' ? '#15803d' :
+                                ad.status === 'pending' ? '#b45309' : '#dc2626',
                               border: `1px solid ${
-                                ad.status === 'active' ? 'rgba(16, 185, 129, 0.3)' :
-                                ad.status === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'
+                                ad.status === 'active' ? '#bbf7d0' :
+                                ad.status === 'pending' ? '#fde68a' : '#fecaca'
                               }`
                             }}
                           >
@@ -397,9 +412,9 @@ export default function AdvertiserDashboard() {
                           </span>
                         </td>
 
-                        <td style={{ padding: '14px 18px', fontSize: '12px' }}>
-                          <div style={{ color: '#38bdf8', fontWeight: 600 }}>{ad.impressions} Views</div>
-                          <div style={{ color: '#a78bfa' }}>{ad.clicks} Clicks</div>
+                        <td style={{ padding: '14px 18px', fontSize: '12.5px' }}>
+                          <div style={{ color: '#0284c7', fontWeight: 600 }}>{ad.impressions} Views</div>
+                          <div style={{ color: '#7c3aed', fontWeight: 600 }}>{ad.clicks} Clicks</div>
                         </td>
                       </tr>
                     ))}
@@ -410,35 +425,35 @@ export default function AdvertiserDashboard() {
           </div>
         )}
 
-        {/* TAB 2: CREATE AD FORM */}
+        {/* TAB 2: CREATE AD FORM - Clean White Card */}
         {activeTab === 'create-ad' && (
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', maxWidth: '750px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px 0' }}>नया विज्ञापन अनुरोध सबमिट करें</h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 24px 0' }}>
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '780px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>नया विज्ञापन अनुरोध सबमिट करें</h2>
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0' }}>
               अनुरोध सबमिट होने के बाद एडमिन द्वारा रिव्यू किया जाएगा। अप्रूवल के बाद यह तुरंत लाइव हो जाएगा।
             </p>
 
             <form onSubmit={handleSubmitAd} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>विज्ञापन का शीर्षक / नाम *</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>विज्ञापन का शीर्षक / नाम *</label>
                 <input
                   type="text"
                   required
                   placeholder="उदा. व्यापार महासेल - हेडर बैनर"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्रारूप (Format)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्रारूप (Format)</label>
                   <select
                     value={format}
                     onChange={(e) => handleFormatChange(e.target.value as any)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
                     <option value="banner">हेडर / लीडरबोर्ड बैनर</option>
                     <option value="sidebar">साइडबार स्क्वायर (300×250)</option>
@@ -448,11 +463,11 @@ export default function AdvertiserDashboard() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्लेसमेंट ज़ोन (Slot)</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्लेसमेंट ज़ोन (Slot)</label>
                   <select
                     value={zone}
                     onChange={(e) => setZone(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
                     <option value="728x90 Header Leaderboard">728x90 Header Leaderboard</option>
                     <option value="300x250 (साइडबार)">300x250 (साइडबार)</option>
@@ -465,42 +480,42 @@ export default function AdvertiserDashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>प्रसारण शुरू तारीख *</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्रसारण शुरू तारीख *</label>
                   <input
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>समाप्ति तारीख *</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>समाप्ति तारीख *</label>
                   <input
                     type="date"
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>विज्ञापन क्लिक लिंक (Target URL)</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>विज्ञापन क्लिक लिंक (Target URL)</label>
                 <input
                   type="url"
                   placeholder="https://yourwebsite.com/offer"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '12px', color: '#94a3b8' }}>विज्ञापन इमेज *</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>विज्ञापन इमेज *</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="button"
@@ -509,14 +524,14 @@ export default function AdvertiserDashboard() {
                         background: 'none',
                         border: 'none',
                         color: imageUploadType === 'url' ? themeColor : '#64748b',
-                        fontSize: '12px',
+                        fontSize: '12.5px',
                         cursor: 'pointer',
-                        fontWeight: imageUploadType === 'url' ? 700 : 400
+                        fontWeight: imageUploadType === 'url' ? 700 : 500
                       }}
                     >
                       वेब लिंक (URL)
                     </button>
-                    <span style={{ color: '#475569' }}>|</span>
+                    <span style={{ color: '#cbd5e1' }}>|</span>
                     <button
                       type="button"
                       onClick={() => setImageUploadType('file')}
@@ -524,9 +539,9 @@ export default function AdvertiserDashboard() {
                         background: 'none',
                         border: 'none',
                         color: imageUploadType === 'file' ? themeColor : '#64748b',
-                        fontSize: '12px',
+                        fontSize: '12.5px',
                         cursor: 'pointer',
-                        fontWeight: imageUploadType === 'file' ? 700 : 400
+                        fontWeight: imageUploadType === 'file' ? 700 : 500
                       }}
                     >
                       डिवाइस से अपलोड करें
@@ -543,40 +558,41 @@ export default function AdvertiserDashboard() {
                       setImageUrl(e.target.value);
                       setSelectedFilePreview(e.target.value);
                     }}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 ) : (
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleLocalImageSelect}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 14px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 )}
 
                 {selectedFilePreview && (
-                  <div style={{ marginTop: '12px', padding: '8px', border: '1px dashed #334155', borderRadius: '8px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>इमेज पूर्वावलोकन</span>
+                  <div style={{ marginTop: '14px', padding: '12px', border: '1px dashed #cbd5e1', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
+                    <span style={{ fontSize: '11.5px', color: '#64748b', display: 'block', marginBottom: '8px', fontWeight: 600 }}>इमेज पूर्वावलोकन</span>
                     <img 
                       src={selectedFilePreview} 
                       alt="Banner Preview" 
-                      style={{ maxWidth: '100%', maxHeight: '140px', objectFit: 'contain', borderRadius: '4px' }} 
+                      style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px' }} 
                     />
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setActiveTab('my-ads')}
                   style={{
-                    backgroundColor: '#1e293b',
-                    border: '1px solid #334155',
-                    color: '#94a3b8',
+                    backgroundColor: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
                     padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
@@ -590,11 +606,12 @@ export default function AdvertiserDashboard() {
                     backgroundColor: themeColor,
                     border: 'none',
                     color: '#ffffff',
-                    padding: '10px 24px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: 600,
+                    padding: '11px 26px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 700,
                     cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     opacity: submitting ? 0.6 : 1
                   }}
                 >
