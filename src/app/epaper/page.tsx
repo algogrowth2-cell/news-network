@@ -1,712 +1,480 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { loadRazorpayScript } from '@/lib/razorpay';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+
+import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
+import Link from 'next/link';
 
-interface StateItem {
+interface EPaperEdition {
   id: string;
-  name: string;
-  image: string;
+  cityName: string;
+  editionName: string;
+  date: string;
+  thumbnailUrl: string;
+  pdfUrl: string;
+  pages: string[];
+  totalPages: number;
 }
 
-interface CityItem {
-  id: string;
-  name: string;
-  stateId: string;
-}
-
-const DEFAULT_SITES: Record<string, any> = {
-  'the-local-leader': { name: 'द लोकल लीडर', primaryColor: '#ea580c', logo: '/logos/the-local-leader.jpeg' },
-  'bazar-karobar': { name: 'बाजार कारोबार', primaryColor: '#059669', logo: '/logos/bazar-karobar.jpeg' },
-  'ndn-defence': { name: 'National Defence Network', primaryColor: '#15803d', logo: '/logos/ndn-defence.jpeg' },
-  'golden-pearl-chronicles': { name: 'गोल्डन पर्ल क्रॉनिकल्स', primaryColor: '#d97706', logo: '/logos/golden-pearl-chronicles.jpeg' },
-  'the-provue-times': { name: 'द प्रोव्यू टाइम्स', primaryColor: '#2563eb', logo: '/logos/the-provue-times.jpeg' },
-  'desh-ki-aawaz': { name: 'देश की आवाज़', primaryColor: '#dc2626', logo: '/logos/desh-ki-aawaz.jpeg' },
-  'jan-bharat-news': { name: 'जन भारत न्यूज़', primaryColor: '#7c3aed', logo: '/logos/jan-bharat-news.jpeg' },
-  'news-info-24': { name: 'NEWS INFO 24', primaryColor: '#0284c7', logo: '/logos/news-info-24.jpeg' }
-};
-
-const STATES_DATA: StateItem[] = [
-  { id: 'mp', name: 'मध्य प्रदेश', image: 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=150' },
-  { id: 'rj', name: 'राजस्थान', image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?w=150' },
-  { id: 'cg', name: 'छत्तीसगढ़', image: 'https://images.unsplash.com/photo-1626583222325-1e35d2524419?w=150' },
-  { id: 'up', name: 'उत्तर प्रदेश', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=150' },
-  { id: 'bihar', name: 'बिहार', image: 'https://images.unsplash.com/photo-1600100397608-f010f443b2f5?w=150' },
-  { id: 'jharkhand', name: 'झारखंड', image: 'https://images.unsplash.com/photo-1588416936097-41850ab3d86d?w=150' },
-  { id: 'delhi', name: 'नई दिल्ली', image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=150' },
-  { id: 'haryana', name: 'हरियाणा', image: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?w=150' },
-  { id: 'punjab', name: 'पंजाब', image: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?w=150' },
+// Default Fallback Editions
+const DEFAULT_EDITIONS: EPaperEdition[] = [
+  {
+    id: 'bhopal-ed',
+    cityName: 'भोपाल',
+    editionName: 'द लोकल लीडर मुख्य संस्करण',
+    date: '22-09-2026',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    pages: [
+      'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200',
+      'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200'
+    ],
+    totalPages: 12
+  },
+  {
+    id: 'indore-ed',
+    cityName: 'इंदौर',
+    editionName: 'द लोकल लीडर इंदौर',
+    date: '22-09-2026',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=700',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    pages: [
+      'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200'
+    ],
+    totalPages: 14
+  },
+  {
+    id: 'indore-city',
+    cityName: 'इंदौर सिटी विशेष',
+    editionName: 'सिटी हलचल संस्करण',
+    date: '22-09-2026',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=700',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    pages: [
+      'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200'
+    ],
+    totalPages: 8
+  },
+  {
+    id: 'ujjain-ed',
+    cityName: 'उज्जैन',
+    editionName: 'महाकाल नगरी संस्करण',
+    date: '22-09-2026',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=700',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    pages: [
+      'https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=1200'
+    ],
+    totalPages: 10
+  },
+  {
+    id: 'dewas-ed',
+    cityName: 'देवास',
+    editionName: 'चामुंडा नगरी विशेष',
+    date: '22-09-2026',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700',
+    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    pages: [
+      'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'
+    ],
+    totalPages: 10
+  }
 ];
 
-const CITIES_DATA: CityItem[] = [
-  { id: 'indore', name: 'इंदौर', stateId: 'mp' },
-  { id: 'bhopal', name: 'भोपाल', stateId: 'mp' },
-  { id: 'gwalior', name: 'ग्वालियर', stateId: 'mp' },
-  { id: 'jabalpur', name: 'जबलपुर', stateId: 'mp' },
-  { id: 'ratlam', name: 'रतलाम', stateId: 'mp' },
-  { id: 'khandwa', name: 'खंडवा', stateId: 'mp' },
-  { id: 'ujjain', name: 'उज्जैन', stateId: 'mp' },
-  { id: 'narmadapuram', name: 'नर्मदापुरम (होशंगाबाद)', stateId: 'mp' },
-  { id: 'sagar', name: 'सागर', stateId: 'mp' },
-  { id: 'morena', name: 'मुरैना', stateId: 'mp' },
-  { id: 'bhind', name: 'भिंड', stateId: 'mp' },
-  { id: 'ashoknagar', name: 'अशोकनगर', stateId: 'mp' },
-  { id: 'raisen', name: 'रायसेन', stateId: 'mp' },
-  { id: 'sehore', name: 'सीहोर', stateId: 'mp' },
-  { id: 'guna', name: 'गुना', stateId: 'mp' },
-  { id: 'datia', name: 'दतिया', stateId: 'mp' },
-  { id: 'chhatarpur', name: 'छतरपुर (मध्य प्रदेश)', stateId: 'mp' },
-  { id: 'mandsaur', name: 'मंदसौर', stateId: 'mp' },
-  { id: 'khargone', name: 'खरगोन', stateId: 'mp' },
-  { id: 'jaipur', name: 'जयपुर', stateId: 'rj' },
-  { id: 'jodhpur', name: 'जोधपुर', stateId: 'rj' },
-  { id: 'lucknow', name: 'लखनऊ', stateId: 'up' },
-  { id: 'patna', name: 'पटना', stateId: 'bihar' },
-];
-
-function EPaperContent() {
-  const searchParams = useSearchParams();
-  const [currentSlug, setCurrentSlug] = useState('the-local-leader');
-  const [siteConfig, setSiteConfig] = useState<any>(null);
-
-  // Steps: 'auth' | 'state' | 'city' | 'plan' | 'editions'
-  const [step, setStep] = useState<'auth' | 'state' | 'city' | 'plan' | 'editions'>('auth');
+export default function EPaperPage() {
+  const [editions, setEditions] = useState<EPaperEdition[]>(DEFAULT_EDITIONS);
+  const [selectedCity, setSelectedCity] = useState<string>('सभी');
+  const [selectedDate, setSelectedDate] = useState<string>('2026-09-22');
   
-  // Auth Form State
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authName, setAuthName] = useState('');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPhone, setAuthPhone] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState('');
+  // Theme & Branding
+  const [themeColor, setThemeColor] = useState<string>('#ea580c');
+  const [siteName, setSiteName] = useState<string>('द लोकल लीडर');
+  const [siteLogo, setSiteLogo] = useState<string>('/logos/the-local-leader.jpeg');
 
-  // Selection States
-  const [selectedState, setSelectedState] = useState<string>('mp');
-  const [selectedCities, setSelectedCities] = useState<string[]>(['indore']);
-  const [citySearch, setCitySearch] = useState('');
-  
-  // Membership States
-  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [paying, setPaying] = useState(false);
-  const [readerUser, setReaderUser] = useState<any>(null);
+  // Reader Modal State
+  const [readingEdition, setReadingEdition] = useState<EPaperEdition | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
 
-  // 1. Dynamic Portal Setup
+  // 1. Fetch Dynamic Site Branding
   useEffect(() => {
-    const slugFromUrl = searchParams.get('site') || 'the-local-leader';
-    setCurrentSlug(slugFromUrl);
-
-    const unsub = onSnapshot(doc(db, 'sites', slugFromUrl), (snap) => {
+    const unsub = onSnapshot(doc(db, 'sites', 'the-local-leader'), (snap) => {
       if (snap.exists()) {
-        setSiteConfig({ slug: slugFromUrl, ...snap.data() });
-      } else {
-        const def = DEFAULT_SITES[slugFromUrl] || DEFAULT_SITES['the-local-leader'];
-        setSiteConfig({
-          slug: slugFromUrl,
-          name: def.name,
-          primaryColor: def.primaryColor,
-          logoUrl: def.logo
-        });
+        const data = snap.data();
+        if (data.primaryColor) setThemeColor(data.primaryColor);
+        if (data.name) setSiteName(data.name);
+        if (data.logoUrl) setSiteLogo(data.logoUrl);
       }
     });
-
     return () => unsub();
-  }, [searchParams]);
-
-  // 2. Check User Session
-  useEffect(() => {
-    const raw = localStorage.getItem('reader_user');
-    if (raw) {
-      try {
-        const user = JSON.parse(raw);
-        setReaderUser(user);
-        if (user.epaperSubscribed) {
-          setHasSubscription(true);
-          setStep('editions');
-        } else {
-          setStep('state');
-        }
-      } catch (e) {
-        setStep('auth');
-      }
-    } else {
-      setStep('auth');
-    }
   }, []);
 
-  const primary = siteConfig?.primaryColor || '#ea580c';
-  const siteName = siteConfig?.name || 'द लोकल लीडर';
-
-  const handleAuthSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-
-    if (!authEmail || !authPassword) {
-      setAuthError('कृपया ईमेल और पासवर्ड भरें');
-      return;
-    }
-
-    const userData = {
-      name: authName || (authMode === 'login' ? authEmail.split('@')[0] : 'पाठक'),
-      email: authEmail.trim().toLowerCase(),
-      mobile: authPhone || '',
-      loggedInAt: new Date().toISOString(),
-      epaperSubscribed: false
-    };
-
-    localStorage.setItem('reader_user', JSON.stringify(userData));
-    setReaderUser(userData);
-    setStep('state');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('reader_user');
-    setReaderUser(null);
-    setHasSubscription(false);
-    setStep('auth');
-  };
-
-  const toggleCity = (cityName: string) => {
-    if (selectedCities.includes(cityName)) {
-      setSelectedCities(selectedCities.filter((c) => c !== cityName));
-    } else {
-      setSelectedCities([...selectedCities, cityName]);
-    }
-  };
-
-  const handleRazorpayPay = async () => {
-    setPaying(true);
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      alert('Razorpay SDK लोड नहीं हो सका। कृपया इंटरनेट जांचें।');
-      setPaying(false);
-      return;
-    }
-
-    const planAmount = selectedPlan === 'annual' ? 199 : 1;
-    const planName = selectedPlan === 'annual' ? `${siteName} ई-पेपर वार्षिक प्लान` : `${siteName} ई-पेपर ट्रायल`;
-
-    const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-      amount: planAmount * 100,
-      currency: 'INR',
-      name: `${siteName} डिजिटल ई-पेपर`,
-      description: planName,
-
-      // Explicitly enable and display UPI payment method in Test Mode
-      method: {
-        upi: true,
-        card: true,
-        netbanking: true,
-        wallet: true
-      },
-      config: {
-        display: {
-          blocks: {
-            banks: {
-              name: 'Pay via UPI / Cards / Netbanking',
-              instruments: [
-                { method: 'upi' },
-                { method: 'card' },
-                { method: 'netbanking' },
-                { method: 'wallet' }
-              ]
-            }
-          },
-          sequence: ['block.banks'],
-          preferences: {
-            show_default_blocks: true
-          }
-        }
-      },
-
-      handler: async function (response: any) {
-        setHasSubscription(true);
-        const updatedUser = {
-          ...readerUser,
-          epaperSubscribed: true,
-          epaperPaymentId: response.razorpay_payment_id || 'pay_test_' + Date.now(),
-          epaperPlan: selectedPlan,
-          epaperExpireAt: new Date(Date.now() + (selectedPlan === 'annual' ? 365 : 30) * 86400000).toISOString()
-        };
-
-        localStorage.setItem('reader_user', JSON.stringify(updatedUser));
-        setReaderUser(updatedUser);
-
-        if (readerUser?.id) {
-          try {
-            await updateDoc(doc(db, 'users', readerUser.id), {
-              epaperSubscribed: true,
-              epaperPaymentId: response.razorpay_payment_id,
-              epaperPlan: selectedPlan
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        }
-
-        alert(`बधाई हो! आपकी ${siteName} ई-पेपर मेंबरशिप सक्रिय हो चुकी है।`);
-        setStep('editions');
-        setPaying(false);
-      },
-      prefill: {
-        name: readerUser?.name || 'पाठक',
-        email: readerUser?.email || '',
-        contact: readerUser?.mobile || ''
-      },
-      theme: {
-        color: primary
+  // 2. Fetch Live E-papers from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'epaper'));
+    const unsub = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const list: EPaperEdition[] = snapshot.docs.map((docSnap) => {
+          const d = docSnap.data();
+          return {
+            id: docSnap.id,
+            cityName: d.cityName || d.city || 'मुख्य',
+            editionName: d.editionName || d.title || `${siteName} ई-पेपर`,
+            date: d.date || '22-09-2026',
+            thumbnailUrl: d.thumbnailUrl || d.coverImage || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700',
+            pdfUrl: d.pdfUrl || '',
+            pages: Array.isArray(d.pages) && d.pages.length > 0 ? d.pages : [d.thumbnailUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'],
+            totalPages: Number(d.totalPages || d.pages?.length || 10)
+          };
+        });
+        setEditions(list);
       }
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', function (resp: any) {
-      alert('पेमेंट विफल: ' + (resp.error.description || 'त्रुटि आई'));
-      setPaying(false);
+    }, (err) => {
+      console.error(err);
     });
-    rzp.open();
+    return () => unsub();
+  }, [siteName]);
+
+  const filteredEditions = editions.filter((ed) => {
+    if (selectedCity === 'सभी') return true;
+    return ed.cityName.includes(selectedCity);
+  });
+
+  const handleShare = async (edition: EPaperEdition) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${siteName} - ${edition.cityName} ई-पेपर`,
+          text: `आज का ई-पेपर ऑनलाइन पढ़ें: ${edition.cityName} संस्करण (${edition.date})`,
+          url: window.location.href
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('ई-पेपर लिंक कॉपी हो गया है!');
+    }
   };
 
-  const filteredCities = CITIES_DATA.filter(
-    (c) =>
-      (!selectedState || c.stateId === selectedState) &&
-      (!citySearch || c.name.toLowerCase().includes(citySearch.toLowerCase()))
-  );
+  const handleOpenReader = (edition: EPaperEdition) => {
+    setReadingEdition(edition);
+    setCurrentPage(0);
+    setZoomLevel(1);
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', color: '#0f172a', fontFamily: '"Mukta", system-ui, sans-serif' }}>
       
-      {/* 1. DYNAMIC TOP PORTAL HEADER */}
-      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <img 
-            src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} 
-            alt={siteName} 
-            style={{ height: '36px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
-          />
-          <span style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>
-            {siteName} <span style={{ fontSize: '13px', color: primary, fontWeight: 800 }}>ई-पेपर</span>
-          </span>
-        </Link>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12.5px', color: '#334155' }}>
-          {step === 'editions' && (
-            <button onClick={() => setStep('state')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12.5px', color: '#334155', fontWeight: 600 }}>
-              📍 शहर बदलें
-            </button>
-          )}
-
-          {readerUser ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontWeight: 700, color: '#0f172a' }}>👤 {readerUser.name}</span>
-              <button onClick={handleLogout} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                लॉग आउट
-              </button>
+      {/* Top Header */}
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 40, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div style={{ maxWidth: '1380px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {siteLogo && (
+              <img src={siteLogo} alt={siteName} style={{ height: '38px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+            )}
+            <div>
+              <b style={{ fontSize: '20px', color: '#0f172a' }}>{siteName} ई-पेपर</b>
+              <div style={{ fontSize: '11.5px', color: '#64748b' }}>डिजिटल दैनिक समाचार पत्र (Digital Replica Edition)</div>
             </div>
-          ) : (
-            <button onClick={() => setStep('auth')} style={{ background: primary, color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-              लॉगिन / साइनअप
-            </button>
-          )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <Link href="/" style={{ fontSize: '13.5px', color: themeColor, textDecoration: 'none', fontWeight: 600 }}>
+              ← मुख्य वेबसाइट
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* 2. BODY CONTENT */}
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      {/* Main Content Area */}
+      <main style={{ maxWidth: '1380px', margin: '0 auto', padding: '24px 20px' }}>
         
-        {/* STEP 0: LOGIN / SIGNUP */}
-        {step === 'auth' && (
-          <div style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', padding: '30px 24px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ width: '48px', height: '48px', background: '#fff7ed', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', marginBottom: '8px' }}>
-                📰
-              </div>
-              <h2 style={{ fontSize: '19px', fontWeight: 900, color: '#1e293b', margin: '0 0 4px 0' }}>
-                {siteName} ई-पेपर में आपका स्वागत है
-              </h2>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-                ई-पेपर और संस्करण पढ़ने के लिए कृपया पहले लॉगिन करें
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '4px', marginBottom: '18px' }}>
+        {/* Date and City Filter Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '28px', backgroundColor: '#f8fafc', padding: '14px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155' }}>शहर चुनें:</span>
+            {['सभी', 'भोपाल', 'इंदौर', 'उज्जैन', 'देवास'].map((city) => (
               <button
+                key={city}
                 type="button"
-                onClick={() => setAuthMode('login')}
-                style={{ flex: 1, padding: '7px', border: 'none', borderRadius: '6px', background: authMode === 'login' ? '#fff' : 'transparent', fontWeight: 700, fontSize: '12px', color: authMode === 'login' ? primary : '#64748b', cursor: 'pointer' }}
+                onClick={() => setSelectedCity(city)}
+                style={{
+                  backgroundColor: selectedCity === city ? themeColor : '#ffffff',
+                  color: selectedCity === city ? '#ffffff' : '#475569',
+                  border: `1px solid ${selectedCity === city ? themeColor : '#cbd5e1'}`,
+                  borderRadius: '20px',
+                  padding: '5px 14px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
               >
-                लॉगिन
+                {city}
               </button>
-              <button
-                type="button"
-                onClick={() => setAuthMode('signup')}
-                style={{ flex: 1, padding: '7px', border: 'none', borderRadius: '6px', background: authMode === 'signup' ? '#fff' : 'transparent', fontWeight: 700, fontSize: '12px', color: authMode === 'signup' ? primary : '#64748b', cursor: 'pointer' }}
-              >
-                नया खाता (साइनअप)
-              </button>
-            </div>
-
-            {authError && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '14px', textAlign: 'center' }}>
-                {authError}
-              </div>
-            )}
-
-            <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {authMode === 'signup' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                    आपका नाम
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="पूरा नाम दर्ज करें"
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                  ईमेल पता
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {authMode === 'signup' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                    मोबाइल नंबर (ऐच्छिक)
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="10 अंकों का नंबर"
-                    value={authPhone}
-                    onChange={(e) => setAuthPhone(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                  पासवर्ड
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', marginTop: '6px' }}
-              >
-                {authMode === 'login' ? 'लॉगिन करें और आगे बढ़ें →' : 'खाता बनाएं और आगे बढ़ें →'}
-              </button>
-            </form>
+            ))}
           </div>
-        )}
 
-        {/* STEP 1: STATE SELECTION */}
-        {step === 'state' && (
-          <div style={{ width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', fontWeight: 800, fontSize: '16px' }}>
-              ई-पेपर के लिए राज्य चुनें
-            </div>
-
-            <div style={{ maxHeight: '420px', overflowY: 'auto', padding: '20px 16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', textAlign: 'center' }}>
-                {STATES_DATA.map((st) => {
-                  const isSelected = selectedState === st.id;
-                  return (
-                    <div
-                      key={st.id}
-                      onClick={() => setSelectedState(st.id)}
-                      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
-                    >
-                      <div style={{ position: 'relative', width: '70px', height: '70px', borderRadius: '50%', overflow: 'hidden', border: isSelected ? `3px solid ${primary}` : '2px solid transparent' }}>
-                        <img src={st.image} alt={st.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        {isSelected ? (
-                          <div style={{ position: 'absolute', top: 2, right: 2, background: primary, color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
-                            ✓
-                          </div>
-                        ) : (
-                          <div style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,255,255,0.85)', color: '#64748b', borderRadius: '50%', width: '16px', height: '16px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                            +
-                          </div>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '12.5px', fontWeight: isSelected ? 800 : 500, color: isSelected ? primary : '#334155' }}>
-                        {st.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9' }}>
-              <button
-                onClick={() => setStep('city')}
-                style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
-              >
-                आगे बढ़ें
-              </button>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>दिनांक:</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', backgroundColor: '#ffffff' }}
+            />
           </div>
-        )}
+        </div>
 
-        {/* STEP 2: CITY SELECTION */}
-        {step === 'city' && (
-          <div style={{ width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontWeight: 800, fontSize: '16px' }}>शहर चुनें</span>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <input
-                  type="text"
-                  placeholder="शहर खोजें..."
-                  value={citySearch}
-                  onChange={(e) => setCitySearch(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px 8px 30px', background: '#f1f5f9', border: 'none', borderRadius: '6px', fontSize: '12.5px', outline: 'none', boxSizing: 'border-box' }}
-                />
-                <span style={{ position: 'absolute', left: '10px', top: '7px', fontSize: '13px', color: '#64748b' }}>🔍</span>
+        {/* Section Title */}
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>मेरे पसंदीदा शहर</h2>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>अपने शहर का आज का संपूर्ण ई-पेपर पढ़ें या पूरी पीडीएफ डाउनलोड करें</p>
+        </div>
+
+        {/* Grid Layout Matching Screenshot */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '22px' }}>
+          {filteredEditions.map((edition) => (
+            <div
+              key={edition.id}
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+              }}
+            >
+              {/* City Name Header */}
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+                {edition.cityName}
               </div>
-            </div>
 
-            <div style={{ maxHeight: '380px', overflowY: 'auto', padding: '12px 16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {filteredCities.map((ct) => {
-                const isSelected = selectedCities.includes(ct.name);
-                return (
+              {/* Newspaper Replica Front Page with Website Masthead */}
+              <div
+                onClick={() => handleOpenReader(edition)}
+                style={{
+                  cursor: 'pointer',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  backgroundColor: '#f1f5f9',
+                  aspectRatio: '3/4',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                {/* Dynamic Newspaper Masthead Banner */}
+                <div style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #0f172a', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>🗞️</span>
+                    <b style={{ fontSize: '15px', color: '#b91c1c', letterSpacing: '0.5px', fontFamily: 'Georgia, serif' }}>
+                      {siteName}
+                    </b>
+                  </div>
+                  <span style={{ fontSize: '9.5px', color: '#64748b' }}>{edition.cityName}</span>
+                </div>
+
+                {/* Cover Image */}
+                <img
+                  src={edition.thumbnailUrl}
+                  alt={edition.cityName}
+                  style={{ width: '100%', flex: 1, objectFit: 'cover' }}
+                />
+
+                {/* Hover Read Overlay */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+                    opacity: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    color: '#ffffff',
+                    transition: 'opacity 0.2s ease',
+                    fontWeight: 600,
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+                >
+                  <span style={{ backgroundColor: themeColor, padding: '8px 16px', borderRadius: '20px' }}>
+                    📖 ई-पेपर पढ़ें
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer Meta: Date & Share Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 500 }}>
+                  {edition.date}
+                </span>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button
-                    key={ct.id}
-                    onClick={() => toggleCity(ct.name)}
-                    style={{
-                      background: isSelected ? '#fff7ed' : '#ffffff',
-                      border: isSelected ? `1.5px solid ${primary}` : '1px solid #e2e8f0',
-                      color: isSelected ? primary : '#334155',
-                      padding: '7px 14px',
-                      borderRadius: '20px',
-                      fontSize: '13px',
-                      fontWeight: isSelected ? 700 : 500,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
+                    type="button"
+                    onClick={() => handleShare(edition)}
+                    title="शेयर करें"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '4px' }}
                   >
-                    <span>{ct.name}</span>
-                    <span>{isSelected ? '✓' : '+'}</span>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
                   </button>
-                );
-              })}
-            </div>
 
-            <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setStep('state')}
-                style={{ padding: '12px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
-              >
-                ← वापस
-              </button>
-              <button
-                onClick={() => (hasSubscription ? setStep('editions') : setStep('plan'))}
-                style={{ flex: 1, padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}
-              >
-                आगे बढ़ें ({selectedCities.length} शहर चुने गए)
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: MEMBERSHIP PLAN / RAZORPAY PAYWALL */}
-        {step === 'plan' && (
-          <div style={{ width: '100%', maxWidth: '580px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 12px 40px rgba(0,0,0,0.08)', padding: '24px', position: 'relative' }}>
-            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '18px', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', alignItems: 'center', border: '1px solid #edf2f7' }}>
-              <div>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  👑 {siteName} प्रीमियम ई-पेपर
-                </span>
-                <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '12.5px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '6px', lineHeight: 1.4 }}>
-                  <li>सभी राज्यों व प्रमुख शहरों के <b>ई-पेपर कहीं भी कभी भी पढ़ें</b></li>
-                  <li>उच्च गुणवत्ता (HD) डिजिटल पृष्ठ</li>
-                  <li>बिना किसी विज्ञापन रुकावट के वाचन</li>
-                  <li>आर्काइव और पुराने संस्करणों तक असीमित पहुंच</li>
-                </ul>
-              </div>
-
-              <div style={{ height: '140px', background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300" alt="Newspaper Pages" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'rotate(-3deg) scale(1.05)' }} />
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'center', margin: '20px 0 14px 0', fontSize: '13px', fontWeight: 800, color: primary }}>
-              🎉 विशेष छूट ऑफर 🎉
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px' }}>
-              <div
-                onClick={() => setSelectedPlan('annual')}
-                style={{
-                  border: selectedPlan === 'annual' ? `2px solid ${primary}` : '1px solid #cbd5e1',
-                  background: selectedPlan === 'annual' ? '#fffaf5' : '#ffffff',
-                  borderRadius: '10px',
-                  padding: '16px',
-                  cursor: 'pointer',
-                  position: 'relative'
-                }}
-              >
-                <span style={{ position: 'absolute', top: '-10px', left: '16px', background: '#22c55e', color: '#fff', fontSize: '9.5px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
-                  रोज़ ₹1 से कम
-                </span>
-                {selectedPlan === 'annual' && (
-                  <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: primary, color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
-                    ✓
-                  </span>
-                )}
-                <div style={{ fontSize: '12px', color: '#64748b' }}>1 साल का एक्सेस</div>
-                <div style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>₹199</div>
-              </div>
-
-              <div
-                onClick={() => setSelectedPlan('monthly')}
-                style={{
-                  border: selectedPlan === 'monthly' ? `2px solid ${primary}` : '1px solid #cbd5e1',
-                  background: selectedPlan === 'monthly' ? '#fffaf5' : '#ffffff',
-                  borderRadius: '10px',
-                  padding: '16px',
-                  cursor: 'pointer',
-                  position: 'relative'
-                }}
-              >
-                {selectedPlan === 'monthly' && (
-                  <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: primary, color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900 }}>
-                    ✓
-                  </span>
-                )}
-                <div style={{ fontSize: '12px', color: '#64748b' }}>पहला महीना ट्रायल</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '24px', fontWeight: 900, color: '#0f172a' }}>₹1</span>
-                  <span style={{ fontSize: '14px', color: '#94a3b8', textDecoration: 'line-through' }}>₹25</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '20px' }}>
-              <button
-                onClick={handleRazorpayPay}
-                disabled={paying}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: primary,
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '15px',
-                  fontWeight: 900,
-                  cursor: paying ? 'not-allowed' : 'pointer',
-                  boxShadow: `0 4px 15px ${primary}40`
-                }}
-              >
-                {paying ? 'Razorpay खुल रहा है...' : `प्रीमियम सक्रिय करें सिर्फ ₹${selectedPlan === 'annual' ? '199' : '1'} में →`}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: EDITIONS */}
-        {step === 'editions' && (
-          <div style={{ width: '100%', maxWidth: '1100px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, margin: '0 0 20px 0', color: '#1e293b' }}>
-              {siteName} - आज के संस्करण ({selectedCities.join(', ')})
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
-              {selectedCities.map((cityName) => (
-                <div key={cityName} style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                  <div style={{ padding: '10px 14px', fontWeight: 700, fontSize: '14px', color: '#1e293b', borderBottom: '1px solid #f1f5f9' }}>
-                    {cityName} संस्करण
-                  </div>
-
-                  <div
-                    onClick={() => alert(`${cityName} का आज का संपूर्ण ई-पेपर लोड हो रहा है...`)}
-                    style={{ height: '240px', background: '#0f172a', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
+                  <a
+                    href={edition.pdfUrl}
+                    download={`${edition.cityName}-epaper-${edition.date}.pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="PDF डाउनलोड करें"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: themeColor, display: 'flex', alignItems: 'center', padding: '4px' }}
                   >
-                    <img
-                      src="https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=500"
-                      alt={cityName}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px', background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', color: '#fff', fontSize: '11.5px', fontWeight: 700 }}>
-                      पूरा अखबार पढ़ें ↗
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748b' }}>
-                    <span>08-09-2026</span>
-                    <button
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({ title: `${siteName} ${cityName} ई-पेपर`, url: window.location.href });
-                        } else {
-                          navigator.clipboard.writeText(window.location.href);
-                          alert('ई-पेपर लिंक कॉपी हो गया!');
-                        }
-                      }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                      🔗
-                    </button>
-                  </div>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </a>
                 </div>
-              ))}
+              </div>
+
+              {/* Action Buttons Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleOpenReader(edition)}
+                  style={{
+                    backgroundColor: '#0f172a',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  पढ़ें
+                </button>
+
+                <a
+                  href={edition.pdfUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    backgroundColor: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    display: 'block'
+                  }}
+                >
+                  PDF डाउनलोड
+                </a>
+              </div>
+
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
       </main>
 
-      {/* 3. DYNAMIC FOOTER */}
-      <footer style={{ background: '#ffffff', borderTop: '1px solid #e2e8f0', padding: '16px', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          <Link href={`/?site=${currentSlug}`} style={{ color: 'inherit', textDecoration: 'none' }}>मुख्य पृष्ठ</Link>
-          <span>|</span>
-          <Link href="/privacy-policy" style={{ color: 'inherit', textDecoration: 'none' }}>गोपनीयता नीति</Link>
-          <span>|</span>
-          <Link href="/terms-and-conditions" style={{ color: 'inherit', textDecoration: 'none' }}>नियम एवं शर्तें</Link>
-          <span>|</span>
-          <Link href="/refund-policy" style={{ color: 'inherit', textDecoration: 'none' }}>रिफंड नीति</Link>
+      {/* ── FULLSCREEN E-PAPER READER MODAL ── */}
+      {readingEdition && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column' }}>
+          
+          {/* Reader Top Controls */}
+          <div style={{ backgroundColor: '#0f172a', color: '#ffffff', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <b style={{ fontSize: '16px' }}>{siteName} ({readingEdition.cityName} संस्करण)</b>
+              <span style={{ fontSize: '13px', color: '#94a3b8' }}>दिनांक: {readingEdition.date}</span>
+            </div>
+
+            {/* Page & Zoom Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                type="button"
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                style={{ backgroundColor: '#1e293b', color: '#ffffff', border: '1px solid #334155', borderRadius: '4px', padding: '6px 12px', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+              >
+                ◀ पिछला पेज
+              </button>
+
+              <span style={{ fontSize: '13px', color: '#cbd5e1' }}>
+                पेज <b>{currentPage + 1}</b> / {readingEdition.pages.length || 1}
+              </span>
+
+              <button
+                type="button"
+                disabled={currentPage >= (readingEdition.pages.length - 1)}
+                onClick={() => setCurrentPage(prev => Math.min(readingEdition.pages.length - 1, prev + 1))}
+                style={{ backgroundColor: '#1e293b', color: '#ffffff', border: '1px solid #334155', borderRadius: '4px', padding: '6px 12px', cursor: currentPage >= (readingEdition.pages.length - 1) ? 'not-allowed' : 'pointer', fontSize: '13px' }}
+              >
+                अगला पेज ▶
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setZoomLevel(prev => (prev === 1 ? 1.5 : 1))}
+                style={{ backgroundColor: '#1e293b', color: '#ffffff', border: '1px solid #334155', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}
+              >
+                {zoomLevel === 1 ? '🔍 ज़ूम इन' : '🔍 ज़ूम रीसेट'}
+              </button>
+
+              <a
+                href={readingEdition.pdfUrl}
+                download
+                target="_blank"
+                rel="noreferrer"
+                style={{ backgroundColor: themeColor, color: '#ffffff', padding: '6px 14px', borderRadius: '4px', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}
+              >
+                📥 PDF डाउनलोड
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setReadingEdition(null)}
+                style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '6px 14px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕ बंद करें
+              </button>
+            </div>
+          </div>
+
+          {/* Reader View Body */}
+          <div style={{ flex: 1, overflow: 'auto', padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img
+              src={readingEdition.pages[currentPage] || readingEdition.thumbnailUrl}
+              alt={`Page ${currentPage + 1}`}
+              style={{
+                maxWidth: zoomLevel === 1 ? '90%' : '140%',
+                maxHeight: zoomLevel === 1 ? '85vh' : 'none',
+                objectFit: 'contain',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                borderRadius: '4px',
+                transition: 'transform 0.2s ease',
+                transform: `scale(${zoomLevel})`
+              }}
+            />
+          </div>
+
         </div>
-        <div>Copyright©2026 {siteName} Media Network. All Rights Reserved</div>
-      </footer>
+      )}
 
     </div>
   );
 }
-
-export default function EPaperPage() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>ई-पेपर लोड हो रहा है...</div>}>
-      <EPaperContent />
-    </Suspense>
-  );
-} 
