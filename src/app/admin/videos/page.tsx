@@ -5,10 +5,8 @@ import { db } from '@/lib/firebase';
 import { 
   collection, 
   query, 
-  orderBy, 
   onSnapshot, 
   addDoc, 
-  updateDoc, 
   deleteDoc, 
   doc, 
   serverTimestamp 
@@ -80,19 +78,29 @@ export default function AdminVideosPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. YouTube ID extractor for automatic thumbnails & embeds
+  // 2. YouTube Auto-detection & ID extractor
+  const isYouTubeUrl = (url: string) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
   const getEmbedUrl = (url: string) => {
     if (!url) return '';
-    if (url.includes('youtube.com/watch?v=')) {
-      return url.replace('watch?v=', 'embed/');
-    }
-    if (url.includes('youtu.be/')) {
-      const id = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${id}`;
-    }
-    if (url.includes('youtube.com/shorts/')) {
-      const id = url.split('youtube.com/shorts/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${id}`;
+    try {
+      if (url.includes('youtube.com/watch?v=')) {
+        const id = url.split('watch?v=')[1]?.split('&')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+      if (url.includes('youtu.be/')) {
+        const id = url.split('youtu.be/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+      if (url.includes('youtube.com/shorts/')) {
+        const id = url.split('youtube.com/shorts/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+    } catch (e) {
+      console.error(e);
     }
     return url;
   };
@@ -108,9 +116,8 @@ export default function AdminVideosPage() {
     try {
       setSubmitting(true);
 
-      // Auto generate thumbnail for YouTube if not provided
       let finalThumb = thumbnailUrl.trim();
-      if (!finalThumb && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))) {
+      if (!finalThumb && isYouTubeUrl(videoUrl)) {
         let ytId = '';
         if (videoUrl.includes('watch?v=')) ytId = videoUrl.split('watch?v=')[1]?.split('&')[0];
         else if (videoUrl.includes('youtu.be/')) ytId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
@@ -123,7 +130,7 @@ export default function AdminVideosPage() {
         category,
         siteId,
         cityName: cityName.trim(),
-        videoType,
+        videoType: isYouTubeUrl(videoUrl) ? (videoUrl.includes('shorts') ? 'shorts' : 'youtube') : videoType,
         videoUrl: videoUrl.trim(),
         thumbnailUrl: finalThumb || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800',
         duration: duration.trim() || '02:00',
@@ -192,7 +199,7 @@ export default function AdminVideosPage() {
       ) : videos.length === 0 ? (
         <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '70px 20px', textAlign: 'center' }}>
           <span style={{ fontSize: '36px' }}>📹</span>
-          <h3 style={{ fontSize: '18px', color: '#ffffff', margin: '12px 0 6px' }}>कोई न्यूज़ वीडियो उपलब्ध नहीं है</h3>
+          <h3 style={{ fontSize: '18px', color: '#ffffff', margin: '12px 0 6px 0' }}>कोई न्यूज़ वीडियो उपलब्ध नहीं है</h3>
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px' }}>वेबसाइट और ऐप पर वीडियो दिखाने के लिए ऊपर "+ नया न्यूज़ वीडियो जोड़ें" पर क्लिक करें।</p>
           <button
             onClick={() => setShowModal(true)}
@@ -242,7 +249,7 @@ export default function AdminVideosPage() {
 
                 {/* Video Type Badge */}
                 <span style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(15,23,42,0.85)', color: '#38bdf8', fontSize: '10.5px', padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-                  {vid.videoType}
+                  {isYouTubeUrl(vid.videoUrl) ? 'YOUTUBE' : vid.videoType}
                 </span>
               </div>
 
@@ -340,6 +347,7 @@ export default function AdminVideosPage() {
                     <option value="शहर हलचल">शहर हलचल</option>
                     <option value="व्यापार">व्यापार</option>
                     <option value="विशेष रिपोर्ट">विशेष रिपोर्ट</option>
+                    <option value="खेल">खेल</option>
                   </select>
                 </div>
 
@@ -412,7 +420,7 @@ export default function AdminVideosPage() {
         </div>
       )}
 
-      {/* Video Player Modal */}
+      {/* Video Player Modal with YouTube Auto-detection */}
       {previewVideo && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '16px' }}>
           <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px', width: '100%', maxWidth: '780px' }}>
@@ -427,9 +435,7 @@ export default function AdminVideosPage() {
             </div>
 
             <div style={{ width: '100%', aspectRatio: previewVideo.videoType === 'shorts' ? '9/16' : '16/9', maxHeight: '70vh', backgroundColor: '#000', margin: '0 auto', overflow: 'hidden', borderRadius: '8px' }}>
-              {previewVideo.videoType === 'direct' ? (
-                <video src={previewVideo.videoUrl} controls autoPlay style={{ width: '100%', height: '100%' }} />
-              ) : (
+              {isYouTubeUrl(previewVideo.videoUrl) ? (
                 <iframe
                   src={getEmbedUrl(previewVideo.videoUrl)}
                   title={previewVideo.title}
@@ -437,6 +443,8 @@ export default function AdminVideosPage() {
                   allowFullScreen
                   style={{ width: '100%', height: '100%', border: 'none' }}
                 />
+              ) : (
+                <video src={previewVideo.videoUrl} controls autoPlay style={{ width: '100%', height: '100%' }} />
               )}
             </div>
           </div>
