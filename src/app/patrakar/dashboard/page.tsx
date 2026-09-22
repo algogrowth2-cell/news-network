@@ -29,7 +29,7 @@ interface ReporterArticle {
   views?: number;
 }
 
-// Complete list of all 8 network websites
+// Complete list of all 8 network websites (Sirf Hindi naam display ke liye)
 const NETWORK_WEBSITES = [
   { name: 'द लोकल लीडर', slug: 'the-local-leader' },
   { name: 'बाज़ार कारोबार', slug: 'bazar-karobar' },
@@ -302,7 +302,7 @@ export default function PatrakarDashboard() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Header - White Theme */}
+      {/* Top Header */}
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
@@ -331,7 +331,7 @@ export default function PatrakarDashboard() {
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         
-        {/* Metric Cards Row - Clean White Cards */}
+        {/* Metric Cards Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
@@ -364,7 +364,7 @@ export default function PatrakarDashboard() {
 
         </div>
 
-        {/* Tab Navigation with Dynamic Brand Color */}
+        {/* Tab Navigation */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
           <button
             onClick={() => setActiveTab('overview')}
@@ -460,7 +460,7 @@ export default function PatrakarDashboard() {
           )}
         </div>
 
-        {/* TAB 1: MY ARTICLES - Clean White Table */}
+        {/* TAB 1: MY ARTICLES */}
         {activeTab === 'overview' && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
@@ -477,7 +477,7 @@ export default function PatrakarDashboard() {
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                       <th style={{ padding: '14px 18px' }}>शीर्षक (Title)</th>
                       <th style={{ padding: '14px 18px' }}>श्रेणी</th>
-                      <th style={{ padding: '14px 18px' }}>पोर्टल (Target Site)</th>
+                      <th style={{ padding: '14px 18px' }}>पोर्टल</th>
                       <th style={{ padding: '14px 18px' }}>सत्यापन स्थिति (Status)</th>
                       <th style={{ padding: '14px 18px' }}>रीडर व्यूज़</th>
                     </tr>
@@ -491,8 +491,8 @@ export default function PatrakarDashboard() {
                         <td style={{ padding: '14px 18px', color: '#475569' }}>
                           {art.category}
                         </td>
-                        <td style={{ padding: '14px 18px', color: themeColor, fontFamily: 'monospace', fontWeight: 600 }}>
-                          {art.siteId}
+                        <td style={{ padding: '14px 18px', color: themeColor, fontWeight: 600 }}>
+                          {NETWORK_WEBSITES.find(w => w.slug === art.siteId)?.name || art.siteId}
                         </td>
                         <td style={{ padding: '14px 18px' }}>
                           <span
@@ -522,7 +522,7 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 2: CREATE & SUBMIT ARTICLE - Light Clean Box with all 8 sites */}
+        {/* TAB 2: CREATE & SUBMIT ARTICLE (Sirf Hindi Names Dropdown me) */}
         {activeTab === 'create-article' && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '820px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>नई खबर सबमिट करें (सत्यापन हेतु)</h2>
@@ -554,7 +554,7 @@ export default function PatrakarDashboard() {
                   >
                     {NETWORK_WEBSITES.map(w => (
                       <option key={w.slug} value={w.slug}>
-                        {w.name} ({w.slug})
+                        {w.name}
                       </option>
                     ))}
                   </select>
@@ -567,13 +567,13 @@ export default function PatrakarDashboard() {
                     onChange={(e) => setArtCategory(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
-                    <option value="राजनीति">राजनीति (Politics)</option>
-                    <option value="अपराध">अपराध (Crime)</option>
-                    <option value="व्यापार">व्यापार (Business)</option>
-                    <option value="राज्य">राज्य / ज़िला (National/State)</option>
-                    <option value="खेल">खेल (Sports)</option>
-                    <option value="स्वास्थ्य">स्वास्थ्य (Health)</option>
-                    <option value="जीवनशैली">जीवनशैली (Lifestyle)</option>
+                    <option value="राजनीति">राजनीति</option>
+                    <option value="अपराध">अपराध</option>
+                    <option value="व्यापार">व्यापार</option>
+                    <option value="राज्य">राज्य / ज़िला</option>
+                    <option value="खेल">खेल</option>
+                    <option value="स्वास्थ्य">स्वास्थ्य</option>
+                    <option value="जीवनशैली">जीवनशैली</option>
                   </select>
                 </div>
               </div>
