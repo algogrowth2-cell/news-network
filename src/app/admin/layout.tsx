@@ -65,7 +65,7 @@ export default function AdminLayout({
     );
   }
 
-  // Screenshot ke exact 4 categories aur 19 navigation links
+  // Navigation sections with News Videos included
   const navSections = [
     {
       heading: 'MAIN',
@@ -81,6 +81,7 @@ export default function AdminLayout({
         { label: 'States & Cities', icon: '📍', href: '/admin/locations' },
         { label: 'Media Library', icon: '🖼️', href: '/admin/media' },
         { label: 'Web Stories', icon: '📱', href: '/admin/web-stories' },
+        { label: 'News Videos', icon: '📹', href: '/admin/videos' },
         { label: 'Photo Galleries', icon: '📷', href: '/admin/galleries' },
         { label: 'E-Paper', icon: '📰', href: '/admin/epaper' },
         { label: 'Live Blogs', icon: '📡', href: '/admin/live-blogs' },
