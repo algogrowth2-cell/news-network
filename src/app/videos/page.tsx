@@ -42,12 +42,10 @@ export default function PublicVideosPage() {
   const [selectedCategory, setSelectedCategory] = useState('सभी');
   const [playingVideo, setPlayingVideo] = useState<NewsVideo | null>(null);
 
-  // Dynamic Theme State
   const [themeColor, setThemeColor] = useState<string>('#ea580c');
   const [siteName, setSiteName] = useState<string>('द लोकल लीडर');
   const [siteLogo, setSiteLogo] = useState<string>('/logos/the-local-leader.jpeg');
 
-  // 1. Fetch Dynamic Site Config
   useEffect(() => {
     const unsubSite = onSnapshot(doc(db, 'sites', 'the-local-leader'), (snap) => {
       if (snap.exists()) {
@@ -60,7 +58,6 @@ export default function PublicVideosPage() {
     return () => unsubSite();
   }, []);
 
-  // 2. Fetch Live Published Videos from news_videos collection
   useEffect(() => {
     setLoading(true);
     const q = query(
@@ -84,26 +81,34 @@ export default function PublicVideosPage() {
     return () => unsub();
   }, []);
 
-  // 3. Category Filter logic
   const filteredVideos = videos.filter((vid) => {
     if (selectedCategory === 'सभी') return true;
     return vid.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
   });
 
-  // 4. Safe Embed URL generator
+  // Auto-detect YouTube Links regardless of videoType selected in admin
+  const isYouTubeUrl = (url: string) => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
   const getEmbedUrl = (url: string) => {
     if (!url) return '';
-    if (url.includes('youtube.com/watch?v=')) {
-      const id = url.split('watch?v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    }
-    if (url.includes('youtu.be/')) {
-      const id = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    }
-    if (url.includes('youtube.com/shorts/')) {
-      const id = url.split('youtube.com/shorts/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1`;
+    try {
+      if (url.includes('youtube.com/watch?v=')) {
+        const id = url.split('watch?v=')[1]?.split('&')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+      if (url.includes('youtu.be/')) {
+        const id = url.split('youtu.be/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+      if (url.includes('youtube.com/shorts/')) {
+        const id = url.split('youtube.com/shorts/')[1]?.split('?')[0];
+        return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      }
+    } catch (e) {
+      console.error(e);
     }
     return url;
   };
@@ -249,7 +254,7 @@ export default function PublicVideosPage() {
 
                   {/* Video Type Badge */}
                   <span style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(15,23,42,0.85)', color: '#38bdf8', fontSize: '10px', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>
-                    {vid.videoType}
+                    {isYouTubeUrl(vid.videoUrl) ? 'YOUTUBE' : 'DIRECT'}
                   </span>
                 </div>
 
@@ -282,7 +287,7 @@ export default function PublicVideosPage() {
 
       </main>
 
-      {/* ── FULLSCREEN POPUP VIDEO PLAYER MODAL ── */}
+      {/* ── AUTO-DETECT VIDEO PLAYER MODAL ── */}
       {playingVideo && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
           <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '18px', width: '100%', maxWidth: '820px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
@@ -306,9 +311,7 @@ export default function PublicVideosPage() {
             </div>
 
             <div style={{ width: '100%', aspectRatio: playingVideo.videoType === 'shorts' ? '9/16' : '16/9', maxHeight: '72vh', backgroundColor: '#000', margin: '0 auto', overflow: 'hidden', borderRadius: '8px' }}>
-              {playingVideo.videoType === 'direct' ? (
-                <video src={playingVideo.videoUrl} controls autoPlay style={{ width: '100%', height: '100%' }} />
-              ) : (
+              {isYouTubeUrl(playingVideo.videoUrl) ? (
                 <iframe
                   src={getEmbedUrl(playingVideo.videoUrl)}
                   title={playingVideo.title}
@@ -316,6 +319,8 @@ export default function PublicVideosPage() {
                   allowFullScreen
                   style={{ width: '100%', height: '100%', border: 'none' }}
                 />
+              ) : (
+                <video src={playingVideo.videoUrl} controls autoPlay style={{ width: '100%', height: '100%' }} />
               )}
             </div>
 
