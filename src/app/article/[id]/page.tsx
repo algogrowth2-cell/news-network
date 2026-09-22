@@ -77,15 +77,10 @@ export default function ArticleDetailPage() {
   const searchParams = useSearchParams();
   const articleId = params?.id as string;
 
-  // Active Site State
   const [siteSlug, setSiteSlug] = useState<string>('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
-
-  // Article State
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Comments State
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [newComment, setNewComment] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
@@ -118,12 +113,10 @@ export default function ArticleDetailPage() {
           const data = { id: docSnap.id, ...docSnap.data() } as ArticleDetail;
           setArticle(data);
 
-          // Priority: 1. URL search param (?site=xyz) -> 2. Article ke data me siteId -> 3. default
           const querySite = searchParams.get('site');
           const finalSlug = (querySite || data.siteId || 'the-local-leader').toLowerCase();
           setSiteSlug(finalSlug);
 
-          // Page view count update
           updateDoc(docRef, { views: increment(1) }).catch(() => {});
         }
       } catch (err) {
@@ -135,7 +128,7 @@ export default function ArticleDetailPage() {
     fetchArticle();
   }, [articleId, searchParams]);
 
-  // 3. Live Site Config Fetch based on identified siteSlug
+  // 3. Live Site Config Fetch
   useEffect(() => {
     if (!siteSlug) return;
 
@@ -196,7 +189,7 @@ export default function ArticleDetailPage() {
         userEmail: readerUser.email || '',
         comment: newComment.trim(),
         createdAt: new Date().toISOString().split('T')[0],
-        status: 'pending' // Admin approval required
+        status: 'pending'
       });
       setNewComment('');
       setCommentSuccess(true);
@@ -213,19 +206,27 @@ export default function ArticleDetailPage() {
   const siteLogo = siteConfig?.logoUrl || `/logos/${siteSlug}.jpeg`;
   const siteTagline = siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —';
 
+  // CSS custom property for dynamic primary color
+  const cssVars = { '--ap-primary': primary } as React.CSSProperties;
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-        खबर लोड हो रही है...
+      <div className="ap-loader-screen">
+        <style jsx global>{`${globalCSS}`}</style>
+        <div className="ap-loader-pulse" />
+        <span className="ap-loader-text">खबर लोड हो रही है…</span>
       </div>
     );
   }
 
   if (!article) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-        <h2>यह खबर उपलब्ध नहीं है।</h2>
-        <Link href={`/?site=${siteSlug}`} style={{ color: primary, fontWeight: 700 }}>
+      <div className="ap-empty-screen">
+        <style jsx global>{`${globalCSS}`}</style>
+        <div className="ap-empty-icon">📰</div>
+        <h2 className="ap-empty-title">यह खबर उपलब्ध नहीं है</h2>
+        <p className="ap-empty-desc">शायद यह खबर हटा दी गई है या लिंक गलत है।</p>
+        <Link href={`/?site=${siteSlug}`} className="ap-empty-back" style={{ background: primary }}>
           ← मुख्य पृष्ठ पर वापस जाएं
         </Link>
       </div>
@@ -233,126 +234,136 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* 1. TOP PORTAL HEADER (DYNAMIC SITE BRANDING) */}
-      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '12px 0', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          
-          {/* Back to Exact Site Home Button */}
-          <Link 
-            href={`/?site=${siteSlug}`} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              textDecoration: 'none', 
-              color: primary, 
-              fontWeight: 800, 
-              fontSize: '14px' 
-            }}
-          >
-            <span>←</span>
+    <div className="ap-page" style={cssVars}>
+      <style jsx global>{`${globalCSS}`}</style>
+
+      {/* ─── STICKY HEADER ─── */}
+      <header className="ap-header">
+        <div className="ap-header-inner">
+          <Link href={`/?site=${siteSlug}`} className="ap-header-back">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             <span>{siteName}</span>
           </Link>
-
-          <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-            {article.createdAt || '2026-09-05'}
-          </div>
+          <time className="ap-header-date">{article.createdAt || '2026-09-05'}</time>
         </div>
       </header>
 
-      {/* 2. ARTICLE CONTENT CONTAINER */}
-      <main style={{ maxWidth: '1000px', margin: '24px auto', padding: '0 16px', width: '100%', boxSizing: 'border-box', flex: 1 }}>
-        
-        {/* Category Tag */}
-        <div style={{ marginBottom: '12px' }}>
-          <span style={{ background: primary, color: '#ffffff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {article.category || 'National'}
-          </span>
-        </div>
+      {/* ─── ARTICLE ─── */}
+      <main className="ap-main">
+        <article className="ap-article">
 
-        {/* Title */}
-        <h1 style={{ fontSize: 'clamp(22px, 3.5vw, 32px)', fontWeight: 900, color: '#0f172a', lineHeight: '1.3', margin: '0 0 16px 0' }}>
-          {article.title}
-        </h1>
-
-        {/* Author & Stats Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid #e2e8f0', marginBottom: '20px', fontSize: '12.5px', color: '#64748b' }}>
-          <div>
-            लेखक: <b style={{ color: '#1e293b' }}>{article.authorName || siteName}</b>
+          {/* Category Pill */}
+          <div className="ap-category-row">
+            <span className="ap-category-pill" style={{ background: primary }}>
+              {article.category || 'National'}
+            </span>
           </div>
-          <div>
-            👁️ {(article.views || 1).toLocaleString()} बार पढ़ा गया
+
+          {/* Title */}
+          <h1 className="ap-title">{article.title}</h1>
+
+          {/* Meta Row */}
+          <div className="ap-meta-row">
+            <div className="ap-meta-author">
+              <span className="ap-meta-author-avatar" style={{ background: primary }}>
+                {(article.authorName || siteName).charAt(0)}
+              </span>
+              <div className="ap-meta-author-info">
+                <span className="ap-meta-author-name">{article.authorName || siteName}</span>
+                <span className="ap-meta-author-label">लेखक</span>
+              </div>
+            </div>
+            <div className="ap-meta-views">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>{(article.views || 1).toLocaleString()}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Main Hero Image */}
-        {article.image && (
-          <div style={{ width: '100%', maxHeight: '480px', borderRadius: '8px', overflow: 'hidden', marginBottom: '24px', background: '#0f172a' }}>
-            <img 
-              src={article.image} 
-              alt={article.title} 
-              style={{ width: '100%', height: '100%', objectFit: 'contain', maxHeight: '480px' }} 
-            />
+          {/* Hero Image */}
+          {article.image && (
+            <figure className="ap-hero">
+              <img
+                src={article.image}
+                alt={article.title}
+                className="ap-hero-img"
+              />
+            </figure>
+          )}
+
+          {/* Summary */}
+          {article.summary && (
+            <blockquote className="ap-summary" style={{ borderColor: primary }}>
+              {article.summary}
+            </blockquote>
+          )}
+
+          {/* Body Content */}
+          <div className="ap-body">
+            {article.content || article.summary || 'खबर का विस्तृत विवरण जल्द ही उपलब्ध कराया जाएगा।'}
           </div>
-        )}
 
-        {/* Summary Lead Paragraph */}
-        {article.summary && (
-          <div style={{ borderLeft: `4px solid ${primary}`, paddingLeft: '16px', margin: '20px 0', fontSize: '15px', fontStyle: 'normal', color: '#334155', fontWeight: 600, lineHeight: '1.6' }}>
-            {article.summary}
+        </article>
+
+        {/* ─── COMMENTS ─── */}
+        <section className="ap-comments">
+          <div className="ap-comments-head">
+            <h3 className="ap-comments-title">
+              पाठकों की टिप्पणियां
+              <span className="ap-comments-count">{comments.length}</span>
+            </h3>
           </div>
-        )}
 
-        {/* Full Content Body */}
-        <div style={{ fontSize: '16px', lineHeight: '1.8', color: '#1e293b', whiteSpace: 'pre-line', margin: '24px 0' }}>
-          {article.content || article.summary || 'खबर का विस्तृत विवरण जल्द ही उपलब्ध कराया जाएगा।'}
-        </div>
-
-        {/* 3. COMMENTS & DISCUSSION SECTION */}
-        <div style={{ marginTop: '40px', paddingTop: '24px', borderTop: '2px solid #f1f5f9' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
-            पाठकों की टिप्पणियां ({comments.length})
-          </h3>
-
-          {/* Comment Form / Login Prompt */}
+          {/* Comment Form or Login Prompt */}
           {readerUser ? (
-            <form onSubmit={handlePostComment} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
-                टिप्पणी कर रहे हैं: <b style={{ color: primary }}>{readerUser.name || readerUser.email}</b>
+            <form onSubmit={handlePostComment} className="ap-comment-form">
+              <div className="ap-comment-form-user">
+                <span className="ap-comment-form-avatar" style={{ background: primary }}>
+                  {(readerUser.name || readerUser.email || 'प').charAt(0)}
+                </span>
+                <span className="ap-comment-form-name">{readerUser.name || readerUser.email}</span>
               </div>
               <textarea
                 required
                 rows={3}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="इस खबर पर अपनी राय लिखें..."
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', boxSizing: 'border-box', resize: 'vertical' }}
+                placeholder="इस खबर पर अपनी राय लिखें…"
+                className="ap-comment-textarea"
               />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <div className="ap-comment-form-actions">
+                {commentSuccess && (
+                  <span className="ap-comment-success">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    टिप्पणी भेज दी गई — एडमिन स्वीकृति के बाद दिखेगी
+                  </span>
+                )}
                 <button
                   type="submit"
                   disabled={commentSubmitting}
-                  style={{ background: primary, color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
+                  className="ap-comment-submit"
+                  style={{ background: primary }}
                 >
-                  {commentSubmitting ? 'भेजा जा रहा है...' : 'टिप्पणी भेजें'}
+                  {commentSubmitting ? (
+                    <>
+                      <span className="ap-btn-spinner" />
+                      भेजा जा रहा है…
+                    </>
+                  ) : (
+                    'टिप्पणी भेजें'
+                  )}
                 </button>
               </div>
-              {commentSuccess && (
-                <div style={{ marginTop: '10px', color: '#059669', fontSize: '12px', fontWeight: 600 }}>
-                  ✓ आपकी टिप्पणी भेज दी गई है। एडमिन द्वारा स्वीकृति के बाद यह लाइव दिखाई देगी।
-                </div>
-              )}
             </form>
           ) : (
-            <div style={{ background: '#fff7ed', border: `1px solid ${primary}40`, padding: '16px', borderRadius: '8px', textAlign: 'center', marginBottom: '24px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#9a3412', fontWeight: 600 }}>
+            <div className="ap-login-prompt">
+              <div className="ap-login-prompt-icon">💬</div>
+              <p className="ap-login-prompt-text">
                 इस खबर पर अपनी राय रखने के लिए कृपया लॉगिन करें
               </p>
-              <Link 
-                href="/login" 
-                style={{ display: 'inline-block', background: primary, color: '#fff', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}
+              <Link
+                href="/login"
+                className="ap-login-prompt-btn"
+                style={{ background: primary }}
               >
                 लॉगिन करें / रजिस्टर करें
               </Link>
@@ -361,34 +372,544 @@ export default function ArticleDetailPage() {
 
           {/* Comments List */}
           {comments.length === 0 ? (
-            <div style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>
+            <div className="ap-comments-empty">
               अभी इस लेख पर कोई स्वीकृत टिप्पणी नहीं है। पहली टिप्पणी करें!
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="ap-comments-list">
               {comments.map((c) => (
-                <div key={c.id} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '12.5px', color: '#1e293b' }}>👤 {c.userName}</span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>{c.createdAt}</span>
+                <div key={c.id} className="ap-comment-card">
+                  <div className="ap-comment-card-head">
+                    <div className="ap-comment-card-user">
+                      <span className="ap-comment-card-avatar">
+                        {c.userName.charAt(0)}
+                      </span>
+                      <span className="ap-comment-card-name">{c.userName}</span>
+                    </div>
+                    <time className="ap-comment-card-date">{c.createdAt}</time>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{c.comment}</p>
+                  <p className="ap-comment-card-body">{c.comment}</p>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
+        </section>
       </main>
 
-      {/* 4. EXACT MATCH DYNAMIC FOOTER */}
-      <Footer 
-        siteName={siteName} 
+      {/* ─── FOOTER ─── */}
+      <Footer
+        siteName={siteName}
         primaryColor={primary}
         logoUrl={siteLogo}
         tagline={siteTagline}
       />
-
     </div>
   );
 }
+
+
+/* ═══════════════════════════════════════════════════════
+   ALL CSS — injected via <style jsx global>
+   ═══════════════════════════════════════════════════════ */
+const globalCSS = `
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Page Shell ── */
+.ap-page {
+  min-height: 100vh;
+  background: #fafbfc;
+  color: #0f172a;
+  font-family: 'Noto Sans Devanagari', 'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Loading Screen ── */
+.ap-loader-screen {
+  min-height: 100vh;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
+}
+.ap-loader-pulse {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  animation: apPulse 1s ease-in-out infinite;
+  margin-bottom: 16px;
+}
+@keyframes apPulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.4; }
+  50% { transform: scale(1); opacity: 1; }
+}
+.ap-loader-text {
+  font-size: 13.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ── Empty / 404 Screen ── */
+.ap-empty-screen {
+  min-height: 100vh;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  font-family: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
+}
+.ap-empty-icon { font-size: 48px; margin-bottom: 4px; opacity: 0.6; }
+.ap-empty-title { font-size: 20px; font-weight: 800; color: #1e293b; }
+.ap-empty-desc { font-size: 14px; color: #64748b; max-width: 340px; }
+.ap-empty-back {
+  display: inline-block;
+  margin-top: 8px;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.ap-empty-back:hover { opacity: 0.88; }
+
+/* ── Sticky Header ── */
+.ap-header {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #eef1f5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.ap-header-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 11px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ap-header-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  color: var(--ap-primary);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.ap-header-back:hover {
+  background: rgba(0,0,0,0.03);
+}
+.ap-header-back svg { flex-shrink: 0; }
+.ap-header-date {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Main Container ── */
+.ap-main {
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  flex: 1;
+}
+
+/* ── Article ── */
+.ap-article {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef1f5;
+  padding: clamp(20px, 4vw, 40px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03), 0 6px 24px rgba(0,0,0,0.02);
+}
+
+/* Category */
+.ap-category-row { margin-bottom: 14px; }
+.ap-category-pill {
+  display: inline-block;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+}
+
+/* Title */
+.ap-title {
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 900;
+  color: #0c1222;
+  line-height: 1.32;
+  margin: 0 0 20px;
+  letter-spacing: -0.3px;
+}
+
+/* Meta Row */
+.ap-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 22px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ap-meta-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ap-meta-author-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ap-meta-author-info {
+  display: flex;
+  flex-direction: column;
+}
+.ap-meta-author-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #1e293b;
+  line-height: 1.2;
+}
+.ap-meta-author-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.ap-meta-views {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ap-meta-views svg { color: #cbd5e1; }
+
+/* Hero Image */
+.ap-hero {
+  width: calc(100% + clamp(40px, 8vw, 80px));
+  margin-left: calc(-1 * clamp(20px, 4vw, 40px));
+  margin-bottom: 24px;
+  overflow: hidden;
+  background: #0f172a;
+  max-height: 480px;
+}
+.ap-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  max-height: 480px;
+  display: block;
+}
+
+/* Summary Blockquote */
+.ap-summary {
+  border-left: 4px solid;
+  padding: 14px 18px;
+  margin: 0 0 24px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.65;
+  background: #f8fafc;
+  border-radius: 0 10px 10px 0;
+}
+
+/* Body */
+.ap-body {
+  font-size: 16.5px;
+  line-height: 1.85;
+  color: #1e293b;
+  white-space: pre-line;
+}
+
+/* ── Comments Section ── */
+.ap-comments {
+  margin-top: 36px;
+}
+.ap-comments-head {
+  margin-bottom: 18px;
+}
+.ap-comments-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap-comments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0 7px;
+}
+
+/* Comment Form */
+.ap-comment-form {
+  background: #ffffff;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.ap-comment-form-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.ap-comment-form-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ap-comment-form-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.ap-comment-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #1e293b;
+  outline: none;
+  resize: vertical;
+  min-height: 76px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #fafbfc;
+}
+.ap-comment-textarea:focus {
+  border-color: var(--ap-primary);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+  background: #fff;
+}
+.ap-comment-textarea::placeholder { color: #94a3b8; }
+.ap-comment-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.ap-comment-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #059669;
+  animation: apFadeIn 0.3s ease;
+}
+@keyframes apFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ap-comment-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.ap-comment-submit:hover { opacity: 0.9; }
+.ap-comment-submit:active { transform: scale(0.97); }
+.ap-comment-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.ap-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: apSpin 0.6s linear infinite;
+}
+@keyframes apSpin { to { transform: rotate(360deg); } }
+
+/* Login Prompt */
+.ap-login-prompt {
+  background: #ffffff;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.ap-login-prompt-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.7; }
+.ap-login-prompt-text {
+  font-size: 13.5px;
+  color: #475569;
+  font-weight: 600;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.ap-login-prompt-btn {
+  display: inline-block;
+  color: #fff;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.ap-login-prompt-btn:hover { opacity: 0.88; }
+
+/* Comments Empty */
+.ap-comments-empty {
+  color: #94a3b8;
+  font-size: 13.5px;
+  text-align: center;
+  padding: 32px 16px;
+  background: #fff;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+}
+
+/* Comments List */
+.ap-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ap-comment-card {
+  background: #ffffff;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.ap-comment-card:hover {
+  border-color: #dde3eb;
+}
+.ap-comment-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.ap-comment-card-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap-comment-card-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.ap-comment-card-name {
+  font-weight: 650;
+  font-size: 13px;
+  color: #1e293b;
+}
+.ap-comment-card-date {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ap-comment-card-body {
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .ap-main { padding: 16px 12px 40px; }
+  .ap-article { padding: 16px; border-radius: 12px; }
+  .ap-hero {
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    border-radius: 0;
+  }
+  .ap-meta-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .ap-comment-form { padding: 14px; }
+  .ap-comment-form-actions { flex-direction: column; align-items: stretch; }
+  .ap-comment-submit { justify-content: center; }
+}
+
+@media (max-width: 380px) {
+  .ap-main { padding: 10px 8px 32px; }
+  .ap-article { padding: 14px; }
+  .ap-title { font-size: 20px; }
+  .ap-header-inner { padding: 10px 12px; }
+}
+`;
