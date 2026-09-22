@@ -70,6 +70,7 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'राज्य', icon: '🇮🇳' },
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'ई-पेपर', icon: '📄' },
+  { key: 'वीडियो', icon: '📹' },
   { key: 'अपराध', icon: '🚨' },
   { key: 'खेल', icon: '🏏' },
 ];
@@ -123,6 +124,7 @@ export default function HomePage() {
   const handleCategoryClick = (cat: string) => {
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
+    if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
     if (cat === 'सर्च') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
@@ -432,6 +434,7 @@ export default function HomePage() {
               { key: 'ताज़ा खबरें', emoji: '⚡' },
               { key: 'शोक संदेश', emoji: '🕯️' },
               { key: 'ई-पेपर', emoji: '📄' },
+              { key: 'वीडियो', emoji: '📹' },
             ].map(({ key, emoji }) => {
               const isActive = activeCategory === key;
               return (
@@ -449,7 +452,6 @@ export default function HomePage() {
               <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
                 ✍️ पत्रकार
               </Link>
-              {/* विज्ञापन — neutral outline style, NOT dark/active */}
               <Link href="/advertiser/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
                 📢 विज्ञापन
               </Link>
@@ -461,11 +463,9 @@ export default function HomePage() {
               खोजें
             </button>
 
-            {/* SiteSwitcher — unchanged */}
             <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            {/* LanguageTranslator — lang-fix class added to fix hover text visibility */}
             <div className="lang-fix" style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
@@ -491,7 +491,6 @@ export default function HomePage() {
             <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            {/* LanguageTranslator mobile — lang-fix class added */}
             <div className="lang-fix" style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <LanguageTranslator />
             </div>
@@ -598,7 +597,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── TRENDING TAGS — fully inline styles, no CSS classes ── */}
+          {/* ── TRENDING TAGS ── */}
           <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
