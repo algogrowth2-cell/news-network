@@ -17,12 +17,55 @@ const LANGUAGES = [
   { code: 'or', native: 'ଓଡ଼ିଆ', english: 'Odia' }
 ];
 
+declare global {
+  interface Window {
+    google: any;
+    googleTranslateElementInit: any;
+  }
+}
+
 export default function LanguageTranslator() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Click outside listener to close dropdown
+  // 1. Google Translate script load aur initialize karna
+  useEffect(() => {
+    // Current cookie se selected language read karna
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
+      if (match && match[2]) {
+        setSelectedLang(match[2]);
+      }
+    }
+
+    // Google translate init function define karna
+    window.googleTranslateElementInit = () => {
+      if (window.google && window.google.translate) {
+        new window.google.translate.TranslateElement(
+          {
+            pageLanguage: 'hi',
+            includedLanguages: 'hi,en,pa,gu,mr,bn,ta,te,kn,ml,ur,or',
+            autoDisplay: false
+          },
+          'google_translate_element'
+        );
+      }
+    };
+
+    // Script inject karna agar pehle se nahi hai
+    if (!document.getElementById('google-translate-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    } else if (window.google && window.google.translate) {
+      window.googleTranslateElementInit();
+    }
+  }, []);
+
+  // Click outside se dropdown band karna
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -33,38 +76,33 @@ export default function LanguageTranslator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Check existing language cookie on load
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
-      if (match && match[2]) {
-        setSelectedLang(match[2]);
-      }
-    }
-  }, []);
-
+  // 2. Language switch karne ka bulletproof function
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
     setIsOpen(false);
 
     if (typeof window === 'undefined') return;
 
-    // 1. Google Translate cookie set karein (Direct Domain & Host)
-    const hostname = window.location.hostname;
+    // Cookie set karein sabhi domain levels par
+    const host = window.location.hostname;
+    document.cookie = `googtrans=/hi/${langCode}; path=/;`;
     document.cookie = `googtrans=/auto/${langCode}; path=/;`;
-    document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${hostname};`;
-    if (hostname.includes('.')) {
-      const rootDomain = '.' + hostname.split('.').slice(-2).join('.');
+    document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${host};`;
+    document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${host};`;
+
+    if (host.includes('.')) {
+      const rootDomain = '.' + host.split('.').slice(-2).join('.');
+      document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${rootDomain};`;
       document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${rootDomain};`;
     }
 
-    // 2. Google Translate ke hidden select box ko trigger karein
-    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-    if (select) {
-      select.value = langCode;
-      select.dispatchEvent(new Event('change'));
+    // Native Google combo dhoondh kar change dispatch karein
+    const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+    if (combo) {
+      combo.value = langCode;
+      combo.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
-      // Agar select render nahi hua toh page reload karke cookie apply karein
+      // Agar direct combo na mile toh reload karke cookie se apply karein
       window.location.reload();
     }
   };
@@ -74,7 +112,10 @@ export default function LanguageTranslator() {
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
       
-      {/* Trigger Button (notranslate lagaya taaki button par likha language code sahi dikhe) */}
+      {/* Hidden container jahan Google Translate apna real select element banata hai */}
+      <div id="google_translate_element" style={{ display: 'none' }} />
+
+      {/* Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -100,7 +141,7 @@ export default function LanguageTranslator() {
         <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Box */}
       {isOpen && (
         <div
           style={{
@@ -157,12 +198,12 @@ export default function LanguageTranslator() {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isSelected ? '#f8fafc' : 'transparent')}
                 >
-                  {/* Left Column: Regional Language text (Translate ho sakti hai) */}
+                  {/* Left Column: Regional Bhasha */}
                   <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#ea580c' : '#1e293b' }}>
                     {lang.native}
                   </span>
 
-                  {/* Right Column: Sirf is text par strictly English lock (translate="no") */}
+                  {/* Right Column: English Locked (translate="no") */}
                   <span
                     className="notranslate"
                     translate="no"
