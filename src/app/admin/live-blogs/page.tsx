@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from '../Admin.module.css';
 
@@ -11,36 +11,40 @@ interface UpdateItem {
 }
 
 interface LiveBlogData {
+  id: string;
   title: string;
   siteId: string;
   youtubeUrl: string;
   youtubeId: string;
   isActive: boolean;
   updates: UpdateItem[];
-  updatedAt?: any;
+  createdAt?: any;
 }
 
 const NETWORK_PORTALS = [
-  { slug: 'all', name: 'Sabhi Portals (All Network)' },
-  { slug: 'the-local-leader', name: 'The Local Leader' },
-  { slug: 'bazar-karobar', name: 'Bazar Karobar' },
-  { slug: 'golden-pearl-chronicles', name: 'Golden Pearl Chronicles' },
-  { slug: 'state-express', name: 'The Proview Times' },
-  { slug: 'desh-ki-aawaz', name: 'Desh Ki Aawaz' },
-  { slug: 'jan-chetna-news', name: 'Jan Bharat News' },
+  { slug: 'all', name: 'सभी नेटवर्क (All Portals)' },
+  { slug: 'the-local-leader', name: 'द लोकल लीडर' },
+  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
+  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
+  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
   { slug: 'city-bulletin', name: 'NEWS INFO 24' },
-  { slug: 'national-spotlight', name: 'Defense News' }
+  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
 ];
 
 export default function LiveBlogsPage() {
-  const [selectedSite, setSelectedSite] = useState('the-local-leader');
-  const [title, setTitle] = useState('');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [isActive, setIsActive] = useState(false);
-  const [updates, setUpdates] = useState<UpdateItem[]>([]);
-  const [postText, setPostText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [liveStreams, setLiveStreams] = useState<LiveBlogData[]>([]);
+  const [selectedSiteFilter, setSelectedSiteFilter] = useState('all');
+
+  // Form states for creating a new stream
+  const [newTitle, setNewTitle] = useState('');
+  const [newYoutubeUrl, setNewYoutubeUrl] = useState('');
+  const [newSiteId, setNewSiteId] = useState('all');
   const [saving, setSaving] = useState(false);
+
+  // Quick update text per stream
+  const [postTexts, setPostTexts] = useState<Record<string, string>>({});
 
   const extractYouTubeId = (url: string) => {
     if (!url) return '';
@@ -49,120 +53,125 @@ export default function LiveBlogsPage() {
     return (match && match[2].length === 11) ? match[2] : url.trim();
   };
 
+  // Live Firestore listener for collection 'live_blogs'
   useEffect(() => {
-    setLoading(true);
-    const docRef = doc(db, 'live_blogs', selectedSite);
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as LiveBlogData;
-        setTitle(data.title || '');
-        setYoutubeUrl(data.youtubeUrl || '');
-        setIsActive(!!data.isActive);
-        setUpdates(data.updates || []);
-      } else {
-        setTitle('');
-        setYoutubeUrl('');
-        setIsActive(false);
-        setUpdates([]);
-      }
-      setLoading(false);
+    const qStreams = query(collection(db, 'live_blogs'));
+    const unsub = onSnapshot(qStreams, (snap) => {
+      const list: LiveBlogData[] = [];
+      snap.forEach((d) => {
+        list.push({ id: d.id, ...d.data() } as LiveBlogData);
+      });
+      // Sort: active first, then newest
+      list.sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0));
+      setLiveStreams(list);
     });
     return () => unsub();
-  }, [selectedSite]);
+  }, []);
 
-  const handleSaveLiveStream = async (e: React.FormEvent) => {
+  // Add a new live stream
+  const handleCreateLiveStream = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !youtubeUrl.trim()) {
-      alert('Kripya Live Stream ka Title aur YouTube URL enter karein!');
+    if (!newTitle.trim() || !newYoutubeUrl.trim()) {
+      alert('कृपया शीर्षक और YouTube URL भरें!');
       return;
     }
 
-    const yId = extractYouTubeId(youtubeUrl);
+    const yId = extractYouTubeId(newYoutubeUrl);
     if (!yId) {
-      alert('Sahi YouTube URL ya Video ID enter karein!');
+      alert('अमान्य YouTube URL! कृपया सही वीडियो या लाइव लिंक डालें।');
       return;
     }
 
     setSaving(true);
     try {
-      const docRef = doc(db, 'live_blogs', selectedSite);
-      await setDoc(docRef, {
-        title: title.trim(),
-        siteId: selectedSite,
-        youtubeUrl: youtubeUrl.trim(),
+      await addDoc(collection(db, 'live_blogs'), {
+        title: newTitle.trim(),
+        siteId: newSiteId,
+        youtubeUrl: newYoutubeUrl.trim(),
         youtubeId: yId,
         isActive: true,
-        updates: updates || [],
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        updates: [],
+        createdAt: serverTimestamp()
+      });
 
-      setIsActive(true);
-      alert(`Live Stream ${selectedSite} par successfully LIVE ho chuka hai!`);
+      setNewTitle('');
+      setNewYoutubeUrl('');
+      alert('नई लाइव स्ट्रीम सफलतापूर्वक शुरू हो गई!');
     } catch (err: any) {
       console.error(err);
-      alert('Error: ' + err.message);
+      alert('त्रुटि: ' + err.message);
     }
     setSaving(false);
   };
 
-  const handleStopLiveStream = async () => {
-    if (!window.confirm('Kya aap is live stream ko band karna chahte hain?')) return;
-    setSaving(true);
+  // Toggle Live status (Start / Stop)
+  const handleToggleActive = async (item: LiveBlogData) => {
     try {
-      const docRef = doc(db, 'live_blogs', selectedSite);
-      await updateDoc(docRef, {
-        isActive: false,
+      await updateDoc(doc(db, 'live_blogs', item.id), {
+        isActive: !item.isActive,
         updatedAt: serverTimestamp()
       });
-      setIsActive(false);
-      alert('Live stream band kar diya gaya hai!');
     } catch (err: any) {
-      console.error(err);
-      alert('Error: ' + err.message);
+      alert('त्रुटि: ' + err.message);
     }
-    setSaving(false);
   };
 
-  const handlePostUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!postText.trim()) return;
+  // Delete a stream
+  const handleDeleteStream = async (id: string, streamTitle: string) => {
+    if (!window.confirm(`क्या आप निश्चित रूप से "${streamTitle}" को हटाना चाहते हैं?`)) return;
+    try {
+      await deleteDoc(doc(db, 'live_blogs', id));
+      alert('लाइव स्ट्रीम हटा दी गई!');
+    } catch (err: any) {
+      alert('त्रुटि: ' + err.message);
+    }
+  };
 
-    const newUpdate: UpdateItem = {
+  // Post a quick bullet text update
+  const handlePostBullet = async (streamId: string) => {
+    const text = postTexts[streamId]?.trim();
+    if (!text) return;
+
+    const newBullet: UpdateItem = {
       id: Date.now().toString(),
       time: new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }),
-      update: postText.trim()
+      update: text
     };
 
     try {
-      const docRef = doc(db, 'live_blogs', selectedSite);
-      await updateDoc(docRef, {
-        updates: arrayUnion(newUpdate),
+      await updateDoc(doc(db, 'live_blogs', streamId), {
+        updates: arrayUnion(newBullet),
         updatedAt: serverTimestamp()
       });
-      setPostText('');
+      setPostTexts(prev => ({ ...prev, [streamId]: '' }));
     } catch (err: any) {
-      console.error(err);
-      alert('Error posting update: ' + err.message);
+      alert('अपडेट पोस्ट करने में त्रुटि: ' + err.message);
     }
   };
 
-  const currentEmbedId = extractYouTubeId(youtubeUrl);
+  const filteredStreams = liveStreams.filter(item => {
+    if (selectedSiteFilter === 'all') return true;
+    return item.siteId === selectedSiteFilter || item.siteId === 'all';
+  });
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+      {/* Top Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>YouTube Live Stream & Live Blog</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+            🔴 मल्टीपल लाइव स्ट्रीम्स (Multi Live Manager)
+          </h1>
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
-            YouTube channel ka live link yahan dalein, website par news feed, video aur live sections me video stream chalegi.
+            एक साथ कई YouTube लाइव स्ट्रीम्स को अलग-अलग या सभी पोर्टल्स पर लाइव करें और रोकें।
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#94a3b8' }}>Target Portal:</span>
+          <span style={{ fontSize: '13px', color: '#94a3b8' }}>फिल्टर पोर्टल:</span>
           <select
-            value={selectedSite}
-            onChange={(e) => setSelectedSite(e.target.value)}
+            value={selectedSiteFilter}
+            onChange={(e) => setSelectedSiteFilter(e.target.value)}
             style={{
               backgroundColor: '#1e242b',
               color: '#fff',
@@ -181,165 +190,212 @@ export default function LiveBlogsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
-        
-        {/* Left Form: YouTube Stream Settings */}
-        <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '12px', padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Live Setup</h2>
-            {isActive ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#ef444422', color: '#ef4444', padding: '4px 10px', borderRadius: '14px', fontSize: '11px', fontWeight: 800 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} /> LIVE ACTIVE
-              </span>
-            ) : (
-              <span style={{ backgroundColor: '#334155', color: '#94a3b8', padding: '4px 10px', borderRadius: '14px', fontSize: '11px' }}>
-                OFFLINE
-              </span>
-            )}
+      {/* CREATE NEW LIVE STREAM FORM */}
+      <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '20px', marginBottom: '28px', border: '1px solid #334155' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px 0', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>+</span> नई लाइव स्ट्रीम जोड़ें (Add New Stream)
+        </h2>
+
+        <form onSubmit={handleCreateLiveStream} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+              लाइव का शीर्षक (Title) *
+            </label>
+            <input
+              type="text"
+              placeholder="उदा: ग्राउंड रिपोर्ट: आज की बड़ी चुनावी रैली लाइव"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              required
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+            />
           </div>
 
-          <form onSubmit={handleSaveLiveStream} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>
-                Live Stream Title (Heading) *
-              </label>
-              <input
-                type="text"
-                placeholder="Ex: ग्राउंड रिपोर्ट: आज की बड़ी चुनावी हलचल लाइव"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>
-                YouTube Live / Video Link *
-              </label>
-              <input
-                type="text"
-                placeholder="https://www.youtube.com/watch?v=XXXX ya https://youtu.be/live/XXXX"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#ea580c',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '11px',
-                  fontSize: '13.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                {saving ? 'Saving...' : '🚀 Website Par Live Karein'}
-              </button>
-
-              {isActive && (
-                <button
-                  type="button"
-                  onClick={handleStopLiveStream}
-                  disabled={saving}
-                  style={{
-                    backgroundColor: '#ef4444',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '11px 16px',
-                    fontSize: '13.5px',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Live Stop Karein
-                </button>
-              )}
-            </div>
-          </form>
-
-          {currentEmbedId && (
-            <div style={{ marginTop: '18px' }}>
-              <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>Video Preview:</span>
-              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#000' }}>
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${currentEmbedId}`}
-                  title="YouTube Live Preview"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Section: Realtime Live Updates */}
-        <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '12px', padding: '20px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px' }}>
-            Live Text Updates (Breaking Bullets)
-          </h2>
-
-          <form onSubmit={handlePostUpdate} style={{ marginBottom: '18px' }}>
-            <textarea
-              rows={3}
-              placeholder="Live breaking bullet ya taaza update yahan likhein..."
-              value={postText}
-              onChange={(e) => setPostText(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none', resize: 'vertical' }}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+              YouTube Live / Video Link *
+            </label>
+            <input
+              type="text"
+              placeholder="https://www.youtube.com/watch?v=... या https://youtu.be/..."
+              value={newYoutubeUrl}
+              onChange={(e) => setNewYoutubeUrl(e.target.value)}
+              required
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
             />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+              टारगेट पोर्टल
+            </label>
+            <select
+              value={newSiteId}
+              onChange={(e) => setNewSiteId(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+            >
+              {NETWORK_PORTALS.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <button
               type="submit"
-              disabled={!isActive}
+              disabled={saving}
               style={{
-                marginTop: '8px',
-                backgroundColor: isActive ? '#38bdf8' : '#475569',
-                color: isActive ? '#0f172a' : '#94a3b8',
+                width: '100%',
+                backgroundColor: '#ea580c',
+                color: '#fff',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '8px 16px',
-                fontSize: '12.5px',
+                padding: '11px 18px',
+                fontSize: '13.5px',
                 fontWeight: 700,
-                cursor: isActive ? 'pointer' : 'not-allowed'
+                cursor: 'pointer'
               }}
             >
-              + Quick Update Post Karein
+              {saving ? 'शुरू हो रही है…' : '🚀 वेबसाइट पर लाइव करें'}
             </button>
-            {!isActive && (
-              <span style={{ fontSize: '11px', color: '#f87171', marginLeft: '10px' }}>
-                (Pehle stream ko live karein)
-              </span>
-            )}
-          </form>
-
-          <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {updates.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', padding: '20px 0' }}>
-                Abhi koi update post nahi kiya gaya hai
-              </div>
-            ) : (
-              [...updates].reverse().map((item) => (
-                <div key={item.id} style={{ borderLeft: '3px solid #ea580c', paddingLeft: '12px', backgroundColor: '#0f172a55', padding: '8px 12px', borderRadius: '0 8px 8px 0' }}>
-                  <span style={{ fontSize: '11px', color: '#ea580c', fontWeight: 700 }}>⏱ {item.time}</span>
-                  <p style={{ fontSize: '13px', margin: '4px 0 0', color: '#f1f5f9' }}>{item.update}</p>
-                </div>
-              ))
-            )}
           </div>
-        </div>
+        </form>
+      </div>
 
+      {/* ACTIVE & SAVED STREAMS LIST */}
+      <div>
+        <h2 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '16px', color: '#f8fafc' }}>
+          वर्तमान लाइव स्ट्रीम्स ({filteredStreams.length})
+        </h2>
+
+        {filteredStreams.length === 0 ? (
+          <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '12px', padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+            अभी कोई लाइव स्ट्रीम सक्रिय नहीं है। ऊपर दिए गए फॉर्म से नई लाइव स्ट्रीम जोड़ें।
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+            {filteredStreams.map((stream) => (
+              <div
+                key={stream.id}
+                className={styles.formCard}
+                style={{
+                  backgroundColor: '#1e242b',
+                  borderRadius: '14px',
+                  border: `1.5px solid ${stream.isActive ? '#ef4444' : '#334155'}`,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                {/* Header status bar */}
+                <div style={{ padding: '10px 16px', backgroundColor: stream.isActive ? '#ef444415' : '#0f172a', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: stream.isActive ? '#ef4444' : '#64748b' }} />
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: stream.isActive ? '#ef4444' : '#94a3b8' }}>
+                      {stream.isActive ? '🔴 LIVE ACTIVE' : '⏹️ PAUSED / STOPPED'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#cbd5e1', backgroundColor: '#334155', padding: '2px 8px', borderRadius: '10px' }}>
+                    {stream.siteId === 'all' ? 'All Portals' : stream.siteId}
+                  </span>
+                </div>
+
+                {/* Video Iframe Preview */}
+                <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000' }}>
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${stream.youtubeId}`}
+                    title={stream.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+
+                {/* Stream Info & Controls */}
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: 700, margin: '0 0 14px 0', color: '#f8fafc', lineHeight: 1.35 }}>
+                    {stream.title}
+                  </h3>
+
+                  {/* Action Buttons: Stop / Start / Delete */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(stream)}
+                      style={{
+                        flex: 1,
+                        backgroundColor: stream.isActive ? '#f9731622' : '#22c55e22',
+                        color: stream.isActive ? '#f97316' : '#22c55e',
+                        border: `1px solid ${stream.isActive ? '#f9731644' : '#22c55e44'}`,
+                        borderRadius: '8px',
+                        padding: '8px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {stream.isActive ? '⏸️ स्ट्रीम रोकें (Stop)' : '▶️ फिर से चालू करें (Resume)'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteStream(stream.id, stream.title)}
+                      style={{
+                        backgroundColor: '#ef444422',
+                        color: '#ef4444',
+                        border: '1px solid #ef444444',
+                        borderRadius: '8px',
+                        padding: '8px 14px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ हटाएं
+                    </button>
+                  </div>
+
+                  {/* Bullet updates section */}
+                  <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px dashed #334155' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                      इस स्ट्रीम के लिए ब्रेकिंग बुलेट जोड़ें:
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder="नया लाइव अपडेट..."
+                        value={postTexts[stream.id] || ''}
+                        onChange={(e) => setPostTexts(prev => ({ ...prev, [stream.id]: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handlePostBullet(stream.id); }}
+                        style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '12px', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handlePostBullet(stream.id)}
+                        style={{ backgroundColor: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '6px', padding: '0 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        भेजें
+                      </button>
+                    </div>
+
+                    {stream.updates && stream.updates.length > 0 && (
+                      <div style={{ marginTop: '10px', maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {[...stream.updates].slice(-3).reverse().map(u => (
+                          <div key={u.id} style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
+                            <span style={{ color: '#ea580c', fontWeight: 700 }}>[{u.time}]</span> {u.update}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
