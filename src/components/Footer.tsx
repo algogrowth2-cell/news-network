@@ -111,8 +111,6 @@ export default function Footer({
 }: FooterProps) {
   const [logoErr, setLogoErr] = useState(false);
 
-  const cleanDomain = siteName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'thelocalleader';
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -352,7 +350,7 @@ export default function Footer({
                 </Link>
               </li>
               <li>
-                <Link href={`/?site=${currentSlug}#classifieds`} onClick={(e) => { e.preventDefault(); alert('क्लासिफाइड बुकिंग पेज जल्द खुलेगा!'); }} className="gp-ft-cat-link">
+                <Link href={`/classifieds?site=${currentSlug}`} className="gp-ft-cat-link">
                   क्लासिफाइड
                 </Link>
               </li>
@@ -385,11 +383,11 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.email(primaryColor)}</span>
-                <span style={{ wordBreak: 'break-all' }}>editorial@{cleanDomain}.in</span>
+                <span style={{ wordBreak: 'break-all' }}>goldenpearlnews@gmail.com</span>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.phone(primaryColor)}</span>
-                <span>+91 2642 220 145</span>
+                <span>+91 8103333381</span>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.clock(primaryColor)}</span>
