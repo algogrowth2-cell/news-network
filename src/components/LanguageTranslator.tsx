@@ -22,6 +22,7 @@ export default function LanguageTranslator() {
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Click outside listener to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -32,28 +33,53 @@ export default function LanguageTranslator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Check existing language cookie on load
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
+      if (match && match[2]) {
+        setSelectedLang(match[2]);
+      }
+    }
+  }, []);
+
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
     setIsOpen(false);
 
-    // Google Translate Trigger
-    if (typeof window !== 'undefined') {
-      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-      if (select) {
-        select.value = langCode;
-        select.dispatchEvent(new Event('change'));
-      }
+    if (typeof window === 'undefined') return;
+
+    // 1. Google Translate cookie set karein (Direct Domain & Host)
+    const hostname = window.location.hostname;
+    document.cookie = `googtrans=/auto/${langCode}; path=/;`;
+    document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${hostname};`;
+    if (hostname.includes('.')) {
+      const rootDomain = '.' + hostname.split('.').slice(-2).join('.');
+      document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${rootDomain};`;
+    }
+
+    // 2. Google Translate ke hidden select box ko trigger karein
+    const select = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+    if (select) {
+      select.value = langCode;
+      select.dispatchEvent(new Event('change'));
+    } else {
+      // Agar select render nahi hua toh page reload karke cookie apply karein
+      window.location.reload();
     }
   };
 
-  const currentLangObj = LANGUAGES.find(l => l.code === selectedLang) || LANGUAGES[0];
+  const currentLangObj = LANGUAGES.find((l) => l.code === selectedLang) || LANGUAGES[0];
 
   return (
-    <div ref={dropdownRef} className="notranslate" translate="no" style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Trigger Button */}
+    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+      
+      {/* Trigger Button (notranslate lagaya taaki button par likha language code sahi dikhe) */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        className="notranslate"
+        translate="no"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -77,13 +103,11 @@ export default function LanguageTranslator() {
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="notranslate"
-          translate="no"
           style={{
             position: 'absolute',
             right: 0,
             top: 'calc(100% + 8px)',
-            width: '240px',
+            width: '230px',
             maxHeight: '340px',
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -94,8 +118,20 @@ export default function LanguageTranslator() {
             padding: '8px 0'
           }}
         >
-          <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            भाषा चुनें / Select Language
+          <div 
+            className="notranslate"
+            translate="no"
+            style={{ 
+              padding: '8px 16px', 
+              borderBottom: '1px solid #f1f5f9', 
+              fontSize: '11px', 
+              fontWeight: 700, 
+              color: '#64748b', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.5px' 
+            }}
+          >
+            Select Language
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -121,15 +157,15 @@ export default function LanguageTranslator() {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isSelected ? '#f8fafc' : 'transparent')}
                 >
-                  {/* Left Column: Regional Language */}
+                  {/* Left Column: Regional Language text (Translate ho sakti hai) */}
                   <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#ea580c' : '#1e293b' }}>
                     {lang.native}
                   </span>
 
-                  {/* Right Column: STRICT LOCKED ENGLISH (translate="no") */}
+                  {/* Right Column: Sirf is text par strictly English lock (translate="no") */}
                   <span
-                    translate="no"
                     className="notranslate"
+                    translate="no"
                     style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, letterSpacing: '0.2px' }}
                   >
                     {lang.english}
