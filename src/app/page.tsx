@@ -20,6 +20,7 @@ interface ArticleItem {
   siteId?: string;
   slug?: string;
   status?: string;
+  tags?: string[];
 }
 
 interface AdItem {
@@ -148,10 +149,10 @@ export default function HomePage() {
   const handleTrendTagClick = (tag: string) => {
     if (activeTrendTag === tag) {
       setActiveTrendTag('');
-      setSearchTerm('');
     } else {
       setActiveTrendTag(tag);
-      setSearchTerm(tag);
+      setActiveCategory('होम');
+      setSearchTerm('');
     }
   };
 
@@ -263,19 +264,53 @@ export default function HomePage() {
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
+  // ── FIX: Smart Trending Tag & Category Filter ──
   const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
+
+    // 1. Trending Tag Filter
+    if (activeTrendTag) {
+      const tag = activeTrendTag.trim();
+      const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
+      
+      if (tag === 'बजट सत्र') {
+        return contentStr.includes('बजट') || contentStr.includes('सत्र') || art.category === 'व्यापार' || art.category === 'राजनीति';
+      }
+      if (tag === 'पंचायत चुनाव') {
+        return contentStr.includes('चुनाव') || contentStr.includes('पंचायत') || art.category === 'राजनीति';
+      }
+      if (tag === 'बारिश का मौसम') {
+        return contentStr.includes('बारिश') || contentStr.includes('मौसम') || art.category === 'राज्य' || art.category === 'जीवनशैली';
+      }
+      if (tag === 'मंडी भाव') {
+        return contentStr.includes('मंडी') || contentStr.includes('भाव') || contentStr.includes('बाजार') || art.category === 'व्यापार';
+      }
+      if (tag === 'भर्ती परिणाम') {
+        return contentStr.includes('भर्ती') || contentStr.includes('परीक्षा') || contentStr.includes('परिणाम') || art.category === 'शिक्षा' || art.category === 'राज्य';
+      }
+      if (tag === 'बिजली दर') {
+        return contentStr.includes('बिजली') || contentStr.includes('दर') || art.category === 'राज्य' || art.category === 'व्यापार';
+      }
+      if (tag === 'क्रिकेट लीग') {
+        return contentStr.includes('क्रिकेट') || contentStr.includes('मैच') || contentStr.includes('लीग') || art.category === 'खेल';
+      }
+
+      return contentStr.includes(tag.toLowerCase());
+    }
+
+    // 2. Normal Category Filter
     const matchesCategory =
       activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
-      (activeCategory === 'राजनीति' && art.category === 'Politics') ||
-      (activeCategory === 'व्यापार' && art.category === 'Business') ||
-      (activeCategory === 'स्वास्थ्य' && art.category === 'Health') ||
-      (activeCategory === 'जीवनशैली' && art.category === 'Lifestyle') ||
-      (activeCategory === 'अपराध' && art.category === 'Crime') ||
-      (activeCategory === 'खेल' && art.category === 'Sports') ||
-      (activeCategory === 'राज्य' && art.category === 'National');
+      (activeCategory === 'राजनीति' && (art.category === 'Politics' || art.category === 'राजनीति')) ||
+      (activeCategory === 'व्यापार' && (art.category === 'Business' || art.category === 'व्यापार')) ||
+      (activeCategory === 'स्वास्थ्य' && (art.category === 'Health' || art.category === 'स्वास्थ्य')) ||
+      (activeCategory === 'जीवनशैली' && (art.category === 'Lifestyle' || art.category === 'जीवनशैली')) ||
+      (activeCategory === 'अपराध' && (art.category === 'Crime' || art.category === 'अपराध')) ||
+      (activeCategory === 'खेल' && (art.category === 'Sports' || art.category === 'खेल')) ||
+      (activeCategory === 'राज्य' && (art.category === 'National' || art.category === 'राज्य'));
+
     const cleanSearch = searchTerm.trim().toLowerCase();
     const matchesSearch = !cleanSearch || (art.title && art.title.toLowerCase().includes(cleanSearch)) || (art.titleHi && art.titleHi.toLowerCase().includes(cleanSearch)) || (art.summary && art.summary.toLowerCase().includes(cleanSearch));
     return matchesCategory && matchesSearch;
@@ -458,7 +493,7 @@ export default function HomePage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e8e6e2', boxShadow: '0 1px 4px rgba(0,0,0,.04)', width: '100%' }}>
         <div className="header-row">
 
-          {/* Left Side: Brand Logo (Always Fixed) */}
+          {/* Left Side: Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -485,7 +520,7 @@ export default function HomePage() {
               { key: 'ई-पेपर', emoji: '📄' },
               { key: 'वीडियो', emoji: '📹' },
             ].map(({ key, emoji }) => {
-              const isActive = activeCategory === key;
+              const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button key={key} className="nav-pill" onClick={() => handleCategoryClick(key)}
                   style={{ color: isActive ? primary : '#555', background: isActive ? tint(primary, 0.08) : 'transparent', fontWeight: isActive ? 700 : 500 }}>
@@ -532,7 +567,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── MOBILE TOOLS: HORIZONTALLY SCROLLABLE (NO BUTTONS CUT) ── */}
+          {/* Mobile Tools */}
           <div 
             className="mobile-tools hide-scrollbar" 
             style={{ 
@@ -547,23 +582,19 @@ export default function HomePage() {
               padding: '4px 2px 4px 6px'
             }}
           >
-            {/* Search Icon */}
             <button onClick={() => setSearchModalOpen(true)} aria-label="सर्च"
               style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
             
-            {/* Site Switcher Dropdown */}
             <div style={{ flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
 
-            {/* Language Translator Dropdown */}
             <div style={{ flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
 
-            {/* Login / Profile */}
             {readerUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
@@ -611,7 +642,7 @@ export default function HomePage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {CATEGORY_LIST.map(({ key, icon }) => {
-              const isActive = activeCategory === key;
+              const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button key={key} className="cat-btn" onClick={() => handleCategoryClick(key)}
                   style={{ color: isActive ? primary : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: isActive ? 600 : 500 }}>
@@ -712,7 +743,7 @@ export default function HomePage() {
             <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
-                {searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                {activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
               <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
