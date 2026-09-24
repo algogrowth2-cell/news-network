@@ -30,7 +30,31 @@ interface AdvertiserAd {
   advertiserEmail: string;
   advertiserName: string;
   createdAt?: any;
+  city?: string;
+  price?: string;
 }
+
+const NETWORK_PORTALS = [
+  { slug: 'all', name: 'सभी नेटवर्क (All Portals)' },
+  { slug: 'the-local-leader', name: 'द लोकल लीडर' },
+  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
+  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
+  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
+  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
+  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
+];
+
+const CLASSIFIED_CATEGORIES = [
+  'प्रॉपर्टी / ज़मीन',
+  'वाहन (गाड़ियां)',
+  'नौकरी / रोजगार',
+  'इलेक्ट्रॉनिक्स',
+  'सेवाएं / बिजनेस',
+  'शिक्षा / कोचिंग',
+  'अन्य'
+];
 
 export default function AdvertiserDashboard() {
   const [activeTab, setActiveTab] = useState<'my-ads' | 'create-ad'>('my-ads');
@@ -48,8 +72,13 @@ export default function AdvertiserDashboard() {
 
   // Form State
   const [name, setName] = useState('');
-  const [format, setFormat] = useState<'banner' | 'sidebar' | 'classified' | 'popup'>('banner');
-  const [zone, setZone] = useState('728x90 Header Leaderboard');
+  const [format, setFormat] = useState<'banner' | 'sidebar' | 'classified' | 'popup'>('classified');
+  const [zone, setZone] = useState('classifieds-feed');
+  const [selectedSite, setSelectedSite] = useState('the-local-leader');
+  const [classifiedCategory, setClassifiedCategory] = useState(CLASSIFIED_CATEGORIES[0]);
+  const [city, setCity] = useState('');
+  const [price, setPrice] = useState('');
+  const [contactPhone, setContactPhone] = useState('8103333381');
   const [targetUrl, setTargetUrl] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -91,25 +120,36 @@ export default function AdvertiserDashboard() {
     }
   }, []);
 
-  // 3. Fetch only this advertiser's ads in real-time
+  // 3. Fetch advertiser's ads in real-time (Dono: 'ads' aur 'classifieds' collections se)
   useEffect(() => {
     if (!currentUser?.email) return;
 
     setLoading(true);
-    const q = query(
+
+    // Banner Ads query
+    const qAds = query(
       collection(db, 'ads'),
       where('advertiserEmail', '==', currentUser.email)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list: AdvertiserAd[] = snapshot.docs.map((docSnap) => {
+    // Classified Ads query
+    const qClassifieds = query(
+      collection(db, 'classifieds'),
+      where('advertiserEmail', '==', currentUser.email)
+    );
+
+    let bannerList: AdvertiserAd[] = [];
+    let classifiedList: AdvertiserAd[] = [];
+
+    const unsubAds = onSnapshot(qAds, (snapshot) => {
+      bannerList = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
-          name: data.name || data.title || 'Untitled Ad',
+          name: data.name || data.title || 'Untitled Banner',
           zone: data.zone || '728x90 Header Leaderboard',
           type: data.type || 'image',
-          format: data.format || 'banner',
+          format: (data.format || 'banner') as any,
           imageUrl: data.imageUrl || '',
           targetUrl: data.targetUrl || '',
           startDate: data.startDate || 'तत्काल',
@@ -122,15 +162,41 @@ export default function AdvertiserDashboard() {
           advertiserName: data.advertiserName || ''
         };
       });
-
-      setAds(list);
-      setLoading(false);
-    }, (err) => {
-      console.error('Error fetching ads:', err);
+      setAds([...classifiedList, ...bannerList]);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubCls = onSnapshot(qClassifieds, (snapshot) => {
+      classifiedList = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          name: data.title || data.name || 'Untitled Classified',
+          zone: 'साइडबार क्लासिफाइड विजेट (Sidebar Widget)',
+          type: 'classified',
+          format: 'classified',
+          imageUrl: data.imageUrl || '',
+          targetUrl: data.targetUrl || '#',
+          startDate: data.startDate || 'तत्काल',
+          endDate: data.endDate || 'खुला',
+          status: (data.status === 'active' || data.status === 'approved' ? 'active' : data.status || 'pending') as any,
+          impressions: Number(data.impressions || data.views || 0),
+          clicks: Number(data.clicks || 0),
+          budget: data.price ? `₹${data.price}` : 0,
+          advertiserEmail: data.advertiserEmail || '',
+          advertiserName: data.advertiserName || '',
+          city: data.city || '',
+          price: data.price || ''
+        };
+      });
+      setAds([...classifiedList, ...bannerList]);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubAds();
+      unsubCls();
+    };
   }, [currentUser?.email]);
 
   const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,44 +230,67 @@ export default function AdvertiserDashboard() {
     e.preventDefault();
 
     if (!name.trim()) {
-      alert('विज्ञापन का नाम दर्ज करना आवश्यक है।');
-      return;
-    }
-
-    if (!imageUrl) {
-      alert('कृपया विज्ञापन इमेज URL दर्ज करें या फाइल चुनें।');
+      alert('विज्ञापन का शीर्षक/नाम दर्ज करना आवश्यक है।');
       return;
     }
 
     try {
       setSubmitting(true);
 
-      await addDoc(collection(db, 'ads'), {
-        name: name.trim(),
-        title: name.trim(),
-        format,
-        zone,
-        type: 'image',
-        device: 'all',
-        imageUrl,
-        targetUrl: targetUrl.trim() || '#',
-        startDate: startDate || 'तत्काल',
-        endDate: endDate || 'खुला',
-        budget: budget || '5000',
-        status: 'pending', // Sent for Admin approval
-        priority: 1,
-        impressions: 0,
-        clicks: 0,
-        advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
-        advertiserName: currentUser?.name || 'pankaj',
-        createdAt: serverTimestamp()
-      });
+      // 👉 1. CLASSIFIED ADS: Seede 'classifieds' collection mein jayega taaki Sidebar Widget mein display ho!
+      if (format === 'classified') {
+        await addDoc(collection(db, 'classifieds'), {
+          title: name.trim(),
+          category: classifiedCategory,
+          city: city.trim() || 'इंदौर/महू',
+          price: price.trim() || '',
+          contactNumber: contactPhone.trim() || '8103333381',
+          imageUrl: imageUrl.trim() || '',
+          siteId: selectedSite,
+          status: 'active', // Direct active for sidebar classifieds
+          format: 'classified',
+          type: 'classified',
+          advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
+          advertiserName: currentUser?.name || 'pankaj',
+          createdAt: new Date().toISOString(),
+          timestamp: serverTimestamp()
+        });
 
-      alert('विज्ञापन अनुरोध सफलतापूर्वक एडमिन को भेज दिया गया है!');
+        alert('✅ आपका क्लासिफाइड विज्ञापन सफलतापूर्वक दर्ज हो गया है aur वेबसाइट के साइडबार विजेट में लाइव हो गया है!');
+      } else {
+        // 👉 2. BANNER ADS: 'ads' collection mein jayega (Header / Sidebar Square Banner)
+        await addDoc(collection(db, 'ads'), {
+          name: name.trim(),
+          title: name.trim(),
+          format,
+          zone,
+          siteId: selectedSite,
+          type: 'image',
+          device: 'all',
+          imageUrl,
+          targetUrl: targetUrl.trim() || '#',
+          startDate: startDate || 'तत्काल',
+          endDate: endDate || 'खुला',
+          budget: budget || '5000',
+          status: 'active',
+          priority: 1,
+          impressions: 0,
+          clicks: 0,
+          contactNumber: contactPhone.trim(),
+          advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
+          advertiserName: currentUser?.name || 'pankaj',
+          createdAt: serverTimestamp()
+        });
+
+        alert('✅ आपका बैनर विज्ञापन सफलतापूर्वक लाइव हो गया है!');
+      }
+
       setName('');
       setImageUrl('');
       setSelectedFilePreview('');
       setTargetUrl('');
+      setCity('');
+      setPrice('');
       setStartDate('');
       setEndDate('');
       setSubmitting(false);
@@ -225,7 +314,7 @@ export default function AdvertiserDashboard() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
       
-      {/* Top Navbar - Clean Light Theme */}
+      {/* Top Navbar */}
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
@@ -253,7 +342,7 @@ export default function AdvertiserDashboard() {
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         
-        {/* Metric Cards Row - Clean White Cards */}
+        {/* Metric Cards Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
@@ -282,7 +371,7 @@ export default function AdvertiserDashboard() {
 
         </div>
 
-        {/* Navigation Tabs with Dynamic Brand Color */}
+        {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
           <button
             type="button"
@@ -321,7 +410,7 @@ export default function AdvertiserDashboard() {
           </button>
         </div>
 
-        {/* TAB 1: MY ADS LIST - Clean White Table */}
+        {/* TAB 1: MY ADS LIST */}
         {activeTab === 'my-ads' && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
@@ -341,7 +430,7 @@ export default function AdvertiserDashboard() {
                       <th style={{ padding: '14px 18px' }}>विज्ञापन विवरण</th>
                       <th style={{ padding: '14px 18px' }}>प्रारूप (Format)</th>
                       <th style={{ padding: '14px 18px' }}>प्लेसमेंट ज़ोन</th>
-                      <th style={{ padding: '14px 18px' }}>समय सीमा (Dates)</th>
+                      <th style={{ padding: '14px 18px' }}>समय सीमा / विवरण</th>
                       <th style={{ padding: '14px 18px' }}>स्थिति (Status)</th>
                       <th style={{ padding: '14px 18px' }}>प्रदर्शन (Performance)</th>
                     </tr>
@@ -356,35 +445,52 @@ export default function AdvertiserDashboard() {
                       >
                         <td style={{ padding: '14px 18px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {ad.imageUrl && (
+                            {ad.imageUrl ? (
                               <img 
                                 src={ad.imageUrl} 
                                 alt={ad.name} 
                                 style={{ width: '48px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
                               />
+                            ) : (
+                              <div style={{ width: '48px', height: '36px', backgroundColor: '#f1f5f9', borderRadius: '4px', display: 'grid', placeItems: 'center', fontSize: '16px' }}>
+                                📋
+                              </div>
                             )}
                             <div>
                               <div style={{ fontWeight: 600, color: '#0f172a' }}>{ad.name}</div>
-                              {ad.targetUrl && (
-                                <a href={ad.targetUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11.5px', color: '#0284c7', textDecoration: 'none' }}>
-                                  {ad.targetUrl.slice(0, 32)}...
+                              {ad.city && <span style={{ fontSize: '11px', color: '#64748b' }}>📍 {ad.city} {ad.price ? `· ₹${ad.price}` : ''}</span>}
+                              {ad.targetUrl && ad.targetUrl !== '#' && (
+                                <a href={ad.targetUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11.5px', color: '#0284c7', textDecoration: 'none', display: 'block' }}>
+                                  {ad.targetUrl.slice(0, 30)}...
                                 </a>
                               )}
                             </div>
                           </div>
                         </td>
 
-                        <td style={{ padding: '14px 18px', textTransform: 'capitalize', color: '#475569' }}>
-                          {ad.format} Ad
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>
+                          {ad.format === 'classified' ? (
+                            <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '3px 8px', borderRadius: '4px', fontSize: '11.5px', fontWeight: 600 }}>
+                              क्लासिफाइड
+                            </span>
+                          ) : (
+                            <span style={{ textTransform: 'capitalize' }}>{ad.format} Banner</span>
+                          )}
                         </td>
 
-                        <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: '12.5px', color: '#64748b' }}>
+                        <td style={{ padding: '14px 18px', fontSize: '12px', color: '#64748b' }}>
                           {ad.zone}
                         </td>
 
                         <td style={{ padding: '14px 18px', fontSize: '12.5px', color: '#64748b' }}>
-                          <div>शुरू: {ad.startDate}</div>
-                          <div style={{ color: '#dc2626' }}>समाप्त: {ad.endDate}</div>
+                          {ad.format === 'classified' ? (
+                            <div>स्थान: {ad.city || 'MP'}</div>
+                          ) : (
+                            <>
+                              <div>शुरू: {ad.startDate}</div>
+                              <div style={{ color: '#dc2626' }}>समाप्त: {ad.endDate}</div>
+                            </>
+                          )}
                         </td>
 
                         <td style={{ padding: '14px 18px' }}>
@@ -425,97 +531,163 @@ export default function AdvertiserDashboard() {
           </div>
         )}
 
-        {/* TAB 2: CREATE AD FORM - Clean White Card */}
+        {/* TAB 2: CREATE AD FORM */}
         {activeTab === 'create-ad' && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '780px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>नया विज्ञापन अनुरोध सबमिट करें</h2>
             <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0' }}>
-              अनुरोध सबमिट होने के बाद एडमिन द्वारा रिव्यू किया जाएगा। अप्रूवल के बाद यह तुरंत लाइव हो जाएगा।
+              क्लासिफाइड विज्ञापन सीधे साइडबार में दिखेंगे, और बैनर विज्ञापन संबंधित स्लॉट में लाइव होंगे।
             </p>
 
             <form onSubmit={handleSubmitAd} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
               <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>विज्ञापन का प्रकार (Format) *</label>
+                <select
+                  value={format}
+                  onChange={(e) => handleFormatChange(e.target.value as any)}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `2px solid ${themeColor}`, borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज)</option>
+                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90)</option>
+                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250)</option>
+                  <option value="popup">🛑 पॉप-अप विज्ञापन</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>टारगेट पोर्टल (Site)</label>
+                  <select
+                    value={selectedSite}
+                    onChange={(e) => setSelectedSite(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
+                  >
+                    {NETWORK_PORTALS.map(p => (
+                      <option key={p.slug} value={p.slug}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {format === 'classified' ? (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>क्लासिफाइड श्रेणी *</label>
+                    <select
+                      value={classifiedCategory}
+                      onChange={(e) => setClassifiedCategory(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
+                    >
+                      {CLASSIFIED_CATEGORIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्लेसमेंट ज़ोन (Slot)</label>
+                    <select
+                      value={zone}
+                      onChange={(e) => setZone(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
+                    >
+                      <option value="728x90 Header Leaderboard">728x90 Header Leaderboard</option>
+                      <option value="300x250 (साइडबार)">300x250 (साइडबार)</option>
+                      <option value="popup">popup</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>विज्ञापन का शीर्षक / नाम *</label>
                 <input
                   type="text"
                   required
-                  placeholder="उदा. व्यापार महासेल - हेडर बैनर"
+                  placeholder={format === 'classified' ? 'उदा. 2 BHK मकान बिकाऊ है स्टेशन रोड पर' : 'उदा. व्यापार महासेल - हेडर बैनर'}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्रारूप (Format)</label>
-                  <select
-                    value={format}
-                    onChange={(e) => handleFormatChange(e.target.value as any)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
-                  >
-                    <option value="banner">हेडर / लीडरबोर्ड बैनर</option>
-                    <option value="sidebar">साइडबार स्क्वायर (300×250)</option>
-                    <option value="classified">क्लासिफाइड विज्ञापन</option>
-                    <option value="popup">पॉप-अप विज्ञापन</option>
-                  </select>
+              {/* Classified specific fields */}
+              {format === 'classified' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>शहर / कस्बा (City)</label>
+                    <input
+                      type="text"
+                      placeholder="उदा. महू / इंदौर"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>कीमत / दर (₹ Price)</label>
+                    <input
+                      type="text"
+                      placeholder="उदा. 25,00,000 या 5000"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
+                    />
+                  </div>
                 </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्लेसमेंट ज़ोन (Slot)</label>
-                  <select
-                    value={zone}
-                    onChange={(e) => setZone(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
-                  >
-                    <option value="728x90 Header Leaderboard">728x90 Header Leaderboard</option>
-                    <option value="300x250 (साइडबार)">300x250 (साइडबार)</option>
-                    <option value="in-article-1">खबर के अंदर (In-Article)</option>
-                    <option value="classifieds-feed">classifieds-feed</option>
-                    <option value="popup">popup</option>
-                  </select>
-                </div>
-              </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्रसारण शुरू तारीख *</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>संपर्क मोबाइल नंबर *</label>
                   <input
-                    type="date"
+                    type="tel"
                     required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="8103333381"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
-
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>समाप्ति तारीख *</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>क्लिक लिंक (Target URL)</label>
                   <input
-                    type="date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    type="url"
+                    placeholder="https://yourwebsite.com/offer"
+                    value={targetUrl}
+                    onChange={(e) => setTargetUrl(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>विज्ञापन क्लिक लिंक (Target URL)</label>
-                <input
-                  type="url"
-                  placeholder="https://yourwebsite.com/offer"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
-                />
-              </div>
+              {format !== 'classified' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>प्रसारण शुरू तारीख *</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>समाप्ति तारीख *</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>विज्ञापन इमेज *</label>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                    विज्ञापन फोटो / बैनर {format === 'classified' ? '(वैकल्पिक)' : '*'}
+                  </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="button"
@@ -615,7 +787,7 @@ export default function AdvertiserDashboard() {
                     opacity: submitting ? 0.6 : 1
                   }}
                 >
-                  {submitting ? 'अनुरोध भेजा जा रहा है...' : 'अनुरोध सबमिट करें (Admin Review)'}
+                  {submitting ? 'दर्ज हो रहा है...' : '🚀 विज्ञापन तुरंत प्रकाशित करें'}
                 </button>
               </div>
 
