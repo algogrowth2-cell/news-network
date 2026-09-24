@@ -31,6 +31,17 @@ interface AdItem {
   status: string;
 }
 
+interface ClassifiedItem {
+  id: string;
+  title: string;
+  category?: string;
+  city?: string;
+  price?: string;
+  contactNumber?: string;
+  imageUrl?: string;
+  status?: string;
+}
+
 interface MarketRates {
   diesel: string;
   petrol: string;
@@ -68,7 +79,6 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'स्वास्थ्य', icon: '🩺' },
   { key: 'जीवनशैली', icon: '🌿' },
   { key: 'राज्य', icon: '🇮🇳' },
-  { key: 'क्लासिफाइड', icon: '📋' },
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'ई-पेपर', icon: '📄' },
   { key: 'वीडियो', icon: '📹' },
@@ -84,6 +94,7 @@ export default function HomePage() {
   const [headerAd, setHeaderAd] = useState<AdItem | null>(null);
   const [sidebarAd, setSidebarAd] = useState<AdItem | null>(null);
   const [inFeedAds, setInFeedAds] = useState<AdItem[]>([]);
+  const [classifiedAds, setClassifiedAds] = useState<ClassifiedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('होम');
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,7 +138,6 @@ export default function HomePage() {
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
     if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
-    if (cat === 'क्लासिफाइड') { router.push(`/classifieds?site=${currentSlug}`); return; }
     if (cat === 'सर्च') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
@@ -213,7 +223,6 @@ export default function HomePage() {
             const cleanAd: AdItem = { id: docSnap.id, name: rawData.name || '', zone: rawData.zone || '', imageUrl: rawData.imageUrl || '', targetUrl: rawData.targetUrl || '', status: adStatus };
             const adRef = doc(db, 'ads', docSnap.id);
             updateDoc(adRef, { impressions: increment(1) }).catch(() => { updateDoc(doc(db, 'advertisements', docSnap.id), { impressions: increment(1) }).catch(() => {}); });
-            
             if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर') || cleanAd.zone?.includes('header')) { 
               setHeaderAd(cleanAd); 
             } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार') || cleanAd.zone?.includes('sidebar')) { 
@@ -229,13 +238,26 @@ export default function HomePage() {
     }
     loadData();
 
+    // 4. Fetch Classifieds for Right Sidebar
+    const unsubClassifieds = onSnapshot(collection(db, 'classifieds'), (snap) => {
+      const list: ClassifiedItem[] = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        const st = String(data.status || 'active').toLowerCase();
+        if (st === 'active' || st === 'approved') {
+          list.push({ id: d.id, ...data } as ClassifiedItem);
+        }
+      });
+      setClassifiedAds(list.slice(0, 4));
+    });
+
     const unsubRashifal = onSnapshot(collection(db, 'rashifal'), (snap) => {
       const map: Record<string, any> = {};
       snap.docs.forEach(d => { map[d.id] = d.data(); });
       setRashifalData(map);
     });
 
-    return () => { unsubSite(); unsubRashifal(); };
+    return () => { unsubSite(); unsubRashifal(); unsubClassifieds(); };
   }, []);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
@@ -704,7 +726,7 @@ export default function HomePage() {
                 </article>
               )}
 
-              {/* Loop over articles & insert In-Feed Ads every 3-4 news */}
+              {/* Loop over articles & insert In-Feed Ads every 3 news */}
               {filteredArticles.slice(1).map((item, index) => {
                 const showAd = (index + 1) % 3 === 0;
                 const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
@@ -764,6 +786,8 @@ export default function HomePage() {
 
         {/* ── RIGHT SIDEBAR ── */}
         <aside className="col-right">
+
+          {/* 1. Most Read Articles Widget */}
           <div className="card" style={{ marginBottom: '18px' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #eae8e4', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -784,6 +808,56 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR */}
+          <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '15px' }}>📋</span>
+                <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15px', fontWeight: 700, margin: 0, color: primary }}>
+                  क्लासिफाइड विज्ञापन
+                </h3>
+              </div>
+              <Link href={`/classifieds?site=${currentSlug}`} style={{ fontSize: '11px', color: primary, fontWeight: 700 }}>
+                सभी देखें →
+              </Link>
+            </div>
+
+            <div style={{ padding: '12px 16px' }}>
+              {classifiedAds.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '16px 0', color: '#999', fontSize: '12.5px' }}>
+                  <p style={{ margin: '0 0 8px' }}>प्रॉपर्टी, वाहन, नौकरी व अन्य विज्ञापन</p>
+                  <Link href={`/classifieds?site=${currentSlug}`} style={{ display: 'inline-block', background: primary, color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: 600 }}>
+                    + विज्ञापन पोस्ट करें
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {classifiedAds.map((c) => (
+                    <Link key={c.id} href={`/classifieds?site=${currentSlug}`} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f5f4f1' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: '#f1f5f9', display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                        {c.imageUrl ? (
+                          <img src={c.imageUrl} alt={c.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '16px' }}>🏷️</span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '10.5px', color: primary, fontWeight: 700, textTransform: 'uppercase' }}>
+                          {c.category || 'वर्गीकृत'} {c.city ? `· ${c.city}` : ''}
+                        </div>
+                        <h5 style={{ fontSize: '12.5px', fontWeight: 600, color: '#1a1a1a', margin: '1px 0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          {c.title}
+                        </h5>
+                        {c.price && <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>₹{c.price}</span>}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Rashifal Widget */}
           <div className="card" style={{ marginBottom: '18px', padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
               <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${tint(primary, 0.12)}, ${tint(primary, 0.04)})`, display: 'grid', placeItems: 'center', fontSize: '20px', flexShrink: 0 }}>{activeRashiItem.sign}</span>
@@ -801,6 +875,7 @@ export default function HomePage() {
             </p>
           </div>
 
+          {/* 4. Sponsored Ad Slot (300x250) */}
           <div className="card" style={{ height: '260px', display: 'grid', placeItems: 'center' }}>
             {sidebarAd ? (
               <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)} style={{ display: 'block', width: '100%', height: '100%' }}>
