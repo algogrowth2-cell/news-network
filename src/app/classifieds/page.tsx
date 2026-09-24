@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -34,7 +34,7 @@ const CLASSIFIED_CATEGORIES = [
   'अन्य'
 ];
 
-export default function ClassifiedsPage() {
+function ClassifiedsContent() {
   const searchParams = useSearchParams();
   const [siteSlug, setSiteSlug] = useState('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
@@ -72,7 +72,6 @@ export default function ClassifiedsPage() {
   // 3. Fetch Live Classifieds from Firebase
   useEffect(() => {
     setLoading(true);
-    // Fetch active/approved classifieds
     const qCls = query(collection(db, 'classifieds'));
     const unsub = onSnapshot(
       qCls,
@@ -82,7 +81,6 @@ export default function ClassifiedsPage() {
           const data = d.data();
           const st = String(data.status || 'active').toLowerCase();
           if (st === 'active' || st === 'approved') {
-            // Agar siteId match ho ya all-network public ho
             if (!data.siteId || data.siteId.toLowerCase() === siteSlug || data.siteId === 'all') {
               list.push({ id: d.id, ...data } as ClassifiedItem);
             }
@@ -105,7 +103,6 @@ export default function ClassifiedsPage() {
   const siteLogo = siteConfig?.logoUrl || `/logos/${siteSlug}.jpeg`;
   const siteTagline = siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —';
 
-  // Filter ads
   const filteredAds = classifieds.filter((item) => {
     const matchesCat =
       selectedCategory === 'सभी' ||
@@ -211,7 +208,7 @@ export default function ClassifiedsPage() {
           </div>
         </div>
 
-        {/* Category Pills Slider */}
+        {/* Category Pills */}
         <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', marginBottom: '24px', paddingBottom: '4px' }}>
           {CLASSIFIED_CATEGORIES.map((cat) => {
             const isAct = selectedCategory === cat;
@@ -288,16 +285,7 @@ export default function ClassifiedsPage() {
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
-                }}
               >
-                {/* Image */}
                 <div style={{ width: '100%', height: '170px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
                   {ad.imageUrl ? (
                     <img src={ad.imageUrl} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -313,7 +301,6 @@ export default function ClassifiedsPage() {
                   )}
                 </div>
 
-                {/* Content */}
                 <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: primary, textTransform: 'uppercase' }}>
@@ -362,7 +349,7 @@ export default function ClassifiedsPage() {
 
       </main>
 
-      {/* ── DETAIL MODAL POPUP ── */}
+      {/* ── DETAIL MODAL ── */}
       {selectedAd && (
         <div
           onClick={() => setSelectedAd(null)}
@@ -405,7 +392,6 @@ export default function ClassifiedsPage() {
               {selectedAd.description || 'विवरण उपलब्ध नहीं है।'}
             </p>
 
-            {/* Contact Details Box */}
             <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <b style={{ fontSize: '13px', color: '#0f172a' }}>विज्ञापनदाता संपर्क विवरण:</b>
               {selectedAd.contactNumber ? (
@@ -429,5 +415,18 @@ export default function ClassifiedsPage() {
       {/* ── FOOTER ── */}
       <Footer siteName={siteName} primaryColor={primary} logoUrl={siteLogo} tagline={siteTagline} />
     </div>
+  );
+}
+
+// Wrap with Suspense to resolve prerender build error
+export default function ClassifiedsPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#64748b' }}>
+        लोड हो रहा है…
+      </div>
+    }>
+      <ClassifiedsContent />
+    </Suspense>
   );
 }
