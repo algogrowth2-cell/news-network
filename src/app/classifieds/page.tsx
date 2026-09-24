@@ -69,25 +69,51 @@ function ClassifiedsContent() {
     return () => unsub();
   }, [siteSlug]);
 
-  // 3. Fetch Live Classifieds from Firebase
+  // 3. Fetch Live Classifieds from BOTH collections ('classifieds' AND 'ads')
   useEffect(() => {
     setLoading(true);
-    const qCls = query(collection(db, 'classifieds'));
-    const unsub = onSnapshot(
-      qCls,
+
+    let directClassifieds: ClassifiedItem[] = [];
+    let adsClassifieds: ClassifiedItem[] = [];
+
+    const updateCombinedList = () => {
+      const combined = [...directClassifieds, ...adsClassifieds];
+      // Deduplicate by ID
+      const uniqueMap = new Map();
+      combined.forEach(item => uniqueMap.set(item.id, item));
+      setClassifieds(Array.from(uniqueMap.values()));
+      setLoading(false);
+    };
+
+    // A. Query 'classifieds' collection
+    const unsubCls = onSnapshot(
+      collection(db, 'classifieds'),
       (snap) => {
-        const list: ClassifiedItem[] = [];
+        directClassifieds = [];
         snap.forEach((d) => {
           const data = d.data();
           const st = String(data.status || 'active').toLowerCase();
           if (st === 'active' || st === 'approved') {
-            if (!data.siteId || data.siteId.toLowerCase() === siteSlug || data.siteId === 'all') {
-              list.push({ id: d.id, ...data } as ClassifiedItem);
+            const itemSite = String(data.siteId || 'all').toLowerCase();
+            if (!data.siteId || itemSite === siteSlug || itemSite === 'all') {
+              directClassifieds.push({
+                id: d.id,
+                title: data.title || data.name || 'वर्गीकृत विज्ञापन',
+                category: data.category || 'अन्य',
+                city: data.city || '',
+                price: data.price ? String(data.price) : '',
+                description: data.description || '',
+                contactNumber: data.contactNumber || data.phone || '',
+                email: data.email || '',
+                imageUrl: data.imageUrl || '',
+                siteId: itemSite,
+                createdAt: data.createdAt || 'आज',
+                status: 'active'
+              });
             }
           }
         });
-        setClassifieds(list);
-        setLoading(false);
+        updateCombinedList();
       },
       (err) => {
         console.error('Error fetching classifieds:', err);
@@ -95,7 +121,53 @@ function ClassifiedsContent() {
       }
     );
 
-    return () => unsub();
+    // B. Query 'ads' collection for classified format ads
+    const unsubAds = onSnapshot(
+      collection(db, 'ads'),
+      (snap) => {
+        adsClassifieds = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          const st = String(data.status || '').toLowerCase();
+          const fmt = String(data.format || '').toLowerCase();
+          const zn = String(data.zone || '').toLowerCase();
+          const typ = String(data.type || '').toLowerCase();
+
+          // If ad is marked as classified
+          if (
+            (st === 'active' || st === 'approved') &&
+            (fmt === 'classified' || zn.includes('classified') || typ === 'classified')
+          ) {
+            const itemSite = String(data.siteId || 'all').toLowerCase();
+            if (!data.siteId || itemSite === siteSlug || itemSite === 'all') {
+              adsClassifieds.push({
+                id: d.id,
+                title: data.name || data.title || 'वर्गीकृत विज्ञापन',
+                category: data.category || 'अन्य',
+                city: data.city || '',
+                price: data.price ? String(data.price) : data.budget ? String(data.budget) : '',
+                description: data.description || '',
+                contactNumber: data.contactNumber || data.phone || '',
+                email: data.advertiserEmail || '',
+                imageUrl: data.imageUrl || '',
+                siteId: itemSite,
+                createdAt: 'आज',
+                status: 'active'
+              });
+            }
+          }
+        });
+        updateCombinedList();
+      },
+      (err) => {
+        console.error('Error fetching ads for classifieds:', err);
+      }
+    );
+
+    return () => {
+      unsubCls();
+      unsubAds();
+    };
   }, [siteSlug]);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
@@ -107,8 +179,8 @@ function ClassifiedsContent() {
     const matchesCat =
       selectedCategory === 'सभी' ||
       (item.category && item.category.toLowerCase().includes(selectedCategory.toLowerCase())) ||
-      (selectedCategory.includes('प्रॉपर्टी') && (item.category?.includes('Property') || item.category?.includes('जमीन'))) ||
-      (selectedCategory.includes('वाहन') && (item.category?.includes('Vehicle') || item.category?.includes('गाड़ी'))) ||
+      (selectedCategory.includes('प्रॉपर्टी') && (item.category?.includes('Property') || item.category?.includes('ज़मीन') || item.category?.includes('जमीन'))) ||
+      (selectedCategory.includes('वाहन') && (item.category?.includes('Vehicle') || item.category?.includes('गाड़ी') || item.category?.includes('गाड़ियां'))) ||
       (selectedCategory.includes('नौकरी') && (item.category?.includes('Job') || item.category?.includes('रोजगार')));
 
     const cleanSearch = searchTerm.trim().toLowerCase();
@@ -284,6 +356,14 @@ function ClassifiedsContent() {
                   flexDirection: 'column',
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                   boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
                 }}
               >
                 <div style={{ width: '100%', height: '170px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
