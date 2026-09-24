@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
 import { 
   collection, 
   query, 
@@ -11,449 +10,429 @@ import {
   doc, 
   serverTimestamp 
 } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import styles from '../Admin.module.css';
 
-interface NewsVideo {
+interface VideoItem {
   id: string;
   title: string;
-  category: string;
-  siteId: string;
-  cityName: string;
-  videoType: 'youtube' | 'direct' | 'shorts';
-  videoUrl: string;
-  thumbnailUrl: string;
-  duration?: string;
-  views?: number;
-  status: 'published' | 'draft';
+  youtubeUrl: string;
+  youtubeId: string;
+  category?: string;
+  siteId?: string;
+  description?: string;
   createdAt?: any;
 }
 
-const NETWORK_WEBSITES = [
-  { name: 'द लोकल लीडर', slug: 'the-local-leader' },
-  { name: 'बाज़ार कारोबार', slug: 'bazar-karobar' },
-  { name: 'गोल्डन पर्ल क्रॉनिकल्स', slug: 'golden-pearl-chronicles' },
-  { name: 'द प्रोव्यू टाइम्स', slug: 'state-express' },
-  { name: 'देश की आवाज़', slug: 'desh-ki-aawaz' },
-  { name: 'जन भारत न्यूज़', slug: 'jan-chetna-news' },
-  { name: 'NEWS INFO 24', slug: 'city-bulletin' },
-  { name: 'डिफेंस न्यूज़', slug: 'national-spotlight' }
+const NETWORK_PORTALS = [
+  { slug: 'all', name: 'सभी नेटवर्क (All Portals)' },
+  { slug: 'the-local-leader', name: 'द लोकल लीडर' },
+  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
+  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
+  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
+  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
+  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
+];
+
+const VIDEO_CATEGORIES = [
+  'ताज़ा बुलेटिन',
+  'ग्राउंड रिपोर्ट',
+  'राजनीति',
+  'व्यापार',
+  'अपराध',
+  'खेलकूद',
+  'विशेष इंटरव्यू'
 ];
 
 export default function AdminVideosPage() {
-  const [videos, setVideos] = useState<NewsVideo[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedSiteFilter, setSelectedSiteFilter] = useState('all');
 
-  // Form State
+  // Form states
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('राजनीति');
-  const [siteId, setSiteId] = useState('the-local-leader');
-  const [cityName, setCityName] = useState('भोपाल');
-  const [videoType, setVideoType] = useState<'youtube' | 'direct' | 'shorts'>('youtube');
-  const [videoUrl, setVideoUrl] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [duration, setDuration] = useState('02:30');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [category, setCategory] = useState(VIDEO_CATEGORIES[0]);
+  const [siteId, setSiteId] = useState('the-local-leader'); // Default Portal
+  const [description, setDescription] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  // Preview State
-  const [previewVideo, setPreviewVideo] = useState<NewsVideo | null>(null);
+  // YouTube Video ID nikaalne ka function
+  const extractYouTubeId = (url: string) => {
+    if (!url) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url.trim();
+  };
 
-  // 1. Fetch Real-time News Videos
+  // 1. Fetch live videos
   useEffect(() => {
     setLoading(true);
-    const q = query(collection(db, 'news_videos'));
+    const qVideos = query(collection(db, 'videos'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list: NewsVideo[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data()
-      } as NewsVideo));
-
-      setVideos(list);
-      setLoading(false);
-    }, (err) => {
-      console.error(err);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      qVideos,
+      (snapshot) => {
+        const list: VideoItem[] = [];
+        snapshot.forEach((d) => {
+          list.push({ id: d.id, ...d.data() } as VideoItem);
+        });
+        // Newest first
+        list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setVideos(list);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching videos:', err);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
-  // Universal YouTube Video ID Extractor
-  const extractYouTubeId = (url: string): string | null => {
-    if (!url) return null;
-    const regExp = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/;
-    const match = url.match(regExp);
-    return match ? match[1] : null;
-  };
-
-  const getYouTubeEmbedUrl = (url: string): string => {
-    const id = extractYouTubeId(url);
-    if (!id) return url;
-    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
-  };
-
-  // 3. Upload / Create Video Entry
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 2. Add Video with EXACT siteId
+  const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !videoUrl.trim()) {
-      alert('कृपया वीडियो का शीर्षक और वीडियो लिंक दर्ज करें।');
+    if (!title.trim() || !youtubeUrl.trim()) {
+      alert('कृपया शीर्षक और YouTube लिंक दर्ज करें!');
       return;
     }
 
+    const yId = extractYouTubeId(youtubeUrl);
+    if (!yId) {
+      alert('अमान्य YouTube लिंक! कृपया सही वीडियो URL डालें।');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-
-      const ytId = extractYouTubeId(videoUrl);
-      let finalThumb = thumbnailUrl.trim();
-      if (!finalThumb && ytId) {
-        finalThumb = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-      }
-
-      const detectedType = ytId ? (videoUrl.includes('/shorts/') ? 'shorts' : 'youtube') : videoType;
-
-      await addDoc(collection(db, 'news_videos'), {
+      await addDoc(collection(db, 'videos'), {
         title: title.trim(),
+        youtubeUrl: youtubeUrl.trim(),
+        youtubeId: yId,
         category,
-        siteId,
-        cityName: cityName.trim(),
-        videoType: detectedType,
-        videoUrl: videoUrl.trim(),
-        thumbnailUrl: finalThumb || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800',
-        duration: duration.trim() || '02:00',
-        views: 0,
-        status: 'published',
+        siteId: siteId.toLowerCase(), // 👉 Specific Selected Portal Save hoga
+        description: description.trim() || '',
         createdAt: serverTimestamp()
       });
 
-      alert('न्यूज़ वीडियो सफलतापूर्वक लाइव पब्लिश हो गया है!');
       setTitle('');
-      setVideoUrl('');
-      setThumbnailUrl('');
-      setShowModal(false);
-      setSubmitting(false);
+      setYoutubeUrl('');
+      setDescription('');
+      setShowAddModal(false);
+      alert(`✅ वीडियो सफलतापूर्वक "${NETWORK_PORTALS.find(p => p.slug === siteId)?.name}" के लिए अपलोड हो गया!`);
     } catch (err: any) {
-      setSubmitting(false);
-      alert('Upload error: ' + err.message);
+      console.error(err);
+      alert('त्रुटि: ' + err.message);
+    }
+    setSubmitting(false);
+  };
+
+  // 3. Delete Video
+  const handleDeleteVideo = async (id: string, vidTitle: string) => {
+    if (!window.confirm(`क्या आप निश्चित रूप से "${vidTitle}" को हटाना चाहते हैं?`)) return;
+    try {
+      await deleteDoc(doc(db, 'videos', id));
+      alert('वीडियो सफलतापूर्वक हटा दी गई!');
+    } catch (err: any) {
+      alert('हटाने में त्रुटि: ' + err.message);
     }
   };
 
-  // 4. Delete Video
-  const handleDelete = async (id: string, vidTitle: string) => {
-    if (!confirm(`क्या आप "${vidTitle}" वीडियो को हटाना चाहते हैं?`)) return;
-    try {
-      await deleteDoc(doc(db, 'news_videos', id));
-    } catch (err: any) {
-      alert('Delete error: ' + err.message);
-    }
-  };
+  const filteredVideos = videos.filter((item) => {
+    if (selectedSiteFilter === 'all') return true;
+    return item.siteId === selectedSiteFilter || item.siteId === 'all';
+  });
 
   return (
-    <div style={{ backgroundColor: '#070b14', minHeight: '100vh', padding: '28px', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      
+    <div style={{ color: '#fff', width: '100%' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: '0 0 6px 0' }}>
-            न्यूज़ वीडियो एवं रील्स प्रबंधन ({videos.length})
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+            📹 वीडियो बुलेटिन प्रबंधन (Video Management)
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-            Upload & manage ground report videos, bulletin clips, and YouTube Shorts for Website & App
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
+            पोर्टल-वाइज़ वीडियो बुलेटिन अपलोड और मैनेज करें।
           </p>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            backgroundColor: '#ea580c',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '10px 20px',
-            fontSize: '13.5px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(234,88,12,0.3)'
-          }}
-        >
-          + नया न्यूज़ वीडियो जोड़ें
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select
+            value={selectedSiteFilter}
+            onChange={(e) => setSelectedSiteFilter(e.target.value)}
+            style={{
+              backgroundColor: '#1e242b',
+              color: '#f8fafc',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontSize: '13px',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            {NETWORK_PORTALS.map((p) => (
+              <option key={p.slug} value={p.slug}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            style={{
+              backgroundColor: '#ea580c',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '9px 16px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            + नया वीडियो जोड़ें
+          </button>
+        </div>
       </div>
 
-      {/* Videos Grid */}
+      {/* Videos List */}
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>वीडियो लोड हो रहे हैं...</div>
-      ) : videos.length === 0 ? (
-        <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '70px 20px', textAlign: 'center' }}>
-          <span style={{ fontSize: '36px' }}>📹</span>
-          <h3 style={{ fontSize: '18px', color: '#ffffff', margin: '12px 0 6px 0' }}>कोई न्यूज़ वीडियो उपलब्ध नहीं है</h3>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px' }}>वेबसाइट और ऐप पर वीडियो दिखाने के लिए ऊपर "+ नया न्यूज़ वीडियो जोड़ें" पर क्लिक करें।</p>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
+          वीडियो लोड हो रहे हैं…
+        </div>
+      ) : filteredVideos.length === 0 ? (
+        <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '50px 20px', textAlign: 'center' }}>
+          <span style={{ fontSize: '42px', display: 'block', marginBottom: '10px', opacity: 0.6 }}>📹</span>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', marginBottom: '6px' }}>
+            इस पोर्टल के लिए कोई वीडियो उपलब्ध नहीं है
+          </h3>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px' }}>
+            ऊपर दिए गए बटन से इस पोर्टल के लिए नया YouTube वीडियो अपलोड करें।
+          </p>
           <button
-            onClick={() => setShowModal(true)}
-            style={{ backgroundColor: '#ea580c', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '9px 18px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
           >
-            + पहला वीडियो अपलोड करें
+            + वीडियो अपलोड करें
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {videos.map((vid) => {
-            const ytId = extractYouTubeId(vid.videoUrl);
-            const thumb = vid.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800');
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
+          {filteredVideos.map((item) => (
+            <div
+              key={item.id}
+              className={styles.formCard}
+              style={{
+                backgroundColor: '#1e242b',
+                borderRadius: '12px',
+                border: '1px solid #334155',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000' }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${item.youtubeId}`}
+                  title={item.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
 
-            return (
-              <div
-                key={vid.id}
-                style={{
-                  backgroundColor: '#0e1626',
-                  border: '1px solid #1e293b',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-              >
-                {/* Thumbnail Container */}
-                <div 
-                  style={{ position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', cursor: 'pointer' }}
-                  onClick={() => setPreviewVideo(vid)}
-                >
-                  <img
-                    src={thumb}
-                    alt={vid.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  
-                  {/* Play Button Overlay */}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(234,88,12,0.9)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '18px' }}>
-                      ▶
-                    </div>
-                  </div>
-
-                  {vid.duration && (
-                    <span style={{ position: 'absolute', bottom: '8px', right: '8px', backgroundColor: 'rgba(0,0,0,0.8)', color: '#fff', fontSize: '11px', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                      {vid.duration}
-                    </span>
-                  )}
-
-                  {/* Video Type Badge */}
-                  <span style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(15,23,42,0.85)', color: '#38bdf8', fontSize: '10.5px', padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
-                    {ytId ? 'YOUTUBE' : (vid.videoType || 'VIDEO')}
+              <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ backgroundColor: '#334155', color: '#f97316', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
+                    {item.category || 'वीडियो'}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>
+                    पोर्टल: {item.siteId === 'all' ? 'All Portals' : item.siteId}
                   </span>
                 </div>
 
-                {/* Body */}
-                <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '11.5px', color: '#ea580c', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                      {vid.category} · {vid.cityName}
-                    </div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: '0 0 8px 0', lineHeight: 1.4 }}>
-                      {vid.title}
-                    </h3>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      पोर्टल: <span style={{ color: '#94a3b8' }}>{vid.siteId}</span>
-                    </div>
-                  </div>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px', lineHeight: 1.4 }}>
+                  {item.title}
+                </h4>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #162238' }}>
-                    <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-                      ● Live on Web & App
-                    </span>
+                {item.description && (
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                    {item.description}
+                  </p>
+                )}
 
-                    <button
-                      onClick={() => handleDelete(vid.id, vid.title)}
-                      style={{ backgroundColor: 'transparent', border: 'none', color: '#f87171', fontSize: '12.5px', cursor: 'pointer', padding: '4px' }}
-                    >
-                      हटाएं (Delete)
-                    </button>
-                  </div>
+                <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteVideo(item.id, item.title)}
+                    style={{
+                      backgroundColor: '#ef444422',
+                      color: '#ef4444',
+                      border: '1px solid #ef444444',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    हटाएं ✕
+                  </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Modal: Add New News Video */}
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '26px', width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: '19px', fontWeight: 700, color: '#ffffff', margin: '0 0 16px 0' }}>
-              नया न्यूज़ वीडियो पब्लिश करें
-            </h2>
+      {/* Add Video Modal */}
+      {showAddModal && (
+        <div
+          onClick={() => setShowAddModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#1e242b',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '24px',
+              border: '1px solid #334155',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                📹 नया वीडियो बुलेटिन अपलोड करें
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                style={{ background: '#334155', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#fff', cursor: 'pointer', fontWeight: 800 }}
+              >
+                ✕
+              </button>
+            </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleAddVideo} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              {/* TARGET PORTAL SELECTION (EXPLICIT) */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>वीडियो का मुख्य शीर्षक (Headline) *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#f97316', marginBottom: '5px', fontWeight: 700 }}>
+                  👉 किस वेबसाइट (पोर्टल) पर वीडियो दिखाना है? *
+                </label>
+                <select
+                  value={siteId}
+                  onChange={(e) => setSiteId(e.target.value)}
+                  style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1.5px solid #ea580c', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
+                >
+                  {NETWORK_PORTALS.map((p) => (
+                    <option key={p.slug} value={p.slug}>{p.name}</option>
+                  ))}
+                </select>
+                <small style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                  यदि आप &apos;द लोकल लीडर&apos; चुनेंगे, तो यह सिर्फ उसी वेबसाइट पर दिखेगा।
+                </small>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  वीडियो का शीर्षक (Title) *
+                </label>
                 <input
                   type="text"
-                  required
-                  placeholder="उदा. सीएम का बड़ा ऐलान: मेट्रो प्रोजेक्ट का हुआ शुभारंभ..."
+                  placeholder="उदा: आज की बड़ी खबर: देखें ग्राउंड रिपोर्ट"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 12px', color: '#ffffff', fontSize: '13.5px' }}
+                  required
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
                 />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>वीडियो प्रकार (Format)</label>
-                  <select
-                    value={videoType}
-                    onChange={(e) => setVideoType(e.target.value as any)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  >
-                    <option value="youtube">YouTube Video</option>
-                    <option value="shorts">YouTube Shorts / Reel (Vertical)</option>
-                    <option value="direct">Direct MP4 Video Link</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>पोर्टल चयन</label>
-                  <select
-                    value={siteId}
-                    onChange={(e) => setSiteId(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  >
-                    {NETWORK_WEBSITES.map(w => (
-                      <option key={w.slug} value={w.slug}>{w.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>श्रेणी (Category)</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  >
-                    <option value="राजनीति">राजनीति</option>
-                    <option value="अपराध">अपराध (Crime)</option>
-                    <option value="शहर हलचल">शहर हलचल</option>
-                    <option value="व्यापार">व्यापार</option>
-                    <option value="विशेष रिपोर्ट">विशेष रिपोर्ट</option>
-                    <option value="खेल">खेल</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>शहर / ज़िला</label>
-                  <input
-                    type="text"
-                    value={cityName}
-                    onChange={(e) => setCityName(e.target.value)}
-                    placeholder="उदा. भोपाल"
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  />
-                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>वीडियो लिंक (YouTube / Shorts / MP4 URL) *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  YouTube Video Link / URL *
+                </label>
                 <input
-                  type="url"
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=... या https://youtu.be/..."
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
                   required
-                  placeholder="https://www.youtube.com/watch?v=... या MP4 URL"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '10px 12px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>थंबनेल इमेज URL (वैकल्पिक)</label>
-                  <input
-                    type="url"
-                    placeholder="YouTube से स्वतः भी जनरेट हो जाएगा"
-                    value={thumbnailUrl}
-                    onChange={(e) => setThumbnailUrl(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>वीडियो अवधि (Duration)</label>
-                  <input
-                    type="text"
-                    placeholder="02:30"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '9px 12px', color: '#ffffff', fontSize: '13px' }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  श्रेणी (Category)
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+                >
+                  {VIDEO_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  संक्षिप्त विवरण (Description)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="वीडियो के बारे में संक्षेप में लिखें..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none', resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#94a3b8', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                  onClick={() => setShowAddModal(false)}
+                  style={{ backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer' }}
                 >
                   रद्द करें
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{ backgroundColor: '#ea580c', border: 'none', color: '#ffffff', padding: '9px 22px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer', fontSize: '13px' }}
+                  style={{ backgroundColor: '#ea580c', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 20px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
                 >
-                  {submitting ? 'पब्लिश हो रहा है...' : 'पब्लिश करें (Live on Web & App)'}
+                  {submitting ? 'अपलोड हो रहा है…' : 'वीडियो प्रकाशित करें'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {/* Video Player Modal with Bulletproof YouTube Auto-detection */}
-      {previewVideo && (() => {
-        const isYt = Boolean(extractYouTubeId(previewVideo.videoUrl));
-        const isShorts = previewVideo.videoType === 'shorts' || previewVideo.videoUrl.includes('/shorts/');
-
-        return (
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '16px' }}>
-            <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px', width: '100%', maxWidth: isShorts ? '450px' : '780px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <b style={{ color: '#fff', fontSize: '15px' }}>{previewVideo.title}</b>
-                <button
-                  onClick={() => setPreviewVideo(null)}
-                  style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}
-                >
-                  ✕ बंद करें
-                </button>
-              </div>
-
-              <div style={{ width: '100%', aspectRatio: isShorts ? '9/16' : '16/9', maxHeight: '70vh', backgroundColor: '#000', margin: '0 auto', overflow: 'hidden', borderRadius: '8px' }}>
-                {isYt ? (
-                  <iframe
-                    src={getYouTubeEmbedUrl(previewVideo.videoUrl)}
-                    title={previewVideo.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    style={{ width: '100%', height: '100%', border: 'none' }}
-                  />
-                ) : (
-                  <video 
-                    controls 
-                    autoPlay 
-                    playsInline
-                    style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
-                  >
-                    <source src={previewVideo.videoUrl} type="video/mp4" />
-                    आपका ब्राउज़र इस वीडियो प्रारूप का समर्थन नहीं करता है।
-                  </video>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
     </div>
   );
 }
