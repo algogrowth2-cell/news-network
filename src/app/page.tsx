@@ -31,6 +31,7 @@ interface AdItem {
   imageUrl: string;
   targetUrl?: string;
   status: string;
+  format?: string;
 }
 
 interface ClassifiedItem {
@@ -42,6 +43,7 @@ interface ClassifiedItem {
   contactNumber?: string;
   imageUrl?: string;
   status?: string;
+  siteId?: string;
 }
 
 interface MarketRates {
@@ -149,7 +151,6 @@ export default function HomePage() {
     }
   };
 
-  // Dedicated routing for external pages like /videos, /epaper, /shok-sandesh
   const handleCategoryClick = (cat: string) => {
     if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
@@ -239,23 +240,50 @@ export default function HomePage() {
           .filter(art => { const s = String(art.status || '').trim().toLowerCase(); return s === 'published' || s === 'approved'; });
         setArticles(approvedArticles);
 
+        // ── ADS LOAD LOGIC (PROPER ISOLATION OF CLASSIFIEDS) ──
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
-        setHeaderAd(null); setSidebarAd(null);
+        setHeaderAd(null); 
+        setSidebarAd(null);
         const feedAdsList: AdItem[] = [];
 
         adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
           const adStatus = String(rawData.status || '').trim().toLowerCase();
+          
           if (adStatus === 'active') {
-            const cleanAd: AdItem = { id: docSnap.id, name: rawData.name || '', zone: rawData.zone || '', imageUrl: rawData.imageUrl || '', targetUrl: rawData.targetUrl || '', status: adStatus };
+            const cleanAd: AdItem = { 
+              id: docSnap.id, 
+              name: rawData.name || rawData.title || '', 
+              zone: rawData.zone || '', 
+              imageUrl: rawData.imageUrl || '', 
+              targetUrl: rawData.targetUrl || '', 
+              status: adStatus,
+              format: rawData.format || ''
+            };
+
+            const zoneStr = String(cleanAd.zone || '').toLowerCase();
+            const formatStr = String(cleanAd.format || '').toLowerCase();
+            const typeStr = String(rawData.type || '').toLowerCase();
+
+            // 🛑 STOP: Classified ads must NOT enter the news feed banner list!
+            if (zoneStr.includes('classified') || formatStr.includes('classified') || typeStr.includes('classified')) {
+              return;
+            }
+
             const adRef = doc(db, 'ads', docSnap.id);
-            updateDoc(adRef, { impressions: increment(1) }).catch(() => { updateDoc(doc(db, 'advertisements', docSnap.id), { impressions: increment(1) }).catch(() => {}); });
-            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर') || cleanAd.zone?.includes('header')) { 
+            updateDoc(adRef, { impressions: increment(1) }).catch(() => {});
+
+            // Header Banner
+            if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) { 
               setHeaderAd(cleanAd); 
-            } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार') || cleanAd.zone?.includes('sidebar')) { 
+            } 
+            // Sidebar Banner
+            else if (zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार')) { 
               setSidebarAd(cleanAd); 
-            } else {
+            } 
+            // Feed Banner (Only genuine feed/banner ads)
+            else if (zoneStr.includes('feed') || zoneStr.includes('banner') || zoneStr.includes('in-article')) {
               feedAdsList.push(cleanAd);
             }
           }
@@ -266,16 +294,56 @@ export default function HomePage() {
     }
     loadData();
 
+    // ── LIVE CLASSIFIEDS LISTENER (SIDEBAR WIDGET) ──
+    // Listens to 'classifieds' collection AND 'ads' collection (classified format)
+    let directClassifieds: ClassifiedItem[] = [];
+    let adsClassifieds: ClassifiedItem[] = [];
+
+    const updateCombinedClassifieds = () => {
+      const combined = [...directClassifieds, ...adsClassifieds];
+      // remove duplicate ids if any
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+      setClassifiedAds(unique.slice(0, 4));
+    };
+
     const unsubClassifieds = onSnapshot(collection(db, 'classifieds'), (snap) => {
-      const list: ClassifiedItem[] = [];
+      directClassifieds = [];
       snap.forEach((d) => {
         const data = d.data();
         const st = String(data.status || 'active').toLowerCase();
         if (st === 'active' || st === 'approved') {
-          list.push({ id: d.id, ...data } as ClassifiedItem);
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
+            directClassifieds.push({ id: d.id, ...data } as ClassifiedItem);
+          }
         }
       });
-      setClassifiedAds(list.slice(0, 4));
+      updateCombinedClassifieds();
+    });
+
+    const unsubAdsForClassifieds = onSnapshot(collection(db, 'ads'), (snap) => {
+      adsClassifieds = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        const st = String(data.status || '').toLowerCase();
+        const fmt = String(data.format || '').toLowerCase();
+        const zn = String(data.zone || '').toLowerCase();
+
+        if ((st === 'active' || st === 'approved') && (fmt === 'classified' || zn.includes('classified'))) {
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
+            adsClassifieds.push({
+              id: d.id,
+              title: data.name || data.title || 'क्लासिफाइड विज्ञापन',
+              category: data.category || 'वर्गीकृत',
+              city: data.city || '',
+              price: data.price || data.budget || '',
+              contactNumber: data.contactNumber || '',
+              imageUrl: data.imageUrl || '',
+              status: 'active'
+            });
+          }
+        }
+      });
+      updateCombinedClassifieds();
     });
 
     const unsubRashifal = onSnapshot(collection(db, 'rashifal'), (snap) => {
@@ -284,7 +352,13 @@ export default function HomePage() {
       setRashifalData(map);
     });
 
-    return () => { unsubSite(); unsubLive(); unsubRashifal(); unsubClassifieds(); };
+    return () => { 
+      unsubSite(); 
+      unsubLive(); 
+      unsubRashifal(); 
+      unsubClassifieds(); 
+      unsubAdsForClassifieds(); 
+    };
   }, []);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
@@ -296,16 +370,11 @@ export default function HomePage() {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
-    // 'लाइव' tab par normal news nahi dikhegi
-    if (activeCategory === 'लाइव') {
-      return false;
-    }
+    if (activeCategory === 'लाइव') return false;
 
-    // Trending Tag Filter
     if (activeTrendTag) {
       const tag = activeTrendTag.trim();
       const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
-      
       if (tag === 'बजट सत्र') return contentStr.includes('बजट') || contentStr.includes('सत्र') || art.category === 'व्यापार' || art.category === 'राजनीति';
       if (tag === 'पंचायत चुनाव') return contentStr.includes('चुनाव') || contentStr.includes('पंचायत') || art.category === 'राजनीति';
       if (tag === 'बारिश का मौसम') return contentStr.includes('बारिश') || contentStr.includes('मौसम') || art.category === 'राज्य' || art.category === 'जीवनशैली';
@@ -316,7 +385,6 @@ export default function HomePage() {
       return contentStr.includes(tag.toLowerCase());
     }
 
-    // Normal Category Filter
     const matchesCategory =
       activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
@@ -718,7 +786,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 🔴 MULTIPLE LIVE STREAMS GRID (SHOWS ON TOP IN HOME & DEDICATED IN LIVE TAB) */}
+          {/* 🔴 MULTIPLE LIVE STREAMS GRID */}
           {showLiveInFeed && (
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -731,7 +799,6 @@ export default function HomePage() {
                 <span style={{ fontSize: '11px', color: '#64748b' }}>सीधा प्रसारण</span>
               </div>
 
-              {/* Grid: 1 stream => full width, 2+ streams => responsive side-by-side grid */}
               <div style={{ display: 'grid', gridTemplateColumns: liveSessions.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(290px, 1fr))', gap: '16px' }}>
                 {liveSessions.map((session) => (
                   <div key={session.id} className="card" style={{ border: '2px solid #ef4444', overflow: 'hidden', boxShadow: '0 4px 18px rgba(239, 68, 68, 0.15)' }}>
@@ -783,7 +850,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── TRENDING TAGS (HOME MODE) ── */}
+          {/* ── TRENDING TAGS ── */}
           {activeCategory !== 'लाइव' && (
             <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
               <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -820,7 +887,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Section Heading for Live Mode */}
+          {/* Live Section Heading */}
           {activeCategory === 'लाइव' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
@@ -830,7 +897,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── ARTICLES FEED (Hidden in 'लाइव' tab so only live stream is visible) ── */}
+          {/* ── ARTICLES FEED ── */}
           {activeCategory === 'लाइव' ? (
             !hasLiveStreams && (
               <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
@@ -964,6 +1031,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* 📋 CLASSIFIED ADS WIDGET */}
           <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
