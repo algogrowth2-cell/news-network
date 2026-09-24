@@ -68,6 +68,7 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'स्वास्थ्य', icon: '🩺' },
   { key: 'जीवनशैली', icon: '🌿' },
   { key: 'राज्य', icon: '🇮🇳' },
+  { key: 'क्लासिफाइड', icon: '📋' },
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'ई-पेपर', icon: '📄' },
   { key: 'वीडियो', icon: '📹' },
@@ -82,6 +83,7 @@ export default function HomePage() {
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [headerAd, setHeaderAd] = useState<AdItem | null>(null);
   const [sidebarAd, setSidebarAd] = useState<AdItem | null>(null);
+  const [inFeedAds, setInFeedAds] = useState<AdItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('होम');
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +127,7 @@ export default function HomePage() {
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
     if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
+    if (cat === 'क्लासिफाइड') { router.push(`/classifieds?site=${currentSlug}`); return; }
     if (cat === 'सर्च') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
@@ -201,6 +204,7 @@ export default function HomePage() {
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null); setSidebarAd(null);
+        const feedAdsList: AdItem[] = [];
 
         adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
@@ -209,10 +213,17 @@ export default function HomePage() {
             const cleanAd: AdItem = { id: docSnap.id, name: rawData.name || '', zone: rawData.zone || '', imageUrl: rawData.imageUrl || '', targetUrl: rawData.targetUrl || '', status: adStatus };
             const adRef = doc(db, 'ads', docSnap.id);
             updateDoc(adRef, { impressions: increment(1) }).catch(() => { updateDoc(doc(db, 'advertisements', docSnap.id), { impressions: increment(1) }).catch(() => {}); });
-            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर') || cleanAd.zone?.includes('header')) { setHeaderAd(cleanAd); }
-            else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार') || cleanAd.zone?.includes('sidebar')) { setSidebarAd(cleanAd); }
+            
+            if (cleanAd.zone?.includes('728') || cleanAd.zone?.includes('हेडर') || cleanAd.zone?.includes('header')) { 
+              setHeaderAd(cleanAd); 
+            } else if (cleanAd.zone?.includes('300') || cleanAd.zone?.includes('साइडबार') || cleanAd.zone?.includes('sidebar')) { 
+              setSidebarAd(cleanAd); 
+            } else {
+              feedAdsList.push(cleanAd);
+            }
           }
         });
+        setInFeedAds(feedAdsList);
       } catch (err) { console.error('Error loading home data:', err); }
       setLoading(false);
     }
@@ -270,7 +281,7 @@ export default function HomePage() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── FIX: Force light theme on LanguageTranslator (button + dropdown) ── */
+        /* ── FIX: Force light theme on LanguageTranslator & Keep Right Column Static English ── */
         .lang-fix div,
         .lang-fix span,
         .lang-fix p,
@@ -303,6 +314,13 @@ export default function HomePage() {
         .lang-fix option:hover {
           background-color: #f0efec !important;
           color: #1a1a1a !important;
+        }
+
+        /* Prevents right English language labels from auto translating */
+        .lang-fix [translate="no"],
+        .lang-fix .notranslate,
+        .lang-fix span:last-child {
+          translate: no !important;
         }
 
         .shell {
@@ -344,6 +362,18 @@ export default function HomePage() {
           margin-bottom: 18px; background: #1a1a1a; position: relative;
         }
         .ad-leader a, .ad-leader img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+        /* In-feed Ad Banner styling */
+        .infeed-ad-banner {
+          background: #fafaf8;
+          border-top: 1px dashed #e2e8f0;
+          border-bottom: 1px dashed #e2e8f0;
+          padding: 12px 18px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
 
         .portal-link {
           display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px;
@@ -632,7 +662,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ── ARTICLES ── */}
+          {/* ── ARTICLES FEED WITH CONTINUOUS SCROLL & IN-FEED ADS ── */}
           {loading ? (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
@@ -647,7 +677,7 @@ export default function HomePage() {
               <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
           ) : (
-            <div className="card">
+            <div className="card" style={{ overflow: 'hidden' }}>
               {filteredArticles[0] && (
                 <article style={{ borderBottom: '1px solid #eae8e4' }}>
                   <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`}>
@@ -674,26 +704,60 @@ export default function HomePage() {
                 </article>
               )}
 
-              {filteredArticles.slice(1).map((item) => (
-                <article key={item.id} className="art-row" style={{ borderBottom: '1px solid #eae8e4' }}>
-                  <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 20px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: primary, letterSpacing: '.03em' }}>{item.category}</span>
-                      <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 500, margin: '3px 0 8px', color: '#1a1a1a', lineHeight: 1.45 }}>{item.title}</h4>
-                      <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
-                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
-                        <span>👁 {item.views || 0}</span>
-                      </div>
-                    </div>
-                    {item.image && (
-                      <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
-                        <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Loop over articles & insert In-Feed Ads every 3-4 news */}
+              {filteredArticles.slice(1).map((item, index) => {
+                const showAd = (index + 1) % 3 === 0;
+                const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
+                const currentInFeedAd = inFeedAds[adIndex];
+
+                return (
+                  <div key={item.id}>
+                    <article className="art-row" style={{ borderBottom: '1px solid #eae8e4' }}>
+                      <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 20px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: primary, letterSpacing: '.03em' }}>{item.category}</span>
+                          <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 500, margin: '3px 0 8px', color: '#1a1a1a', lineHeight: 1.45 }}>{item.title}</h4>
+                          <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
+                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
+                            <span>👁 {item.views || 0}</span>
+                          </div>
+                        </div>
+                        {item.image && (
+                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
+                            <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        )}
+                      </Link>
+                    </article>
+
+                    {/* Dynamic In-Feed Ad Banner Slot */}
+                    {showAd && (
+                      <div className="infeed-ad-banner">
+                        <span style={{ fontSize: '9.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', alignSelf: 'flex-start' }}>
+                          प्रायोजित / विज्ञापन
+                        </span>
+                        {currentInFeedAd ? (
+                          <a 
+                            href={currentInFeedAd.targetUrl || '#'} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            onClick={() => handleAdClick(currentInFeedAd)}
+                            style={{ display: 'block', width: '100%', maxHeight: '110px', overflow: 'hidden', borderRadius: '8px' }}
+                          >
+                            <img src={currentInFeedAd.imageUrl} alt={currentInFeedAd.name} style={{ width: '100%', height: 'auto', maxHeight: '110px', objectFit: 'cover', borderRadius: '8px' }} />
+                          </a>
+                        ) : (
+                          <div style={{ width: '100%', height: '80px', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#64748b', fontSize: '12px' }}>
+                            <span>📢</span>
+                            <b>विज्ञापन स्थान (In-Feed Sponsored Ad)</b>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </Link>
-                </article>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </main>
