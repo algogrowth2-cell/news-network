@@ -148,7 +148,9 @@ export default function HomePage() {
     }
   };
 
+  // Dedicated routing for external pages like /videos, /epaper, /shok-sandesh
   const handleCategoryClick = (cat: string) => {
+    if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
     if (cat === 'सर्च') { setSearchModalOpen(true); return; }
@@ -291,17 +293,17 @@ export default function HomePage() {
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
-  // ── Smart Articles Filtering Logic ──
+  // ── Articles Filtering Logic ──
   const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
-    // 1. Agar user 'लाइव' tab par hai, to niche koi normal news nahi aayegi (Sirf Live Stream Card aayega)
+    // 'लाइव' tab par niche normal news feed nahi aayegi
     if (activeCategory === 'लाइव') {
       return false;
     }
 
-    // 2. Trending Tag Filter
+    // Trending Tag Filter
     if (activeTrendTag) {
       const tag = activeTrendTag.trim();
       const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
@@ -316,22 +318,7 @@ export default function HomePage() {
       return contentStr.includes(tag.toLowerCase());
     }
 
-    // 3. 'वीडियो' (Video Category) Filter:
-    // Video category wale articles, ya jinme videoUrl hai, ya video title wale articles filter karega.
-    // Agar portal me explicitly 'video' tag nahi bhi hua, toh fallback me top articles ko video format me serve karega.
-    if (activeCategory === 'वीडियो') {
-      const isVideoArticle = 
-        art.category?.toLowerCase() === 'video' || 
-        art.category === 'वीडियो' || 
-        Boolean(art.videoUrl) || 
-        art.title?.toLowerCase().includes('video') ||
-        art.title?.includes('वीडियो');
-
-      // Agar koi specific video category article nahi mila to feed khali na rahe isliye published articles include honge
-      return isVideoArticle || Boolean(art.image);
-    }
-
-    // 4. Normal Category Filter
+    // Normal Category Filter
     const matchesCategory =
       activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
@@ -348,10 +335,9 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Check whether Live Video Card should show on top:
-  // Shows in 'होम' (News Feed), 'ताज़ा खबरें', 'वीडियो' (Video Section), and 'लाइव' (Dedicated Live Section)!
+  // Live video player will display in Home news feed and in Live dedicated category
   const showLiveInFeed = Boolean(liveSession && liveSession.isActive && liveSession.youtubeId && 
-    (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'वीडियो' || activeCategory === 'लाइव'));
+    (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'लाइव'));
 
   const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
@@ -725,7 +711,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        {/* ── CENTER COLUMN (MAIN NEWS FEED, VIDEO FEED & LIVE FEED) ── */}
+        {/* ── CENTER COLUMN (MAIN NEWS FEED & LIVE FEED) ── */}
         <main style={{ minWidth: 0 }}>
 
           <div className="ad-leader">
@@ -792,7 +778,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── TRENDING TAGS (HOME & VIDEO MODE) ── */}
+          {/* ── TRENDING TAGS (HOME MODE) ── */}
           {activeCategory !== 'लाइव' && (
             <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
               <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -829,26 +815,17 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Section Headings */}
-          {activeCategory === 'वीडियो' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
-              <span style={{ fontSize: '20px' }}>📹</span>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-                वीडियो एवं लाइव बुलेटिन
-              </h2>
-            </div>
-          )}
-
+          {/* Section Heading for Live Mode */}
           {activeCategory === 'लाइव' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#ef4444', margin: 0 }}>
-                लाइव कवरेज (Live Stream)
+                लाइव प्रसारण (Live Stream)
               </h2>
             </div>
           )}
 
-          {/* ── ARTICLES / VIDEO FEED (Hidden in 'लाइव' tab so that only Live Stream is visible) ── */}
+          {/* ── ARTICLES FEED (Hidden in 'लाइव' tab so that only Live Stream is visible) ── */}
           {activeCategory === 'लाइव' ? (
             !showLiveInFeed && (
               <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
@@ -870,7 +847,7 @@ export default function HomePage() {
             <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
-                {activeCategory === 'वीडियो' ? 'अभी कोई वीडियो खबर उपलब्ध नहीं है' : activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                {activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
               <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
@@ -882,13 +859,6 @@ export default function HomePage() {
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
                       <img className="hero-img" src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} alt={filteredArticles[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       
-                      {/* Play badge if in video mode or has video */}
-                      {(activeCategory === 'वीडियो' || filteredArticles[0].videoUrl || filteredArticles[0].category === 'वीडियो') && (
-                        <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(239, 68, 68, 0.9)', color: '#fff', borderRadius: '50%', width: '44px', height: '44px', display: 'grid', placeItems: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}>
-                          ▶
-                        </div>
-                      )}
-
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.7))', padding: '40px 20px 16px' }}>
                         <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', marginBottom: '8px' }}>
                           {filteredArticles[0].category || 'ताज़ा खबर'}
@@ -929,13 +899,8 @@ export default function HomePage() {
                           </div>
                         </div>
                         {item.image && (
-                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2', position: 'relative' }}>
+                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
                             <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            {(activeCategory === 'वीडियो' || item.videoUrl || item.category === 'वीडियो') && (
-                              <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '15px' }}>
-                                ▶
-                              </span>
-                            )}
                           </div>
                         )}
                       </Link>
