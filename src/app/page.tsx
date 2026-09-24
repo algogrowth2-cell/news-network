@@ -21,6 +21,7 @@ interface ArticleItem {
   slug?: string;
   status?: string;
   tags?: string[];
+  videoUrl?: string;
 }
 
 interface AdItem {
@@ -56,6 +57,14 @@ interface MarketRates {
   silver: string;
 }
 
+interface LiveBlogData {
+  title: string;
+  siteId: string;
+  youtubeId: string;
+  isActive: boolean;
+  updates?: { id: string; time: string; update: string }[];
+}
+
 const DEFAULT_RASHI_LIST = [
   { id: 'aries', name: 'मेष', sign: '♈' },
   { id: 'taurus', name: 'वृषभ', sign: '♉' },
@@ -75,6 +84,8 @@ const TRENDING_TAGS = ["बजट सत्र", "पंचायत चुन�
 
 const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'होम', icon: '🏠' },
+  { key: 'लाइव', icon: '🔴' },
+  { key: 'वीडियो', icon: '📹' },
   { key: 'राजनीति', icon: '🏛️' },
   { key: 'व्यापार', icon: '📈' },
   { key: 'स्वास्थ्य', icon: '🩺' },
@@ -82,7 +93,6 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'राज्य', icon: '🇮🇳' },
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'ई-पेपर', icon: '📄' },
-  { key: 'वीडियो', icon: '📹' },
   { key: 'अपराध', icon: '🚨' },
   { key: 'खेल', icon: '🏏' },
 ];
@@ -101,6 +111,9 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTrendTag, setActiveTrendTag] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
+
+  // Live Stream Session State
+  const [liveSession, setLiveSession] = useState<LiveBlogData | null>(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -138,7 +151,6 @@ export default function HomePage() {
   const handleCategoryClick = (cat: string) => {
     if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
-    if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
     if (cat === 'सर्च') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
@@ -202,6 +214,21 @@ export default function HomePage() {
       }
     });
 
+    // Live Stream check for this portal or all network
+    const unsubLive = onSnapshot(doc(db, 'live_blogs', activeSiteSlug), (snap) => {
+      if (snap.exists() && snap.data().isActive) {
+        setLiveSession(snap.data() as LiveBlogData);
+      } else {
+        onSnapshot(doc(db, 'live_blogs', 'all'), (allSnap) => {
+          if (allSnap.exists() && allSnap.data().isActive) {
+            setLiveSession(allSnap.data() as LiveBlogData);
+          } else {
+            setLiveSession(null);
+          }
+        });
+      }
+    });
+
     async function loadData() {
       setLoading(true);
       try {
@@ -257,14 +284,14 @@ export default function HomePage() {
       setRashifalData(map);
     });
 
-    return () => { unsubSite(); unsubRashifal(); unsubClassifieds(); };
+    return () => { unsubSite(); unsubLive(); unsubRashifal(); unsubClassifieds(); };
   }, []);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
-  // ── FIX: Smart Trending Tag & Category Filter ──
+  // ── Smart Trending Tag & Category Filter ──
   const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
@@ -299,7 +326,22 @@ export default function HomePage() {
       return contentStr.includes(tag.toLowerCase());
     }
 
-    // 2. Normal Category Filter
+    // 2. Live Tab Filter: Live mode shows active live stream + breaking news
+    if (activeCategory === 'लाइव') {
+      return true;
+    }
+
+    // 3. Video Category Filter: Shows video articles in feed
+    if (activeCategory === 'वीडियो') {
+      const isVideo = art.category?.toLowerCase() === 'video' || 
+                      art.category === 'वीडियो' || 
+                      !!art.videoUrl || 
+                      art.title?.toLowerCase().includes('video') ||
+                      art.title?.includes('वीडियो');
+      return isVideo;
+    }
+
+    // 4. Normal Category Filter
     const matchesCategory =
       activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
@@ -315,6 +357,11 @@ export default function HomePage() {
     const matchesSearch = !cleanSearch || (art.title && art.title.toLowerCase().includes(cleanSearch)) || (art.titleHi && art.titleHi.toLowerCase().includes(cleanSearch)) || (art.summary && art.summary.toLowerCase().includes(cleanSearch));
     return matchesCategory && matchesSearch;
   });
+
+  // Check whether Live Video Feed should show on top:
+  // Shows in 'होम' (News feed), 'ताज़ा खबरें', 'वीडियो' (Video feed), and 'लाइव' (Live section)!
+  const showLiveInFeed = !!(liveSession && liveSession.isActive && liveSession.youtubeId && 
+    (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'वीडियो' || activeCategory === 'लाइव'));
 
   const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
@@ -515,15 +562,20 @@ export default function HomePage() {
           <nav className="nav-pills hide-scrollbar">
             {[
               { key: 'होम', emoji: '🏠' },
+              { key: 'लाइव', emoji: '🔴' },
+              { key: 'वीडियो', emoji: '📹' },
               { key: 'ताज़ा खबरें', emoji: '⚡' },
               { key: 'शोक संदेश', emoji: '🕯️' },
               { key: 'ई-पेपर', emoji: '📄' },
-              { key: 'वीडियो', emoji: '📹' },
             ].map(({ key, emoji }) => {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button key={key} className="nav-pill" onClick={() => handleCategoryClick(key)}
-                  style={{ color: isActive ? primary : '#555', background: isActive ? tint(primary, 0.08) : 'transparent', fontWeight: isActive ? 700 : 500 }}>
+                  style={{ 
+                    color: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#555', 
+                    background: isActive ? tint(primary, 0.08) : 'transparent', 
+                    fontWeight: isActive ? 700 : 500 
+                  }}>
                   <span style={{ fontSize: '13px' }}>{emoji}</span>{key}
                 </button>
               );
@@ -574,12 +626,12 @@ export default function HomePage() {
               display: 'none', 
               alignItems: 'center', 
               gap: '6px', 
-              flex: 1,
-              minWidth: 0,
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x',
-              padding: '4px 2px 4px 6px'
+              flex: 1, 
+              minWidth: 0, 
+              overflowX: 'auto', 
+              WebkitOverflowScrolling: 'touch', 
+              touchAction: 'pan-x', 
+              padding: '4px 2px 4px 6px' 
             }}
           >
             <button onClick={() => setSearchModalOpen(true)} aria-label="सर्च"
@@ -645,8 +697,8 @@ export default function HomePage() {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button key={key} className="cat-btn" onClick={() => handleCategoryClick(key)}
-                  style={{ color: isActive ? primary : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: isActive ? 600 : 500 }}>
-                  <span style={{ width: '30px', height: '30px', borderRadius: '8px', background: isActive ? primary : '#f0efec', color: isActive ? '#fff' : '#888', display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0, transition: 'background .15s ease, color .15s ease' }}>
+                  style={{ color: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: isActive ? 600 : 500 }}>
+                  <span style={{ width: '30px', height: '30px', borderRadius: '8px', background: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef444422' : '#f0efec', color: isActive ? '#fff' : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#888', display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0, transition: 'background .15s ease, color .15s ease' }}>
                     {icon}
                   </span>
                   {key}
@@ -683,7 +735,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        {/* ── CENTER COLUMN ── */}
+        {/* ── CENTER COLUMN (MAIN NEWS FEED, VIDEO FEED & LIVE FEED) ── */}
         <main style={{ minWidth: 0 }}>
 
           <div className="ad-leader">
@@ -697,6 +749,58 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {/* 🔴 LIVE VIDEO FEED CARD: AUTOMATICALLY EMBEDDED IN ARTICLE FEED, VIDEO FEED & LIVE SECTION */}
+          {showLiveInFeed && (
+            <div className="card" style={{ marginBottom: '20px', border: '2px solid #ef4444', overflow: 'hidden', boxShadow: '0 4px 22px rgba(239, 68, 68, 0.18)' }}>
+              
+              <div style={{ backgroundColor: '#ef4444', color: '#fff', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#fff', animation: 'spin 1.2s linear infinite' }} />
+                  <b style={{ fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    🔴 LIVE STREAM NOW PLAYING
+                  </b>
+                </div>
+                <span style={{ fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.3)', padding: '3px 10px', borderRadius: '12px' }}>
+                  {siteConfig?.name || 'द लोकल लीडर'}
+                </span>
+              </div>
+
+              <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000' }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${liveSession!.youtubeId}?autoplay=1&mute=0`}
+                  title={liveSession!.title || 'YouTube Live News'}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+
+              <div style={{ padding: '14px 18px', backgroundColor: '#fff' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '0 0 8px', color: '#0f172a', lineHeight: 1.35 }}>
+                  {liveSession!.title}
+                </h3>
+
+                {liveSession!.updates && liveSession!.updates.length > 0 && (
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #e2e8f0' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
+                      ⚡ ताज़ा लाइव अपडेट्स (Live Updates):
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {[...liveSession!.updates].slice(-3).reverse().map((u) => (
+                        <div key={u.id} style={{ fontSize: '13px', color: '#334155', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                          <span style={{ color: '#ef4444', fontWeight: 800, flexShrink: 0 }}>[{u.time}]</span>
+                          <span>{u.update}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── TRENDING TAGS ── */}
           <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
@@ -733,17 +837,36 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ── ARTICLES FEED ── */}
+          {/* Section Heading for Video or Live Mode */}
+          {activeCategory === 'वीडियो' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
+              <span style={{ fontSize: '20px' }}>📹</span>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                वीडियो एवं लाइव बुलेटिन
+              </h2>
+            </div>
+          )}
+
+          {activeCategory === 'लाइव' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#ef4444', margin: 0 }}>
+                लाइव कवरेज एवं ब्रेकिंग बुलेटिन
+              </h2>
+            </div>
+          )}
+
+          {/* ── ARTICLES / VIDEO FEED ── */}
           {loading ? (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
               <span style={{ color: '#999', fontSize: '14px' }}>खबरें लोड हो रही हैं…</span>
             </div>
-          ) : filteredArticles.length === 0 ? (
+          ) : filteredArticles.length === 0 && !showLiveInFeed ? (
             <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
-                {activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                {activeCategory === 'लाइव' ? 'अभी कोई लाइव स्ट्रीम सक्रिय नहीं है' : activeCategory === 'वीडियो' ? 'अभी कोई वीडियो खबर उपलब्ध नहीं है' : activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
               <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
@@ -754,6 +877,14 @@ export default function HomePage() {
                   <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`}>
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
                       <img className="hero-img" src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} alt={filteredArticles[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      
+                      {/* Play badge if video */}
+                      {(filteredArticles[0].videoUrl || filteredArticles[0].category === 'वीडियो') && (
+                        <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(239, 68, 68, 0.9)', color: '#fff', borderRadius: '50%', width: '42px', height: '42px', display: 'grid', placeItems: 'center', fontSize: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                          ▶
+                        </div>
+                      )}
+
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.7))', padding: '40px 20px 16px' }}>
                         <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', marginBottom: '8px' }}>
                           {filteredArticles[0].category || 'ताज़ा खबर'}
@@ -794,8 +925,13 @@ export default function HomePage() {
                           </div>
                         </div>
                         {item.image && (
-                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
+                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2', position: 'relative' }}>
                             <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {(item.videoUrl || item.category === 'वीडियो') && (
+                              <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '14px' }}>
+                                ▶
+                              </span>
+                            )}
                           </div>
                         )}
                       </Link>
@@ -834,7 +970,6 @@ export default function HomePage() {
         {/* ── RIGHT SIDEBAR ── */}
         <aside className="col-right">
 
-          {/* 1. Most Read Articles Widget */}
           <div className="card" style={{ marginBottom: '18px' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #eae8e4', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -855,7 +990,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 2. Classified Ads Widget */}
           <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -907,7 +1041,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 3. Rashifal Widget */}
           <div className="card" style={{ marginBottom: '18px', padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
               <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${tint(primary, 0.12)}, ${tint(primary, 0.04)})`, display: 'grid', placeItems: 'center', fontSize: '20px', flexShrink: 0 }}>{activeRashiItem.sign}</span>
@@ -925,7 +1058,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* 4. Sponsored Ad Slot (300x250) */}
           <div className="card" style={{ height: '260px', display: 'grid', placeItems: 'center' }}>
             {sidebarAd ? (
               <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)} style={{ display: 'block', width: '100%', height: '100%' }}>
