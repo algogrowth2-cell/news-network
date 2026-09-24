@@ -238,7 +238,6 @@ export default function HomePage() {
     }
     loadData();
 
-    // 4. Fetch Classifieds for Right Sidebar
     const unsubClassifieds = onSnapshot(collection(db, 'classifieds'), (snap) => {
       const list: ClassifiedItem[] = [];
       snap.forEach((d) => {
@@ -296,14 +295,21 @@ export default function HomePage() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { max-width: 100vw; overflow-x: hidden; }
+        html, body { max-width: 100vw; overflow-x: hidden; top: 0 !important; }
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── FIX: Force light theme on LanguageTranslator & Keep Right Column Static English ── */
+        /* ── PREVENT GOOGLE TRANSLATE FROM BREAKING LAYOUT & HEADER ── */
+        body { top: 0px !important; position: static !important; }
+        .goog-te-banner-frame { display: none !important; }
+        .skiptranslate { display: none !important; }
+        body > .skiptranslate { display: none !important; }
+        #goog-gt-tt { display: none !important; top: 0px !important; }
+
+        /* ── FIX: Force light theme on LanguageTranslator Dropdown ── */
         .lang-fix div,
         .lang-fix span,
         .lang-fix p,
@@ -338,13 +344,7 @@ export default function HomePage() {
           color: #1a1a1a !important;
         }
 
-        /* Prevents right English language labels from auto translating */
-        .lang-fix [translate="no"],
-        .lang-fix .notranslate,
-        .lang-fix span:last-child {
-          translate: no !important;
-        }
-
+        /* ── 3-COLUMN RESPONSIVE SHELL ── */
         .shell {
           max-width: 1400px; margin: 0 auto; display: grid;
           grid-template-columns: 230px minmax(0, 1fr) 310px;
@@ -385,7 +385,6 @@ export default function HomePage() {
         }
         .ad-leader a, .ad-leader img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-        /* In-feed Ad Banner styling */
         .infeed-ad-banner {
           background: #fafaf8;
           border-top: 1px dashed #e2e8f0;
@@ -726,7 +725,6 @@ export default function HomePage() {
                 </article>
               )}
 
-              {/* Loop over articles & insert In-Feed Ads every 3 news */}
               {filteredArticles.slice(1).map((item, index) => {
                 const showAd = (index + 1) % 3 === 0;
                 const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
@@ -753,7 +751,6 @@ export default function HomePage() {
                       </Link>
                     </article>
 
-                    {/* Dynamic In-Feed Ad Banner Slot */}
                     {showAd && (
                       <div className="infeed-ad-banner">
                         <span style={{ fontSize: '9.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', alignSelf: 'flex-start' }}>
@@ -808,7 +805,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR */}
+          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR (NO POST ADS BUTTON) */}
           <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -824,17 +821,20 @@ export default function HomePage() {
 
             <div style={{ padding: '12px 16px' }}>
               {classifiedAds.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '16px 0', color: '#999', fontSize: '12.5px' }}>
-                  <p style={{ margin: '0 0 8px' }}>प्रॉपर्टी, वाहन, नौकरी व अन्य विज्ञापन</p>
-                  <Link href={`/classifieds?site=${currentSlug}`} style={{ display: 'inline-block', background: primary, color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '11.5px', fontWeight: 600 }}>
-                    + विज्ञापन पोस्ट करें
-                  </Link>
+                <div style={{ textAlign: 'center', padding: '18px 12px', background: '#fafaf8', border: '1px dashed #d1d5db', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px', opacity: 0.6 }}>📢</span>
+                  <p style={{ margin: '0 0 4px', fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>
+                    अभी कोई सक्रिय क्लासिफाइड विज्ञापन नहीं है
+                  </p>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    विज्ञापन हेतु विज्ञापनदाता पोर्टल से संपर्क करें
+                  </span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {classifiedAds.map((c) => (
                     <Link key={c.id} href={`/classifieds?site=${currentSlug}`} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f5f4f1' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: '#f1f5f9', display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '6px', background: '#f1f5f9', display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
                         {c.imageUrl ? (
                           <img src={c.imageUrl} alt={c.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
@@ -842,7 +842,7 @@ export default function HomePage() {
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '10.5px', color: primary, fontWeight: 700, textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: '10px', color: primary, fontWeight: 700, textTransform: 'uppercase' }}>
                           {c.category || 'वर्गीकृत'} {c.city ? `· ${c.city}` : ''}
                         </div>
                         <h5 style={{ fontSize: '12.5px', fontWeight: 600, color: '#1a1a1a', margin: '1px 0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
