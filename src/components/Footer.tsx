@@ -379,7 +379,7 @@ export default function Footer({
             <div style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '18px' }}>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.location(primaryColor)}</span>
-                <span>द लोकल लीडर भवन,<br />स्टेशन रोड, भरूच — 392001</span>
+                <span>1st Floor Shreenath Complex Old A.B Road, Kishanganj Dr. Ambedkar Nagar (Mhow) District: Indore (Madhya Pradesh) Pin Code - 453441</span>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.email(primaryColor)}</span>
