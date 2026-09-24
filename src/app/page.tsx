@@ -302,47 +302,12 @@ export default function HomePage() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── PREVENT GOOGLE TRANSLATE FROM BREAKING LAYOUT & HEADER ── */
+        /* ── PREVENT GOOGLE TRANSLATE BANNER SHIFT ── */
         body { top: 0px !important; position: static !important; }
         .goog-te-banner-frame { display: none !important; }
         .skiptranslate { display: none !important; }
         body > .skiptranslate { display: none !important; }
         #goog-gt-tt { display: none !important; top: 0px !important; }
-
-        /* ── FIX: Force light theme on LanguageTranslator Dropdown ── */
-        .lang-fix div,
-        .lang-fix span,
-        .lang-fix p,
-        .lang-fix a,
-        .lang-fix button,
-        .lang-fix ul,
-        .lang-fix ol,
-        .lang-fix li,
-        .lang-fix label,
-        .lang-fix input,
-        .lang-fix select,
-        .lang-fix option,
-        .lang-fix [role="listbox"],
-        .lang-fix [role="menu"],
-        .lang-fix [role="option"],
-        .lang-fix [role="menuitem"],
-        .lang-fix [role="button"] {
-          background-color: #ffffff !important;
-          color: #333333 !important;
-          opacity: 1 !important;
-        }
-        .lang-fix button:hover,
-        .lang-fix button:hover > span,
-        .lang-fix li:hover,
-        .lang-fix a:hover,
-        .lang-fix [role="option"]:hover,
-        .lang-fix [role="menuitem"]:hover,
-        .lang-fix [role="button"]:hover,
-        .lang-fix [role="button"]:hover > span,
-        .lang-fix option:hover {
-          background-color: #f0efec !important;
-          color: #1a1a1a !important;
-        }
 
         /* ── 3-COLUMN RESPONSIVE SHELL ── */
         .shell {
@@ -367,15 +332,20 @@ export default function HomePage() {
 
         .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
 
+        /* ── HEADER ROW OVERFLOW FIX ── */
         .header-row {
           max-width: 1400px; margin: 0 auto; display: flex; align-items: center;
-          justify-content: space-between; gap: 14px; padding: 0 24px; height: 68px; width: 100%;
+          justify-content: space-between; gap: 10px; padding: 0 20px; height: 68px; width: 100%;
         }
-        .nav-pills { display: flex; align-items: center; gap: 6px; margin: 0 20px; flex: 1; justify-content: center; }
+        .nav-pills { 
+          display: flex; align-items: center; gap: 4px; margin: 0 10px; 
+          flex: 1; justify-content: center; min-width: 0; overflow-x: auto;
+        }
         .nav-pill {
-          display: flex; align-items: center; gap: 5px; background: none; border: none;
-          font-size: 13.5px; font-weight: 600; padding: 6px 14px; border-radius: 20px;
+          display: flex; align-items: center; gap: 4px; background: none; border: none;
+          font-size: 13px; font-weight: 600; padding: 6px 11px; border-radius: 20px;
           cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease;
+          flex-shrink: 0;
         }
         .nav-pill:hover { background: #f5f4f1; }
 
@@ -397,8 +367,8 @@ export default function HomePage() {
         }
 
         .portal-link {
-          display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px;
-          font-weight: 600; padding: 6px 13px; border-radius: 20px; white-space: nowrap;
+          display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+          font-weight: 600; padding: 5px 10px; border-radius: 20px; white-space: nowrap;
           transition: opacity .15s ease;
         }
         .portal-link:hover { opacity: .85; }
@@ -409,8 +379,11 @@ export default function HomePage() {
         @media (max-width: 1280px) {
           .shell { grid-template-columns: 210px minmax(0,1fr); gap: 18px; padding: 16px 18px 40px; }
           .col-right { display: none; }
+          .portal-links-wrap { display: none !important; }
         }
-        @media (max-width: 1060px) { .portal-links-wrap { display: none !important; } }
+        @media (max-width: 1100px) {
+          .nav-pills { display: none !important; }
+        }
         @media (max-width: 860px) {
           .shell { grid-template-columns: 1fr; padding: 14px 12px 36px; }
           .col-left {
@@ -497,7 +470,7 @@ export default function HomePage() {
             })}
           </nav>
 
-          {/* ── desktop tools ── */}
+          {/* ── desktop tools (shrink: 0 prevents cutting) ── */}
           <div className="desktop-tools" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             <div className="portal-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
@@ -509,7 +482,7 @@ export default function HomePage() {
             </div>
 
             <button onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12.5px' }}>
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12px', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
               खोजें
             </button>
@@ -517,17 +490,18 @@ export default function HomePage() {
             <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            <div className="lang-fix" style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
+            
+            <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
 
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: tint(primary, 0.06), border: `1px solid ${tint(primary, 0.25)}`, borderRadius: '22px', padding: '5px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: tint(primary, 0.06), border: `1px solid ${tint(primary, 0.25)}`, borderRadius: '22px', padding: '5px 12px', flexShrink: 0 }}>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 6) : 'यूज़र'}</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', fontWeight: 800, lineHeight: 1 }}>✕</button>
               </div>
             ) : (
-              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '22px', padding: '7px 18px', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block' }}>
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '22px', padding: '7px 16px', fontSize: '12.5px', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
@@ -542,7 +516,7 @@ export default function HomePage() {
             <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            <div className="lang-fix" style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
+            <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
               <LanguageTranslator />
             </div>
             {readerUser ? (
@@ -725,6 +699,7 @@ export default function HomePage() {
                 </article>
               )}
 
+              {/* Loop over articles & insert In-Feed Ads every 3 news */}
               {filteredArticles.slice(1).map((item, index) => {
                 const showAd = (index + 1) % 3 === 0;
                 const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
@@ -805,7 +780,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR (NO POST ADS BUTTON) */}
+          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR (NO BUTTON, CLEAN SPACE) */}
           <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
