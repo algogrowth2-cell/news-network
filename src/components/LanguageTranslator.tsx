@@ -29,6 +29,7 @@ export default function LanguageTranslator() {
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // 1. Check existing cookie & init Google Translate
   useEffect(() => {
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
@@ -61,6 +62,7 @@ export default function LanguageTranslator() {
     }
   }, []);
 
+  // 2. Click outside listener for desktop
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -71,6 +73,7 @@ export default function LanguageTranslator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 3. Switch Language
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
     setIsOpen(false);
@@ -103,10 +106,10 @@ export default function LanguageTranslator() {
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
       
-      {/* Hidden Google Translate container */}
+      {/* Hidden container for Google Translate widget */}
       <div id="google_translate_element" style={{ display: 'none' }} />
 
-      {/* Button */}
+      {/* Trigger Button */}
       <button
         type="button"
         onClick={(e) => {
@@ -116,72 +119,104 @@ export default function LanguageTranslator() {
         className="notranslate"
         translate="no"
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '5px',
           backgroundColor: '#f1f5f9',
           border: '1px solid #cbd5e1',
           borderRadius: '20px',
           padding: '6px 12px',
-          fontSize: '12.5px',
+          fontSize: '12px',
           fontWeight: 600,
           color: '#334155',
           cursor: 'pointer',
-          whiteSpace: 'nowrap'
+          whiteSpace: 'nowrap',
+          userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
       >
-        <span>🌐</span>
+        <span style={{ fontSize: '14px' }}>🌐</span>
         <span>{currentLangObj.native}</span>
-        <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
+        <span style={{ fontSize: '9px', color: '#94a3b8' }}>▼</span>
       </button>
 
-      {/* Dropdown Menu (Mobile + Desktop friendly overlay) */}
+      {/* POPUP & MOBILE MODAL */}
       {isOpen && (
         <>
-          {/* Mobile backdrop to easily close */}
-          <div 
+          {/* Full Screen Dim Backdrop */}
+          <div
             onClick={() => setIsOpen(false)}
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 9998,
-              background: 'transparent'
+              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              backdropFilter: 'blur(2px)',
+              zIndex: 99998
             }}
           />
 
+          {/* Modal Container: Mobile me Bottom Drawer, Desktop me Dropdown */}
           <div
+            className="lang-modal-box"
             style={{
-              position: 'absolute',
-              right: 0,
-              top: 'calc(100% + 6px)',
-              width: '230px',
-              maxHeight: '340px',
               backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              boxShadow: '0 12px 36px rgba(0,0,0,0.18)',
+              borderRadius: '16px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
               zIndex: 99999,
-              overflowY: 'auto',
-              padding: '6px 0'
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
             }}
           >
-            <div 
+            {/* Header */}
+            <div
               className="notranslate"
               translate="no"
-              style={{ 
-                padding: '8px 16px', 
-                borderBottom: '1px solid #f1f5f9', 
-                fontSize: '11px', 
-                fontWeight: 700, 
-                color: '#64748b', 
-                textTransform: 'uppercase', 
-                letterSpacing: '0.5px' 
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 18px',
+                borderBottom: '1px solid #f1f5f9',
+                backgroundColor: '#fafaf9'
               }}
             >
-              Select Language
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '16px' }}>🌐</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                  भाषा चुनें / Select Language
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '26px',
+                  height: '26px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: '13px',
+                  color: '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Language Items List */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                overflowY: 'auto',
+                maxHeight: '360px',
+                padding: '6px 0'
+              }}
+            >
               {LANGUAGES.map((lang) => {
                 const isSelected = selectedLang === lang.code;
                 return (
@@ -193,21 +228,44 @@ export default function LanguageTranslator() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      padding: '9px 16px',
+                      padding: '12px 20px',
                       border: 'none',
-                      backgroundColor: isSelected ? '#f8fafc' : 'transparent',
+                      backgroundColor: isSelected ? '#fff7ed' : 'transparent',
                       cursor: 'pointer',
                       width: '100%',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      borderBottom: '1px solid #f8fafc',
+                      transition: 'background 0.15s ease'
                     }}
                   >
-                    <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#ea580c' : '#1e293b' }}>
-                      {lang.native}
-                    </span>
+                    {/* Left Column: Native */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {isSelected ? (
+                        <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '13px' }}>✓</span>
+                      ) : (
+                        <span style={{ width: '12px' }} />
+                      )}
+                      <span
+                        style={{
+                          fontSize: '14.5px',
+                          fontWeight: isSelected ? 700 : 500,
+                          color: isSelected ? '#ea580c' : '#1e293b'
+                        }}
+                      >
+                        {lang.native}
+                      </span>
+                    </div>
+
+                    {/* Right Column: English Strictly Locked */}
                     <span
                       className="notranslate"
                       translate="no"
-                      style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, letterSpacing: '0.2px' }}
+                      style={{
+                        fontSize: '12.5px',
+                        color: isSelected ? '#ea580c' : '#64748b',
+                        fontWeight: 600,
+                        letterSpacing: '0.3px'
+                      }}
                     >
                       {lang.english}
                     </span>
@@ -216,6 +274,41 @@ export default function LanguageTranslator() {
               })}
             </div>
           </div>
+
+          <style jsx>{`
+            /* Desktop View: Normal Anchor Dropdown */
+            @media (min-width: 769px) {
+              .lang-modal-box {
+                position: absolute !important;
+                right: 0 !important;
+                top: calc(100% + 8px) !important;
+                width: 250px !important;
+              }
+            }
+
+            /* Mobile View: Centered / Bottom Sheet Modal */
+            @media (max-width: 768px) {
+              .lang-modal-box {
+                position: fixed !important;
+                left: 12px !important;
+                right: 12px !important;
+                bottom: 16px !important;
+                max-height: 80vh !important;
+                animation: slideUp 0.25s ease-out !important;
+              }
+            }
+
+            @keyframes slideUp {
+              from {
+                transform: translateY(100%);
+                opacity: 0;
+              }
+              to {
+                transform: translateY(0);
+                opacity: 1;
+              }
+            }
+          `}</style>
         </>
       )}
     </div>
