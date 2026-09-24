@@ -309,7 +309,7 @@ export default function HomePage() {
         body > .skiptranslate { display: none !important; }
         #goog-gt-tt { display: none !important; top: 0px !important; }
 
-        /* ── 3-COLUMN RESPONSIVE SHELL ── */
+        /* ── 3-COLUMN SHELL ── */
         .shell {
           max-width: 1400px; margin: 0 auto; display: grid;
           grid-template-columns: 230px minmax(0, 1fr) 310px;
@@ -332,7 +332,6 @@ export default function HomePage() {
 
         .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
 
-        /* ── HEADER ROW OVERFLOW FIX ── */
         .header-row {
           max-width: 1400px; margin: 0 auto; display: flex; align-items: center;
           justify-content: space-between; gap: 10px; padding: 0 20px; height: 68px; width: 100%;
@@ -376,16 +375,21 @@ export default function HomePage() {
         .hero-img { transition: transform .4s ease; }
         .hero-img:hover { transform: scale(1.03); }
 
+        /* ── RESPONSIVE RULES (DESKTOP SAME, MOBILE FIXED) ── */
         @media (max-width: 1280px) {
-          .shell { grid-template-columns: 210px minmax(0,1fr); gap: 18px; padding: 16px 18px 40px; }
-          .col-right { display: none; }
           .portal-links-wrap { display: none !important; }
         }
         @media (max-width: 1100px) {
           .nav-pills { display: none !important; }
         }
-        @media (max-width: 860px) {
-          .shell { grid-template-columns: 1fr; padding: 14px 12px 36px; }
+        
+        /* Mobile View - Right sidebar will stack cleanly below feed without disappearing */
+        @media (max-width: 900px) {
+          .shell { 
+            grid-template-columns: 1fr !important; 
+            padding: 14px 12px 36px !important;
+            gap: 20px !important;
+          }
           .col-left {
             position: fixed; top: 0; bottom: 0; left: 0; width: min(80vw, 300px);
             background: #fff; z-index: 400; padding: 20px 16px; max-height: none;
@@ -394,15 +398,26 @@ export default function HomePage() {
           }
           .col-left.open { transform: translateX(0); }
           .burger { display: block; }
-          .nav-pills { display: none !important; }
           .desktop-tools { display: none !important; }
           .mobile-tools { display: flex !important; }
           .header-row { padding: 0 10px; height: 58px; gap: 6px; }
           .ad-leader { height: 72px; border-radius: 10px; margin-bottom: 14px; }
-          .site-name { font-size: 14px !important; max-width: 100px; }
+          .site-name { font-size: 14px !important; max-width: 110px; }
           .site-tag { display: none !important; }
+
+          /* Right sidebar visible below feed in mobile */
+          .col-right {
+            display: block !important;
+            position: static !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin-top: 10px;
+          }
         }
-        @media (min-width: 861px) { .mobile-tools { display: none !important; } }
+
+        @media (min-width: 901px) { 
+          .mobile-tools { display: none !important; } 
+        }
       `}</style>
 
       {/* ═══ 1. MARKET TICKER ═══ */}
@@ -470,7 +485,7 @@ export default function HomePage() {
             })}
           </nav>
 
-          {/* ── desktop tools (shrink: 0 prevents cutting) ── */}
+          {/* ── Desktop Tools ── */}
           <div className="desktop-tools" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             <div className="portal-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
@@ -507,25 +522,29 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── mobile tools ── */}
-          <div className="mobile-tools hide-scrollbar" style={{ display: 'none', alignItems: 'center', gap: '6px', marginLeft: 'auto', overflowX: 'auto' }}>
+          {/* ── Mobile Tools (Visible on Phone) ── */}
+          <div className="mobile-tools" style={{ display: 'none', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0, position: 'relative', zIndex: 300 }}>
             <button onClick={() => setSearchModalOpen(true)} aria-label="सर्च"
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
-            <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
+            
+            <div style={{ flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
-            <div style={{ flexShrink: 0, position: 'relative', zIndex: 999, overflow: 'visible' }}>
+
+            {/* Mobile Language Translator container */}
+            <div style={{ flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
+
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 7px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
               </div>
             ) : (
-              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 12px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 10px', fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
@@ -607,7 +626,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        {/* ── CENTER COLUMN ── */}
+        {/* ── CENTER COLUMN (MAIN NEWS FEED) ── */}
         <main style={{ minWidth: 0 }}>
 
           <div className="ad-leader">
@@ -657,7 +676,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ── ARTICLES FEED WITH CONTINUOUS SCROLL & IN-FEED ADS ── */}
+          {/* ── ARTICLES FEED ── */}
           {loading ? (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
@@ -699,7 +718,6 @@ export default function HomePage() {
                 </article>
               )}
 
-              {/* Loop over articles & insert In-Feed Ads every 3 news */}
               {filteredArticles.slice(1).map((item, index) => {
                 const showAd = (index + 1) % 3 === 0;
                 const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
@@ -756,7 +774,7 @@ export default function HomePage() {
           )}
         </main>
 
-        {/* ── RIGHT SIDEBAR ── */}
+        {/* ── RIGHT SIDEBAR (Desktop Side, Mobile: Stacks Below News Feed) ── */}
         <aside className="col-right">
 
           {/* 1. Most Read Articles Widget */}
@@ -780,7 +798,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 2. LIVE CLASSIFIED ADS WIDGET IN RIGHT SIDEBAR (NO BUTTON, CLEAN SPACE) */}
+          {/* 2. Classified Ads Widget */}
           <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

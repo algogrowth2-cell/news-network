@@ -29,9 +29,7 @@ export default function LanguageTranslator() {
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 1. Google Translate script load aur initialize karna
   useEffect(() => {
-    // Current cookie se selected language read karna
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
       if (match && match[2]) {
@@ -39,7 +37,6 @@ export default function LanguageTranslator() {
       }
     }
 
-    // Google translate init function define karna
     window.googleTranslateElementInit = () => {
       if (window.google && window.google.translate) {
         new window.google.translate.TranslateElement(
@@ -53,7 +50,6 @@ export default function LanguageTranslator() {
       }
     };
 
-    // Script inject karna agar pehle se nahi hai
     if (!document.getElementById('google-translate-script')) {
       const script = document.createElement('script');
       script.id = 'google-translate-script';
@@ -65,7 +61,6 @@ export default function LanguageTranslator() {
     }
   }, []);
 
-  // Click outside se dropdown band karna
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -76,14 +71,12 @@ export default function LanguageTranslator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 2. Language switch karne ka bulletproof function
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
     setIsOpen(false);
 
     if (typeof window === 'undefined') return;
 
-    // Cookie set karein sabhi domain levels par
     const host = window.location.hostname;
     document.cookie = `googtrans=/hi/${langCode}; path=/;`;
     document.cookie = `googtrans=/auto/${langCode}; path=/;`;
@@ -96,13 +89,11 @@ export default function LanguageTranslator() {
       document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${rootDomain};`;
     }
 
-    // Native Google combo dhoondh kar change dispatch karein
     const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (combo) {
       combo.value = langCode;
       combo.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
-      // Agar direct combo na mile toh reload karke cookie se apply karein
       window.location.reload();
     }
   };
@@ -112,13 +103,16 @@ export default function LanguageTranslator() {
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
       
-      {/* Hidden container jahan Google Translate apna real select element banata hai */}
+      {/* Hidden Google Translate container */}
       <div id="google_translate_element" style={{ display: 'none' }} />
 
       {/* Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="notranslate"
         translate="no"
         style={{
@@ -128,7 +122,7 @@ export default function LanguageTranslator() {
           backgroundColor: '#f1f5f9',
           border: '1px solid #cbd5e1',
           borderRadius: '20px',
-          padding: '6px 14px',
+          padding: '6px 12px',
           fontSize: '12.5px',
           fontWeight: 600,
           color: '#334155',
@@ -141,81 +135,88 @@ export default function LanguageTranslator() {
         <span style={{ fontSize: '10px', color: '#94a3b8' }}>▼</span>
       </button>
 
-      {/* Dropdown Box */}
+      {/* Dropdown Menu (Mobile + Desktop friendly overlay) */}
       {isOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 'calc(100% + 8px)',
-            width: '230px',
-            maxHeight: '340px',
-            backgroundColor: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-            zIndex: 9999,
-            overflowY: 'auto',
-            padding: '8px 0'
-          }}
-        >
+        <>
+          {/* Mobile backdrop to easily close */}
           <div 
-            className="notranslate"
-            translate="no"
-            style={{ 
-              padding: '8px 16px', 
-              borderBottom: '1px solid #f1f5f9', 
-              fontSize: '11px', 
-              fontWeight: 700, 
-              color: '#64748b', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px' 
+            onClick={() => setIsOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9998,
+              background: 'transparent'
+            }}
+          />
+
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 'calc(100% + 6px)',
+              width: '230px',
+              maxHeight: '340px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              boxShadow: '0 12px 36px rgba(0,0,0,0.18)',
+              zIndex: 99999,
+              overflowY: 'auto',
+              padding: '6px 0'
             }}
           >
-            Select Language
-          </div>
+            <div 
+              className="notranslate"
+              translate="no"
+              style={{ 
+                padding: '8px 16px', 
+                borderBottom: '1px solid #f1f5f9', 
+                fontSize: '11px', 
+                fontWeight: 700, 
+                color: '#64748b', 
+                textTransform: 'uppercase', 
+                letterSpacing: '0.5px' 
+              }}
+            >
+              Select Language
+            </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {LANGUAGES.map((lang) => {
-              const isSelected = selectedLang === lang.code;
-              return (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => changeLanguage(lang.code)}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '9px 16px',
-                    border: 'none',
-                    backgroundColor: isSelected ? '#f8fafc' : 'transparent',
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                    transition: 'background 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isSelected ? '#f8fafc' : 'transparent')}
-                >
-                  {/* Left Column: Regional Bhasha */}
-                  <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#ea580c' : '#1e293b' }}>
-                    {lang.native}
-                  </span>
-
-                  {/* Right Column: English Locked (translate="no") */}
-                  <span
-                    className="notranslate"
-                    translate="no"
-                    style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, letterSpacing: '0.2px' }}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {LANGUAGES.map((lang) => {
+                const isSelected = selectedLang === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => changeLanguage(lang.code)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '9px 16px',
+                      border: 'none',
+                      backgroundColor: isSelected ? '#f8fafc' : 'transparent',
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left'
+                    }}
                   >
-                    {lang.english}
-                  </span>
-                </button>
-              );
-            })}
+                    <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#ea580c' : '#1e293b' }}>
+                      {lang.native}
+                    </span>
+                    <span
+                      className="notranslate"
+                      translate="no"
+                      style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, letterSpacing: '0.2px' }}
+                    >
+                      {lang.english}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
