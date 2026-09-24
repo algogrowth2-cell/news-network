@@ -291,54 +291,44 @@ export default function HomePage() {
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
-  // ── Smart Trending Tag & Category Filter ──
+  // ── Smart Articles Filtering Logic ──
   const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
-    // 1. Trending Tag Filter
+    // 1. Agar user 'लाइव' tab par hai, to niche koi normal news nahi aayegi (Sirf Live Stream Card aayega)
+    if (activeCategory === 'लाइव') {
+      return false;
+    }
+
+    // 2. Trending Tag Filter
     if (activeTrendTag) {
       const tag = activeTrendTag.trim();
       const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
       
-      if (tag === 'बजट सत्र') {
-        return contentStr.includes('बजट') || contentStr.includes('सत्र') || art.category === 'व्यापार' || art.category === 'राजनीति';
-      }
-      if (tag === 'पंचायत चुनाव') {
-        return contentStr.includes('चुनाव') || contentStr.includes('पंचायत') || art.category === 'राजनीति';
-      }
-      if (tag === 'बारिश का मौसम') {
-        return contentStr.includes('बारिश') || contentStr.includes('मौसम') || art.category === 'राज्य' || art.category === 'जीवनशैली';
-      }
-      if (tag === 'मंडी भाव') {
-        return contentStr.includes('मंडी') || contentStr.includes('भाव') || contentStr.includes('बाजार') || art.category === 'व्यापार';
-      }
-      if (tag === 'भर्ती परिणाम') {
-        return contentStr.includes('भर्ती') || contentStr.includes('परीक्षा') || contentStr.includes('परिणाम') || art.category === 'शिक्षा' || art.category === 'राज्य';
-      }
-      if (tag === 'बिजली दर') {
-        return contentStr.includes('बिजली') || contentStr.includes('दर') || art.category === 'राज्य' || art.category === 'व्यापार';
-      }
-      if (tag === 'क्रिकेट लीग') {
-        return contentStr.includes('क्रिकेट') || contentStr.includes('मैच') || contentStr.includes('लीग') || art.category === 'खेल';
-      }
-
+      if (tag === 'बजट सत्र') return contentStr.includes('बजट') || contentStr.includes('सत्र') || art.category === 'व्यापार' || art.category === 'राजनीति';
+      if (tag === 'पंचायत चुनाव') return contentStr.includes('चुनाव') || contentStr.includes('पंचायत') || art.category === 'राजनीति';
+      if (tag === 'बारिश का मौसम') return contentStr.includes('बारिश') || contentStr.includes('मौसम') || art.category === 'राज्य' || art.category === 'जीवनशैली';
+      if (tag === 'मंडी भाव') return contentStr.includes('मंडी') || contentStr.includes('भाव') || contentStr.includes('बाजार') || art.category === 'व्यापार';
+      if (tag === 'भर्ती परिणाम') return contentStr.includes('भर्ती') || contentStr.includes('परीक्षा') || contentStr.includes('परिणाम') || art.category === 'शिक्षा' || art.category === 'राज्य';
+      if (tag === 'बिजली दर') return contentStr.includes('बिजली') || contentStr.includes('दर') || art.category === 'राज्य' || art.category === 'व्यापार';
+      if (tag === 'क्रिकेट लीग') return contentStr.includes('क्रिकेट') || contentStr.includes('मैच') || contentStr.includes('लीग') || art.category === 'खेल';
       return contentStr.includes(tag.toLowerCase());
     }
 
-    // 2. Live Tab Filter: Live mode shows active live stream + breaking news
-    if (activeCategory === 'लाइव') {
-      return true;
-    }
-
-    // 3. Video Category Filter: Shows video articles in feed
+    // 3. 'वीडियो' (Video Category) Filter:
+    // Video category wale articles, ya jinme videoUrl hai, ya video title wale articles filter karega.
+    // Agar portal me explicitly 'video' tag nahi bhi hua, toh fallback me top articles ko video format me serve karega.
     if (activeCategory === 'वीडियो') {
-      const isVideo = art.category?.toLowerCase() === 'video' || 
-                      art.category === 'वीडियो' || 
-                      !!art.videoUrl || 
-                      art.title?.toLowerCase().includes('video') ||
-                      art.title?.includes('वीडियो');
-      return isVideo;
+      const isVideoArticle = 
+        art.category?.toLowerCase() === 'video' || 
+        art.category === 'वीडियो' || 
+        Boolean(art.videoUrl) || 
+        art.title?.toLowerCase().includes('video') ||
+        art.title?.includes('वीडियो');
+
+      // Agar koi specific video category article nahi mila to feed khali na rahe isliye published articles include honge
+      return isVideoArticle || Boolean(art.image);
     }
 
     // 4. Normal Category Filter
@@ -358,9 +348,9 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Check whether Live Video Feed should show on top:
-  // Shows in 'होम' (News feed), 'ताज़ा खबरें', 'वीडियो' (Video feed), and 'लाइव' (Live section)!
-  const showLiveInFeed = !!(liveSession && liveSession.isActive && liveSession.youtubeId && 
+  // Check whether Live Video Card should show on top:
+  // Shows in 'होम' (News Feed), 'ताज़ा खबरें', 'वीडियो' (Video Section), and 'लाइव' (Dedicated Live Section)!
+  const showLiveInFeed = Boolean(liveSession && liveSession.isActive && liveSession.youtubeId && 
     (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'वीडियो' || activeCategory === 'लाइव'));
 
   const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
@@ -540,7 +530,7 @@ export default function HomePage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e8e6e2', boxShadow: '0 1px 4px rgba(0,0,0,.04)', width: '100%' }}>
         <div className="header-row">
 
-          {/* Left Side: Brand Logo */}
+          {/* Left: Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -697,7 +687,7 @@ export default function HomePage() {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button key={key} className="cat-btn" onClick={() => handleCategoryClick(key)}
-                  style={{ color: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: isActive ? 600 : 500 }}>
+                  style={{ color: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: 600 }}>
                   <span style={{ width: '30px', height: '30px', borderRadius: '8px', background: isActive ? primary : key === 'लाइव' && liveSession?.isActive ? '#ef444422' : '#f0efec', color: isActive ? '#fff' : key === 'लाइव' && liveSession?.isActive ? '#ef4444' : '#888', display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0, transition: 'background .15s ease, color .15s ease' }}>
                     {icon}
                   </span>
@@ -750,7 +740,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* 🔴 LIVE VIDEO FEED CARD: AUTOMATICALLY EMBEDDED IN ARTICLE FEED, VIDEO FEED & LIVE SECTION */}
+          {/* 🔴 LIVE VIDEO FEED CARD */}
           {showLiveInFeed && (
             <div className="card" style={{ marginBottom: '20px', border: '2px solid #ef4444', overflow: 'hidden', boxShadow: '0 4px 22px rgba(239, 68, 68, 0.18)' }}>
               
@@ -802,42 +792,44 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ── TRENDING TAGS ── */}
-          <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              ट्रेंडिंग
-            </span>
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
-              {TRENDING_TAGS.map((t) => {
-                const isTagActive = activeTrendTag === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => handleTrendTagClick(t)}
-                    style={{
-                      fontSize: '12.5px',
-                      fontWeight: isTagActive ? 600 : 500,
-                      border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
-                      borderRadius: '20px',
-                      padding: '5px 14px',
-                      color: isTagActive ? '#fff' : '#555',
-                      background: isTagActive ? primary : '#fff',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      outline: 'none',
-                      transition: 'all .15s ease',
-                    }}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
+          {/* ── TRENDING TAGS (HOME & VIDEO MODE) ── */}
+          {activeCategory !== 'लाइव' && (
+            <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                ट्रेंडिंग
+              </span>
+              <div className="hide-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
+                {TRENDING_TAGS.map((t) => {
+                  const isTagActive = activeTrendTag === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleTrendTagClick(t)}
+                      style={{
+                        fontSize: '12.5px',
+                        fontWeight: isTagActive ? 600 : 500,
+                        border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
+                        borderRadius: '20px',
+                        padding: '5px 14px',
+                        color: isTagActive ? '#fff' : '#555',
+                        background: isTagActive ? primary : '#fff',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        outline: 'none',
+                        transition: 'all .15s ease',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Section Heading for Video or Live Mode */}
+          {/* Section Headings */}
           {activeCategory === 'वीडियो' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
               <span style={{ fontSize: '20px' }}>📹</span>
@@ -851,13 +843,25 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
               <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#ef4444', margin: 0 }}>
-                लाइव कवरेज एवं ब्रेकिंग बुलेटिन
+                लाइव कवरेज (Live Stream)
               </h2>
             </div>
           )}
 
-          {/* ── ARTICLES / VIDEO FEED ── */}
-          {loading ? (
+          {/* ── ARTICLES / VIDEO FEED (Hidden in 'लाइव' tab so that only Live Stream is visible) ── */}
+          {activeCategory === 'लाइव' ? (
+            !showLiveInFeed && (
+              <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <span style={{ fontSize: '42px', display: 'block', marginBottom: '12px', opacity: 0.5 }}>📡</span>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है
+                </h3>
+                <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।
+                </p>
+              </div>
+            )
+          ) : loading ? (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
               <span style={{ color: '#999', fontSize: '14px' }}>खबरें लोड हो रही हैं…</span>
@@ -866,7 +870,7 @@ export default function HomePage() {
             <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
-                {activeCategory === 'लाइव' ? 'अभी कोई लाइव स्ट्रीम सक्रिय नहीं है' : activeCategory === 'वीडियो' ? 'अभी कोई वीडियो खबर उपलब्ध नहीं है' : activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                {activeCategory === 'वीडियो' ? 'अभी कोई वीडियो खबर उपलब्ध नहीं है' : activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
               <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
@@ -878,9 +882,9 @@ export default function HomePage() {
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
                       <img className="hero-img" src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} alt={filteredArticles[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       
-                      {/* Play badge if video */}
-                      {(filteredArticles[0].videoUrl || filteredArticles[0].category === 'वीडियो') && (
-                        <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(239, 68, 68, 0.9)', color: '#fff', borderRadius: '50%', width: '42px', height: '42px', display: 'grid', placeItems: 'center', fontSize: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                      {/* Play badge if in video mode or has video */}
+                      {(activeCategory === 'वीडियो' || filteredArticles[0].videoUrl || filteredArticles[0].category === 'वीडियो') && (
+                        <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(239, 68, 68, 0.9)', color: '#fff', borderRadius: '50%', width: '44px', height: '44px', display: 'grid', placeItems: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}>
                           ▶
                         </div>
                       )}
@@ -927,8 +931,8 @@ export default function HomePage() {
                         {item.image && (
                           <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2', position: 'relative' }}>
                             <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            {(item.videoUrl || item.category === 'वीडियो') && (
-                              <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '14px' }}>
+                            {(activeCategory === 'वीडियो' || item.videoUrl || item.category === 'वीडियो') && (
+                              <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '15px' }}>
                                 ▶
                               </span>
                             )}
