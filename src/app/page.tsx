@@ -332,6 +332,7 @@ export default function HomePage() {
 
         .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
 
+        /* ── DESKTOP HEADER ROW ── */
         .header-row {
           max-width: 1400px; margin: 0 auto; display: flex; align-items: center;
           justify-content: space-between; gap: 10px; padding: 0 20px; height: 68px; width: 100%;
@@ -375,7 +376,7 @@ export default function HomePage() {
         .hero-img { transition: transform .4s ease; }
         .hero-img:hover { transform: scale(1.03); }
 
-        /* ── RESPONSIVE RULES (DESKTOP SAME, MOBILE FIXED) ── */
+        /* ── RESPONSIVE RULES ── */
         @media (max-width: 1280px) {
           .portal-links-wrap { display: none !important; }
         }
@@ -383,7 +384,7 @@ export default function HomePage() {
           .nav-pills { display: none !important; }
         }
         
-        /* Mobile View - Right sidebar will stack cleanly below feed without disappearing */
+        /* ── MOBILE VIEW: FULLY SCROLLABLE NAVBAR ── */
         @media (max-width: 900px) {
           .shell { 
             grid-template-columns: 1fr !important; 
@@ -400,12 +401,19 @@ export default function HomePage() {
           .burger { display: block; }
           .desktop-tools { display: none !important; }
           .mobile-tools { display: flex !important; }
-          .header-row { padding: 0 10px; height: 58px; gap: 6px; }
-          .ad-leader { height: 72px; border-radius: 10px; margin-bottom: 14px; }
-          .site-name { font-size: 14px !important; max-width: 110px; }
+          
+          .header-row { 
+            padding: 0 8px !important; 
+            height: 56px !important; 
+            gap: 6px !important; 
+            overflow: hidden !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+          }
+
+          .site-name { font-size: 13.5px !important; max-width: 90px; }
           .site-tag { display: none !important; }
 
-          /* Right sidebar visible below feed in mobile */
           .col-right {
             display: block !important;
             position: static !important;
@@ -450,14 +458,15 @@ export default function HomePage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e8e6e2', boxShadow: '0 1px 4px rgba(0,0,0,.04)', width: '100%' }}>
         <div className="header-row">
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Left Side: Brand Logo (Always Fixed) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} alt={siteConfig?.name || 'The Local Leader'} style={{ height: '38px', width: 'auto', objectFit: 'contain', borderRadius: '6px' }} />
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <img src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} alt={siteConfig?.name || 'The Local Leader'} style={{ height: '32px', width: 'auto', objectFit: 'contain', borderRadius: '5px' }} />
               <div style={{ minWidth: 0 }}>
-                <span className="site-name" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '18px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap' }}>
+                <span className="site-name" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
                 </span>
                 <span className="site-tag" style={{ display: 'block', fontSize: '9px', color: '#999', whiteSpace: 'nowrap', letterSpacing: '.02em' }}>
@@ -467,6 +476,7 @@ export default function HomePage() {
             </Link>
           </div>
 
+          {/* Desktop Nav Pills */}
           <nav className="nav-pills hide-scrollbar">
             {[
               { key: 'होम', emoji: '🏠' },
@@ -485,7 +495,7 @@ export default function HomePage() {
             })}
           </nav>
 
-          {/* ── Desktop Tools ── */}
+          {/* Desktop Tools */}
           <div className="desktop-tools" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             <div className="portal-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
@@ -522,29 +532,45 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── Mobile Tools (Visible on Phone) ── */}
-          <div className="mobile-tools" style={{ display: 'none', alignItems: 'center', gap: '6px', marginLeft: 'auto', flexShrink: 0, position: 'relative', zIndex: 300 }}>
+          {/* ── MOBILE TOOLS: HORIZONTALLY SCROLLABLE (NO BUTTONS CUT) ── */}
+          <div 
+            className="mobile-tools hide-scrollbar" 
+            style={{ 
+              display: 'none', 
+              alignItems: 'center', 
+              gap: '6px', 
+              flex: 1,
+              minWidth: 0,
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x',
+              padding: '4px 2px 4px 6px'
+            }}
+          >
+            {/* Search Icon */}
             <button onClick={() => setSearchModalOpen(true)} aria-label="सर्च"
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
             
+            {/* Site Switcher Dropdown */}
             <div style={{ flexShrink: 0 }}>
               <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             </div>
 
-            {/* Mobile Language Translator container */}
+            {/* Language Translator Dropdown */}
             <div style={{ flexShrink: 0 }}>
               <LanguageTranslator />
             </div>
 
+            {/* Login / Profile */}
             {readerUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 7px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
                 <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
               </div>
             ) : (
-              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 10px', fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
@@ -626,7 +652,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        {/* ── CENTER COLUMN (MAIN NEWS FEED) ── */}
+        {/* ── CENTER COLUMN ── */}
         <main style={{ minWidth: 0 }}>
 
           <div className="ad-leader">
@@ -774,7 +800,7 @@ export default function HomePage() {
           )}
         </main>
 
-        {/* ── RIGHT SIDEBAR (Desktop Side, Mobile: Stacks Below News Feed) ── */}
+        {/* ── RIGHT SIDEBAR ── */}
         <aside className="col-right">
 
           {/* 1. Most Read Articles Widget */}
