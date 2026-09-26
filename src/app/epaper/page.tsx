@@ -134,6 +134,10 @@ const EP_STYLES = `
 .ep-read.brand{background:var(--brand)}
 .ep-read.brand:hover{filter:brightness(1.07)}
 
+.ep-dl-card{margin-top:8px;width:100%;padding:10px;border-radius:12px;font-size:13.5px;background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.ep-dl-card:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+.ep-dl-card:disabled{opacity:.5;cursor:not-allowed}
+
 .ep-empty{text-align:center;padding:56px 16px;border:1.5px dashed var(--line);border-radius:18px;color:var(--muted);background:#fff}
 .ep-empty-ic{font-size:34px;margin-bottom:8px}
 
@@ -145,6 +149,10 @@ const EP_STYLES = `
 .ep-rtitle{min-width:0}
 .ep-rtitle strong{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ep-rtitle small{display:block;color:#a39a90;font-size:12px}
+.ep-rbtns{display:flex;gap:8px;flex-shrink:0}
+.ep-dl{background:#2a2522;color:#fff;padding:9px 14px;font-size:13.5px;border-radius:10px;border:1px solid #3a332f;white-space:nowrap}
+.ep-dl:hover:not(:disabled){background:#3a332f}
+.ep-dl:disabled{opacity:.4;cursor:not-allowed}
 .ep-close{background:#ef4444;color:#fff;padding:9px 16px;font-size:13.5px;border-radius:10px;flex-shrink:0}
 .ep-close:hover{background:#dc2626}
 .ep-rstage{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:18px 12px}
@@ -221,6 +229,9 @@ const EP_STYLES = `
   .ep-lock-t{font-size:11.5px}
   .ep-meta{font-size:11px;padding:6px 2px 0}
   .ep-read{padding:10px 6px;font-size:13px;border-radius:10px;margin-top:10px}
+  .ep-dl-card{padding:9px 6px;font-size:12px;border-radius:10px;margin-top:6px}
+  .ep-dl{padding:8px 11px;font-size:13px}
+  .ep-close{padding:8px 12px;font-size:13px}
   .ep-rbar{padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top))}
   .ep-rstage{padding:10px 6px}
   .ep-nav{min-width:0;flex:1;padding:12px 10px}
@@ -252,6 +263,7 @@ function EPaperComponent() {
   const [selectedPlan, setSelectedPlan] = useState(EPAPER_PLANS[0]);
   const [showPayModal, setShowPayModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // 1. Dynamic Site Fetching from Firestore
   useEffect(() => {
@@ -358,6 +370,40 @@ function EPaperComponent() {
     }
     setReadingEdition(ed);
     setCurrentPage(0);
+  };
+
+  // PDF Download (sirf subscribers ke liye)
+  const handleDownloadPdf = async (ed: EPaperEdition) => {
+    if (!hasSubscribed) {
+      handleOpenSubscribe();
+      return;
+    }
+    if (!ed.pdfUrl) {
+      alert('इस संस्करण की PDF अभी उपलब्ध नहीं है।');
+      return;
+    }
+
+    const fileName = `${siteSlug}-${ed.cityName}-${ed.date}.pdf`;
+    setDownloadingId(ed.id);
+    try {
+      const res = await fetch(ed.pdfUrl);
+      if (!res.ok) throw new Error('PDF fetch failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error(err);
+      // Agar direct download block ho (CORS), toh PDF nayi tab me khul jaayegi
+      window.open(ed.pdfUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const handlePayment = () => {
@@ -538,6 +584,20 @@ function EPaperComponent() {
                 >
                   {hasSubscribed ? 'ई-पेपर पढ़ें' : '🔒 अनलॉक करें'}
                 </button>
+
+                {hasSubscribed && (
+                  <button
+                    className="ep-btn ep-dl-card"
+                    disabled={!edition.pdfUrl || downloadingId === edition.id}
+                    onClick={() => handleDownloadPdf(edition)}
+                  >
+                    {downloadingId === edition.id
+                      ? 'डाउनलोड हो रहा है...'
+                      : edition.pdfUrl
+                        ? '⬇ PDF डाउनलोड करें'
+                        : 'PDF उपलब्ध नहीं'}
+                  </button>
+                )}
               </article>
             ))}
           </div>
@@ -562,9 +622,25 @@ function EPaperComponent() {
               </strong>
               <small>{readingEdition.date}</small>
             </div>
-            <button className="ep-btn ep-close" onClick={() => setReadingEdition(null)}>
-              बंद करें
-            </button>
+            <div className="ep-rbtns">
+              <button
+                className="ep-btn ep-dl"
+                disabled={!readingEdition.pdfUrl || downloadingId === readingEdition.id}
+                onClick={() => handleDownloadPdf(readingEdition)}
+                title={readingEdition.pdfUrl ? 'PDF डाउनलोड करें' : 'PDF उपलब्ध नहीं'}
+              >
+                {downloadingId === readingEdition.id ? (
+                  '...'
+                ) : (
+                  <>
+                    ⬇ PDF<span className="ep-hide-sm"> डाउनलोड</span>
+                  </>
+                )}
+              </button>
+              <button className="ep-btn ep-close" onClick={() => setReadingEdition(null)}>
+                बंद करें
+              </button>
+            </div>
           </div>
 
           <div className="ep-rstage">
