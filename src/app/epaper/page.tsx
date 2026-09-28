@@ -42,8 +42,20 @@ const DEFAULT_EDITIONS: EPaperEdition[] = [
 ];
 
 const EPAPER_PLANS = [
-  { id: 'epaper_1_month', name: '1 महीना प्लान (1 Month)', price: 21, durationDays: 30, desc: '₹21 में 30 दिनों का ई-पेपर ऐक्सेस' },
-  { id: 'epaper_1_year', name: '1 साल का वार्षिक प्लान (1 Year)', price: 132, durationDays: 365, desc: '₹132 (मात्र ₹11/माह) में 365 दिनों का ऐक्सेस' }
+  {
+    id: 'epaper_1_month',
+    name: '1 महीना प्लान (1 Month)',
+    price: 21,
+    durationDays: 30,
+    desc: '₹21 में 30 दिनों का सभी संस्करणों का ई-पेपर ऐक्सेस'
+  },
+  {
+    id: 'epaper_1_year',
+    name: '1 साल का वार्षिक प्लान (1 Year)',
+    price: 132,
+    durationDays: 365,
+    desc: '₹132 (मात्र ₹11/माह) में पूरे 365 दिनों का असीमित ऐक्सेस'
+  }
 ];
 
 const RAZORPAY_KEY = 'rzp_test_TZSA6UoKATong0';
