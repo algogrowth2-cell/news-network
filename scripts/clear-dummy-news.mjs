@@ -33,4 +33,4 @@ async function clearDummy() {
   process.exit(0);
 }
 
-clearDummy();
+clearDummy(); 
