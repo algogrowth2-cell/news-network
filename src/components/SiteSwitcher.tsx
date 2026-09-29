@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -31,6 +32,15 @@ const SUBSCRIPTION_PLANS = [
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
+/* Sirf layout: desktop me button ke neeche dropdown, mobile me neeche se sheet */
+const SS_STYLES = `
+.ss-panel{position:fixed;z-index:100001;width:270px;max-width:90vw;max-height:70vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 16px 40px -12px rgba(0,0,0,.25);padding:8px}
+@media (max-width:640px){
+  .ss-panel{top:auto !important;right:0 !important;left:0;bottom:0;width:100%;max-width:100%;max-height:75vh;border-radius:18px 18px 0 0;border:0;padding:10px 10px calc(14px + env(safe-area-inset-bottom))}
+  .ss-name{max-width:110px;overflow:hidden;text-overflow:ellipsis}
+}
+`;
+
 export default function SiteSwitcher({
   currentSlug = 'the-local-leader',
   primaryColor = '#ea580c'
@@ -45,6 +55,22 @@ export default function SiteSwitcher({
   const [selectedPlan, setSelectedPlan] = useState(SUBSCRIPTION_PLANS[0]);
   const [processing, setProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+  const [panelPos, setPanelPos] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!dropdownOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPanelPos({ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) });
+    }
+    setDropdownOpen(!dropdownOpen);
+  };
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -192,8 +218,10 @@ export default function SiteSwitcher({
 
   return (
     <div className="notranslate" translate="no" style={{ position: 'relative', flexShrink: 0 }}>
+      <style dangerouslySetInnerHTML={{ __html: SS_STYLES }} />
       <button
-        onClick={() => setDropdownOpen(!dropdownOpen)}
+        ref={buttonRef}
+        onClick={toggleDropdown}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -211,32 +239,18 @@ export default function SiteSwitcher({
         }}
       >
         <span>🌐</span>
-        <span>{currentSiteObj.name}</span>
+        <span className="ss-name">{currentSiteObj.name}</span>
         <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
 
-      {dropdownOpen && (
-        <>
+      {mounted && dropdownOpen && createPortal(
+        <div className="notranslate" translate="no">
           <div
             onClick={() => setDropdownOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100000, backgroundColor: 'rgba(0,0,0,0.25)' }}
           />
 
-          <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              right: 0,
-              zIndex: 999,
-              width: '270px',
-              maxWidth: '90vw',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              boxShadow: '0 16px 40px -12px rgba(0,0,0,0.25)',
-              padding: '8px'
-            }}
-          >
+          <div className="ss-panel" style={{ top: panelPos.top, right: panelPos.right }}>
             <div
               style={{
                 fontSize: '11px',
@@ -297,18 +311,21 @@ export default function SiteSwitcher({
               );
             })}
           </div>
-        </>
+        </div>,
+        document.body
       )}
 
-      {modalOpen && (
+      {mounted && modalOpen && createPortal(
         <div
+          className="notranslate"
+          translate="no"
           onClick={() => !processing && setModalOpen(false)}
           style={{
             position: 'fixed',
             inset: 0,
             backgroundColor: 'rgba(0,0,0,0.65)',
             backdropFilter: 'blur(4px)',
-            zIndex: 9999,
+            zIndex: 100002,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -422,7 +439,8 @@ export default function SiteSwitcher({
               🔒 100% सुरक्षित भुगतान (Razorpay Verified Gateway)
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
