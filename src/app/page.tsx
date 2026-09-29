@@ -3,7 +3,7 @@ import { Fragment, Suspense, useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import LanguageTranslator from '@/components/LanguageTranslator';
@@ -262,8 +262,9 @@ const HP_STYLES = `
 }
 `;
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<Record<string, any> | null>(null);
   const [articles, setArticles] = useState<ArticleItem[]>([]);
@@ -372,7 +373,7 @@ export default function HomePage() {
           sensexChange: data.senseChange || '+72.41',
           sensexPositive: data.sensexPositive ?? true,
           silver: data.silver || '₹2,50,000',
-          gold: data.gold || '₹1,56,810'
+          gold: '₹1,56,810'
         });
       }
     });
@@ -396,41 +397,78 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const rawSiteSlug = urlParams.get('site') || 'the-local-leader';
-    const activeSiteSlug = decodeURIComponent(rawSiteSlug).trim().toLowerCase().replace(/\s+/g, '-');
+    let rawSiteSlug = searchParams?.get('site') || '';
+
+    // 🌐 DOMAIN DETECTION LOGIC (AGAR URL ME ?site= NAHI HO)
+    if (!rawSiteSlug && typeof window !== 'undefined') {
+      const hostname = window.location.hostname.toLowerCase().replace('www.', '');
+
+      if (hostname === 'goldenpearlnews.com') {
+        router.push('/admin');
+        return;
+      }
+
+      const domainMap: { [key: string]: string } = {
+        'thelocalleader.in': 'the-local-leader',
+        'theproviewtimes.com': 'the-provue-times',
+        'nationaldefencenetwork.com': 'ndn-defence',
+        'bazarkarobar.com': 'bazar-karobar',
+        // 'goldenpearlcorporation.com': 'golden-pearl-chronicles',
+        'deshkiawaz.com': 'desh-ki-aawaz',
+        'janbharatnews.com': 'jan-bharat-news',
+        'newsinfo24.in': 'news-info-24'
+      };
+
+      rawSiteSlug = domainMap[hostname] || 'the-local-leader';
+    }
+
+    const activeSiteSlug = decodeURIComponent(rawSiteSlug || 'the-local-leader').trim().toLowerCase().replace(/\s+/g, '-');
     setCurrentSlug(activeSiteSlug);
 
     const unsubSite = onSnapshot(doc(db, 'sites', activeSiteSlug), (snap) => {
       if (snap.exists()) {
         setSiteConfig({ slug: activeSiteSlug, ...snap.data() });
       } else {
-        // Exact filenames present in public/logos/
         let fallbackName = 'The Local Leader';
         let fallbackDesc = '— जनता की आवाज़, सच्चाई के साथ —';
         let fallbackLogo = '/logos/the-local-leader.jpeg';
         let fallbackColor = '#ea580c';
 
-        if (activeSiteSlug === 'the-proview-times' || activeSiteSlug === 'the-provue-times' || activeSiteSlug === 'the-pro-times') {
+        if (activeSiteSlug.includes('proview') || activeSiteSlug.includes('provue') || activeSiteSlug.includes('pro-times')) {
           fallbackName = 'द प्रोव्यू टाइम्स';
           fallbackDesc = '— पेशेवर नज़र, सच्ची खबर —';
           fallbackLogo = '/logos/the-provue-times.jpeg';
           fallbackColor = '#b91c1c';
-        } else if (activeSiteSlug === 'jan-bharat-news' || activeSiteSlug === 'jan-chetna-news') {
+        } else if (activeSiteSlug.includes('jan-bharat') || activeSiteSlug.includes('jan-chetna')) {
           fallbackName = 'जन भारत न्यूज़';
           fallbackDesc = '— भारत की आवाज़ —';
           fallbackLogo = '/logos/jan-bharat-news.jpeg';
           fallbackColor = '#1d4ed8';
-        } else if (activeSiteSlug === 'news-info-24' || activeSiteSlug === 'city-bulletin') {
+        } else if (activeSiteSlug.includes('news-info') || activeSiteSlug.includes('city-bulletin')) {
           fallbackName = 'NEWS INFO 24';
           fallbackDesc = '— Stay Informed, Stay Ahead —';
           fallbackLogo = '/logos/news-info-24.jpeg';
           fallbackColor = '#dc2626';
-        } else if (activeSiteSlug === 'national-defence-network' || activeSiteSlug === 'ndn-defence' || activeSiteSlug === 'state-express') {
+        } else if (activeSiteSlug.includes('national-defence') || activeSiteSlug.includes('ndn') || activeSiteSlug.includes('state-express')) {
           fallbackName = 'डिफेंस न्यूज़';
           fallbackDesc = '— Defence Beyond Headlines —';
           fallbackLogo = '/logos/ndn-defence.jpeg';
           fallbackColor = '#15803d';
+        } else if (activeSiteSlug.includes('bazar') || activeSiteSlug.includes('karobar')) {
+          fallbackName = 'बाजार कारोबार';
+          fallbackDesc = '— व्यापार और अर्थव्यवस्था —';
+          fallbackLogo = '/logos/bazar-karobar.jpeg';
+          fallbackColor = '#059669';
+        } else if (activeSiteSlug.includes('golden-pearl')) {
+          fallbackName = 'गोल्डन पर्ल क्रॉनिकल्स';
+          fallbackDesc = '— सच के साथ निष्पक्ष —';
+          fallbackLogo = '/logos/golden-pearl-chronicles.jpeg';
+          fallbackColor = '#d97706';
+        } else if (activeSiteSlug.includes('desh-ki-aawaz')) {
+          fallbackName = 'देश की आवाज़';
+          fallbackDesc = '— हर नागरिक की बुलंद आवाज़ —';
+          fallbackLogo = '/logos/desh-ki-aawaz.jpeg';
+          fallbackColor = '#7c3aed';
         }
 
         setSiteConfig({
@@ -461,7 +499,11 @@ export default function HomePage() {
     async function loadData() {
       setLoading(true);
       try {
-        const qArt = query(collection(db, 'articles'), where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase(), rawSiteSlug]));
+        const possibleSlugs = [activeSiteSlug, activeSiteSlug.replace(/-/g, ' ')];
+        if (activeSiteSlug.includes('provue')) possibleSlugs.push('the-proview-times');
+        if (activeSiteSlug.includes('proview')) possibleSlugs.push('the-provue-times');
+
+        const qArt = query(collection(db, 'articles'), where('siteId', 'in', possibleSlugs));
         const artSnap = await getDocs(qArt);
         const approvedArticles = artSnap.docs
           .map((d) => ({ id: d.id, ...d.data() } as ArticleItem))
@@ -471,7 +513,7 @@ export default function HomePage() {
           });
         setArticles(approvedArticles);
 
-        // ── ADS LOAD LOGIC (PROPER ISOLATION OF CLASSIFIEDS) ──
+        // ── ADS LOAD LOGIC ──
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null);
@@ -497,7 +539,6 @@ export default function HomePage() {
             const formatStr = String(cleanAd.format || '').toLowerCase();
             const typeStr = String(rawData.type || '').toLowerCase();
 
-            // 🛑 STOP: Classified ads must NOT enter the news feed banner list!
             if (zoneStr.includes('classified') || formatStr.includes('classified') || typeStr.includes('classified')) {
               return;
             }
@@ -505,16 +546,11 @@ export default function HomePage() {
             const adRef = doc(db, 'ads', docSnap.id);
             updateDoc(adRef, { impressions: increment(1) }).catch(() => {});
 
-            // Header Banner
             if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) {
               setHeaderAd(cleanAd);
-            }
-            // Sidebar Banner
-            else if (zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार')) {
+            } else if (zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार')) {
               setSidebarAd(cleanAd);
-            }
-            // Feed Banner (Only genuine feed/banner ads)
-            else if (zoneStr.includes('feed') || zoneStr.includes('banner') || zoneStr.includes('in-article')) {
+            } else if (zoneStr.includes('feed') || zoneStr.includes('banner') || zoneStr.includes('in-article')) {
               feedAdsList.push(cleanAd);
             }
           }
@@ -527,7 +563,7 @@ export default function HomePage() {
     }
     loadData();
 
-    // ── LIVE CLASSIFIEDS LISTENER (SIDEBAR WIDGET) ──
+    // ── LIVE CLASSIFIEDS LISTENER ──
     let directClassifieds: ClassifiedItem[] = [];
     let adsClassifieds: ClassifiedItem[] = [];
 
@@ -594,7 +630,7 @@ export default function HomePage() {
       unsubClassifieds();
       unsubAdsForClassifieds();
     };
-  }, []);
+  }, [searchParams]);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const headerBg = siteConfig?.headerBg || '#ffffff';
@@ -1248,5 +1284,29 @@ export default function HomePage() {
         currentSlug={currentSlug}
       />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f7f6f3',
+            color: '#888',
+            fontSize: '15px'
+          }}
+        >
+          खबरें लोड हो रही हैं…
+        </div>
+      }
+    >
+      <HomePageContent />
+    </Suspense>
   );
 }
