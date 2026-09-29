@@ -13,13 +13,13 @@ interface SiteItem {
 
 const NETWORK_SITES: SiteItem[] = [
   { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)' },
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', tag: 'प्रीमियम (Premium)' },
   { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', tag: 'प्रीमियम (Premium)' },
-  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)' },
-  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)' },
-  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)' },
-  { slug: 'city-bulletin', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)' },
-  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)' }
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)' }
 ];
 
 const SUBSCRIPTION_PLANS = [
@@ -31,7 +31,13 @@ const SUBSCRIPTION_PLANS = [
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
-export default function SiteSwitcher({ currentSlug = 'the-local-leader', primaryColor = '#ea580c' }: { currentSlug?: string; primaryColor?: string }) {
+export default function SiteSwitcher({
+  currentSlug = 'the-local-leader',
+  primaryColor = '#ea580c'
+}: {
+  currentSlug?: string;
+  primaryColor?: string;
+}) {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -133,18 +139,22 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
           const now = new Date();
           const expiresAt = new Date(now.getTime() + selectedPlan.durationDays * 24 * 60 * 60 * 1000);
 
-          await setDoc(doc(db, 'subscriptions', currentUser.email), {
-            userEmail: currentUser.email,
-            userName: currentUser.name || 'Reader',
-            planId: selectedPlan.id,
-            planName: selectedPlan.name,
-            amount: selectedPlan.price,
-            paymentId: response.razorpay_payment_id || 'test_pay_id',
-            status: 'active',
-            startedAt: serverTimestamp(),
-            expiresAt: expiresAt,
-            targetSite: selectedTargetSite?.slug || 'all'
-          }, { merge: true });
+          await setDoc(
+            doc(db, 'subscriptions', currentUser.email),
+            {
+              userEmail: currentUser.email,
+              userName: currentUser.name || 'Reader',
+              planId: selectedPlan.id,
+              planName: selectedPlan.name,
+              amount: selectedPlan.price,
+              paymentId: response.razorpay_payment_id || 'test_pay_id',
+              status: 'active',
+              startedAt: serverTimestamp(),
+              expiresAt: expiresAt,
+              targetSite: selectedTargetSite?.slug || 'all'
+            },
+            { merge: true }
+          );
 
           alert(`🎉 भुगतान सफल! आपका ${selectedPlan.name} सक्रिय हो गया है।`);
           setModalOpen(false);
@@ -178,12 +188,11 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
     rzp.open();
   };
 
-  const currentSiteObj = NETWORK_SITES.find(s => s.slug === currentSlug) || NETWORK_SITES[0];
+  const currentSiteObj = NETWORK_SITES.find((s) => s.slug === currentSlug) || NETWORK_SITES[0];
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', flexShrink: 0 }}>
       <button
-        type="button"
         onClick={() => setDropdownOpen(!dropdownOpen)}
         style={{
           display: 'flex',
@@ -201,9 +210,9 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
           whiteSpace: 'nowrap'
         }}
       >
-        <span style={{ fontSize: '13px' }}>🌐</span>
+        <span>🌐</span>
         <span>{currentSiteObj.name}</span>
-        <span style={{ fontSize: '10px', color: '#64748b' }}>▼</span>
+        <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
 
       {dropdownOpen && (
@@ -212,73 +221,81 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
             onClick={() => setDropdownOpen(false)}
             style={{ position: 'fixed', inset: 0, zIndex: 998 }}
           />
+
           <div
             style={{
               position: 'absolute',
-              top: '115%',
+              top: 'calc(100% + 8px)',
               right: 0,
-              width: '260px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
               zIndex: 999,
-              overflow: 'hidden',
-              padding: '6px'
+              width: '270px',
+              maxWidth: '90vw',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              boxShadow: '0 16px 40px -12px rgba(0,0,0,0.25)',
+              padding: '8px'
             }}
           >
-            <div style={{ padding: '8px 10px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#64748b',
+                padding: '6px 10px 8px',
+                borderBottom: '1px solid #f1f5f9',
+                marginBottom: '4px'
+              }}
+            >
               नेटवर्क पोर्टल्स चुनें (Switch Portal)
             </div>
 
-            <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-              {NETWORK_SITES.map((site) => {
-                const isCurrent = site.slug === currentSlug;
-                return (
-                  <button
-                    key={site.slug}
-                    type="button"
-                    onClick={() => handleSelectSite(site)}
+            {NETWORK_SITES.map((site) => {
+              const isCurrent = site.slug === currentSlug;
+              return (
+                <button
+                  key={site.slug}
+                  onClick={() => handleSelectSite(site)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '9px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: isCurrent ? `${primaryColor}15` : 'transparent',
+                    color: isCurrent ? primaryColor : '#1e293b',
+                    fontSize: '13px',
+                    fontWeight: isCurrent ? 800 : 500,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCurrent) e.currentTarget.style.backgroundColor = '#f8fafc';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <span>{site.name}</span>
+                  <span
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '9px 10px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: isCurrent ? `${primaryColor}15` : 'transparent',
-                      color: isCurrent ? primaryColor : '#1e293b',
-                      fontSize: '13px',
-                      fontWeight: isCurrent ? 800 : 500,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isCurrent) e.currentTarget.style.backgroundColor = '#f8fafc';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: site.slug === 'the-local-leader' ? '#dcfce7' : '#fef3c7',
+                      color: site.slug === 'the-local-leader' ? '#166534' : '#92400e'
                     }}
                   >
-                    <span>{site.name}</span>
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        backgroundColor: site.slug === 'the-local-leader' ? '#dcfce7' : '#fef3c7',
-                        color: site.slug === 'the-local-leader' ? '#16a34a' : '#b45309'
-                      }}
-                    >
-                      {site.tag}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {site.tag}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
@@ -305,34 +322,46 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
               borderRadius: '20px',
               maxWidth: '480px',
               width: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
               padding: '26px',
               boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
               border: '1px solid #e2e8f0',
               color: '#0f172a'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px' }}>
               <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: primaryColor, backgroundColor: `${primaryColor}15`, padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: primaryColor,
+                    backgroundColor: `${primaryColor}15`,
+                    padding: '3px 10px',
+                    borderRadius: '10px',
+                    marginBottom: '8px'
+                  }}
+                >
                   प्रीमियम नेटवर्क ऐक्सेस
                 </span>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '8px 0 2px', color: '#0f172a' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, lineHeight: 1.35 }}>
                   {selectedTargetSite?.name} में आपका स्वागत है
                 </h3>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
                   सभी नेटवर्क पोर्टल्स का असीमित समाचार ऐक्सेस पाने के लिए प्लान चुनें।
                 </p>
               </div>
               <button
-                type="button"
                 onClick={() => !processing && setModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontWeight: 800, fontSize: '14px', color: '#64748b' }}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontWeight: 800, fontSize: '14px', color: '#64748b', flexShrink: 0 }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {SUBSCRIPTION_PLANS.map((plan) => {
                 const isSelected = selectedPlan.id === plan.id;
                 return (
@@ -351,14 +380,12 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
                       transition: 'all 0.15s'
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#0f172a' }}>{plan.name}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{plan.name}</div>
                       <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{plan.desc}</div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '20px', fontWeight: 800, color: isSelected ? primaryColor : '#0f172a' }}>
-                        ₹{plan.price}
-                      </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                      <div style={{ fontSize: '20px', fontWeight: 800, color: primaryColor }}>₹{plan.price}</div>
                       <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>मात्र</div>
                     </div>
                   </div>
@@ -367,40 +394,36 @@ export default function SiteSwitcher({ currentSlug = 'the-local-leader', primary
             </div>
 
             <button
-              type="button"
               onClick={handlePayment}
               disabled={processing}
               style={{
                 width: '100%',
-                backgroundColor: primaryColor,
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '13px',
-                fontSize: '15px',
-                fontWeight: 800,
-                cursor: processing ? 'not-allowed' : 'pointer',
-                boxShadow: `0 4px 14px ${primaryColor}40`,
+                marginTop: '18px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
+                backgroundColor: primaryColor,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: processing ? 'not-allowed' : 'pointer',
                 opacity: processing ? 0.7 : 1
               }}
             >
               <span>💳</span>
-              <span>
-                {processing ? 'प्रक्रिया जारी है...' : `₹${selectedPlan.price} का भुगतान करें और ऐक्सेस पाएं`}
-              </span>
+              <span>{processing ? 'प्रक्रिया जारी है...' : `₹${selectedPlan.price} का भुगतान करें और ऐक्सेस पाएं`}</span>
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '11px', color: '#94a3b8' }}>
+            <div style={{ textAlign: 'center', fontSize: '11.5px', color: '#64748b', marginTop: '12px' }}>
               🔒 100% सुरक्षित भुगतान (Razorpay Verified Gateway)
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
