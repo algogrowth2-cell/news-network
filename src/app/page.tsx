@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
@@ -83,7 +83,7 @@ const DEFAULT_RASHI_LIST = [
   { id: 'pisces', name: 'मीन', sign: '♓' }
 ];
 
-const TRENDING_TAGS = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
+const TRENDING_TAGS = ["बजट सत्र", "पंचायत चुनाव", "बारिश का मौसम", "मंडी भाव", "भर्ती परिणाम", "बिजली दर", "क्रिकेट लीग"];
 
 const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'होम', icon: '🏠' },
@@ -97,157 +97,13 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'ई-पेपर', icon: '📄' },
   { key: 'अपराध', icon: '🚨' },
-  { key: 'खेल', icon: '🏏' }
+  { key: 'खेल', icon: '🏏' },
 ];
-
-/* ─────────────── Styles (sirf design) ─────────────── */
-const HP_STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&display=swap');
-.hp-root{min-height:100vh;background:#f7f6f3;color:#1a1a1a;-webkit-font-smoothing:antialiased}
-.hp-root *{box-sizing:border-box}
-.hp-root button{font-family:inherit}
-
-.hp-ticker{background:#111;color:#cbd5e1;font-size:12px}
-.hp-ticker-in{max-width:1320px;margin:0 auto;padding:7px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.hp-ticker-items{display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-.hp-ticker-items::-webkit-scrollbar{display:none}
-.hp-ticker-sep{color:#444}
-.hp-ticker-label{color:#94a3b8;margin-right:4px}
-.hp-ticker-date{white-space:nowrap;flex-shrink:0;color:#e2e8f0;font-weight:600}
-
-.hp-header{position:sticky;top:0;z-index:300;border-bottom:1px solid #eae8e4;box-shadow:0 1px 8px rgba(0,0,0,.04)}
-.hp-header-in{max-width:1320px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.hp-brand-wrap{display:flex;align-items:center;gap:8px;min-width:0}
-.hp-menu-btn{display:none;background:none;border:0;padding:6px;cursor:pointer;color:#333;flex-shrink:0}
-.hp-brand{display:flex;align-items:center;gap:10px;min-width:0;text-decoration:none;color:inherit}
-.hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
-.hp-site-name{font-size:17px;font-weight:800;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hp-nav{display:flex;gap:2px}
-.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
-.hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.hp-tool-link{font-size:12px;font-weight:600;color:#555;text-decoration:none;padding:5px 9px;border-radius:8px;border:1px solid #e5e3df;background:#fff;white-space:nowrap}
-.hp-tool-link:hover{background:#f5f4f1}
-.hp-login{color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap}
-.hp-user{display:flex;align-items:center;gap:6px;background:#f5f4f1;border:1px solid #e5e3df;border-radius:20px;padding:4px 5px 4px 12px;font-size:12.5px;font-weight:600;white-space:nowrap}
-.hp-user button{background:#fff;border:1px solid #e5e3df;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:10px;color:#888;display:flex;align-items:center;justify-content:center}
-.hp-mobile-tools{display:none;align-items:center;gap:8px}
-
-.hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
-.hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
-.hp-box{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:14px}
-.hp-box-title{font-size:13.5px;font-weight:800;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid}
-.hp-cat{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;text-align:left;color:#333;transition:background .15s}
-.hp-cat:hover{background:#f5f4f1}
-
-.hp-main{min-width:0;display:flex;flex-direction:column;gap:18px}
-.hp-ad-slot{display:flex;align-items:center;justify-content:center;background:#fff;border:1px dashed #d6d3cd;border-radius:10px;color:#aaa;font-size:12px;min-height:90px;text-align:center;padding:10px}
-.hp-ad-img{display:block;width:100%;height:auto;border-radius:10px}
-
-.hp-live{background:#fff;border:1px solid #fecaca;border-radius:16px;padding:16px}
-.hp-live-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.hp-live-title{font-size:15px;font-weight:800;margin:0;color:#b91c1c}
-.hp-live-pill{background:#ef4444;color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;animation:hpPulse 1.6s infinite}
-.hp-live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.hp-live-card{border:1px solid #f1f0ec;border-radius:12px;overflow:hidden;background:#fafaf8}
-.hp-video{position:relative;aspect-ratio:16/9;background:#000}
-.hp-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.hp-live-body{padding:12px}
-.hp-live-tag{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;font-weight:700;margin-bottom:6px}
-.hp-live-card-title{font-size:14px;font-weight:700;line-height:1.4;margin:0 0 8px}
-.hp-updates{background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#444}
-.hp-updates p{margin:4px 0 0;line-height:1.5}
-
-.hp-tags{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.hp-tags::-webkit-scrollbar{display:none}
-.hp-tags-label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;white-space:nowrap;flex-shrink:0}
-
-.hp-section-title{font-size:17px;font-weight:800;margin:0;padding-bottom:8px;border-bottom:2px solid}
-
-.hp-hero{display:block;background:#fff;border:1px solid #eae8e4;border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;transition:box-shadow .2s}
-.hp-hero:hover{box-shadow:0 14px 32px -18px rgba(0,0,0,.3)}
-.hp-hero-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#eee}
-.hp-hero-body{padding:18px}
-.hp-hero-title{font-size:20px;font-weight:800;line-height:1.35;margin:10px 0 8px}
-.hp-hero-summary{font-size:14px;color:#555;line-height:1.6;margin:0 0 12px}
-.hp-badge{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;padding:3px 10px;border-radius:6px}
-
-.hp-list{display:flex;flex-direction:column;gap:12px}
-.hp-item{display:flex;gap:14px;background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:12px;text-decoration:none;color:inherit;transition:box-shadow .2s}
-.hp-item:hover{box-shadow:0 8px 20px -12px rgba(0,0,0,.25)}
-.hp-item-body{flex:1;min-width:0;display:flex;flex-direction:column}
-.hp-item-cat{font-size:11.5px;font-weight:700}
-.hp-item-title{font-size:14.5px;font-weight:700;line-height:1.45;margin:4px 0 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.hp-item-img{width:104px;height:78px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#eee}
-.hp-meta{display:flex;gap:12px;font-size:12px;color:#888;margin-top:auto}
-
-.hp-feed-ad{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:10px}
-.hp-feed-ad-label{font-size:10.5px;color:#999;letter-spacing:.04em;margin-bottom:6px}
-
-.hp-empty{background:#fff;border:1px dashed #d6d3cd;border-radius:14px;padding:40px 16px;text-align:center;color:#777}
-.hp-empty-ic{font-size:34px;margin-bottom:8px}
-.hp-empty h3{margin:0 0 6px;font-size:16px;color:#333}
-.hp-empty p{margin:0;font-size:13px}
-.hp-loading{text-align:center;padding:40px;color:#888;font-size:14px}
-
-.hp-rashi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
-.hp-rashi{border:1px solid #eae8e4;border-radius:8px;padding:6px 2px;font-size:11px;cursor:pointer;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;color:#444}
-.hp-rashi-sign{font-size:16px}
-.hp-rashi-text{font-size:13px;line-height:1.6;color:#444;margin:0}
-
-.hp-classified{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f0eee9}
-.hp-classified:last-child{border-bottom:0;padding-bottom:0}
-.hp-classified-img{width:54px;height:54px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f1f0ec}
-.hp-classified-title{font-size:13.5px;font-weight:700;margin:0 0 3px;line-height:1.35}
-.hp-classified-meta{font-size:11.5px;color:#888}
-.hp-classified-call{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;text-decoration:none}
-
-.hp-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:85vw;background:#fff;z-index:400;overflow-y:auto;padding:16px;box-shadow:4px 0 24px rgba(0,0,0,.15);animation:hpSlide .22s ease}
-.hp-drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #eee}
-.hp-drawer-close{background:#f5f4f1;border:1px solid #e5e3df;border-radius:50%;width:32px;height:32px;cursor:pointer}
-.hp-drawer-links{display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #eee}
-
-.hp-search-box{background:#fff;border-radius:16px;width:100%;max-width:560px;height:fit-content;padding:14px 16px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4)}
-.hp-search-row{display:flex;align-items:center;gap:10px}
-.hp-search-result{margin-top:12px;width:100%;text-align:left;background:#f7f6f3;border:0;border-radius:10px;padding:10px 12px;font-size:13.5px;cursor:pointer;color:#333}
-
-@keyframes hpPulse{0%,100%{opacity:1}50%{opacity:.6}}
-@keyframes hpSlide{from{transform:translateX(-100%)}to{transform:translateX(0)}}
-
-@media(max-width:1100px){
-  .hp-shell{grid-template-columns:minmax(0,1fr) 300px}
-  .hp-left{display:none}
-  .hp-nav{display:none}
-  .hp-menu-btn{display:block}
-}
-@media(max-width:820px){
-  .hp-shell{grid-template-columns:1fr}
-  .hp-side{position:static}
-  .hp-desktop-tools{display:none}
-  .hp-mobile-tools{display:flex}
-  .hp-hero-title{font-size:18px}
-}
-@media(max-width:560px){
-  .hp-ticker-date{display:none}
-  .hp-header-in{padding:8px 12px;gap:10px}
-  .hp-logo{height:38px;max-width:100px}
-  .hp-site-name{font-size:15px}
-  .hp-tagline{display:none}
-  .hp-shell{padding:14px 12px 32px;gap:16px}
-  .hp-hero-body{padding:14px}
-  .hp-hero-title{font-size:17px}
-  .hp-hero-summary{font-size:13.5px}
-  .hp-item{padding:10px;gap:10px}
-  .hp-item-img{width:96px;height:72px}
-  .hp-item-title{font-size:13.5px}
-  .hp-live-grid{grid-template-columns:1fr}
-}
-`;
 
 export default function HomePage() {
   const router = useRouter();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
-  const [siteConfig, setSiteConfig] = useState<Record<string, any> | null>(null);
+  const [siteConfig, setSiteConfig] = useState<any>(null);
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [headerAd, setHeaderAd] = useState<AdItem | null>(null);
   const [sidebarAd, setSidebarAd] = useState<AdItem | null>(null);
@@ -319,7 +175,7 @@ export default function HomePage() {
   useEffect(() => {
     const updateDate = () => {
       const days = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
-      const months = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+      const months = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
       const now = new Date();
       setCurrentHindiDate(`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
     };
@@ -333,16 +189,10 @@ export default function HomePage() {
       if (snap.exists()) {
         const data = snap.data();
         setMarketRates({
-          diesel: data.diesel || '₹95.20',
-          petrol: data.petrol || '₹102.12',
-          nifty: data.nifty || '23,897.7 points',
-          niftyChange: data.niftyChange || '-16.70',
-          niftyPositive: data.niftyPositive ?? false,
-          sensex: data.sensex || '76,642.81 points',
-          sensexChange: data.senseChange || '+72.41',
-          sensexPositive: data.sensexPositive ?? true,
-          silver: data.silver || '₹2,50,000',
-          gold: data.gold || '₹1,56,810'
+          diesel: data.diesel || '₹95.20', petrol: data.petrol || '₹102.12',
+          nifty: data.nifty || '23,897.7 points', niftyChange: data.niftyChange || '-16.70', niftyPositive: data.niftyPositive ?? false,
+          sensex: data.sensex || '76,642.81 points', sensexChange: data.senseChange || '+72.41', sensexPositive: data.sensexPositive ?? true,
+          silver: data.silver || '₹2,50,000', gold: data.gold || '₹1,56,810'
         });
       }
     });
@@ -351,67 +201,20 @@ export default function HomePage() {
 
   useEffect(() => {
     const cached = localStorage.getItem('reader_user');
-    if (cached) {
-      try {
-        setReaderUser(JSON.parse(cached));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    if (cached) { try { setReaderUser(JSON.parse(cached)); } catch (e) { console.error(e); } }
   }, []);
 
-  const handleReaderLogout = () => {
-    localStorage.removeItem('reader_user');
-    setReaderUser(null);
-  };
+  const handleReaderLogout = () => { localStorage.removeItem('reader_user'); setReaderUser(null); };
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const rawSiteSlug = urlParams.get('site') || 'the-local-leader';
-    const activeSiteSlug = decodeURIComponent(rawSiteSlug).trim().toLowerCase().replace(/\s+/g, '-');
+    const activeSiteSlug = urlParams.get('site') || 'the-local-leader';
     setCurrentSlug(activeSiteSlug);
 
     const unsubSite = onSnapshot(doc(db, 'sites', activeSiteSlug), (snap) => {
-      if (snap.exists()) {
-        setSiteConfig({ slug: activeSiteSlug, ...snap.data() });
-      } else {
-        // Exact filenames present in public/logos/
-        let fallbackName = 'The Local Leader';
-        let fallbackDesc = '— जनता की आवाज़, सच्चाई के साथ —';
-        let fallbackLogo = '/logos/the-local-leader.jpeg';
-        let fallbackColor = '#ea580c';
-
-        if (activeSiteSlug === 'the-proview-times' || activeSiteSlug === 'the-provue-times' || activeSiteSlug === 'the-pro-times') {
-          fallbackName = 'द प्रोव्यू टाइम्स';
-          fallbackDesc = '— पेशेवर नज़र, सच्ची खबर —';
-          fallbackLogo = '/logos/the-provue-times.jpeg';
-          fallbackColor = '#b91c1c';
-        } else if (activeSiteSlug === 'jan-bharat-news' || activeSiteSlug === 'jan-chetna-news') {
-          fallbackName = 'जन भारत न्यूज़';
-          fallbackDesc = '— भारत की आवाज़ —';
-          fallbackLogo = '/logos/jan-bharat-news.jpeg';
-          fallbackColor = '#1d4ed8';
-        } else if (activeSiteSlug === 'news-info-24' || activeSiteSlug === 'city-bulletin') {
-          fallbackName = 'NEWS INFO 24';
-          fallbackDesc = '— Stay Informed, Stay Ahead —';
-          fallbackLogo = '/logos/news-info-24.jpeg';
-          fallbackColor = '#dc2626';
-        } else if (activeSiteSlug === 'national-defence-network' || activeSiteSlug === 'ndn-defence' || activeSiteSlug === 'state-express') {
-          fallbackName = 'डिफेंस न्यूज़';
-          fallbackDesc = '— Defence Beyond Headlines —';
-          fallbackLogo = '/logos/ndn-defence.jpeg';
-          fallbackColor = '#15803d';
-        }
-
-        setSiteConfig({
-          slug: activeSiteSlug,
-          name: fallbackName,
-          primaryColor: fallbackColor,
-          secondaryColor: '#1e242b',
-          headerBg: '#ffffff',
-          logoUrl: fallbackLogo,
-          description: fallbackDesc
-        });
+      if (snap.exists()) { setSiteConfig({ slug: activeSiteSlug, ...snap.data() }); }
+      else {
+        setSiteConfig({ slug: activeSiteSlug, name: 'The Local Leader', primaryColor: '#ea580c', secondaryColor: '#1e242b', headerBg: '#ffffff', logoUrl: `/logos/${activeSiteSlug}.jpeg`, description: '— जनता की आवाज़, सच्चाई के साथ —' });
       }
     });
 
@@ -420,8 +223,7 @@ export default function HomePage() {
       const activeList: LiveBlogData[] = [];
       snap.forEach((d) => {
         const data = d.data();
-        const liveSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
-        if (data.isActive && (liveSite === activeSiteSlug || data.siteId === 'all')) {
+        if (data.isActive && (data.siteId === activeSiteSlug || data.siteId === 'all')) {
           activeList.push({ id: d.id, ...data } as LiveBlogData);
         }
       });
@@ -431,34 +233,31 @@ export default function HomePage() {
     async function loadData() {
       setLoading(true);
       try {
-        const qArt = query(collection(db, 'articles'), where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase(), rawSiteSlug]));
+        const qArt = query(collection(db, 'articles'), where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase()]));
         const artSnap = await getDocs(qArt);
         const approvedArticles = artSnap.docs
-          .map((d) => ({ id: d.id, ...d.data() } as ArticleItem))
-          .filter((art) => {
-            const s = String(art.status || '').trim().toLowerCase();
-            return s === 'published' || s === 'approved';
-          });
+          .map(d => ({ id: d.id, ...d.data() } as ArticleItem))
+          .filter(art => { const s = String(art.status || '').trim().toLowerCase(); return s === 'published' || s === 'approved'; });
         setArticles(approvedArticles);
 
         // ── ADS LOAD LOGIC (PROPER ISOLATION OF CLASSIFIEDS) ──
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
-        setHeaderAd(null);
+        setHeaderAd(null); 
         setSidebarAd(null);
         const feedAdsList: AdItem[] = [];
 
-        adSnap.docs.forEach((docSnap) => {
+        adSnap.docs.forEach(docSnap => {
           const rawData = docSnap.data();
           const adStatus = String(rawData.status || '').trim().toLowerCase();
-
+          
           if (adStatus === 'active') {
-            const cleanAd: AdItem = {
-              id: docSnap.id,
-              name: rawData.name || rawData.title || '',
-              zone: rawData.zone || '',
-              imageUrl: rawData.imageUrl || '',
-              targetUrl: rawData.targetUrl || '',
+            const cleanAd: AdItem = { 
+              id: docSnap.id, 
+              name: rawData.name || rawData.title || '', 
+              zone: rawData.zone || '', 
+              imageUrl: rawData.imageUrl || '', 
+              targetUrl: rawData.targetUrl || '', 
               status: adStatus,
               format: rawData.format || ''
             };
@@ -476,13 +275,13 @@ export default function HomePage() {
             updateDoc(adRef, { impressions: increment(1) }).catch(() => {});
 
             // Header Banner
-            if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) {
-              setHeaderAd(cleanAd);
-            }
+            if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) { 
+              setHeaderAd(cleanAd); 
+            } 
             // Sidebar Banner
-            else if (zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार')) {
-              setSidebarAd(cleanAd);
-            }
+            else if (zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार')) { 
+              setSidebarAd(cleanAd); 
+            } 
             // Feed Banner (Only genuine feed/banner ads)
             else if (zoneStr.includes('feed') || zoneStr.includes('banner') || zoneStr.includes('in-article')) {
               feedAdsList.push(cleanAd);
@@ -490,20 +289,20 @@ export default function HomePage() {
           }
         });
         setInFeedAds(feedAdsList);
-      } catch (err) {
-        console.error('Error loading home data:', err);
-      }
+      } catch (err) { console.error('Error loading home data:', err); }
       setLoading(false);
     }
     loadData();
 
     // ── LIVE CLASSIFIEDS LISTENER (SIDEBAR WIDGET) ──
+    // Listens to 'classifieds' collection AND 'ads' collection (classified format)
     let directClassifieds: ClassifiedItem[] = [];
     let adsClassifieds: ClassifiedItem[] = [];
 
     const updateCombinedClassifieds = () => {
       const combined = [...directClassifieds, ...adsClassifieds];
-      const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+      // remove duplicate ids if any
+      const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
       setClassifiedAds(unique.slice(0, 4));
     };
 
@@ -512,9 +311,8 @@ export default function HomePage() {
       snap.forEach((d) => {
         const data = d.data();
         const st = String(data.status || 'active').toLowerCase();
-        const cSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
         if (st === 'active' || st === 'approved') {
-          if (!data.siteId || cSite === activeSiteSlug || data.siteId === 'all') {
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
             directClassifieds.push({ id: d.id, ...data } as ClassifiedItem);
           }
         }
@@ -529,10 +327,9 @@ export default function HomePage() {
         const st = String(data.status || '').toLowerCase();
         const fmt = String(data.format || '').toLowerCase();
         const zn = String(data.zone || '').toLowerCase();
-        const aSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
 
         if ((st === 'active' || st === 'approved') && (fmt === 'classified' || zn.includes('classified'))) {
-          if (!data.siteId || aSite === activeSiteSlug || data.siteId === 'all') {
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
             adsClassifieds.push({
               id: d.id,
               title: data.name || data.title || 'क्लासिफाइड विज्ञापन',
@@ -551,18 +348,16 @@ export default function HomePage() {
 
     const unsubRashifal = onSnapshot(collection(db, 'rashifal'), (snap) => {
       const map: Record<string, any> = {};
-      snap.docs.forEach((d) => {
-        map[d.id] = d.data();
-      });
+      snap.docs.forEach(d => { map[d.id] = d.data(); });
       setRashifalData(map);
     });
 
-    return () => {
-      unsubSite();
-      unsubLive();
-      unsubRashifal();
-      unsubClassifieds();
-      unsubAdsForClassifieds();
+    return () => { 
+      unsubSite(); 
+      unsubLive(); 
+      unsubRashifal(); 
+      unsubClassifieds(); 
+      unsubAdsForClassifieds(); 
     };
   }, []);
 
@@ -571,7 +366,7 @@ export default function HomePage() {
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
   // Articles Filtering Logic
-  const filteredArticles = articles.filter((art) => {
+  const filteredArticles = articles.filter(art => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
@@ -591,9 +386,7 @@ export default function HomePage() {
     }
 
     const matchesCategory =
-      activeCategory === 'होम' ||
-      activeCategory === 'ताज़ा खबरें' ||
-      activeCategory === 'राशिफल' ||
+      activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'राशिफल' ||
       art.category?.toLowerCase() === activeCategory.toLowerCase() ||
       (activeCategory === 'राजनीति' && (art.category === 'Politics' || art.category === 'राजनीति')) ||
       (activeCategory === 'व्यापार' && (art.category === 'Business' || art.category === 'व्यापार')) ||
@@ -604,204 +397,299 @@ export default function HomePage() {
       (activeCategory === 'राज्य' && (art.category === 'National' || art.category === 'राज्य'));
 
     const cleanSearch = searchTerm.trim().toLowerCase();
-    const matchesSearch =
-      !cleanSearch ||
-      (art.title && art.title.toLowerCase().includes(cleanSearch)) ||
-      (art.titleHi && art.titleHi.toLowerCase().includes(cleanSearch)) ||
-      (art.summary && art.summary.toLowerCase().includes(cleanSearch));
+    const matchesSearch = !cleanSearch || (art.title && art.title.toLowerCase().includes(cleanSearch)) || (art.titleHi && art.titleHi.toLowerCase().includes(cleanSearch)) || (art.summary && art.summary.toLowerCase().includes(cleanSearch));
     return matchesCategory && matchesSearch;
   });
 
   const hasLiveStreams = liveSessions.length > 0;
   const showLiveInFeed = hasLiveStreams && (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'लाइव');
 
-  const activeRashiItem = DEFAULT_RASHI_LIST.find((r) => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
+  const activeRashiItem = DEFAULT_RASHI_LIST.find(r => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
 
   const tint = (hex: string, op: number) => {
-    const r = parseInt(hex.slice(1, 3), 16),
-      g = parseInt(hex.slice(3, 5), 16),
-      b = parseInt(hex.slice(5, 7), 16);
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r},${g},${b},${op})`;
   };
 
-  // Article link (apne article route ke hisaab se badal sakte hain)
-  const articleHref = (a: ArticleItem) => `/article/${a.slug || a.id}?site=${currentSlug}`;
-
-  const SearchIcon = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="7" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-
-  const categoryButtons = (
-    <>
-      {CATEGORY_LIST.map(({ key, icon }) => {
-        const isActive = activeCategory === key && !activeTrendTag;
-        return (
-          <button
-            key={key}
-            className="hp-cat"
-            onClick={() => handleCategoryClick(key)}
-            style={{
-              color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#333',
-              background: isActive ? tint(primary, 0.08) : undefined,
-              fontWeight: isActive ? 700 : 500
-            }}
-          >
-            <span style={{ fontSize: '16px', width: '22px', textAlign: 'center' }}>{icon}</span>
-            {key}
-          </button>
-        );
-      })}
-    </>
-  );
-
   return (
-    <div className="hp-root" style={{ fontFamily: siteFont }}>
-      <style dangerouslySetInnerHTML={{ __html: HP_STYLES }} />
+    <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: siteFont, fontSize: '15px', lineHeight: 1.6, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
+
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@300;400;500;600;700;800&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { max-width: 100vw; overflow-x: hidden; top: 0 !important; }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        body { top: 0px !important; position: static !important; }
+        .goog-te-banner-frame { display: none !important; }
+        .skiptranslate { display: none !important; }
+        body > .skiptranslate { display: none !important; }
+        #goog-gt-tt { display: none !important; top: 0px !important; }
+
+        .shell {
+          max-width: 1400px; margin: 0 auto; display: grid;
+          grid-template-columns: 230px minmax(0, 1fr) 310px;
+          gap: 22px; padding: 20px 24px 48px; width: 100%;
+        }
+        .col-left { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 90px); overflow-y: auto; }
+        .col-right { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 90px); overflow-y: auto; }
+
+        .card { background: #fff; border: 1px solid #eae8e4; border-radius: 14px; overflow: hidden; transition: box-shadow .2s ease; }
+        .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+        .art-row { transition: background .15s ease; }
+        .art-row:hover { background: #fafaf8 !important; }
+
+        .cat-btn {
+          display: flex; align-items: center; gap: 12px; width: 100%;
+          padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 500;
+          border: none; text-align: left; cursor: pointer; transition: background .15s ease, color .15s ease;
+        }
+        .cat-btn:hover { background: #f5f4f1; }
+
+        .burger { display: none; background: none; border: none; padding: 6px; cursor: pointer; color: #1a1a1a; flex-shrink: 0; }
+
+        .header-row {
+          max-width: 1400px; margin: 0 auto; display: flex; align-items: center;
+          justify-content: space-between; gap: 10px; padding: 0 20px; height: 68px; width: 100%;
+        }
+        .nav-pills { 
+          display: flex; align-items: center; gap: 4px; margin: 0 10px; 
+          flex: 1; justify-content: center; min-width: 0; overflow-x: auto;
+        }
+        .nav-pill {
+          display: flex; align-items: center; gap: 4px; background: none; border: none;
+          font-size: 13px; font-weight: 600; padding: 6px 11px; border-radius: 20px;
+          cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease;
+          flex-shrink: 0;
+        }
+        .nav-pill:hover { background: #f5f4f1; }
+
+        .ad-leader {
+          width: 100%; height: 96px; border-radius: 12px; overflow: hidden;
+          margin-bottom: 18px; background: #1a1a1a; position: relative;
+        }
+        .ad-leader a, .ad-leader img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+        .infeed-ad-banner {
+          background: #fafaf8;
+          border-top: 1px dashed #e2e8f0;
+          border-bottom: 1px dashed #e2e8f0;
+          padding: 12px 18px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .portal-link {
+          display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+          font-weight: 600; padding: 5px 10px; border-radius: 20px; white-space: nowrap;
+          transition: opacity .15s ease;
+        }
+        .portal-link:hover { opacity: .85; }
+
+        .hero-img { transition: transform .4s ease; }
+        .hero-img:hover { transform: scale(1.03); }
+
+        @media (max-width: 1280px) {
+          .portal-links-wrap { display: none !important; }
+        }
+        @media (max-width: 1100px) {
+          .nav-pills { display: none !important; }
+        }
+        
+        @media (max-width: 900px) {
+          .shell { 
+            grid-template-columns: 1fr !important; 
+            padding: 14px 12px 36px !important;
+            gap: 20px !important;
+          }
+          .col-left {
+            position: fixed; top: 0; bottom: 0; left: 0; width: min(80vw, 300px);
+            background: #fff; z-index: 400; padding: 20px 16px; max-height: none;
+            box-shadow: 6px 0 30px rgba(0,0,0,.15); transform: translateX(-100%);
+            transition: transform .25s cubic-bezier(.4,0,.2,1); border-radius: 0 18px 18px 0;
+          }
+          .col-left.open { transform: translateX(0); }
+          .burger { display: block; }
+          .desktop-tools { display: none !important; }
+          .mobile-tools { display: flex !important; }
+          
+          .header-row { 
+            padding: 0 8px !important; 
+            height: 56px !important; 
+            gap: 6px !important; 
+            overflow: hidden !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+          }
+
+          .site-name { font-size: 13.5px !important; max-width: 90px; }
+          .site-tag { display: none !important; }
+
+          .col-right {
+            display: block !important;
+            position: static !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin-top: 10px;
+          }
+        }
+
+        @media (min-width: 901px) { 
+          .mobile-tools { display: none !important; } 
+        }
+      `}</style>
 
       {/* ═══ 1. MARKET TICKER ═══ */}
-      <div className="hp-ticker">
-        <div className="hp-ticker-in">
-          <div className="hp-ticker-items">
+      <div style={{ background: 'linear-gradient(90deg,#141414,#1e1e1e)', color: '#b0b0b0', fontSize: '11px', letterSpacing: '.01em', width: '100%', overflow: 'hidden', borderBottom: '1px solid #2a2a2a' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 24px' }}>
+          <div className="hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '4px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x', padding: '7px 0' }}>
             {[
               { label: 'पेट्रोल', value: marketRates.petrol, color: '#fff' },
               { label: 'डीज़ल', value: marketRates.diesel, color: '#fff' },
-              {
-                label: 'निफ्टी',
-                value: `${marketRates.nifty} ${marketRates.niftyPositive ? '▲' : '▼'} ${marketRates.niftyChange}`,
-                color: marketRates.niftyPositive ? '#34d399' : '#f87171'
-              },
-              {
-                label: 'सेंसेक्स',
-                value: `${marketRates.sensex} ${marketRates.sensexPositive ? '▲' : '▼'} ${marketRates.sensexChange}`,
-                color: marketRates.sensexPositive ? '#34d399' : '#f87171'
-              },
+              { label: 'निफ्टी', value: `${marketRates.nifty} ${marketRates.niftyPositive ? '▲' : '▼'} ${marketRates.niftyChange}`, color: marketRates.niftyPositive ? '#34d399' : '#f87171' },
+              { label: 'सेंसेक्स', value: `${marketRates.sensex} ${marketRates.sensexPositive ? '▲' : '▼'} ${marketRates.sensexChange}`, color: marketRates.sensexPositive ? '#34d399' : '#f87171' },
               { label: 'सोना', value: marketRates.gold, color: '#fbbf24' },
-              { label: 'चांदी', value: marketRates.silver, color: '#cbd5e1' }
+              { label: 'चांदी', value: marketRates.silver, color: '#cbd5e1' },
             ].map((item, i) => (
-              <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                {i > 0 && <span className="hp-ticker-sep">│</span>}
-                <span>
-                  <span className="hp-ticker-label">{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: 600 }}>{item.value}</span>
-                </span>
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                {i > 0 && <span style={{ color: '#333', margin: '0 6px' }}>│</span>}
+                <span style={{ color: '#888' }}>{item.label}</span>
+                <span style={{ color: item.color, fontWeight: 600 }}>{item.value}</span>
               </span>
             ))}
-          </div>
-          <div className="hp-ticker-date">
-            <span style={{ marginRight: '5px' }}>📅</span>
-            {currentHindiDate || '...'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginLeft: '14px', paddingLeft: '14px', borderLeft: '1px solid #333' }}>
+              <span style={{ fontSize: '12px' }}>📅</span>
+              <span style={{ color: '#999' }}>{currentHindiDate || '...'}</span>
+            </span>
           </div>
         </div>
       </div>
 
       {/* ═══ 2. HEADER ═══ */}
-      <header className="hp-header" style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
-        <div className="hp-header-in">
-          {/* Left: Brand Logo & Title */}
-          <div className="hp-brand-wrap">
-            <button className="hp-menu-btn" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
+      <header style={{ position: 'sticky', top: 0, zIndex: 200, background: headerBg, borderBottom: '1px solid #e8e6e2', boxShadow: '0 1px 4px rgba(0,0,0,.04)', width: '100%' }}>
+        <div className="header-row">
+
+          {/* Left: Brand Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <button className="burger" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            <Link href={`/?site=${currentSlug}`} className="hp-brand">
-              {siteConfig?.logoUrl && (
-                <img src={siteConfig.logoUrl} alt={siteConfig?.name || 'लोगो'} className="hp-logo" />
-              )}
+            <Link href={`/?site=${currentSlug}`} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <img src={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} alt={siteConfig?.name || 'The Local Leader'} style={{ height: '32px', width: 'auto', objectFit: 'contain', borderRadius: '5px' }} />
               <div style={{ minWidth: 0 }}>
-                <h1 className="hp-site-name" style={{ color: primary }}>
+                <span className="site-name" style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600, color: '#1a1a1a', lineHeight: 1.15, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {siteConfig?.name || 'द लोकल लीडर'}
-                </h1>
-                <p className="hp-tagline">{siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}</p>
+                </span>
+                <span className="site-tag" style={{ display: 'block', fontSize: '9px', color: '#999', whiteSpace: 'nowrap', letterSpacing: '.02em' }}>
+                  {siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}
+                </span>
               </div>
             </Link>
           </div>
 
           {/* Desktop Nav Pills */}
-          <nav className="hp-nav">
+          <nav className="nav-pills hide-scrollbar">
             {[
               { key: 'होम', emoji: '🏠' },
               { key: 'लाइव', emoji: '🔴' },
               { key: 'वीडियो', emoji: '📹' },
               { key: 'ताज़ा खबरें', emoji: '⚡' },
               { key: 'शोक संदेश', emoji: '🕯️' },
-              { key: 'ई-पेपर', emoji: '📄' }
+              { key: 'ई-पेपर', emoji: '📄' },
             ].map(({ key, emoji }) => {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
-                <button
-                  key={key}
-                  className="hp-nav-btn"
-                  onClick={() => handleCategoryClick(key)}
-                  style={{
-                    color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#555',
-                    background: isActive ? tint(primary, 0.08) : 'transparent',
-                    fontWeight: isActive ? 700 : 500
-                  }}
-                >
-                  <span>{emoji}</span>
-                  {key}
+                <button key={key} className="nav-pill" onClick={() => handleCategoryClick(key)}
+                  style={{ 
+                    color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#555', 
+                    background: isActive ? tint(primary, 0.08) : 'transparent', 
+                    fontWeight: isActive ? 700 : 500 
+                  }}>
+                  <span style={{ fontSize: '13px' }}>{emoji}</span>{key}
                 </button>
               );
             })}
           </nav>
 
           {/* Desktop Tools */}
-          <div className="hp-tools hp-desktop-tools">
-            <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ पत्रकार
-            </Link>
-            <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
-              📢 विज्ञापन
-            </Link>
-            <SiteSwitcher />
-            <LanguageTranslator />
-            <button
-              onClick={() => setSearchModalOpen(true)}
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12px', flexShrink: 0 }}
-            >
-              <SearchIcon size={14} />
+          <div className="desktop-tools" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+            <div className="portal-links-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Link href="/patrakar/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
+                ✍️ पत्रकार
+              </Link>
+              <Link href="/advertiser/login" className="portal-link" style={{ color: '#444', background: '#f3f3f1', border: '1px solid #ddd' }}>
+                📢 विज्ञापन
+              </Link>
+            </div>
+
+            <button onClick={() => setSearchModalOpen(true)}
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12px', flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
               खोजें
             </button>
+
+            <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            </div>
+            
+            <div style={{ position: 'relative', zIndex: 999, overflow: 'visible', flexShrink: 0 }}>
+              <LanguageTranslator />
+            </div>
+
             {readerUser ? (
-              <div className="hp-user">
-                👤 {readerUser.name ? readerUser.name.slice(0, 6) : 'यूज़र'}
-                <button onClick={handleReaderLogout} aria-label="लॉगआउट" title="लॉगआउट">
-                  ✕
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: tint(primary, 0.06), border: `1px solid ${tint(primary, 0.25)}`, borderRadius: '22px', padding: '5px 12px', flexShrink: 0 }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: primary }}>👤 {readerUser.name ? readerUser.name.slice(0, 6) : 'यूज़र'}</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', fontWeight: 800, lineHeight: 1 }}>✕</button>
               </div>
             ) : (
-              <Link href="/login" className="hp-login" style={{ background: primary }}>
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '22px', padding: '7px 16px', fontSize: '12.5px', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
           </div>
 
           {/* Mobile Tools */}
-          <div className="hp-mobile-tools">
-            <SiteSwitcher />
-            <button
-              onClick={() => setSearchModalOpen(true)}
-              aria-label="सर्च"
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: '#555' }}
-            >
-              <SearchIcon size={15} />
+          <div 
+            className="mobile-tools hide-scrollbar" 
+            style={{ 
+              display: 'none', 
+              alignItems: 'center', 
+              gap: '6px', 
+              flex: 1, 
+              minWidth: 0, 
+              overflowX: 'auto', 
+              WebkitOverflowScrolling: 'touch', 
+              touchAction: 'pan-x', 
+              padding: '4px 2px 4px 6px' 
+            }}
+          >
+            <button onClick={() => setSearchModalOpen(true)} aria-label="सर्च"
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
             </button>
+            
+            <div style={{ flexShrink: 0 }}>
+              <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            </div>
+
+            <div style={{ flexShrink: 0 }}>
+              <LanguageTranslator />
+            </div>
+
             {readerUser ? (
-              <div className="hp-user" style={{ paddingLeft: '8px' }}>
-                👤
-                <button onClick={handleReaderLogout} aria-label="लॉगआउट">
-                  ✕
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: tint(primary, 0.08), border: `1px solid ${tint(primary, 0.2)}`, borderRadius: '18px', padding: '4px 8px', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: primary }}>👤</span>
+                <button onClick={handleReaderLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '10px', cursor: 'pointer', fontWeight: 800 }}>✕</button>
               </div>
             ) : (
-              <Link href="/login" className="hp-login" style={{ background: primary, padding: '6px 12px', fontSize: '12px' }}>
+              <Link href="/login" style={{ background: primary, color: '#fff', borderRadius: '18px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 लॉगिन
               </Link>
             )}
@@ -811,222 +699,257 @@ export default function HomePage() {
 
       {/* ═══ SEARCH MODAL ═══ */}
       {searchModalOpen && (
-        <div
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSearchModalOpen(false);
-          }}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(4px)', zIndex: 500, display: 'flex', justifyContent: 'center', padding: '90px 16px 0' }}
-        >
-          <div className="hp-search-box">
-            <div className="hp-search-row">
-              <span style={{ color: '#999', display: 'flex' }}>
-                <SearchIcon size={18} />
-              </span>
-              <input
-                type="text"
-                placeholder="खबरें खोजें..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setActiveTrendTag('');
-                }}
-                autoFocus
-                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#1a1a1a', background: 'transparent' }}
-              />
-              <button
-                onClick={() => setSearchModalOpen(false)}
-                style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', padding: '4px 12px', fontSize: '11.5px', color: '#888', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}
-              >
+        <div onClick={(e) => { if (e.target === e.currentTarget) setSearchModalOpen(false); }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(4px)', zIndex: 500, display: 'flex', justifyContent: 'center', padding: '90px 16px 0' }}>
+          <div style={{ width: '100%', maxWidth: '580px', background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,.2)', alignSelf: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', borderBottom: '1px solid #eee' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="search" placeholder="खबर, विषय या कीवर्ड लिखें..." value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setActiveTrendTag(''); }} autoFocus
+                style={{ width: '100%', border: 'none', outline: 'none', fontSize: '15px', color: '#1a1a1a', background: 'transparent' }} />
+              <button onClick={() => setSearchModalOpen(false)}
+                style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', padding: '4px 12px', fontSize: '11.5px', color: '#888', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}>
                 Esc
               </button>
             </div>
-            {searchTerm && (
-              <button className="hp-search-result" onClick={() => setSearchModalOpen(false)}>
-                “{searchTerm}” के लिए परिणाम देखें…
-              </button>
-            )}
+            {searchTerm && <div style={{ padding: '12px 18px', fontSize: '13px', color: '#999' }}>&ldquo;{searchTerm}&rdquo; के लिए परिणाम देखें…</div>}
           </div>
         </div>
       )}
 
-      {/* ═══ MOBILE DRAWER ═══ */}
-      {drawerOpen && (
-        <div
-          onClick={() => setDrawerOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(2px)', zIndex: 390 }}
-        />
-      )}
-      {drawerOpen && (
-        <aside className="hp-drawer">
-          <div className="hp-drawer-head">
-            <strong style={{ color: primary, fontSize: '16px' }}>{siteConfig?.name || 'द लोकल लीडर'}</strong>
-            <button className="hp-drawer-close" onClick={() => setDrawerOpen(false)} aria-label="बंद करें">
-              ✕
-            </button>
-          </div>
-          {categoryButtons}
-          <div className="hp-drawer-links">
-            <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ पत्रकार
-            </Link>
-            <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
-              📢 विज्ञापन
-            </Link>
-          </div>
-        </aside>
-      )}
+      {drawerOpen && <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(2px)', zIndex: 390 }} />}
 
       {/* ═══ 3. THREE-COLUMN SHELL ═══ */}
-      <div className="hp-shell">
+      <div className="shell">
+
         {/* ── LEFT SIDEBAR ── */}
-        <aside className="hp-side hp-left">
-          <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>श्रेणियाँ</h3>
-            {categoryButtons}
+        <aside className={`col-left ${drawerOpen ? 'open' : ''}`}>
+          <div style={{ display: drawerOpen ? 'flex' : 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600 }}>श्रेणियाँ</span>
+            <button onClick={() => setDrawerOpen(false)} style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '8px', width: '30px', height: '30px', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: '14px', color: '#888' }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {CATEGORY_LIST.map(({ key, icon }) => {
+              const isActive = activeCategory === key && !activeTrendTag;
+              return (
+                <button key={key} className="cat-btn" onClick={() => handleCategoryClick(key)}
+                  style={{ color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#555', background: isActive ? tint(primary, 0.07) : 'transparent', fontWeight: 600 }}>
+                  <span style={{ width: '30px', height: '30px', borderRadius: '8px', background: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef444422' : '#f0efec', color: isActive ? '#fff' : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#888', display: 'grid', placeItems: 'center', fontSize: '14px', flexShrink: 0, transition: 'background .15s ease, color .15s ease' }}>
+                    {icon}
+                  </span>
+                  {key}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #eae8e4' }}>
+            <div style={{ fontSize: '11px', color: '#aaa', fontWeight: 600, marginBottom: '10px', textAlign: 'center', letterSpacing: '.04em' }}>ऐप डाउनलोड करें</div>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8' }}>
+              <svg width="22" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3.61 1.814L13.793 12 3.61 22.186A1.99 1.99 0 013 20.6V3.4c0-.586.228-1.136.61-1.586z" fill="#4285F4"/>
+                <path d="M17.09 8.352L5.08.658C4.61.384 4.07.25 3.51.25L13.793 12l3.297-3.648z" fill="#EA4335"/>
+                <path d="M3.51 23.75c.56 0 1.1-.134 1.57-.408l12.01-7.694L13.793 12 3.51 23.75z" fill="#34A853"/>
+                <path d="M20.8 10.248l-3.71-1.896L13.793 12l3.297 3.648 3.71-1.896c1.012-.593 1.012-2.11 0-2.504z" fill="#FBBC04"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>GET IT ON</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Google Play</div>
+              </div>
+            </a>
+            <a href="#" onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #eae8e4', borderRadius: '10px', padding: '8px 12px', marginBottom: '6px', background: '#fafaf8' }}>
+              <svg width="20" height="24" viewBox="0 0 170 170" fill="#1a1a1a">
+                <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.28 2.13-9.54 3.24-12.8 3.35-4.92.21-9.84-1.96-14.75-6.52-3.13-2.73-7.04-7.41-11.75-14.04-5.03-7.08-9.17-15.29-12.41-24.65-3.47-10.2-5.21-20.07-5.21-29.59 0-10.95 2.36-20.4 7.09-28.32 3.72-6.36 8.67-11.39 14.87-15.08 6.2-3.7 12.9-5.58 20.12-5.73 3.92 0 9.06 1.21 15.43 3.59 6.35 2.39 10.43 3.61 12.22 3.61 1.34 0 5.87-1.43 13.56-4.29 7.27-2.65 13.41-3.75 18.44-3.32 13.62 1.1 23.85 6.47 30.65 16.15-12.19 7.39-18.22 17.73-18.1 31.01.11 10.34 3.86 18.95 11.23 25.8 3.34 3.17 7.07 5.62 11.22 7.36-.9 2.61-1.85 5.11-2.86 7.51zM119.11 7.24c0 8.1-2.96 15.67-8.86 22.67-7.12 8.32-15.73 13.13-25.07 12.37a25.2 25.2 0 01-.19-3.07c0-7.78 3.39-16.1 9.4-22.9 3-3.44 6.82-6.31 11.45-8.6 4.62-2.26 8.99-3.51 13.1-3.71.12 1.1.17 2.2.17 3.24z"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: '9px', color: '#aaa', lineHeight: 1.2 }}>Download on the</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>App Store</div>
+              </div>
+            </a>
           </div>
         </aside>
 
         {/* ── CENTER COLUMN (MAIN NEWS FEED & LIVE FEED) ── */}
-        <main className="hp-main">
-          {headerAd ? (
-            <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(headerAd)}>
-              <img src={headerAd.imageUrl} alt={headerAd.name || 'विज्ञापन'} className="hp-ad-img" />
-            </a>
-          ) : (
-            <div className="hp-ad-slot">विज्ञापन · 728 × 90</div>
-          )}
+        <main style={{ minWidth: 0 }}>
+
+          <div className="ad-leader">
+            {headerAd ? (
+              <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(headerAd)}>
+                <img src={headerAd.imageUrl} alt={headerAd.name} />
+              </a>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#555', fontSize: '11px' }}>
+                विज्ञापन · 728 × 90
+              </div>
+            )}
+          </div>
 
           {/* 🔴 MULTIPLE LIVE STREAMS GRID */}
           {showLiveInFeed && (
-            <section className="hp-live">
-              <div className="hp-live-head">
-                <h2 className="hp-live-title">🔴 लाइव कवरेज प्रसारण ({liveSessions.length} Live)</h2>
-                <span className="hp-live-pill">सीधा प्रसारण</span>
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', animation: 'spin 1.2s linear infinite' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#ef4444', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                    🔴 लाइव कवरेज प्रसारण ({liveSessions.length} Live)
+                  </span>
+                </div>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>सीधा प्रसारण</span>
               </div>
-              <div className="hp-live-grid">
+
+              <div style={{ display: 'grid', gridTemplateColumns: liveSessions.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(290px, 1fr))', gap: '16px' }}>
                 {liveSessions.map((session) => (
-                  <div key={session.id} className="hp-live-card">
-                    <div className="hp-video">
+                  <div key={session.id} className="card" style={{ border: '2px solid #ef4444', overflow: 'hidden', boxShadow: '0 4px 18px rgba(239, 68, 68, 0.15)' }}>
+                    
+                    <div style={{ backgroundColor: '#ef4444', color: '#fff', padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.5px' }}>
+                        ● LIVE STREAM
+                      </span>
+                      <span style={{ fontSize: '10.5px', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '10px' }}>
+                        {session.siteId === 'all' ? (siteConfig?.name || 'द लोकल लीडर') : session.siteId}
+                      </span>
+                    </div>
+
+                    <div style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000' }}>
                       <iframe
-                        src={`https://www.youtube.com/embed/${session.youtubeId}`}
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${session.youtubeId}?autoplay=0&mute=0`}
                         title={session.title}
+                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
                     </div>
-                    <div className="hp-live-body">
-                      <div className="hp-live-tag">
-                        <span style={{ color: '#ef4444' }}>● LIVE STREAM</span>
-                        <span style={{ color: '#888', fontWeight: 600 }}>
-                          {session.siteId === 'all' ? siteConfig?.name || 'द लोकल लीडर' : session.siteId}
-                        </span>
-                      </div>
-                      <h3 className="hp-live-card-title">{session.title}</h3>
+
+                    <div style={{ padding: '12px 14px', backgroundColor: '#fff' }}>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px', color: '#0f172a', lineHeight: 1.35 }}>
+                        {session.title}
+                      </h3>
+
                       {session.updates && session.updates.length > 0 && (
-                        <div className="hp-updates">
-                          <strong style={{ color: '#c2410c' }}>⚡ ताज़ा अपडेट:</strong>
-                          {[...session.updates].slice(-2).reverse().map((u) => (
-                            <p key={u.id}>
-                              <strong>[{u.time}]</strong> {u.update}
-                            </p>
-                          ))}
+                        <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                            ⚡ ताज़ा अपडेट:
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {[...session.updates].slice(-2).reverse().map((u) => (
+                              <div key={u.id} style={{ fontSize: '12px', color: '#334155' }}>
+                                <span style={{ color: '#ef4444', fontWeight: 700 }}>[{u.time}]</span> {u.update}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
           )}
 
           {/* ── TRENDING TAGS ── */}
           {activeCategory !== 'लाइव' && (
-            <div className="hp-tags">
-              <span className="hp-tags-label" style={{ color: primary }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                  <polyline points="17 6 23 6 23 12" />
-                </svg>
+            <div style={{ background: '#fff', border: '1px solid #eae8e4', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', marginBottom: '18px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: primary, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2.5" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 ट्रेंडिंग
               </span>
-              {TRENDING_TAGS.map((t) => {
-                const isTagActive = activeTrendTag === t;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => handleTrendTagClick(t)}
-                    style={{
-                      fontSize: '12.5px',
-                      fontWeight: isTagActive ? 600 : 500,
-                      border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
-                      borderRadius: '20px',
-                      padding: '5px 14px',
-                      color: isTagActive ? '#fff' : '#555',
-                      background: isTagActive ? primary : '#fff',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      outline: 'none',
-                      transition: 'all .15s ease'
-                    }}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
+              <div className="hide-scrollbar" style={{ display: 'flex', gap: '6px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1 }}>
+                {TRENDING_TAGS.map((t) => {
+                  const isTagActive = activeTrendTag === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleTrendTagClick(t)}
+                      style={{
+                        fontSize: '12.5px',
+                        fontWeight: isTagActive ? 600 : 500,
+                        border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
+                        borderRadius: '20px',
+                        padding: '5px 14px',
+                        color: isTagActive ? '#fff' : '#555',
+                        background: isTagActive ? primary : '#fff',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        outline: 'none',
+                        transition: 'all .15s ease',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* Live Section Heading */}
           {activeCategory === 'लाइव' && (
-            <h2 className="hp-section-title" style={{ borderColor: primary }}>
-              लाइव प्रसारण कवरेज (Live Streams)
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', padding: '0 4px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#ef4444', margin: 0 }}>
+                लाइव प्रसारण कवरेज (Live Streams)
+              </h2>
+            </div>
           )}
 
           {/* ── ARTICLES FEED ── */}
           {activeCategory === 'लाइव' ? (
             !hasLiveStreams && (
-              <div className="hp-empty">
-                <div className="hp-empty-ic">📡</div>
-                <h3>वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है</h3>
-                <p>जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।</p>
+              <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <span style={{ fontSize: '42px', display: 'block', marginBottom: '12px', opacity: 0.5 }}>📡</span>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है
+                </h3>
+                <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+                  जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।
+                </p>
               </div>
             )
           ) : loading ? (
-            <div className="hp-loading">खबरें लोड हो रही हैं…</div>
+            <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <div style={{ width: '32px', height: '32px', border: `3px solid ${tint(primary, 0.2)}`, borderTopColor: primary, borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 14px' }} />
+              <span style={{ color: '#999', fontSize: '14px' }}>खबरें लोड हो रही हैं…</span>
+            </div>
           ) : filteredArticles.length === 0 && !showLiveInFeed ? (
-            <div className="hp-empty">
-              <div className="hp-empty-ic">📭</div>
-              <h3>
-                {activeTrendTag
-                  ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली`
-                  : searchTerm
-                    ? `"${searchTerm}" के लिए कोई खबर नहीं मिली`
-                    : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+            <div className="card" style={{ padding: '50px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px', opacity: .4 }}>📭</div>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1a1a', marginBottom: '6px' }}>
+                {activeTrendTag ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली` : searchTerm ? `"${searchTerm}" के लिए कोई खबर नहीं मिली` : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
-              <p>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
+              <p style={{ color: '#999', fontSize: '13px' }}>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
             </div>
           ) : (
-            <div className="hp-list">
+            <div className="card" style={{ overflow: 'hidden' }}>
               {filteredArticles[0] && (
-                <Link href={articleHref(filteredArticles[0])} className="hp-hero">
-                  {filteredArticles[0].image && (
-                    <img src={filteredArticles[0].image} alt={filteredArticles[0].title} className="hp-hero-img" />
-                  )}
-                  <div className="hp-hero-body">
-                    <span className="hp-badge" style={{ background: primary }}>
-                      {filteredArticles[0].category || 'ताज़ा खबर'}
-                    </span>
-                    <h2 className="hp-hero-title">{filteredArticles[0].title}</h2>
-                    {filteredArticles[0].summary && <p className="hp-hero-summary">{filteredArticles[0].summary}</p>}
-                    <div className="hp-meta">
-                      <span>
-                        {filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}
-                      </span>
-                      <span>👁 {filteredArticles[0].views || 0} बार पढ़ा गया</span>
+                <article style={{ borderBottom: '1px solid #eae8e4' }}>
+                  <Link href={`/article/${filteredArticles[0].id}?site=${currentSlug}`}>
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#e8e6e2' }}>
+                      <img className="hero-img" src={filteredArticles[0].image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'} alt={filteredArticles[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,.7))', padding: '40px 20px 16px' }}>
+                        <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: '10.5px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', marginBottom: '8px' }}>
+                          {filteredArticles[0].category || 'ताज़ा खबर'}
+                        </span>
+                        <h2 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '22px', fontWeight: 500, lineHeight: 1.45, color: '#fff', margin: 0 }}>
+                          {filteredArticles[0].title}
+                        </h2>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                    <div style={{ padding: '14px 20px 16px' }}>
+                      {filteredArticles[0].summary && <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.65, margin: '0 0 12px' }}>{filteredArticles[0].summary}</p>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#aaa' }}>
+                        <span>{filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}</span>
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ccc', flexShrink: 0 }} />
+                        <span>👁 {filteredArticles[0].views || 0} बार पढ़ा गया</span>
+                      </div>
+                    </div>
+                  </Link>
+                </article>
               )}
 
               {filteredArticles.slice(1).map((item, index) => {
@@ -1035,46 +958,50 @@ export default function HomePage() {
                 const currentInFeedAd = inFeedAds[adIndex];
 
                 return (
-                  <Fragment key={item.id}>
-                    <Link href={articleHref(item)} className="hp-item">
-                      <div className="hp-item-body">
-                        <span className="hp-item-cat" style={{ color: primary }}>
-                          {item.category}
-                        </span>
-                        <h3 className="hp-item-title">{item.title}</h3>
-                        <div className="hp-meta">
-                          <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
-                          <span>👁 {item.views || 0}</span>
+                  <div key={item.id}>
+                    <article className="art-row" style={{ borderBottom: '1px solid #eae8e4' }}>
+                      <Link href={`/article/${item.id}?site=${currentSlug}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '14px 20px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: primary, letterSpacing: '.03em' }}>{item.category}</span>
+                          <h4 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 500, margin: '3px 0 8px', color: '#1a1a1a', lineHeight: 1.45 }}>{item.title}</h4>
+                          <div style={{ fontSize: '11px', color: '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
+                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#ddd', flexShrink: 0 }} />
+                            <span>👁 {item.views || 0}</span>
+                          </div>
                         </div>
-                      </div>
-                      {item.image && <img src={item.image} alt={item.title} className="hp-item-img" loading="lazy" />}
-                    </Link>
+                        {item.image && (
+                          <div style={{ width: '108px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#e8e6e2' }}>
+                            <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        )}
+                      </Link>
+                    </article>
 
                     {showAd && (
-                      <div className="hp-feed-ad">
-                        <div className="hp-feed-ad-label">प्रायोजित / विज्ञापन</div>
+                      <div className="infeed-ad-banner">
+                        <span style={{ fontSize: '9.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', alignSelf: 'flex-start' }}>
+                          प्रायोजित / विज्ञापन
+                        </span>
                         {currentInFeedAd ? (
-                          <a
-                            href={currentInFeedAd.targetUrl || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <a 
+                            href={currentInFeedAd.targetUrl || '#'} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
                             onClick={() => handleAdClick(currentInFeedAd)}
                             style={{ display: 'block', width: '100%', maxHeight: '110px', overflow: 'hidden', borderRadius: '8px' }}
                           >
-                            <img
-                              src={currentInFeedAd.imageUrl}
-                              alt={currentInFeedAd.name || 'विज्ञापन'}
-                              style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }}
-                            />
+                            <img src={currentInFeedAd.imageUrl} alt={currentInFeedAd.name} style={{ width: '100%', height: 'auto', maxHeight: '110px', objectFit: 'cover', borderRadius: '8px' }} />
                           </a>
                         ) : (
-                          <div className="hp-ad-slot" style={{ minHeight: '80px' }}>
-                            📢 विज्ञापन स्थान (In-Feed Sponsored Ad)
+                          <div style={{ width: '100%', height: '80px', background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#64748b', fontSize: '12px' }}>
+                            <span>📢</span>
+                            <b>विज्ञापन स्थान (In-Feed Sponsored Ad)</b>
                           </div>
                         )}
                       </div>
                     )}
-                  </Fragment>
+                  </div>
                 );
               })}
             </div>
@@ -1082,93 +1009,110 @@ export default function HomePage() {
         </main>
 
         {/* ── RIGHT SIDEBAR ── */}
-        <aside className="hp-side hp-right">
-          {/* Sidebar Ad (300) */}
-          {sidebarAd ? (
-            <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)}>
-              <img src={sidebarAd.imageUrl} alt={sidebarAd.name || 'विज्ञापन'} className="hp-ad-img" />
-            </a>
-          ) : (
-            <div className="hp-ad-slot" style={{ minHeight: '250px' }}>विज्ञापन · 300 × 250</div>
-          )}
+        <aside className="col-right">
 
-          {/* 🔮 RASHIFAL WIDGET */}
-          <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>🔮 आज का राशिफल</h3>
-            <div className="hp-rashi-grid">
-              {DEFAULT_RASHI_LIST.map((r) => {
-                const isSel = selectedRashi === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    className="hp-rashi"
-                    onClick={() => setSelectedRashi(r.id)}
-                    style={{
-                      borderColor: isSel ? primary : undefined,
-                      background: isSel ? tint(primary, 0.08) : undefined,
-                      color: isSel ? primary : undefined,
-                      fontWeight: isSel ? 700 : 500
-                    }}
-                  >
-                    <span className="hp-rashi-sign">{r.sign}</span>
-                    {r.name}
-                  </button>
-                );
-              })}
+          <div className="card" style={{ marginBottom: '18px' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #eae8e4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '16px', fontWeight: 600, margin: 0 }}>सबसे ज़्यादा पढ़ी गईं</h3>
             </div>
-            <div style={{ background: '#faf9f6', borderRadius: '10px', padding: '12px' }}>
-              <strong style={{ fontSize: '14px', color: primary }}>
-                {activeRashiItem.sign} {activeRashiItem.name}
-              </strong>
-              <p className="hp-rashi-text" style={{ marginTop: '6px' }}>
-                {activeRashiInfo?.prediction ||
-                  activeRashiInfo?.text ||
-                  activeRashiInfo?.description ||
-                  'आज का राशिफल जल्द ही अपडेट किया जाएगा।'}
-              </p>
+            <div>
+              {filteredArticles.slice(0, 5).map((art, idx) => (
+                <Link key={art.id} href={`/article/${art.id}?site=${currentSlug}`} className="art-row"
+                  style={{ display: 'flex', gap: '12px', padding: '12px 18px', borderBottom: idx < 4 ? '1px solid #f0efec' : 'none', alignItems: 'flex-start' }}>
+                  <span style={{ fontFamily: '"Mukta", sans-serif', fontSize: '22px', fontWeight: 800, color: tint(primary, 0.25), lineHeight: 1, flexShrink: 0, width: '24px' }}>{idx + 1}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 500, margin: '0 0 3px', color: '#1a1a1a', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as any}>{art.title}</h4>
+                    <span style={{ fontSize: '10.5px', color: '#bbb' }}>👁 {art.views || 0} बार पढ़ा गया</span>
+                  </div>
+                </Link>
+              ))}
+              {filteredArticles.length === 0 && <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: '#ccc' }}>कोई खबर नहीं</div>}
             </div>
           </div>
 
           {/* 📋 CLASSIFIED ADS WIDGET */}
-          <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>📋 क्लासिफाइड विज्ञापन</h3>
-            {classifiedAds.length === 0 ? (
-              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>अभी कोई क्लासिफाइड विज्ञापन उपलब्ध नहीं है।</p>
-            ) : (
-              classifiedAds.map((c) => (
-                <div key={c.id} className="hp-classified">
-                  {c.imageUrl ? (
-                    <img src={c.imageUrl} alt={c.title} className="hp-classified-img" />
-                  ) : (
-                    <div className="hp-classified-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-                      📋
-                    </div>
-                  )}
-                  <div style={{ minWidth: 0 }}>
-                    <p className="hp-classified-title">{c.title}</p>
-                    <div className="hp-classified-meta">
-                      {[c.category, c.city, c.price].filter(Boolean).join(' · ')}
-                    </div>
-                    {c.contactNumber && (
-                      <a href={`tel:${c.contactNumber}`} className="hp-classified-call" style={{ color: primary }}>
-                        📞 {c.contactNumber}
-                      </a>
-                    )}
-                  </div>
+          <div className="card" style={{ marginBottom: '18px', border: `1.5px solid ${tint(primary, 0.2)}` }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: tint(primary, 0.04) }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '15px' }}>📋</span>
+                <h3 style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15px', fontWeight: 700, margin: 0, color: primary }}>
+                  क्लासिफाइड विज्ञापन
+                </h3>
+              </div>
+              <Link href={`/classifieds?site=${currentSlug}`} style={{ fontSize: '11px', color: primary, fontWeight: 700 }}>
+                सभी देखें →
+              </Link>
+            </div>
+
+            <div style={{ padding: '12px 16px' }}>
+              {classifiedAds.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '18px 12px', background: '#fafaf8', border: '1px dashed #d1d5db', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '6px', opacity: 0.6 }}>📢</span>
+                  <p style={{ margin: '0 0 4px', fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>
+                    अभी कोई सक्रिय क्लासिफाइड विज्ञापन नहीं है
+                  </p>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    विज्ञापन हेतु विज्ञापनदाता पोर्टल से संपर्क करें
+                  </span>
                 </div>
-              ))
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {classifiedAds.map((c) => (
+                    <Link key={c.id} href={`/classifieds?site=${currentSlug}`} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f5f4f1' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '6px', background: '#f1f5f9', display: 'grid', placeItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                        {c.imageUrl ? (
+                          <img src={c.imageUrl} alt={c.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '16px' }}>🏷️</span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '10px', color: primary, fontWeight: 700, textTransform: 'uppercase' }}>
+                          {c.category || 'वर्गीकृत'} {c.city ? `· ${c.city}` : ''}
+                        </div>
+                        <h5 style={{ fontSize: '12.5px', fontWeight: 600, color: '#1a1a1a', margin: '1px 0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          {c.title}
+                        </h5>
+                        {c.price && <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>₹{c.price}</span>}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: '18px', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <span style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${tint(primary, 0.12)}, ${tint(primary, 0.04)})`, display: 'grid', placeItems: 'center', fontSize: '20px', flexShrink: 0 }}>{activeRashiItem.sign}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '15px', fontWeight: 600, lineHeight: 1.2 }}>{activeRashiItem.name} राशिफल</div>
+                <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>शुभ अंक: {activeRashiInfo?.luckyNumber || '7'} · रंग: {activeRashiInfo?.luckyColor || 'केसरिया'}</div>
+              </div>
+              <select value={selectedRashi} onChange={(e) => setSelectedRashi(e.target.value)}
+                style={{ background: '#f5f4f1', border: '1px solid #e5e3df', color: '#555', borderRadius: '8px', padding: '5px 8px', fontSize: '11.5px', outline: 'none', cursor: 'pointer' }}>
+                {DEFAULT_RASHI_LIST.map(r => <option key={r.id} value={r.id}>{r.name} {r.sign}</option>)}
+              </select>
+            </div>
+            <p style={{ fontSize: '13px', color: '#666', margin: 0, lineHeight: 1.7 }}>
+              {activeRashiInfo?.prediction || `आज ${activeRashiItem.name} राशि के जातकों के लिए नए अवसर खुलेंगे। वाणी में मधुरता बनाए रखें।`}
+            </p>
+          </div>
+
+          <div className="card" style={{ height: '260px', display: 'grid', placeItems: 'center' }}>
+            {sidebarAd ? (
+              <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)} style={{ display: 'block', width: '100%', height: '100%' }}>
+                <img src={sidebarAd.imageUrl} alt={sidebarAd.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </a>
+            ) : (
+              <span style={{ color: '#ccc', fontSize: '11px' }}>विज्ञापन · 300 × 250</span>
             )}
           </div>
         </aside>
       </div>
 
-      <Footer
-        siteName={siteConfig?.name || 'द लोकल लीडर'}
-        primaryColor={primary}
-        logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
-        tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
-        currentSlug={currentSlug}
-      />
+      <Footer siteName={siteConfig?.name || 'द लोकल लीडर'} primaryColor={primary} logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`} tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'} currentSlug={currentSlug} />
     </div>
   );
 }
