@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const DOMAIN_TO_SLUG: Record = {
+const DOMAIN_TO_SLUG: { [key: string]: string } = {
   // 1. The Local Leader
   'thelocalleader.in': 'the-local-leader',
   'www.thelocalleader.in': 'the-local-leader',
@@ -18,7 +18,7 @@ const DOMAIN_TO_SLUG: Record = {
   'bazarkarobar.com': 'bazar-karobar',
   'www.bazarkarobar.com': 'bazar-karobar',
 
-  // 5. Golden Pearl Chronicles (Abhi domain fix hona baaki hai)
+  // 5. Golden Pearl Chronicles (Domain pending)
   // 'goldenpearlcorporation.com': 'golden-pearl-chronicles',
   // 'www.goldenpearlcorporation.com': 'golden-pearl-chronicles',
 
