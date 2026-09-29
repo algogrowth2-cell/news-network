@@ -34,37 +34,54 @@ const LT_STYLES = `
 }
 `;
 
+// googtrans cookie ko sabhi variants me set karta hai, taaki purani cookie overwrite ho jaaye
+const setGoogTransCookie = (langCode: string) => {
+  const host = window.location.hostname;
+  document.cookie = `googtrans=/hi/${langCode}; path=/;`;
+  document.cookie = `googtrans=/auto/${langCode}; path=/;`;
+  document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${host};`;
+  document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${host};`;
+
+  if (host.includes('.')) {
+    const rootDomain = '.' + host.split('.').slice(-2).join('.');
+    document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${rootDomain};`;
+    document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${rootDomain};`;
+  }
+};
+
+// English default wale portals
+const ENGLISH_PORTALS = ['news-info-24', 'city-bulletin', 'ndn-defence', 'national-defence-network', 'national-spotlight'];
+
 function LanguageTranslatorInner() {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 1. Detect site & set default language (news-info-24 & ndn-defence -> en, others -> hi)
+  const rawSite = searchParams.get('site') || 'the-local-leader';
+  const siteSlug = decodeURIComponent(rawSite).trim().toLowerCase().replace(/\s+/g, '-');
+  const langPrefKey = `lang_pref_${siteSlug}`;
+
+  // 1. Detect site & set default language (news-info-24 & national-defence-network -> en, others -> hi)
   useEffect(() => {
-    const rawSite = searchParams.get('site') || 'the-local-leader';
-    const siteSlug = decodeURIComponent(rawSite).trim().toLowerCase().replace(/\s+/g, '-');
-
-    const isEnglishPortal =
-      siteSlug === 'news-info-24' ||
-      siteSlug === 'city-bulletin' ||
-      siteSlug === 'ndn-defence' ||
-      siteSlug === 'national-defence-network' ||
-      siteSlug === 'national-spotlight';
-
+    const isEnglishPortal = ENGLISH_PORTALS.includes(siteSlug);
     const portalDefault = isEnglishPortal ? 'en' : 'hi';
 
-    // Check if user has explicitly saved cookie, otherwise use portalDefault
+    // Har site ki apni bhasha: user ne is site par khud chuni ho toh wahi, warna site ka default
     let activeLang = portalDefault;
+    try {
+      const savedForSite = localStorage.getItem(langPrefKey);
+      if (savedForSite) activeLang = savedForSite;
+    } catch (e) {
+      console.error(e);
+    }
+
+    // Cookie dusri site ki bhasha par ho toh use is site ki bhasha par set karo
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
-      if (match && match[2]) {
-        activeLang = match[2];
-      } else {
-        // Apply default cookie for current portal
-        const host = window.location.hostname;
-        document.cookie = `googtrans=/auto/${portalDefault}; path=/;`;
-        document.cookie = `googtrans=/auto/${portalDefault}; path=/; domain=${host};`;
+      const cookieLang = match && match[2] ? match[2] : '';
+      if (cookieLang !== activeLang) {
+        setGoogTransCookie(activeLang);
       }
     }
 
@@ -82,7 +99,7 @@ function LanguageTranslatorInner() {
     applyToCombo();
     const t = setTimeout(applyToCombo, 600);
     return () => clearTimeout(t);
-  }, [searchParams]);
+  }, [siteSlug, langPrefKey]);
 
   // 2. Initialize Google Translate Script
   useEffect(() => {
@@ -128,17 +145,14 @@ function LanguageTranslatorInner() {
 
     if (typeof window === 'undefined') return;
 
-    const host = window.location.hostname;
-    document.cookie = `googtrans=/hi/${langCode}; path=/;`;
-    document.cookie = `googtrans=/auto/${langCode}; path=/;`;
-    document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${host};`;
-    document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${host};`;
-
-    if (host.includes('.')) {
-      const rootDomain = '.' + host.split('.').slice(-2).join('.');
-      document.cookie = `googtrans=/hi/${langCode}; path=/; domain=${rootDomain};`;
-      document.cookie = `googtrans=/auto/${langCode}; path=/; domain=${rootDomain};`;
+    // Sirf is site ke liye user ki chuni hui bhasha yaad rakho
+    try {
+      localStorage.setItem(langPrefKey, langCode);
+    } catch (e) {
+      console.error(e);
     }
+
+    setGoogTransCookie(langCode);
 
     const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
     if (combo) {
