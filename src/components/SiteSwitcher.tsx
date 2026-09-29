@@ -10,17 +10,18 @@ interface SiteItem {
   slug: string;
   name: string;
   tag: string;
+  domain?: string;
 }
 
 const NETWORK_SITES: SiteItem[] = [
-  { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)' },
-  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)' },
-  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)' },
-  { slug: 'news-info-24', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)' },
-  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)' },
-  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', tag: 'प्रीमियम (Premium)' },
-  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', tag: 'प्रीमियम (Premium)' },
-  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)' }
+  { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)', domain: 'thelocalleader.in' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)', domain: 'theproviewtimes.com' },
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'janbharatnews.com' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)', domain: 'newsinfo24.in' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'nationaldefencenetwork.com' },
+  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', tag: 'प्रीमियम (Premium)', domain: 'bazarkarobar.com' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', tag: 'प्रीमियम (Premium)', domain: 'goldenpearlcorporation.com' },
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)', domain: 'deshkiawaz.com' }
 ];
 
 const SUBSCRIPTION_PLANS = [
@@ -93,6 +94,38 @@ export default function SiteSwitcher({
     }
   }, []);
 
+  const getSsoSessionParam = () => {
+    try {
+      const cached = localStorage.getItem('reader_user');
+      if (cached) {
+        const encoded = btoa(encodeURIComponent(cached));
+        return `sso_session=${encoded}`;
+      }
+    } catch (err) {
+      console.error('SSO param generation error:', err);
+    }
+    return '';
+  };
+
+  const navigateToSite = (site: SiteItem) => {
+    const ssoParam = getSsoSessionParam();
+    if (typeof window !== 'undefined') {
+      const currentHost = window.location.hostname.toLowerCase().replace('www.', '');
+      if (currentHost.includes('localhost') || currentHost.includes('vercel.app')) {
+        const queryStr = `?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
+        window.location.href = queryStr;
+        return;
+      }
+
+      if (site.domain) {
+        const targetUrl = `https://${site.domain}${ssoParam ? `?${ssoParam}` : ''}`;
+        window.location.href = targetUrl;
+      } else {
+        window.location.href = `/?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
+      }
+    }
+  };
+
   const checkHasActivePlan = async (userEmail: string) => {
     try {
       const docRef = doc(db, 'subscriptions', userEmail);
@@ -117,7 +150,7 @@ export default function SiteSwitcher({
     setDropdownOpen(false);
 
     if (site.slug === 'the-local-leader') {
-      window.location.href = `/?site=${site.slug}`;
+      navigateToSite(site);
       return;
     }
 
@@ -133,7 +166,7 @@ export default function SiteSwitcher({
 
     const hasPlan = await checkHasActivePlan(userObj.email);
     if (hasPlan) {
-      window.location.href = `/?site=${site.slug}`;
+      navigateToSite(site);
     } else {
       setSelectedTargetSite(site);
       setModalOpen(true);
@@ -187,7 +220,7 @@ export default function SiteSwitcher({
           setProcessing(false);
 
           if (selectedTargetSite) {
-            window.location.href = `/?site=${selectedTargetSite.slug}`;
+            navigateToSite(selectedTargetSite);
           }
         } catch (err: any) {
           console.error(err);

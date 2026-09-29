@@ -1,7 +1,8 @@
 'use client';
 import { Fragment, Suspense, useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
@@ -380,18 +381,62 @@ function HomePageContent() {
     return () => unsubMarket();
   }, []);
 
+  // 🔐 CROSS-DOMAIN SSO TOKEN READER & AUTH PERSISTENCE LISTENER
   useEffect(() => {
-    const cached = localStorage.getItem('reader_user');
-    if (cached) {
+    const ssoSession = searchParams?.get('sso_session');
+    if (ssoSession) {
       try {
-        setReaderUser(JSON.parse(cached));
+        const decodedUser = decodeURIComponent(atob(ssoSession));
+        const parsed = JSON.parse(decodedUser);
+        if (parsed && (parsed.uid || parsed.phone || parsed.name || parsed.email)) {
+          localStorage.setItem('reader_user', JSON.stringify(parsed));
+          setReaderUser(parsed);
+
+          // Clean URL without reloading page
+          const cleanUrl = window.location.pathname + (searchParams.get('site') ? `?site=${searchParams.get('site')}` : '');
+          window.history.replaceState({}, '', cleanUrl);
+        }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to parse cross-domain SSO session:', e);
+      }
+    } else {
+      const cached = localStorage.getItem('reader_user');
+      if (cached) {
+        try {
+          setReaderUser(JSON.parse(cached));
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
-  }, []);
 
-  const handleReaderLogout = () => {
+    try {
+      const auth = getAuth(app);
+      const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          const userData = {
+            uid: user.uid,
+            name: user.displayName || user.phoneNumber || user.email?.split('@')[0] || 'पाठक',
+            email: user.email || '',
+            phone: user.phoneNumber || ''
+          };
+          setReaderUser(userData);
+          localStorage.setItem('reader_user', JSON.stringify(userData));
+        }
+      });
+      return () => unsubscribeAuth();
+    } catch (e) {
+      console.error('Firebase Auth listener error:', e);
+    }
+  }, [searchParams]);
+
+  const handleReaderLogout = async () => {
+    try {
+      const auth = getAuth(app);
+      await signOut(auth);
+    } catch (err) {
+      console.error('Signout error:', err);
+    }
     localStorage.removeItem('reader_user');
     setReaderUser(null);
   };
