@@ -375,31 +375,31 @@ export default function HomePage() {
       if (snap.exists()) {
         setSiteConfig({ slug: activeSiteSlug, ...snap.data() });
       } else {
-        // Dynamic fallback matching whichever site is selected
+        // Exact filenames present in public/logos/
         let fallbackName = 'The Local Leader';
         let fallbackDesc = '— जनता की आवाज़, सच्चाई के साथ —';
-        let fallbackLogo = `/logos/${activeSiteSlug}.jpeg`;
+        let fallbackLogo = '/logos/the-local-leader.jpeg';
         let fallbackColor = '#ea580c';
 
-        if (activeSiteSlug === 'the-proview-times' || activeSiteSlug === 'the-pro-times') {
+        if (activeSiteSlug === 'the-proview-times' || activeSiteSlug === 'the-provue-times' || activeSiteSlug === 'the-pro-times') {
           fallbackName = 'द प्रोव्यू टाइम्स';
           fallbackDesc = '— पेशेवर नज़र, सच्ची खबर —';
-          fallbackLogo = '/logos/theprobg.png';
+          fallbackLogo = '/logos/the-provue-times.jpeg';
           fallbackColor = '#b91c1c';
         } else if (activeSiteSlug === 'jan-bharat-news' || activeSiteSlug === 'jan-chetna-news') {
           fallbackName = 'जन भारत न्यूज़';
           fallbackDesc = '— भारत की आवाज़ —';
-          fallbackLogo = '/logos/JanBharatbg remover.jpg';
+          fallbackLogo = '/logos/jan-bharat-news.jpeg';
           fallbackColor = '#1d4ed8';
         } else if (activeSiteSlug === 'news-info-24' || activeSiteSlug === 'city-bulletin') {
           fallbackName = 'NEWS INFO 24';
           fallbackDesc = '— Stay Informed, Stay Ahead —';
-          fallbackLogo = '/logos/newsinfo24bg.png';
+          fallbackLogo = '/logos/news-info-24.jpeg';
           fallbackColor = '#dc2626';
-        } else if (activeSiteSlug === 'national-defence-network' || activeSiteSlug === 'state-express') {
+        } else if (activeSiteSlug === 'national-defence-network' || activeSiteSlug === 'ndn-defence' || activeSiteSlug === 'state-express') {
           fallbackName = 'डिफेंस न्यूज़';
           fallbackDesc = '— Defence Beyond Headlines —';
-          fallbackLogo = '/logos/ndnbg.png';
+          fallbackLogo = '/logos/ndn-defence.jpeg';
           fallbackColor = '#15803d';
         }
 
@@ -503,7 +503,6 @@ export default function HomePage() {
 
     const updateCombinedClassifieds = () => {
       const combined = [...directClassifieds, ...adsClassifieds];
-      // remove duplicate ids if any
       const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
       setClassifiedAds(unique.slice(0, 4));
     };
