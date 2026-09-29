@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const LANGUAGES = [
@@ -34,7 +34,7 @@ const LT_STYLES = `
 }
 `;
 
-export default function LanguageTranslator() {
+function LanguageTranslatorInner() {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState('hi');
@@ -298,5 +298,14 @@ export default function LanguageTranslator() {
         </>
       )}
     </div>
+  );
+}
+
+// useSearchParams ko Suspense me rakhna zaroori hai, warna Next.js build (prerender) fail hota hai
+export default function LanguageTranslator() {
+  return (
+    <Suspense fallback={null}>
+      <LanguageTranslatorInner />
+    </Suspense>
   );
 }
