@@ -145,6 +145,8 @@ const HP_STYLES = `
 .hp-main{min-width:0;display:flex;flex-direction:column;gap:18px}
 .hp-ad-slot{display:flex;align-items:center;justify-content:center;background:#fff;border:1px dashed #d6d3cd;border-radius:10px;color:#aaa;font-size:12px;min-height:90px;text-align:center;padding:10px}
 .hp-ad-img{display:block;width:100%;height:auto;border-radius:10px}
+.hp-ad-header{height:130px;object-fit:cover;object-position:center}
+.hp-ad-side{height:250px;object-fit:cover;object-position:center}
 
 .hp-live{background:#fff;border:1px solid #fecaca;border-radius:16px;padding:16px}
 .hp-live-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -243,6 +245,8 @@ const HP_STYLES = `
   .hp-item-img{width:96px;height:72px}
   .hp-item-title{font-size:13.5px}
   .hp-live-grid{grid-template-columns:1fr}
+  .hp-ad-header{height:95px}
+  .hp-ad-side{height:200px}
 }
 `;
 
@@ -906,7 +910,7 @@ export default function HomePage() {
         <main className="hp-main">
           {headerAd ? (
             <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(headerAd)}>
-              <img src={headerAd.imageUrl} alt={headerAd.name || 'विज्ञापन'} className="hp-ad-img" />
+              <img src={headerAd.imageUrl} alt={headerAd.name || 'विज्ञापन'} className="hp-ad-img hp-ad-header" />
             </a>
           ) : (
             <div className="hp-ad-slot">विज्ञापन · 728 × 90</div>
@@ -1102,7 +1106,7 @@ export default function HomePage() {
           {/* Sidebar Ad (300) */}
           {sidebarAd ? (
             <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)}>
-              <img src={sidebarAd.imageUrl} alt={sidebarAd.name || 'विज्ञापन'} className="hp-ad-img" />
+              <img src={sidebarAd.imageUrl} alt={sidebarAd.name || 'विज्ञापन'} className="hp-ad-img hp-ad-side" />
             </a>
           ) : (
             <div className="hp-ad-slot" style={{ minHeight: '250px' }}>विज्ञापन · 300 × 250</div>
