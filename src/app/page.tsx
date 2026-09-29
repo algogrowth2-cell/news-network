@@ -209,13 +209,13 @@ const HP_STYLES = `
 .hp-classified-title{font-size:13.5px;font-weight:700;margin:0 0 3px;line-height:1.35}
 .hp-classified-meta{font-size:11.5px;color:#888}
 .hp-see-all{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:9px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;border:1.5px solid;transition:background .15s}
-.hp-app-box{background:linear-gradient(160deg,#1a1a1a,#2b2b2b);color:#fff;border-radius:14px;padding:14px}
-.hp-app-title{font-size:13.5px;font-weight:800;margin:0 0 4px}
-.hp-app-sub{font-size:11.5px;color:#bbb;margin:0 0 12px;line-height:1.5}
-.hp-store{display:flex;align-items:center;gap:10px;background:#000;border:1px solid #444;border-radius:10px;padding:8px 12px;color:#fff;text-decoration:none;margin-top:8px;transition:border-color .15s}
-.hp-store:hover{border-color:#888}
-.hp-store small{display:block;font-size:9.5px;color:#aaa;line-height:1.2}
-.hp-store strong{display:block;font-size:13.5px;line-height:1.2}
+.hp-app-box{margin-top:12px;padding-top:12px;border-top:1px solid #eae8e4}
+.hp-app-title{font-size:13px;font-weight:800;margin:0 0 3px;color:#1a1a1a;padding:0 4px}
+.hp-app-sub{font-size:11.5px;color:#888;margin:0 0 8px;line-height:1.5;padding:0 4px}
+.hp-store{display:flex;align-items:center;gap:10px;background:#f7f6f3;border:1px solid #e5e3df;border-radius:10px;padding:7px 12px;color:#1a1a1a;text-decoration:none;margin-top:8px;transition:border-color .15s,background .15s}
+.hp-store:hover{background:#fff;border-color:#cfcac2}
+.hp-store small{display:block;font-size:9.5px;color:#888;line-height:1.2}
+.hp-store strong{display:block;font-size:13px;line-height:1.25}
 .hp-classified-call{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;text-decoration:none}
 
 .hp-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:85vw;background:#fff;z-index:400;overflow-y:auto;padding:16px;box-shadow:4px 0 24px rgba(0,0,0,.15);animation:hpSlide .22s ease}
@@ -670,7 +670,7 @@ export default function HomePage() {
       <p className="hp-app-title">📱 ऐप डाउनलोड करें</p>
       <p className="hp-app-sub">ताज़ा खबरें, लाइव अपडेट और ई-पेपर अब आपके फ़ोन पर।</p>
       <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill={primary} aria-hidden="true">
           <path d="M5 3.5v17a.5.5 0 0 0 .76.43l14-8.5a.5.5 0 0 0 0-.86l-14-8.5A.5.5 0 0 0 5 3.5z" />
         </svg>
         <span>
@@ -679,7 +679,7 @@ export default function HomePage() {
         </span>
       </a>
       <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round" aria-hidden="true">
           <rect x="6" y="2" width="12" height="20" rx="2.5" />
           <line x1="11" y1="18" x2="13" y2="18" />
         </svg>
@@ -931,7 +931,7 @@ export default function HomePage() {
               📢 विज्ञापन
             </Link>
           </div>
-          <div style={{ marginTop: '14px' }}>{appDownloadBox}</div>
+          {appDownloadBox}
         </aside>
       )}
 
@@ -942,8 +942,8 @@ export default function HomePage() {
           <div className="hp-box">
             <h3 className="hp-box-title" style={{ borderColor: primary }}>श्रेणियाँ</h3>
             {categoryButtons}
+            {appDownloadBox}
           </div>
-          {appDownloadBox}
         </aside>
 
         {/* ── CENTER COLUMN (MAIN NEWS FEED & LIVE FEED) ── */}
