@@ -49,6 +49,18 @@ const setGoogTransCookie = (langCode: string) => {
   }
 };
 
+// googtrans cookie ke saare variants hata deta hai (page original Hindi me dikhega)
+const clearGoogTransCookie = () => {
+  const host = window.location.hostname;
+  const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = `googtrans=; path=/; ${expired};`;
+  document.cookie = `googtrans=; path=/; domain=${host}; ${expired};`;
+  if (host.includes('.')) {
+    const rootDomain = '.' + host.split('.').slice(-2).join('.');
+    document.cookie = `googtrans=; path=/; domain=${rootDomain}; ${expired};`;
+  }
+};
+
 // English default wale portals
 const ENGLISH_PORTALS = ['news-info-24', 'city-bulletin', 'ndn-defence', 'national-defence-network', 'national-spotlight'];
 
@@ -76,16 +88,31 @@ function LanguageTranslatorInner() {
       console.error(e);
     }
 
-    // Cookie dusri site ki bhasha par ho toh use is site ki bhasha par set karo
-    if (typeof document !== 'undefined') {
-      const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
-      const cookieLang = match && match[2] ? match[2] : '';
-      if (cookieLang !== activeLang) {
-        setGoogTransCookie(activeLang);
+    setSelectedLang(activeLang);
+
+    const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
+    const cookieLang = match && match[2] ? match[2] : '';
+
+    // Hindi = page ka original text, isliye translation cookie hata do
+    if (activeLang === 'hi') {
+      clearGoogTransCookie();
+
+      // Pichhli site ka translation (jaise English) laga ho toh ek baar reload karke original dikhao
+      const reloadKey = `lt_reset_${siteSlug}`;
+      const alreadyReloaded = sessionStorage.getItem(reloadKey) === '1';
+      if (cookieLang && cookieLang !== 'hi' && !alreadyReloaded) {
+        sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+      } else if (!cookieLang) {
+        sessionStorage.removeItem(reloadKey);
       }
+      return;
     }
 
-    setSelectedLang(activeLang);
+    // Dusri bhasha (jaise English portals par 'en')
+    if (cookieLang !== activeLang) {
+      setGoogTransCookie(activeLang);
+    }
 
     // Apply to Google combo if already rendered
     const applyToCombo = () => {
@@ -150,6 +177,13 @@ function LanguageTranslatorInner() {
       localStorage.setItem(langPrefKey, langCode);
     } catch (e) {
       console.error(e);
+    }
+
+    // Hindi chuni toh original page dikhane ke liye translation hata kar reload
+    if (langCode === 'hi') {
+      clearGoogTransCookie();
+      window.location.reload();
+      return;
     }
 
     setGoogTransCookie(langCode);

@@ -191,7 +191,7 @@ export default function SiteSwitcher({
   const currentSiteObj = NETWORK_SITES.find((s) => s.slug === currentSlug) || NETWORK_SITES[0];
 
   return (
-    <div style={{ position: 'relative', flexShrink: 0 }}>
+    <div className="notranslate" translate="no" style={{ position: 'relative', flexShrink: 0 }}>
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
         style={{
