@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('goldenpearlnews@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,48 +18,51 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
 
     try {
-      // 🛡️ 1. DIRECT SECURE MASTER ACCESS FOR GOLDEN PEARL ADMIN
-      if (
-        cleanEmail === 'goldenpearlnews@gmail.com' &&
-        (cleanPassword === 'GoldenPearl@2026' || cleanPassword === 'Admin@123' || cleanPassword === 'admin123')
-      ) {
-        localStorage.setItem(
-          'admin_user',
-          JSON.stringify({
-            uid: 'golden-pearl-superadmin',
-            email: cleanEmail,
-            role: 'superadmin',
-            name: 'Golden Pearl Administrator',
-            authenticatedAt: new Date().toISOString()
-          })
-        );
+      // 1. Sirf pehle se bane Firebase account se login (koi auto-create nahi)
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const user = userCredential.user;
 
-        router.push('/admin');
+      // 2. Admin role check: 'admins' collection me uid ya email ka document hona zaroori hai
+      let isAdmin = false;
+      const byUid = await getDoc(doc(db, 'admins', user.uid));
+      if (byUid.exists()) {
+        isAdmin = true;
+      } else if (user.email) {
+        const byEmail = await getDoc(doc(db, 'admins', user.email.toLowerCase()));
+        if (byEmail.exists()) isAdmin = true;
+      }
+
+      if (!isAdmin) {
+        await signOut(auth);
+        setError('इस खाते को एडमिन पैनल का ऐक्सेस नहीं है।');
+        setLoading(false);
         return;
       }
 
-      // 🛡️ 2. STANDARD FIREBASE AUTH CHECK
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-      const user = userCredential.user;
+      // 3. Admin session
+      const adminData = {
+        uid: user.uid,
+        email: user.email,
+        role: 'superadmin',
+        name: 'Golden Pearl Administrator',
+        authenticatedAt: new Date().toISOString()
+      };
 
-      localStorage.setItem(
-        'admin_user',
-        JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          role: 'superadmin',
-          authenticatedAt: new Date().toISOString()
-        })
-      );
+      localStorage.setItem('admin_user', JSON.stringify(adminData));
+      sessionStorage.setItem('admin_user', JSON.stringify(adminData));
+      document.cookie = `admin_session=true; path=/; max-age=86400`;
 
-      router.push('/admin');
+      // 4. Force full page reload into Admin Dashboard
+      window.location.href = '/admin';
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('अमान्य ईमेल या पासवर्ड। कृपया पासवर्ड जांचें (उदा. GoldenPearl@2026)');
-    } finally {
+      if (err.code === 'auth/too-many-requests') {
+        setError('बहुत सारे असफल प्रयास। कृपया कुछ देर बाद प्रयास करें।');
+      } else {
+        setError('अमान्य ईमेल या पासवर्ड।');
+      }
       setLoading(false);
     }
   };
@@ -116,7 +118,7 @@ export default function AdminLoginPage() {
           </div>
           <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#fff' }}>गोल्डन पर्ल न्यूज़ एडमिन</h1>
           <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#94a3b8' }}>
-            नेटवर्क प्रबंधन व संपादकीय नियंत्रण कक्ष
+            सेंट्रलाइज्ड नेटवर्क प्रबंधन व संपादकीय नियंत्रण कक्ष
           </p>
         </div>
 
@@ -144,7 +146,7 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="goldenpearlnews@gmail.com"
+              placeholder="admin@example.com"
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
