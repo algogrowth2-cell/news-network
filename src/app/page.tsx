@@ -68,14 +68,6 @@ interface LiveBlogData {
   updates?: { id: string; time: string; update: string }[];
 }
 
-interface PortalMeta {
-  name: string;
-  description: string;
-  logoUrl: string;
-  primaryColor: string;
-  canonicalSlug: string;
-}
-
 const DEFAULT_RASHI_LIST = [
   { id: 'aries', name: 'मेष', sign: '♈' },
   { id: 'taurus', name: 'वृषभ', sign: '♉' },
@@ -107,79 +99,6 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'अपराध', icon: '🚨' },
   { key: 'खेल', icon: '🏏' }
 ];
-
-// ── PORTAL MAPPING CONFIGURATION ──
-const PORTAL_REGISTRY: Record<string, PortalMeta> = {
-  'the-local-leader': {
-    name: 'द लोकल लीडर',
-    description: '— जनता की आवाज़, सच्चाई के साथ —',
-    logoUrl: '/logos/the-local-leader.jpeg',
-    primaryColor: '#ea580c',
-    canonicalSlug: 'the-local-leader'
-  },
-  'the-proview-times': {
-    name: 'द प्रोव्यू टाइम्स',
-    description: '— पेशेवर नज़र, सच्ची खबर —',
-    logoUrl: '/logos/theprobg.png',
-    primaryColor: '#b91c1c',
-    canonicalSlug: 'the-proview-times'
-  },
-  'the-pro-times': {
-    name: 'द प्रोव्यू टाइम्स',
-    description: '— पेशेवर नज़र, सच्ची खबर —',
-    logoUrl: '/logos/theprobg.png',
-    primaryColor: '#b91c1c',
-    canonicalSlug: 'the-proview-times'
-  },
-  'jan-bharat-news': {
-    name: 'जन भारत न्यूज़',
-    description: '— भारत की आवाज़ —',
-    logoUrl: '/logos/JanBharatbg remover.jpg',
-    primaryColor: '#1d4ed8',
-    canonicalSlug: 'jan-bharat-news'
-  },
-  'jan-chetna-news': {
-    name: 'जन भारत न्यूज़',
-    description: '— भारत की आवाज़ —',
-    logoUrl: '/logos/JanBharatbg remover.jpg',
-    primaryColor: '#1d4ed8',
-    canonicalSlug: 'jan-bharat-news'
-  },
-  'news-info-24': {
-    name: 'NEWS INFO 24',
-    description: '— Stay Informed, Stay Ahead —',
-    logoUrl: '/logos/newsinfo24bg.png',
-    primaryColor: '#dc2626',
-    canonicalSlug: 'news-info-24'
-  },
-  'city-bulletin': {
-    name: 'NEWS INFO 24',
-    description: '— Stay Informed, Stay Ahead —',
-    logoUrl: '/logos/newsinfo24bg.png',
-    primaryColor: '#dc2626',
-    canonicalSlug: 'news-info-24'
-  },
-  'national-defence-network': {
-    name: 'नेशनल डिफेंस नेटवर्क',
-    description: '— Defence Beyond Headlines —',
-    logoUrl: '/logos/ndnbg.png',
-    primaryColor: '#15803d',
-    canonicalSlug: 'national-defence-network'
-  },
-  'state-express': {
-    name: 'नेशनल डिफेंस नेटवर्क',
-    description: '— Defence Beyond Headlines —',
-    logoUrl: '/logos/ndnbg.png',
-    primaryColor: '#15803d',
-    canonicalSlug: 'national-defence-network'
-  }
-};
-
-function normalizeSlug(rawSlug?: string | null): string {
-  if (!rawSlug) return 'the-local-leader';
-  const clean = decodeURIComponent(rawSlug).trim().toLowerCase().replace(/\s+/g, '-');
-  return PORTAL_REGISTRY[clean] ? PORTAL_REGISTRY[clean].canonicalSlug : clean;
-}
 
 /* ─────────────── Styles (sirf design) ─────────────── */
 const HP_STYLES = `
@@ -328,7 +247,7 @@ const HP_STYLES = `
 export default function HomePage() {
   const router = useRouter();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
-  const [siteConfig, setSiteConfig] = useState<Record<string, any>>(PORTAL_REGISTRY['the-local-leader']);
+  const [siteConfig, setSiteConfig] = useState<Record<string, any> | null>(null);
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [headerAd, setHeaderAd] = useState<AdItem | null>(null);
   const [sidebarAd, setSidebarAd] = useState<AdItem | null>(null);
@@ -448,27 +367,51 @@ export default function HomePage() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const rawSiteSlug = urlParams.get('site');
-    const activeSiteSlug = normalizeSlug(rawSiteSlug);
+    const rawSiteSlug = urlParams.get('site') || 'the-local-leader';
+    const activeSiteSlug = decodeURIComponent(rawSiteSlug).trim().toLowerCase().replace(/\s+/g, '-');
     setCurrentSlug(activeSiteSlug);
 
-    const defaultMeta = PORTAL_REGISTRY[activeSiteSlug] || PORTAL_REGISTRY['the-local-leader'];
-    setSiteConfig({ slug: activeSiteSlug, ...defaultMeta });
-
+    // Site configuration loader
     const unsubSite = onSnapshot(doc(db, 'sites', activeSiteSlug), (snap) => {
       if (snap.exists()) {
-        const d = snap.data();
+        setSiteConfig({ slug: activeSiteSlug, ...snap.data() });
+      } else {
+        let fallbackName = 'The Local Leader';
+        let fallbackDesc = '— जनता की आवाज़, सच्चाई के साथ —';
+        let fallbackLogo = `/logos/${activeSiteSlug}.jpeg`;
+        let fallbackColor = '#ea580c';
+
+        if (activeSiteSlug === 'the-proview-times' || activeSiteSlug === 'the-pro-times') {
+          fallbackName = 'द प्रोव्यू टाइम्स';
+          fallbackDesc = '— पेशेवर नज़र, सच्ची खबर —';
+          fallbackLogo = '/logos/theprobg.png';
+          fallbackColor = '#b91c1c';
+        } else if (activeSiteSlug === 'jan-bharat-news' || activeSiteSlug === 'jan-chetna-news') {
+          fallbackName = 'जन भारत न्यूज़';
+          fallbackDesc = '— भारत की आवाज़ —';
+          fallbackLogo = '/logos/JanBharatbg remover.jpg';
+          fallbackColor = '#1d4ed8';
+        } else if (activeSiteSlug === 'news-info-24' || activeSiteSlug === 'city-bulletin') {
+          fallbackName = 'NEWS INFO 24';
+          fallbackDesc = '— Stay Informed, Stay Ahead —';
+          fallbackLogo = '/logos/newsinfo24bg.png';
+          fallbackColor = '#dc2626';
+        } else if (activeSiteSlug === 'national-defence-network' || activeSiteSlug === 'state-express') {
+          fallbackName = 'डिफेंस न्यूज़';
+          fallbackDesc = '— Defence Beyond Headlines —';
+          fallbackLogo = '/logos/ndnbg.png';
+          fallbackColor = '#15803d';
+        }
+
         setSiteConfig({
           slug: activeSiteSlug,
-          name: d.name || d.hindiName || defaultMeta.name,
-          primaryColor: d.primaryColor || defaultMeta.primaryColor,
-          secondaryColor: d.secondaryColor || '#1e242b',
-          headerBg: d.headerBg || '#ffffff',
-          logoUrl: d.logoUrl || defaultMeta.logoUrl,
-          description: d.description || d.tagline || defaultMeta.description
+          name: fallbackName,
+          primaryColor: fallbackColor,
+          secondaryColor: '#1e242b',
+          headerBg: '#ffffff',
+          logoUrl: fallbackLogo,
+          description: fallbackDesc
         });
-      } else {
-        setSiteConfig({ slug: activeSiteSlug, ...defaultMeta });
       }
     });
 
@@ -477,8 +420,7 @@ export default function HomePage() {
       const activeList: LiveBlogData[] = [];
       snap.forEach((d) => {
         const data = d.data();
-        const targetSite = normalizeSlug(data.siteId);
-        if (data.isActive && (targetSite === activeSiteSlug || targetSite === 'all')) {
+        if (data.isActive && (data.siteId === activeSiteSlug || data.siteId === 'all')) {
           activeList.push({ id: d.id, ...data } as LiveBlogData);
         }
       });
@@ -488,14 +430,13 @@ export default function HomePage() {
     async function loadData() {
       setLoading(true);
       try {
-        const qArt = query(collection(db, 'articles'));
+        const qArt = query(collection(db, 'articles'), where('siteId', 'in', [activeSiteSlug, activeSiteSlug.toLowerCase()]));
         const artSnap = await getDocs(qArt);
         const approvedArticles = artSnap.docs
           .map((d) => ({ id: d.id, ...d.data() } as ArticleItem))
           .filter((art) => {
             const s = String(art.status || '').trim().toLowerCase();
-            const artSite = normalizeSlug(art.siteId);
-            return (s === 'published' || s === 'approved') && (artSite === activeSiteSlug || artSite === 'all');
+            return s === 'published' || s === 'approved';
           });
         setArticles(approvedArticles);
 
@@ -563,9 +504,8 @@ export default function HomePage() {
       snap.forEach((d) => {
         const data = d.data();
         const st = String(data.status || 'active').toLowerCase();
-        const cSite = normalizeSlug(data.siteId);
         if (st === 'active' || st === 'approved') {
-          if (!data.siteId || cSite === activeSiteSlug || cSite === 'all') {
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
             directClassifieds.push({ id: d.id, ...data } as ClassifiedItem);
           }
         }
@@ -580,10 +520,9 @@ export default function HomePage() {
         const st = String(data.status || '').toLowerCase();
         const fmt = String(data.format || '').toLowerCase();
         const zn = String(data.zone || '').toLowerCase();
-        const aSite = normalizeSlug(data.siteId);
 
         if ((st === 'active' || st === 'approved') && (fmt === 'classified' || zn.includes('classified'))) {
-          if (!data.siteId || aSite === activeSiteSlug || aSite === 'all') {
+          if (!data.siteId || data.siteId === activeSiteSlug || data.siteId === 'all') {
             adsClassifieds.push({
               id: d.id,
               title: data.name || data.title || 'क्लासिफाइड विज्ञापन',
@@ -971,9 +910,7 @@ export default function HomePage() {
                       <div className="hp-live-tag">
                         <span style={{ color: '#ef4444' }}>● LIVE STREAM</span>
                         <span style={{ color: '#888', fontWeight: 600 }}>
-                          {session.siteId === 'all'
-                            ? siteConfig?.name || 'समाचार लाइव'
-                            : PORTAL_REGISTRY[normalizeSlug(session.siteId)]?.name || session.siteId}
+                          {session.siteId === 'all' ? siteConfig?.name || 'समाचार' : session.siteId}
                         </span>
                       </div>
                       <h3 className="hp-live-card-title">{session.title}</h3>
