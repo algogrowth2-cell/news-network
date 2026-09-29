@@ -71,27 +71,27 @@ interface LiveBlogData {
 }
 
 const DEFAULT_RASHI_LIST = [
-  { id: 'aries', name: 'मेष', sign: '♈' },
-  { id: 'taurus', name: 'वृषभ', sign: '♉' },
-  { id: 'gemini', name: 'मिथुन', sign: '♊' },
-  { id: 'cancer', name: 'कर्क', sign: '♋' },
-  { id: 'leo', name: 'सिंह', sign: '♌' },
-  { id: 'virgo', name: 'कन्या', sign: '♍' },
-  { id: 'libra', name: 'तुला', sign: '♎' },
-  { id: 'scorpio', name: 'वृश्चिक', sign: '♏' },
-  { id: 'sagittarius', name: 'धनु', sign: '♐' },
-  { id: 'capricorn', name: 'मकर', sign: '♑' },
-  { id: 'aquarius', name: 'कुंभ', sign: '♒' },
-  { id: 'pisces', name: 'मीन', sign: '♓' }
+  { id: 'aries', name: 'मेष', nameEn: 'Aries', sign: '♈' },
+  { id: 'taurus', name: 'वृषभ', nameEn: 'Taurus', sign: '♉' },
+  { id: 'gemini', name: 'मिथुन', nameEn: 'Gemini', sign: '♊' },
+  { id: 'cancer', name: 'कर्क', nameEn: 'Cancer', sign: '♋' },
+  { id: 'leo', name: 'सिंह', nameEn: 'Leo', sign: '♌' },
+  { id: 'virgo', name: 'कन्या', nameEn: 'Virgo', sign: '♍' },
+  { id: 'libra', name: 'तुला', nameEn: 'Libra', sign: '♎' },
+  { id: 'scorpio', name: 'वृश्चिक', nameEn: 'Scorpio', sign: '♏' },
+  { id: 'sagittarius', name: 'धनु', nameEn: 'Sagittarius', sign: '♐' },
+  { id: 'capricorn', name: 'मकर', nameEn: 'Capricorn', sign: '♑' },
+  { id: 'aquarius', name: 'कुंभ', nameEn: 'Aquarius', sign: '♒' },
+  { id: 'pisces', name: 'मीन', nameEn: 'Pisces', sign: '♓' }
 ];
 
-// ── APP DOWNLOAD LINKS (apne app ke asli link yahan daalein) ──
 const PLAY_STORE_URL = 'https://play.google.com/store';
 const APP_STORE_URL = 'https://apps.apple.com';
 
-const TRENDING_TAGS = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
+const TRENDING_TAGS_HI = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
+const TRENDING_TAGS_EN = ['Defence Budget', 'Military Drills', 'Border Security', 'Airforce Tech', 'Naval Fleet', 'Strategic Ties', 'Armed Forces'];
 
-const CATEGORY_LIST: { key: string; icon: string }[] = [
+const CATEGORY_LIST_HI: { key: string; icon: string }[] = [
   { key: 'होम', icon: '🏠' },
   { key: 'रेफर और कमाएं', icon: '🎁' },
   { key: 'लाइव', icon: '🔴' },
@@ -107,9 +107,46 @@ const CATEGORY_LIST: { key: string; icon: string }[] = [
   { key: 'खेल', icon: '🏏' }
 ];
 
-/* ─────────────── Styles (sirf design) ─────────────── */
+const CATEGORY_LIST_EN: { key: string; icon: string }[] = [
+  { key: 'Home', icon: '🏠' },
+  { key: 'Refer & Earn', icon: '🎁' },
+  { key: 'Live', icon: '🔴' },
+  { key: 'Videos', icon: '📹' },
+  { key: 'Defence', icon: '🛡️' },
+  { key: 'Strategic', icon: '🌐' },
+  { key: 'Army & Airforce', icon: '✈️' },
+  { key: 'Naval Operations', icon: '⚓' },
+  { key: 'National Security', icon: '🇮🇳' },
+  { key: 'E-Paper', icon: '📄' },
+  { key: 'Special Reports', icon: '📑' }
+];
+
 const HP_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&display=swap');
+
+/* 🚫 HIDE GOOGLE TRANSLATE BANNER, BAR & IFRAME */
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+body {
+  top: 0px !important;
+  position: static !important;
+}
+.skiptranslate {
+  display: none !important;
+}
+.hp-tools .skiptranslate,
+.hp-mobile-tools .skiptranslate {
+  display: block !important;
+}
+
 .hp-root{min-height:100vh;background:#f7f6f3;color:#1a1a1a;-webkit-font-smoothing:antialiased}
 .hp-root *{box-sizing:border-box}
 .hp-root button{font-family:inherit}
@@ -280,9 +317,7 @@ function HomePageContent() {
   const [readerUser, setReaderUser] = useState<any>(null);
   const [referralModalOpen, setReferralModalOpen] = useState(false);
 
-  // Multiple Live Streams State
   const [liveSessions, setLiveSessions] = useState<LiveBlogData[]>([]);
-
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [currentDisplayDate, setCurrentDisplayDate] = useState('');
@@ -303,34 +338,9 @@ function HomePageContent() {
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
-  // Check if current portal should default to English
+  // Check if current site should default to English
   const isEnglishSite = currentSlug === 'news-info-24' || currentSlug === 'ndn-defence' || currentSlug === 'national-defence-network';
 
-  // 🌐 AUTOMATIC DEFAULT LANGUAGE CONTROLLER (news-info-24 & ndn-defence = en, others = hi)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const targetLang = isEnglishSite ? 'en' : 'hi';
-    const cookieVal = isEnglishSite ? '/hi/en' : '/en/hi';
-
-    // Set translation cookie
-    document.cookie = `googtrans=${cookieVal}; path=/;`;
-    if (window.location.hostname) {
-      const baseDomain = window.location.hostname.replace(/^www\./, '');
-      document.cookie = `googtrans=${cookieVal}; path=/; domain=.${baseDomain};`;
-    }
-
-    // Trigger select element in LanguageTranslator if mounted
-    try {
-      const selectEl = document.querySelector('.goog-te-combo') as HTMLSelectElement;
-      if (selectEl && selectEl.value !== targetLang) {
-        selectEl.value = targetLang;
-        selectEl.dispatchEvent(new Event('change'));
-      }
-    } catch (err) {
-      console.warn('Language dispatch error:', err);
-    }
-  }, [currentSlug, isEnglishSite]);
 
   const handleAdClick = async (ad: AdItem) => {
     if (!ad?.id) return;
@@ -346,10 +356,10 @@ function HomePageContent() {
   };
 
   const handleCategoryClick = (cat: string) => {
-    if (cat === 'रेफर और कमाएं') {
+    if (cat === 'रेफर और कमाएं' || cat === 'Refer & Earn') {
       const cached = localStorage.getItem('reader_user');
       if (!cached) {
-        alert(isEnglishSite ? 'Please login to get your referral link and 3 months free rewards!' : 'रेफरल लिंक और 3 माह फ्री रिवार्ड पाने के लिए कृपया पहले लॉगिन करें!');
+        alert(isEnglishSite ? 'Please login to get your referral link and rewards!' : 'रेफरल लिंक और रिवार्ड पाने के लिए कृपया पहले लॉगिन करें!');
         router.push(`/login?redirect=${encodeURIComponent(`/?site=${currentSlug}`)}`);
         return;
       }
@@ -357,10 +367,10 @@ function HomePageContent() {
       setDrawerOpen(false);
       return;
     }
-    if (cat === 'वीडियो') { router.push(`/videos?site=${currentSlug}`); return; }
-    if (cat === 'ई-पेपर') { router.push(`/epaper?site=${currentSlug}`); return; }
+    if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
+    if (cat === 'ई-पेपर' || cat === 'E-Paper') { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
-    if (cat === 'सर्च') { setSearchModalOpen(true); return; }
+    if (cat === 'सर्च' || cat === 'Search') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
     setSearchTerm('');
@@ -372,7 +382,7 @@ function HomePageContent() {
       setActiveTrendTag('');
     } else {
       setActiveTrendTag(tag);
-      setActiveCategory('होम');
+      setActiveCategory(isEnglishSite ? 'Home' : 'होम');
       setSearchTerm('');
     }
   };
@@ -427,7 +437,6 @@ function HomePageContent() {
           localStorage.setItem('reader_user', JSON.stringify(parsed));
           setReaderUser(parsed);
 
-          // Clean URL without reloading page
           const cleanUrl = window.location.pathname + (searchParams.get('site') ? `?site=${searchParams.get('site')}` : '');
           window.history.replaceState({}, '', cleanUrl);
         }
@@ -479,7 +488,6 @@ function HomePageContent() {
   useEffect(() => {
     let rawSiteSlug = searchParams?.get('site') || '';
 
-    // 🌐 DOMAIN DETECTION LOGIC (AGAR URL ME ?site= NAHI HO)
     if (!rawSiteSlug && typeof window !== 'undefined') {
       const hostname = window.location.hostname.toLowerCase().replace('www.', '');
 
@@ -562,7 +570,6 @@ function HomePageContent() {
       }
     });
 
-    // Fetch all active live streams for this portal or 'all'
     const unsubLive = onSnapshot(collection(db, 'live_blogs'), (snap) => {
       const activeList: LiveBlogData[] = [];
       snap.forEach((d) => {
@@ -592,7 +599,6 @@ function HomePageContent() {
           });
         setArticles(approvedArticles);
 
-        // ── ADS LOAD LOGIC ──
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
         setHeaderAd(null);
@@ -642,7 +648,6 @@ function HomePageContent() {
     }
     loadData();
 
-    // ── LIVE CLASSIFIEDS LISTENER ──
     let directClassifieds: ClassifiedItem[] = [];
     let adsClassifieds: ClassifiedItem[] = [];
 
@@ -715,38 +720,28 @@ function HomePageContent() {
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
-  // Articles Filtering Logic
+  const categories = isEnglishSite ? CATEGORY_LIST_EN : CATEGORY_LIST_HI;
+  const trendingTags = isEnglishSite ? TRENDING_TAGS_EN : TRENDING_TAGS_HI;
+
   const filteredArticles = articles.filter((art) => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
 
-    if (activeCategory === 'लाइव') return false;
+    if (activeCategory === 'लाइव' || activeCategory === 'Live') return false;
 
     if (activeTrendTag) {
-      const tag = activeTrendTag.trim();
+      const tag = activeTrendTag.trim().toLowerCase();
       const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
-      if (tag === 'बजट सत्र') return contentStr.includes('बजट') || contentStr.includes('सत्र') || art.category === 'व्यापार' || art.category === 'राजनीति';
-      if (tag === 'पंचायत चुनाव') return contentStr.includes('चुनाव') || contentStr.includes('पंचायत') || art.category === 'राजनीति';
-      if (tag === 'बारिश का मौसम') return contentStr.includes('बारिश') || contentStr.includes('मौसम') || art.category === 'राज्य' || art.category === 'जीवनशैली';
-      if (tag === 'मंडी भाव') return contentStr.includes('मंडी') || contentStr.includes('भाव') || contentStr.includes('बाजार') || art.category === 'व्यापार';
-      if (tag === 'भर्ती परिणाम') return contentStr.includes('भर्ती') || contentStr.includes('परीक्षा') || contentStr.includes('परिणाम') || art.category === 'शिक्षा' || art.category === 'राज्य';
-      if (tag === 'बिजली दर') return contentStr.includes('बिजली') || contentStr.includes('दर') || art.category === 'राज्य' || art.category === 'व्यापार';
-      if (tag === 'क्रिकेट लीग') return contentStr.includes('क्रिकेट') || contentStr.includes('मैच') || contentStr.includes('लीग') || art.category === 'खेल';
-      return contentStr.includes(tag.toLowerCase());
+      return contentStr.includes(tag);
     }
 
     const matchesCategory =
       activeCategory === 'होम' ||
+      activeCategory === 'Home' ||
       activeCategory === 'ताज़ा खबरें' ||
+      activeCategory === 'Latest News' ||
       activeCategory === 'राशिफल' ||
-      art.category?.toLowerCase() === activeCategory.toLowerCase() ||
-      (activeCategory === 'राजनीति' && (art.category === 'Politics' || art.category === 'राजनीति')) ||
-      (activeCategory === 'व्यापार' && (art.category === 'Business' || art.category === 'व्यापार')) ||
-      (activeCategory === 'स्वास्थ्य' && (art.category === 'Health' || art.category === 'स्वास्थ्य')) ||
-      (activeCategory === 'जीवनशैली' && (art.category === 'Lifestyle' || art.category === 'जीवनशैली')) ||
-      (activeCategory === 'अपराध' && (art.category === 'Crime' || art.category === 'अपराध')) ||
-      (activeCategory === 'खेल' && (art.category === 'Sports' || art.category === 'खेल')) ||
-      (activeCategory === 'राज्य' && (art.category === 'National' || art.category === 'राज्य'));
+      art.category?.toLowerCase() === activeCategory.toLowerCase();
 
     const cleanSearch = searchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -758,7 +753,7 @@ function HomePageContent() {
   });
 
   const hasLiveStreams = liveSessions.length > 0;
-  const showLiveInFeed = hasLiveStreams && (activeCategory === 'होम' || activeCategory === 'ताज़ा खबरें' || activeCategory === 'लाइव');
+  const showLiveInFeed = hasLiveStreams && (activeCategory === 'होम' || activeCategory === 'Home' || activeCategory === 'लाइव' || activeCategory === 'Live');
 
   const activeRashiItem = DEFAULT_RASHI_LIST.find((r) => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
@@ -770,7 +765,6 @@ function HomePageContent() {
     return `rgba(${r},${g},${b},${op})`;
   };
 
-  // Article link (apne article route ke hisaab se badal sakte hain)
   const articleHref = (a: ArticleItem) => `/article/${a.slug || a.id}?site=${currentSlug}`;
 
   const SearchIcon = ({ size = 16 }: { size?: number }) => (
@@ -785,7 +779,7 @@ function HomePageContent() {
       <p className="hp-app-title">📱 {isEnglishSite ? 'Download App' : 'ऐप डाउनलोड करें'}</p>
       <p className="hp-app-sub">
         {isEnglishSite
-          ? 'Latest news, live updates, and e-paper now on your smartphone.'
+          ? 'Latest news, live updates, and e-paper on your mobile.'
           : 'ताज़ा खबरें, लाइव अपडेट और ई-पेपर अब आपके फ़ोन पर।'}
       </p>
       <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
@@ -812,7 +806,7 @@ function HomePageContent() {
 
   const categoryButtons = (
     <>
-      {CATEGORY_LIST.map(({ key, icon }) => {
+      {categories.map(({ key, icon }) => {
         const isActive = activeCategory === key && !activeTrendTag;
         return (
           <button
@@ -820,7 +814,7 @@ function HomePageContent() {
             className="hp-cat"
             onClick={() => handleCategoryClick(key)}
             style={{
-              color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#333',
+              color: isActive ? primary : (key === 'लाइव' || key === 'Live') && hasLiveStreams ? '#ef4444' : '#333',
               background: isActive ? tint(primary, 0.08) : undefined,
               fontWeight: isActive ? 700 : 500
             }}
@@ -891,9 +885,9 @@ function HomePageContent() {
               )}
               <div style={{ minWidth: 0 }}>
                 <h1 className="hp-site-name notranslate" translate="no" style={{ color: primary }}>
-                  {siteConfig?.name || (isEnglishSite ? 'NEWS INFO 24' : 'द लोकल लीडर')}
+                  {siteConfig?.name || (isEnglishSite ? 'National Defence Network' : 'द लोकल लीडर')}
                 </h1>
-                <p className="hp-tagline">{siteConfig?.description || (isEnglishSite ? 'Stay Informed, Stay Ahead' : 'जनता की आवाज़, सच्चाई के साथ')}</p>
+                <p className="hp-tagline">{siteConfig?.description || (isEnglishSite ? 'Defence Beyond Headlines' : 'जनता की आवाज़, सच्चाई के साथ')}</p>
               </div>
             </Link>
           </div>
@@ -901,12 +895,12 @@ function HomePageContent() {
           {/* Desktop Nav Pills */}
           <nav className="hp-nav">
             {[
-              { key: 'होम', emoji: '🏠' },
-              { key: 'लाइव', emoji: '🔴' },
-              { key: 'वीडियो', emoji: '📹' },
-              { key: 'ताज़ा खबरें', emoji: '⚡' },
-              { key: 'शोक संदेश', emoji: '🕯️' },
-              { key: 'ई-पेपर', emoji: '📄' }
+              { key: isEnglishSite ? 'Home' : 'होम', emoji: '🏠' },
+              { key: isEnglishSite ? 'Live' : 'लाइव', emoji: '🔴' },
+              { key: isEnglishSite ? 'Videos' : 'वीडियो', emoji: '📹' },
+              { key: isEnglishSite ? 'Latest News' : 'ताज़ा खबरें', emoji: '⚡' },
+              ...(isEnglishSite ? [] : [{ key: 'शोक संदेश', emoji: '🕯️' }]),
+              { key: isEnglishSite ? 'E-Paper' : 'ई-पेपर', emoji: '📄' }
             ].map(({ key, emoji }) => {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
@@ -915,7 +909,7 @@ function HomePageContent() {
                   className="hp-nav-btn"
                   onClick={() => handleCategoryClick(key)}
                   style={{
-                    color: isActive ? primary : key === 'लाइव' && hasLiveStreams ? '#ef4444' : '#555',
+                    color: isActive ? primary : (key === 'लाइव' || key === 'Live') && hasLiveStreams ? '#ef4444' : '#555',
                     background: isActive ? tint(primary, 0.08) : 'transparent',
                     fontWeight: isActive ? 700 : 500
                   }}
@@ -1099,7 +1093,7 @@ function HomePageContent() {
                       <div className="hp-live-tag">
                         <span style={{ color: '#ef4444' }}>● LIVE STREAM</span>
                         <span className="notranslate" translate="no" style={{ color: '#888', fontWeight: 600 }}>
-                          {session.siteId === 'all' ? siteConfig?.name || (isEnglishSite ? 'NEWS INFO 24' : 'द लोकल लीडर') : session.siteId}
+                          {session.siteId === 'all' ? siteConfig?.name || (isEnglishSite ? 'National Defence Network' : 'द लोकल लीडर') : session.siteId}
                         </span>
                       </div>
                       <h3 className="hp-live-card-title">{session.title}</h3>
@@ -1121,7 +1115,7 @@ function HomePageContent() {
           )}
 
           {/* ── TRENDING TAGS ── */}
-          {activeCategory !== 'लाइव' && (
+          {activeCategory !== 'लाइव' && activeCategory !== 'Live' && (
             <div className="hp-tags">
               <span className="hp-tags-label" style={{ color: primary }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -1130,7 +1124,7 @@ function HomePageContent() {
                 </svg>
                 {isEnglishSite ? 'Trending' : 'ट्रेंडिंग'}
               </span>
-              {TRENDING_TAGS.map((t) => {
+              {trendingTags.map((t) => {
                 const isTagActive = activeTrendTag === t;
                 return (
                   <button
@@ -1158,14 +1152,14 @@ function HomePageContent() {
           )}
 
           {/* Live Section Heading */}
-          {activeCategory === 'लाइव' && (
+          {(activeCategory === 'लाइव' || activeCategory === 'Live') && (
             <h2 className="hp-section-title" style={{ borderColor: primary }}>
               {isEnglishSite ? 'Live Coverage Streams' : 'लाइव प्रसारण कवरेज (Live Streams)'}
             </h2>
           )}
 
           {/* ── ARTICLES FEED ── */}
-          {activeCategory === 'लाइव' ? (
+          {activeCategory === 'लाइव' || activeCategory === 'Live' ? (
             !hasLiveStreams && (
               <div className="hp-empty">
                 <div className="hp-empty-ic">📡</div>
@@ -1300,14 +1294,14 @@ function HomePageContent() {
                     }}
                   >
                     <span className="hp-rashi-sign">{r.sign}</span>
-                    {r.name}
+                    {isEnglishSite ? r.nameEn : r.name}
                   </button>
                 );
               })}
             </div>
             <div style={{ background: '#faf9f6', borderRadius: '10px', padding: '12px' }}>
               <strong style={{ fontSize: '14px', color: primary }}>
-                {activeRashiItem.sign} {activeRashiItem.name}
+                {activeRashiItem.sign} {isEnglishSite ? activeRashiItem.nameEn : activeRashiItem.name}
               </strong>
               <p className="hp-rashi-text" style={{ marginTop: '6px' }}>
                 {activeRashiInfo?.prediction ||
