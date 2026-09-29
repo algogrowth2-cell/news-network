@@ -285,7 +285,7 @@ function HomePageContent() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [currentHindiDate, setCurrentHindiDate] = useState('');
+  const [currentDisplayDate, setCurrentDisplayDate] = useState('');
 
   const [marketRates, setMarketRates] = useState<MarketRates>({
     diesel: '₹95.20',
@@ -302,6 +302,35 @@ function HomePageContent() {
 
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
+
+  // Check if current portal should default to English
+  const isEnglishSite = currentSlug === 'news-info-24' || currentSlug === 'ndn-defence' || currentSlug === 'national-defence-network';
+
+  // 🌐 AUTOMATIC DEFAULT LANGUAGE CONTROLLER (news-info-24 & ndn-defence = en, others = hi)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const targetLang = isEnglishSite ? 'en' : 'hi';
+    const cookieVal = isEnglishSite ? '/hi/en' : '/en/hi';
+
+    // Set translation cookie
+    document.cookie = `googtrans=${cookieVal}; path=/;`;
+    if (window.location.hostname) {
+      const baseDomain = window.location.hostname.replace(/^www\./, '');
+      document.cookie = `googtrans=${cookieVal}; path=/; domain=.${baseDomain};`;
+    }
+
+    // Trigger select element in LanguageTranslator if mounted
+    try {
+      const selectEl = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+      if (selectEl && selectEl.value !== targetLang) {
+        selectEl.value = targetLang;
+        selectEl.dispatchEvent(new Event('change'));
+      }
+    } catch (err) {
+      console.warn('Language dispatch error:', err);
+    }
+  }, [currentSlug, isEnglishSite]);
 
   const handleAdClick = async (ad: AdItem) => {
     if (!ad?.id) return;
@@ -320,7 +349,7 @@ function HomePageContent() {
     if (cat === 'रेफर और कमाएं') {
       const cached = localStorage.getItem('reader_user');
       if (!cached) {
-        alert('रेफरल लिंक और 3 माह फ्री रिवार्ड पाने के लिए कृपया पहले लॉगिन करें!');
+        alert(isEnglishSite ? 'Please login to get your referral link and 3 months free rewards!' : 'रेफरल लिंक और 3 माह फ्री रिवार्ड पाने के लिए कृपया पहले लॉगिन करें!');
         router.push(`/login?redirect=${encodeURIComponent(`/?site=${currentSlug}`)}`);
         return;
       }
@@ -350,15 +379,21 @@ function HomePageContent() {
 
   useEffect(() => {
     const updateDate = () => {
-      const days = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
-      const months = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
       const now = new Date();
-      setCurrentHindiDate(`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
+      if (isEnglishSite) {
+        const daysEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        setCurrentDisplayDate(`${daysEn[now.getDay()]}, ${now.getDate()} ${monthsEn[now.getMonth()]} ${now.getFullYear()}`);
+      } else {
+        const daysHi = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+        const monthsHi = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+        setCurrentDisplayDate(`${daysHi[now.getDay()]}, ${now.getDate()} ${monthsHi[now.getMonth()]} ${now.getFullYear()}`);
+      }
     };
     updateDate();
     const interval = setInterval(updateDate, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isEnglishSite]);
 
   useEffect(() => {
     const unsubMarket = onSnapshot(doc(db, 'settings', 'market'), (snap) => {
@@ -416,7 +451,7 @@ function HomePageContent() {
         if (user) {
           const userData = {
             uid: user.uid,
-            name: user.displayName || user.phoneNumber || user.email?.split('@')[0] || 'पाठक',
+            name: user.displayName || user.phoneNumber || user.email?.split('@')[0] || (isEnglishSite ? 'Reader' : 'पाठक'),
             email: user.email || '',
             phone: user.phoneNumber || ''
           };
@@ -428,7 +463,7 @@ function HomePageContent() {
     } catch (e) {
       console.error('Firebase Auth listener error:', e);
     }
-  }, [searchParams]);
+  }, [searchParams, isEnglishSite]);
 
   const handleReaderLogout = async () => {
     try {
@@ -458,7 +493,6 @@ function HomePageContent() {
         'theproviewtimes.com': 'the-provue-times',
         'nationaldefencenetwork.com': 'ndn-defence',
         'bazarkarobar.com': 'bazar-karobar',
-        // 'goldenpearlcorporation.com': 'golden-pearl-chronicles',
         'deshkiawaz.com': 'desh-ki-aawaz',
         'janbharatnews.com': 'jan-bharat-news',
         'newsinfo24.in': 'news-info-24'
@@ -495,7 +529,7 @@ function HomePageContent() {
           fallbackLogo = '/logos/news-info-24.jpeg';
           fallbackColor = '#dc2626';
         } else if (activeSiteSlug.includes('national-defence') || activeSiteSlug.includes('ndn') || activeSiteSlug.includes('state-express')) {
-          fallbackName = 'डिफेंस न्यूज़';
+          fallbackName = 'National Defence Network';
           fallbackDesc = '— Defence Beyond Headlines —';
           fallbackLogo = '/logos/ndn-defence.jpeg';
           fallbackColor = '#15803d';
@@ -646,8 +680,8 @@ function HomePageContent() {
           if (!data.siteId || aSite === activeSiteSlug || data.siteId === 'all') {
             adsClassifieds.push({
               id: d.id,
-              title: data.name || data.title || 'क्लासिफाइड विज्ञापन',
-              category: data.category || 'वर्गीकृत',
+              title: data.name || data.title || (isEnglishSite ? 'Classified Advertisement' : 'क्लासिफाइड विज्ञापन'),
+              category: data.category || (isEnglishSite ? 'Classified' : 'वर्गीकृत'),
               city: data.city || '',
               price: data.price || data.budget || '',
               contactNumber: data.contactNumber || '',
@@ -675,7 +709,7 @@ function HomePageContent() {
       unsubClassifieds();
       unsubAdsForClassifieds();
     };
-  }, [searchParams]);
+  }, [searchParams, isEnglishSite]);
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const headerBg = siteConfig?.headerBg || '#ffffff';
@@ -748,8 +782,12 @@ function HomePageContent() {
 
   const appDownloadBox = (
     <div className="hp-app-box">
-      <p className="hp-app-title">📱 ऐप डाउनलोड करें</p>
-      <p className="hp-app-sub">ताज़ा खबरें, लाइव अपडेट और ई-पेपर अब आपके फ़ोन पर।</p>
+      <p className="hp-app-title">📱 {isEnglishSite ? 'Download App' : 'ऐप डाउनलोड करें'}</p>
+      <p className="hp-app-sub">
+        {isEnglishSite
+          ? 'Latest news, live updates, and e-paper now on your smartphone.'
+          : 'ताज़ा खबरें, लाइव अपडेट और ई-पेपर अब आपके फ़ोन पर।'}
+      </p>
       <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
         <svg width="20" height="20" viewBox="0 0 24 24" fill={primary} aria-hidden="true">
           <path d="M5 3.5v17a.5.5 0 0 0 .76.43l14-8.5a.5.5 0 0 0 0-.86l-14-8.5A.5.5 0 0 0 5 3.5z" />
@@ -804,20 +842,20 @@ function HomePageContent() {
         <div className="hp-ticker-in">
           <div className="hp-ticker-items">
             {[
-              { label: 'पेट्रोल', value: marketRates.petrol, color: '#fff' },
-              { label: 'डीज़ल', value: marketRates.diesel, color: '#fff' },
+              { label: isEnglishSite ? 'Petrol' : 'पेट्रोल', value: marketRates.petrol, color: '#fff' },
+              { label: isEnglishSite ? 'Diesel' : 'डीज़ल', value: marketRates.diesel, color: '#fff' },
               {
-                label: 'निफ्टी',
+                label: isEnglishSite ? 'Nifty' : 'निफ्टी',
                 value: `${marketRates.nifty} ${marketRates.niftyPositive ? '▲' : '▼'} ${marketRates.niftyChange}`,
                 color: marketRates.niftyPositive ? '#34d399' : '#f87171'
               },
               {
-                label: 'सेंसेक्स',
+                label: isEnglishSite ? 'Sensex' : 'सेंसेक्स',
                 value: `${marketRates.sensex} ${marketRates.sensexPositive ? '▲' : '▼'} ${marketRates.sensexChange}`,
                 color: marketRates.sensexPositive ? '#34d399' : '#f87171'
               },
-              { label: 'सोना', value: marketRates.gold, color: '#fbbf24' },
-              { label: 'चांदी', value: marketRates.silver, color: '#cbd5e1' }
+              { label: isEnglishSite ? 'Gold' : 'सोना', value: marketRates.gold, color: '#fbbf24' },
+              { label: isEnglishSite ? 'Silver' : 'चांदी', value: marketRates.silver, color: '#cbd5e1' }
             ].map((item, i) => (
               <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                 {i > 0 && <span className="hp-ticker-sep">│</span>}
@@ -830,7 +868,7 @@ function HomePageContent() {
           </div>
           <div className="hp-ticker-date">
             <span style={{ marginRight: '5px' }}>📅</span>
-            {currentHindiDate || '...'}
+            {currentDisplayDate || '...'}
           </div>
         </div>
       </div>
@@ -853,9 +891,9 @@ function HomePageContent() {
               )}
               <div style={{ minWidth: 0 }}>
                 <h1 className="hp-site-name notranslate" translate="no" style={{ color: primary }}>
-                  {siteConfig?.name || 'द लोकल लीडर'}
+                  {siteConfig?.name || (isEnglishSite ? 'NEWS INFO 24' : 'द लोकल लीडर')}
                 </h1>
-                <p className="hp-tagline">{siteConfig?.description || 'जनता की आवाज़, सच्चाई के साथ'}</p>
+                <p className="hp-tagline">{siteConfig?.description || (isEnglishSite ? 'Stay Informed, Stay Ahead' : 'जनता की आवाज़, सच्चाई के साथ')}</p>
               </div>
             </Link>
           </div>
@@ -892,10 +930,10 @@ function HomePageContent() {
           {/* Desktop Tools */}
           <div className="hp-tools hp-desktop-tools">
             <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ पत्रकार
+              ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
             <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
-              📢 विज्ञापन
+              📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             <Suspense fallback={null}>
@@ -906,18 +944,18 @@ function HomePageContent() {
               style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12px', flexShrink: 0 }}
             >
               <SearchIcon size={14} />
-              खोजें
+              {isEnglishSite ? 'Search' : 'खोजें'}
             </button>
             {readerUser ? (
               <div className="hp-user">
-                👤 {readerUser.name ? readerUser.name.slice(0, 6) : 'यूज़र'}
+                👤 {readerUser.name ? readerUser.name.slice(0, 8) : isEnglishSite ? 'User' : 'यूज़र'}
                 <button onClick={handleReaderLogout} aria-label="लॉगआउट" title="लॉगआउट">
                   ✕
                 </button>
               </div>
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary }}>
-                लॉगिन
+                {isEnglishSite ? 'Login' : 'लॉगिन'}
               </Link>
             )}
           </div>
@@ -941,7 +979,7 @@ function HomePageContent() {
               </div>
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary, padding: '6px 12px', fontSize: '12px' }}>
-                लॉगिन
+                {isEnglishSite ? 'Login' : 'लॉगिन'}
               </Link>
             )}
           </div>
@@ -963,7 +1001,7 @@ function HomePageContent() {
               </span>
               <input
                 type="text"
-                placeholder="खबरें खोजें..."
+                placeholder={isEnglishSite ? 'Search news...' : 'खबरें खोजें...'}
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -981,7 +1019,7 @@ function HomePageContent() {
             </div>
             {searchTerm && (
               <button className="hp-search-result" onClick={() => setSearchModalOpen(false)}>
-                “{searchTerm}” के लिए परिणाम देखें…
+                “{searchTerm}” {isEnglishSite ? 'Search results…' : 'के लिए परिणाम देखें…'}
               </button>
             )}
           </div>
@@ -1006,10 +1044,10 @@ function HomePageContent() {
           {categoryButtons}
           <div className="hp-drawer-links">
             <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ पत्रकार
+              ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
             <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
-              📢 विज्ञापन
+              📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
           </div>
           {appDownloadBox}
@@ -1021,7 +1059,7 @@ function HomePageContent() {
         {/* ── LEFT SIDEBAR ── */}
         <aside className="hp-side hp-left">
           <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>श्रेणियाँ</h3>
+            <h3 className="hp-box-title" style={{ borderColor: primary }}>{isEnglishSite ? 'Categories' : 'श्रेणियाँ'}</h3>
             {categoryButtons}
             {appDownloadBox}
           </div>
@@ -1041,8 +1079,10 @@ function HomePageContent() {
           {showLiveInFeed && (
             <section className="hp-live">
               <div className="hp-live-head">
-                <h2 className="hp-live-title">🔴 लाइव कवरेज प्रसारण ({liveSessions.length} Live)</h2>
-                <span className="hp-live-pill">सीधा प्रसारण</span>
+                <h2 className="hp-live-title">
+                  🔴 {isEnglishSite ? `Live Broadcast Coverage (${liveSessions.length} Live)` : `लाइव कवरेज प्रसारण (${liveSessions.length} Live)`}
+                </h2>
+                <span className="hp-live-pill">{isEnglishSite ? 'LIVE' : 'सीधा प्रसारण'}</span>
               </div>
               <div className="hp-live-grid">
                 {liveSessions.map((session) => (
@@ -1059,13 +1099,13 @@ function HomePageContent() {
                       <div className="hp-live-tag">
                         <span style={{ color: '#ef4444' }}>● LIVE STREAM</span>
                         <span className="notranslate" translate="no" style={{ color: '#888', fontWeight: 600 }}>
-                          {session.siteId === 'all' ? siteConfig?.name || 'द लोकल लीडर' : session.siteId}
+                          {session.siteId === 'all' ? siteConfig?.name || (isEnglishSite ? 'NEWS INFO 24' : 'द लोकल लीडर') : session.siteId}
                         </span>
                       </div>
                       <h3 className="hp-live-card-title">{session.title}</h3>
                       {session.updates && session.updates.length > 0 && (
                         <div className="hp-updates">
-                          <strong style={{ color: '#c2410c' }}>⚡ ताज़ा अपडेट:</strong>
+                          <strong style={{ color: '#c2410c' }}>⚡ {isEnglishSite ? 'Latest Updates:' : 'ताज़ा अपडेट:'}</strong>
                           {[...session.updates].slice(-2).reverse().map((u) => (
                             <p key={u.id}>
                               <strong>[{u.time}]</strong> {u.update}
@@ -1088,7 +1128,7 @@ function HomePageContent() {
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                   <polyline points="17 6 23 6 23 12" />
                 </svg>
-                ट्रेंडिंग
+                {isEnglishSite ? 'Trending' : 'ट्रेंडिंग'}
               </span>
               {TRENDING_TAGS.map((t) => {
                 const isTagActive = activeTrendTag === t;
@@ -1120,7 +1160,7 @@ function HomePageContent() {
           {/* Live Section Heading */}
           {activeCategory === 'लाइव' && (
             <h2 className="hp-section-title" style={{ borderColor: primary }}>
-              लाइव प्रसारण कवरेज (Live Streams)
+              {isEnglishSite ? 'Live Coverage Streams' : 'लाइव प्रसारण कवरेज (Live Streams)'}
             </h2>
           )}
 
@@ -1129,23 +1169,29 @@ function HomePageContent() {
             !hasLiveStreams && (
               <div className="hp-empty">
                 <div className="hp-empty-ic">📡</div>
-                <h3>वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है</h3>
-                <p>जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।</p>
+                <h3>{isEnglishSite ? 'No active live stream right now' : 'वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है'}</h3>
+                <p>{isEnglishSite ? 'Live coverage will appear here once started.' : 'जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।'}</p>
               </div>
             )
           ) : loading ? (
-            <div className="hp-loading">खबरें लोड हो रही हैं…</div>
+            <div className="hp-loading">{isEnglishSite ? 'Loading news…' : 'खबरें लोड हो रही हैं…'}</div>
           ) : filteredArticles.length === 0 && !showLiveInFeed ? (
             <div className="hp-empty">
               <div className="hp-empty-ic">📭</div>
               <h3>
                 {activeTrendTag
-                  ? `"${activeTrendTag}" के लिए कोई खबर नहीं मिली`
+                  ? `No news found for "${activeTrendTag}"`
                   : searchTerm
-                    ? `"${searchTerm}" के लिए कोई खबर नहीं मिली`
-                    : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                    ? `No news found for "${searchTerm}"`
+                    : isEnglishSite
+                      ? 'No approved news articles available yet'
+                      : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
               </h3>
-              <p>संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।</p>
+              <p>
+                {isEnglishSite
+                  ? 'Articles will appear here once reviewed by the editor.'
+                  : 'संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।'}
+              </p>
             </div>
           ) : (
             <div className="hp-list">
@@ -1156,15 +1202,17 @@ function HomePageContent() {
                   )}
                   <div className="hp-hero-body">
                     <span className="hp-badge" style={{ background: primary }}>
-                      {filteredArticles[0].category || 'ताज़ा खबर'}
+                      {filteredArticles[0].category || (isEnglishSite ? 'Top Story' : 'ताज़ा खबर')}
                     </span>
                     <h2 className="hp-hero-title">{filteredArticles[0].title}</h2>
                     {filteredArticles[0].summary && <p className="hp-hero-summary">{filteredArticles[0].summary}</p>}
                     <div className="hp-meta">
                       <span>
-                        {filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentHindiDate}
+                        {filteredArticles[0].createdAt ? String(filteredArticles[0].createdAt).split('T')[0] : currentDisplayDate}
                       </span>
-                      <span>👁 {filteredArticles[0].views || 0} बार पढ़ा गया</span>
+                      <span>
+                        👁 {filteredArticles[0].views || 0} {isEnglishSite ? 'views' : 'बार पढ़ा गया'}
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -1184,7 +1232,7 @@ function HomePageContent() {
                         </span>
                         <h3 className="hp-item-title">{item.title}</h3>
                         <div className="hp-meta">
-                          <span>{item.createdAt ? String(item.createdAt).split('T')[0] : 'आज'}</span>
+                          <span>{item.createdAt ? String(item.createdAt).split('T')[0] : isEnglishSite ? 'Today' : 'आज'}</span>
                           <span>👁 {item.views || 0}</span>
                         </div>
                       </div>
@@ -1193,7 +1241,7 @@ function HomePageContent() {
 
                     {showAd && (
                       <div className="hp-feed-ad">
-                        <div className="hp-feed-ad-label">प्रायोजित / विज्ञापन</div>
+                        <div className="hp-feed-ad-label">{isEnglishSite ? 'SPONSORED / ADVERTISEMENT' : 'प्रायोजित / विज्ञापन'}</div>
                         {currentInFeedAd ? (
                           <a
                             href={currentInFeedAd.targetUrl || '#'}
@@ -1210,7 +1258,7 @@ function HomePageContent() {
                           </a>
                         ) : (
                           <div className="hp-ad-slot" style={{ minHeight: '80px' }}>
-                            📢 विज्ञापन स्थान (In-Feed Sponsored Ad)
+                            📢 {isEnglishSite ? 'Sponsored In-Feed Ad' : 'विज्ञापन स्थान (In-Feed Sponsored Ad)'}
                           </div>
                         )}
                       </div>
@@ -1235,7 +1283,7 @@ function HomePageContent() {
 
           {/* 🔮 RASHIFAL WIDGET */}
           <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>🔮 आज का राशिफल</h3>
+            <h3 className="hp-box-title" style={{ borderColor: primary }}>🔮 {isEnglishSite ? "Today's Horoscope" : 'आज का राशिफल'}</h3>
             <div className="hp-rashi-grid">
               {DEFAULT_RASHI_LIST.map((r) => {
                 const isSel = selectedRashi === r.id;
@@ -1265,16 +1313,18 @@ function HomePageContent() {
                 {activeRashiInfo?.prediction ||
                   activeRashiInfo?.text ||
                   activeRashiInfo?.description ||
-                  'आज का राशिफल जल्द ही अपडेट किया जाएगा।'}
+                  (isEnglishSite ? "Today's horoscope will be updated soon." : 'आज का राशिफल जल्द ही अपडेट किया जाएगा।')}
               </p>
             </div>
           </div>
 
           {/* 📋 CLASSIFIED ADS WIDGET */}
           <div className="hp-box">
-            <h3 className="hp-box-title" style={{ borderColor: primary }}>📋 क्लासिफाइड विज्ञापन</h3>
+            <h3 className="hp-box-title" style={{ borderColor: primary }}>📋 {isEnglishSite ? 'Classified Ads' : 'क्लासिफाइड विज्ञापन'}</h3>
             {classifiedAds.length === 0 ? (
-              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>अभी कोई क्लासिफाइड विज्ञापन उपलब्ध नहीं है।</p>
+              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
+                {isEnglishSite ? 'No classified ads available right now.' : 'अभी कोई क्लासिफाइड विज्ञापन उपलब्ध नहीं है।'}
+              </p>
             ) : (
               classifiedAds.map((c) => (
                 <div key={c.id} className="hp-classified">
@@ -1304,7 +1354,7 @@ function HomePageContent() {
               className="hp-see-all"
               style={{ color: primary, borderColor: primary }}
             >
-              सभी क्लासिफाइड देखें →
+              {isEnglishSite ? 'View All Classifieds →' : 'सभी क्लासिफाइड देखें →'}
             </Link>
           </div>
         </aside>
@@ -1347,7 +1397,7 @@ export default function HomePage() {
             fontSize: '15px'
           }}
         >
-          खबरें लोड हो रही हैं…
+          Loading…
         </div>
       }
     >
