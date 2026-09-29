@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const LANGUAGES = [
   { code: 'hi', native: 'हिंदी', english: 'Hindi' },
@@ -24,20 +25,67 @@ declare global {
   }
 }
 
+/* Sirf layout: mobile me bottom drawer, desktop me dropdown */
+const LT_STYLES = `
+.lt-panel{position:absolute;top:calc(100% + 8px);right:0;width:280px;max-height:420px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 18px 44px -14px rgba(0,0,0,.3);z-index:99999;display:flex;flex-direction:column;overflow:hidden}
+.lt-list{overflow-y:auto;flex:1}
+@media (max-width:640px){
+  .lt-panel{position:fixed;top:auto;left:0;right:0;bottom:0;width:100%;max-height:75vh;border-radius:18px 18px 0 0;border:0;padding-bottom:env(safe-area-inset-bottom)}
+}
+`;
+
 export default function LanguageTranslator() {
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 1. Check existing cookie & init Google Translate
+  // 1. Detect site & set default language (news-info-24 & ndn-defence -> en, others -> hi)
   useEffect(() => {
+    const rawSite = searchParams.get('site') || 'the-local-leader';
+    const siteSlug = decodeURIComponent(rawSite).trim().toLowerCase().replace(/\s+/g, '-');
+
+    const isEnglishPortal =
+      siteSlug === 'news-info-24' ||
+      siteSlug === 'city-bulletin' ||
+      siteSlug === 'ndn-defence' ||
+      siteSlug === 'national-defence-network' ||
+      siteSlug === 'national-spotlight';
+
+    const portalDefault = isEnglishPortal ? 'en' : 'hi';
+
+    // Check if user has explicitly saved cookie, otherwise use portalDefault
+    let activeLang = portalDefault;
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/googtrans=\/([^/]+)\/([^;]+)/);
       if (match && match[2]) {
-        setSelectedLang(match[2]);
+        activeLang = match[2];
+      } else {
+        // Apply default cookie for current portal
+        const host = window.location.hostname;
+        document.cookie = `googtrans=/auto/${portalDefault}; path=/;`;
+        document.cookie = `googtrans=/auto/${portalDefault}; path=/; domain=${host};`;
       }
     }
 
+    setSelectedLang(activeLang);
+
+    // Apply to Google combo if already rendered
+    const applyToCombo = () => {
+      const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+      if (combo && combo.value !== activeLang) {
+        combo.value = activeLang;
+        combo.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    applyToCombo();
+    const t = setTimeout(applyToCombo, 600);
+    return () => clearTimeout(t);
+  }, [searchParams]);
+
+  // 2. Initialize Google Translate Script
+  useEffect(() => {
     window.googleTranslateElementInit = () => {
       if (window.google && window.google.translate) {
         new window.google.translate.TranslateElement(
@@ -62,7 +110,7 @@ export default function LanguageTranslator() {
     }
   }, []);
 
-  // 2. Click outside listener for desktop
+  // 3. Click outside listener for desktop
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -73,7 +121,7 @@ export default function LanguageTranslator() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 3. Switch Language
+  // 4. Switch Language manually
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
     setIsOpen(false);
@@ -104,14 +152,19 @@ export default function LanguageTranslator() {
   const currentLangObj = LANGUAGES.find((l) => l.code === selectedLang) || LANGUAGES[0];
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
-      
+    <div
+      ref={dropdownRef}
+      className="notranslate"
+      translate="no"
+      style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: LT_STYLES }} />
+
       {/* Hidden container for Google Translate widget */}
       <div id="google_translate_element" style={{ display: 'none' }} />
 
       {/* Trigger Button */}
       <button
-        type="button"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
@@ -135,9 +188,9 @@ export default function LanguageTranslator() {
           WebkitTapHighlightColor: 'transparent'
         }}
       >
-        <span style={{ fontSize: '14px' }}>🌐</span>
+        <span>🌐</span>
         <span>{currentLangObj.native}</span>
-        <span style={{ fontSize: '9px', color: '#94a3b8' }}>▼</span>
+        <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
 
       {/* POPUP & MOBILE MODAL */}
@@ -156,39 +209,25 @@ export default function LanguageTranslator() {
           />
 
           {/* Modal Container: Mobile me Bottom Drawer, Desktop me Dropdown */}
-          <div
-            className="lang-modal-box"
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
-              zIndex: 99999,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
-          >
+          <div className="lt-panel notranslate" translate="no">
             {/* Header */}
             <div
-              className="notranslate"
-              translate="no"
               style={{
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '14px 18px',
-                borderBottom: '1px solid #f1f5f9',
-                backgroundColor: '#fafaf9'
+                justifyContent: 'space-between',
+                gap: '8px',
+                padding: '14px 20px',
+                borderBottom: '1px solid #f1f5f9'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '16px' }}>🌐</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>
                   भाषा चुनें / Select Language
                 </span>
               </div>
               <button
-                type="button"
                 onClick={() => setIsOpen(false)}
                 style={{
                   background: '#f1f5f9',
@@ -208,21 +247,12 @@ export default function LanguageTranslator() {
             </div>
 
             {/* Language Items List */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                overflowY: 'auto',
-                maxHeight: '360px',
-                padding: '6px 0'
-              }}
-            >
+            <div className="lt-list">
               {LANGUAGES.map((lang) => {
                 const isSelected = selectedLang === lang.code;
                 return (
                   <button
                     key={lang.code}
-                    type="button"
                     onClick={() => changeLanguage(lang.code)}
                     style={{
                       display: 'flex',
@@ -239,34 +269,25 @@ export default function LanguageTranslator() {
                     }}
                   >
                     {/* Left Column: Native */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {isSelected ? (
-                        <span style={{ color: '#ea580c', fontWeight: 800, fontSize: '13px' }}>✓</span>
+                        <span style={{ width: '16px', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>✓</span>
                       ) : (
-                        <span style={{ width: '12px' }} />
+                        <span style={{ width: '16px' }} />
                       )}
                       <span
                         style={{
-                          fontSize: '14.5px',
+                          fontSize: '14px',
                           fontWeight: isSelected ? 700 : 500,
-                          color: isSelected ? '#ea580c' : '#1e293b'
+                          color: isSelected ? '#c2410c' : '#1e293b'
                         }}
                       >
                         {lang.native}
                       </span>
-                    </div>
+                    </span>
 
                     {/* Right Column: English Strictly Locked */}
-                    <span
-                      className="notranslate"
-                      translate="no"
-                      style={{
-                        fontSize: '12.5px',
-                        color: isSelected ? '#ea580c' : '#64748b',
-                        fontWeight: 600,
-                        letterSpacing: '0.3px'
-                      }}
-                    >
+                    <span className="notranslate" translate="no" style={{ fontSize: '12px', color: '#94a3b8' }}>
                       {lang.english}
                     </span>
                   </button>
@@ -274,41 +295,6 @@ export default function LanguageTranslator() {
               })}
             </div>
           </div>
-
-          <style jsx>{`
-            /* Desktop View: Normal Anchor Dropdown */
-            @media (min-width: 769px) {
-              .lang-modal-box {
-                position: absolute !important;
-                right: 0 !important;
-                top: calc(100% + 8px) !important;
-                width: 250px !important;
-              }
-            }
-
-            /* Mobile View: Centered / Bottom Sheet Modal */
-            @media (max-width: 768px) {
-              .lang-modal-box {
-                position: fixed !important;
-                left: 12px !important;
-                right: 12px !important;
-                bottom: 16px !important;
-                max-height: 80vh !important;
-                animation: slideUp 0.25s ease-out !important;
-              }
-            }
-
-            @keyframes slideUp {
-              from {
-                transform: translateY(100%);
-                opacity: 0;
-              }
-              to {
-                transform: translateY(0);
-                opacity: 1;
-              }
-            }
-          `}</style>
         </>
       )}
     </div>
