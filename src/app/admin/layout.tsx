@@ -135,6 +135,7 @@ export default function AdminLayout({
         { label: 'Classifieds', icon: '📋', href: '/admin/classifieds' },
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
         { label: 'Membership', icon: '💳', href: '/admin/membership' },
+        { label: 'Referrals', icon: '🎁', href: '/admin/referrals' },
         { label: 'Comments', icon: '💬', href: '/admin/comments' },
         { label: 'Analytics', icon: '📊', href: '/admin/analytics' }
       ]

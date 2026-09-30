@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { createReaderWithReferral } from '@/lib/referralService';
 
 function LoginAndSignupContent() {
   const router = useRouter();
@@ -106,7 +107,7 @@ function LoginAndSignupContent() {
         const userId = 'u_' + phone;
         let finalName = name.trim();
         let finalEmail = email.trim();
-        let isNewUser = false;
+        let referralRecorded = false;
 
         // Firestore user profile save/sync
         try {
@@ -118,48 +119,32 @@ function LoginAndSignupContent() {
             finalName = existingData.name || finalName || 'पाठक';
             finalEmail = existingData.email || finalEmail || `${phone}@news.local`;
           } else {
-            isNewUser = true;
-            await setDoc(
-              userRef,
-              {
-                name: finalName || 'पाठक',
-                email: finalEmail || `${phone}@news.local`,
-                phone: phone,
-                role: 'reader',
-                verified: true,
-                referredBy: referralCode || null,
-                createdAt: serverTimestamp()
-              },
-              { merge: true }
-            );
-          }
-
-          // -------------------------------------------------------------
-          // Process Referral and Generate Reward for the Referrer
-          // -------------------------------------------------------------
-          if (isNewUser && referralCode && referralCode !== phone) {
-            const refDocId = `${referralCode}_${phone}`;
-            const refDocRef = doc(db, 'referrals', refDocId);
-            const refDocSnap = await getDoc(refDocRef);
-
-            if (!refDocSnap.exists()) {
-              // 1. Admin analytics collection
-              await setDoc(refDocRef, {
-                referrerPhone: referralCode,
-                referredUserPhone: phone,
-                referredUserName: finalName || 'पाठक',
-                status: 'successful_signup',
-                createdAt: serverTimestamp()
-              });
-
-              // 2. Reward choice creation for referrer (2 Options: 3 Month E-Paper OR 3 Month All Portals)
-              await setDoc(doc(db, 'referral_rewards', refDocId), {
-                referrerPhone: referralCode,
-                referredUserPhone: phone,
-                status: 'pending_selection', // Referrer can choose option 1 or option 2
-                optionsAvailable: ['epaper_3_months', 'all_portals_3_months'],
-                createdAt: serverTimestamp()
-              });
+            const profile = {
+              userId,
+              name: finalName || 'पाठक',
+              email: finalEmail || `${phone}@news.local`,
+              phone
+            };
+            // Naya user + referral auto-verify ek hi transaction me (self-referral / duplicate / galat code apne aap block)
+            try {
+              const result = await createReaderWithReferral(profile, referralCode);
+              referralRecorded = result.created && result.referral === 'recorded';
+            } catch (txErr) {
+              // Referral transaction fail ho toh bhi signup na ruke — user bina referral ke banao
+              console.error('Referral transaction failed, creating user without referral:', txErr);
+              await setDoc(
+                userRef,
+                {
+                  name: profile.name,
+                  email: profile.email,
+                  phone,
+                  role: 'reader',
+                  verified: true,
+                  referredBy: null,
+                  createdAt: serverTimestamp()
+                },
+                { merge: true }
+              );
             }
           }
         } catch (dbErr) {
@@ -180,7 +165,11 @@ function LoginAndSignupContent() {
         localStorage.setItem('shok_user', JSON.stringify(userObj));
 
         setMsg({
-          text: authMode === 'signup' ? '🎉 नया खाता बन गया! लॉगिन हो रहे हैं...' : '✓ OTP सत्यापित! लॉगिन सफल रहा...',
+          text: referralRecorded
+            ? '🎉 नया खाता बन गया और रेफरल सफलतापूर्वक जुड़ गया! लॉगिन हो रहे हैं...'
+            : authMode === 'signup'
+              ? '🎉 नया खाता बन गया! लॉगिन हो रहे हैं...'
+              : '✓ OTP सत्यापित! लॉगिन सफल रहा...',
           type: 'success'
         });
 

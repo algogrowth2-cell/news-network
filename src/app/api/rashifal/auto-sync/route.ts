@@ -3,13 +3,14 @@ import { collection, doc, getDocs, runTransaction, writeBatch, serverTimestamp }
 import { db } from '@/lib/firebase';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 
-// Gemini response me kuch second lag sakte hain
+// Groq response me kuch second lag sakte hain
 export const maxDuration = 60;
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const GEMINI_TIMEOUT_MS = 50_000;
+// llama-3.3-70b-versatile Groq par ab available nahi; gpt-oss-120b sabse saaf Hindi JSON deta hai
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const GROQ_TIMEOUT_MS = 50_000;
 
-// Ek hi din me duplicate Gemini calls rokne ke liye lock (kai visitors ek saath site kholein tab)
+// Ek hi din me duplicate AI calls rokne ke liye lock (kai visitors ek saath site kholein tab)
 const SYNC_LOCK = doc(db, 'settings', 'rashifal_sync');
 const RUNNING_LOCK_MS = 2 * 60 * 1000; // chal rahi sync itni der tak dusri call rokti hai
 const RETRY_AFTER_FAIL_MS = 30 * 60 * 1000; // fail hone par itni der baad hi dobara koshish
@@ -21,61 +22,60 @@ interface GeneratedRashi {
   luckyColor: string;
 }
 
-async function generateWithGemini(today: string): Promise<GeneratedRashi[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY set nahi hai');
+async function generateWithGroq(today: string): Promise<GeneratedRashi[]> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY set nahi hai');
 
+  const ids = RASHI_LIST.map((r) => r.id).join(', ');
+  // Grah-gochar ke claims jaan-boojh kar nahi: AI asli grah sthiti nahi jaanta aur aapas me takraate dave bana deta tha
   const prompt =
-    `आज की तारीख ${today} है (भारतीय समय)। सभी 12 राशियों का आज का दैनिक राशिफल सरल, सकारात्मक और संतुलित हिंदी में लिखें। ` +
-    `हर राशि के लिए 2-3 वाक्य (करियर/धन, स्वास्थ्य, संबंध)। कोई डरावनी या पक्की भविष्यवाणी नहीं। ` +
-    `luckyNumber 1 से 99 के बीच एक अंक, luckyColor हिंदी में एक रंग का नाम। ` +
-    `rashiId इनमें से ही हों: ${RASHI_LIST.map((r) => r.id).join(', ')}।`;
+    `आज की तारीख ${today} (Asia/Kolkata) है। सभी 12 राशियों का आज का दैनिक राशिफल समाचार-पत्र की पेशेवर शैली में शुद्ध हिंदी में लिखें। ` +
+    `हर राशि के लिए 2-3 संतुलित, व्यावहारिक वाक्य — करियर, व्यापार, स्वास्थ्य, आर्थिक स्थिति और पारिवारिक जीवन पर मार्गदर्शन। ` +
+    `किसी भी ग्रह, नक्षत्र, गोचर, भाव या दशा का नाम या उल्लेख बिल्कुल न करें (जैसे सूर्य, चंद्र, मंगल, बुध, गुरु/बृहस्पति, शुक्र, शनि, राहु, केतु)। ` +
+    `कोई डरावनी या पक्की भविष्यवाणी नहीं। ` +
+    `इस JSON आकार में लौटाएं: {"rashifal":[{"rashiId":"aries","prediction":"...","luckyNumber":"1-9 में से एक अंक","luckyColor":"हिंदी में रंग"}]} — ` +
+    `rashiId क्रम से: ${ids}।`;
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       signal: controller.signal,
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.9,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'ARRAY',
-            items: {
-              type: 'OBJECT',
-              properties: {
-                rashiId: { type: 'STRING', enum: RASHI_LIST.map((r) => r.id) },
-                prediction: { type: 'STRING' },
-                luckyNumber: { type: 'STRING' },
-                luckyColor: { type: 'STRING' }
-              },
-              required: ['rashiId', 'prediction', 'luckyNumber', 'luckyColor']
-            }
-          }
-        }
+        model: GROQ_MODEL,
+        temperature: 0.8,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'आप एक हिंदी समाचार पत्र के अनुभवी राशिफल संपादक हैं। आप दैनिक जीवन पर व्यावहारिक, सकारात्मक मार्गदर्शन लिखते हैं और कभी ग्रह-नक्षत्र या गोचर का उल्लेख नहीं करते। केवल valid JSON लौटाएं।'
+          },
+          { role: 'user', content: prompt }
+        ]
       })
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(`Gemini ${res.status}: ${data?.error?.message || 'unknown error'}`);
+    if (!res.ok) throw new Error(`Groq ${res.status}: ${data?.error?.message || 'unknown error'}`);
 
-    const text: string = (data?.candidates?.[0]?.content?.parts || []).map((p: any) => p.text || '').join('');
+    const text: string = data?.choices?.[0]?.message?.content || '';
     const parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ''));
-    if (!Array.isArray(parsed)) throw new Error('Gemini ne array return nahi kiya');
+    const list = Array.isArray(parsed) ? parsed : parsed?.rashifal;
+    if (!Array.isArray(list)) throw new Error('Groq response me rashifal array nahi mila');
 
     // Har rashi ka valid entry zaroori — adhoora data Firestore me nahi likhenge
     return RASHI_LIST.map((r) => {
-      const item = parsed.find((p: any) => p?.rashiId === r.id);
+      const item = list.find((p: any) => p?.rashiId === r.id);
       const prediction = String(item?.prediction || '').trim();
-      if (!prediction) throw new Error(`Gemini response me ${r.id} ka rashifal nahi hai`);
+      if (!prediction) throw new Error(`Groq response me ${r.id} ka rashifal nahi hai`);
+      const num = String(item.luckyNumber || '').replace(/[^1-9]/g, '').charAt(0);
       return {
         rashiId: r.id,
         prediction: prediction.slice(0, 800),
-        luckyNumber: String(item.luckyNumber || '').replace(/[^0-9]/g, '').slice(0, 2),
+        luckyNumber: num,
         luckyColor: String(item.luckyColor || '').trim().slice(0, 30)
       };
     });
@@ -85,7 +85,7 @@ async function generateWithGemini(today: string): Promise<GeneratedRashi[]> {
 }
 
 // Browser me URL kholne (GET) aur homepage ke background trigger (POST) — dono same sync chalate hain.
-// Lock + "already up-to-date" check ki wajah se baar-baar hit karne par bhi Gemini din me ek hi baar call hota hai.
+// Lock + "already up-to-date" check ki wajah se baar-baar hit karne par bhi AI din me ek hi baar call hota hai.
 export async function GET() {
   return runAutoSync();
 }
@@ -98,7 +98,7 @@ async function runAutoSync() {
   const today = todayIST();
 
   try {
-    // 1. Aaj ka data pehle se hai? Toh Gemini call bilkul nahi
+    // 1. Aaj ka data pehle se hai? Toh AI call bilkul nahi
     const snap = await getDocs(collection(db, 'rashifal'));
     const docsById: Record<string, any> = {};
     snap.docs.forEach((d) => (docsById[d.id] = d.data()));
@@ -106,7 +106,7 @@ async function runAutoSync() {
       return NextResponse.json({ updated: false, date: today, message: 'Already up-to-date' });
     }
 
-    // 2. Lock claim karo, taaki ek hi request Gemini ko call kare
+    // 2. Lock claim karo, taaki ek hi request AI ko call kare
     const claimed = await runTransaction(db, async (tx) => {
       const lock = (await tx.get(SYNC_LOCK)).data();
       const now = Date.now();
@@ -122,12 +122,12 @@ async function runAutoSync() {
       return NextResponse.json({ updated: false, date: today, message: 'Sync already done, running, or recently failed' });
     }
 
-    // 3. Gemini se 12 rashiyon ka naya rashifal
+    // 3. Groq se 12 rashiyon ka naya rashifal
     let generated: GeneratedRashi[];
     try {
-      generated = await generateWithGemini(today);
+      generated = await generateWithGroq(today);
     } catch (err: any) {
-      const message = err?.name === 'AbortError' ? 'Gemini request timed out' : err?.message || 'Gemini error';
+      const message = err?.name === 'AbortError' ? 'Groq request timed out' : err?.message || 'Groq error';
       await writeBatch(db).set(SYNC_LOCK, { date: today, status: 'failed', failedAt: Date.now(), error: message }).commit();
       console.error('Rashifal auto-sync failed:', message);
       return NextResponse.json({ updated: false, date: today, message }, { status: 502 });
@@ -145,14 +145,14 @@ async function runAutoSync() {
         luckyNumber: g.luckyNumber,
         luckyColor: g.luckyColor,
         date: today,
-        source: 'gemini-auto',
+        source: 'groq-auto',
         updatedAt: serverTimestamp()
       });
     });
-    batch.set(SYNC_LOCK, { date: today, status: 'done', finishedAt: Date.now(), model: GEMINI_MODEL });
+    batch.set(SYNC_LOCK, { date: today, status: 'done', finishedAt: Date.now(), model: GROQ_MODEL });
     await batch.commit();
 
-    return NextResponse.json({ updated: true, date: today, message: 'Rashifal updated' });
+    return NextResponse.json({ updated: true, date: today, model: GROQ_MODEL, message: 'Rashifal updated' });
   } catch (err: any) {
     console.error('Rashifal auto-sync error:', err);
     return NextResponse.json({ updated: false, date: today, message: err?.message || 'Server error' }, { status: 500 });
