@@ -84,7 +84,17 @@ async function generateWithGemini(today: string): Promise<GeneratedRashi[]> {
   }
 }
 
+// Browser me URL kholne (GET) aur homepage ke background trigger (POST) — dono same sync chalate hain.
+// Lock + "already up-to-date" check ki wajah se baar-baar hit karne par bhi Gemini din me ek hi baar call hota hai.
+export async function GET() {
+  return runAutoSync();
+}
+
 export async function POST() {
+  return runAutoSync();
+}
+
+async function runAutoSync() {
   const today = todayIST();
 
   try {
