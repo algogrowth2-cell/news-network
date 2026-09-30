@@ -89,8 +89,12 @@ export default function ArticleDetailPage() {
         if (docSnap) {
           const data = { id: docSnap.id, ...docSnap.data() } as ArticleDetail;
           setArticle(data);
+          // Article ka apna siteId pehle — ?site= sirf tab jab article kisi ek portal ka na ho.
+          // Warna ?site=the-local-leader laga kar premium article ka paywall bypass ho jaata.
+          const articleSite = normalizeSiteId(data.siteId);
           const querySite = searchParams.get('site');
-          const finalSlug = normalizeSiteId(querySite || data.siteId || 'the-local-leader');
+          const finalSlug =
+            articleSite && articleSite !== 'all' ? articleSite : normalizeSiteId(querySite || 'the-local-leader');
           setSiteSlug(finalSlug);
           updateDoc(doc(db, 'articles', docSnap.id), { views: increment(1) }).catch(() => {});
         } else {

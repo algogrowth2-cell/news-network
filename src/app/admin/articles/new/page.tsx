@@ -4,6 +4,7 @@ import { collection, addDoc, getDocs, serverTimestamp } from 'firebase/firestore
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { NETWORK_SITES } from '@/lib/portals';
 
 interface SiteItem {
   id: string;
@@ -11,10 +12,13 @@ interface SiteItem {
   language?: string;
 }
 
+// lib/portals ke 8 standard slugs — network slow/fail ho tab bhi yahi list dikhegi
+const STANDARD_SITES: SiteItem[] = NETWORK_SITES.map((s) => ({ id: s.slug, name: `${s.name} (${s.slug})` }));
+
 export default function NewArticlePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [sites, setSites] = useState<SiteItem[]>([]);
+  const [sites, setSites] = useState<SiteItem[]>(STANDARD_SITES);
   const [activeTab, setActiveTab] = useState<'content' | 'seo' | 'settings'>('content');
 
   // Form States
@@ -29,16 +33,6 @@ export default function NewArticlePage() {
   const [thumbnail, setThumbnail] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Default network sites fallback
-  const defaultSites: SiteItem[] = [
-    { id: 'bazar-karobar', name: 'Bazar Karobar (Hindi)' },
-    { id: 'desh-ki-awaz', name: 'Desh Ki awaz (Hindi)' },
-    { id: 'jan-bharat', name: 'Jan Bharat News (Hindi)' },
-    { id: 'national-defence', name: 'National Defence Network (English)' },
-    { id: 'newsinfo24', name: 'Newsinfo24 (English)' },
-    { id: 'the-local-leader', name: 'The Local Leader (Hindi)' },
-    { id: 'proview-times', name: 'The Proview Time (Hindi)' }
-  ];
 
   const categories = [
     'National', 'Business', 'Politics', 'Sports', 'Technology', 
@@ -50,21 +44,19 @@ export default function NewArticlePage() {
   ];
 
   useEffect(() => {
+    // Dropdown hamesha 8 standard slugs ka hi rehta hai; Firestore 'sites' se sirf naam/bhasha update hote hain
     async function loadSites() {
       try {
         const snap = await getDocs(collection(db, 'sites'));
-        if (!snap.empty) {
-          const list = snap.docs.map(doc => ({
-            id: doc.id,
-            name: `${doc.data().name} (${doc.data().language === 'en' ? 'English' : 'Hindi'})`
-          }));
-          setSites(list);
-        } else {
-          setSites(defaultSites);
-        }
+        const siteDocs = new Map(snap.docs.map((d) => [d.id, d.data()]));
+        setSites(
+          STANDARD_SITES.map((s) => {
+            const data = siteDocs.get(s.id);
+            return data?.name ? { id: s.id, name: `${data.name} (${data.language === 'en' ? 'English' : 'Hindi'})` } : s;
+          })
+        );
       } catch (err) {
         console.error('Sites loading error:', err);
-        setSites(defaultSites);
       }
     }
     loadSites();

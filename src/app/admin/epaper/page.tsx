@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
-import { NETWORK_SITES } from '@/components/SiteSwitcher';
+import { NETWORK_SITES } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
 interface EPaperDoc {

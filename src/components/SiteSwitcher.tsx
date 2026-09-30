@@ -6,26 +6,9 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { hasPremiumAccess } from '@/lib/premiumAccess';
+import { FREE_SITE_SLUG, NETWORK_SITES, type SiteItem } from '@/lib/portals';
 
-export interface SiteItem {
-  slug: string;
-  name: string;
-  tag: string;
-  domain?: string;
-}
-
-export const FREE_SITE_SLUG = 'the-local-leader';
-
-export const NETWORK_SITES: SiteItem[] = [
-  { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)', domain: 'thelocalleader.in' },
-  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)', domain: 'theproviewtimes.com' },
-  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'janbharatnews.com' },
-  { slug: 'news-info-24', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)', domain: 'newsinfo24.in' },
-  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'nationaldefencenetwork.com' },
-  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', tag: 'प्रीमियम (Premium)', domain: 'bazarkarobar.com' },
-  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', tag: 'प्रीमियम (Premium)', domain: 'goldenpearlcorporation.com' },
-  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)', domain: 'deshkiawaz.com' }
-];
+export { FREE_SITE_SLUG, NETWORK_SITES, type SiteItem };
 
 export const SUBSCRIPTION_PLANS = [
   { id: 'trial_1', name: 'ट्रायल ऑफर (Trial Access)', price: 1, durationDays: 30, desc: 'सभी 7+ प्रीमियम पोर्टल्स का ऐक्सेस' },

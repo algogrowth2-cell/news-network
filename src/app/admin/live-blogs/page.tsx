@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { NETWORK_SITES } from '@/components/SiteSwitcher';
-import { LEGACY_SLUG_MAP, normalizeSiteId } from '@/lib/portals';
+import { NETWORK_SITES, LEGACY_SLUG_MAP, normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
 interface UpdateItem {
