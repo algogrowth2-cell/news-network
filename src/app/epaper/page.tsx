@@ -18,28 +18,19 @@ interface EPaperEdition {
   totalPages: number;
 }
 
-const DEFAULT_EDITIONS: EPaperEdition[] = [
-  {
-    id: 'bhopal-ed',
-    cityName: 'भोपाल',
-    editionName: 'मुख्य संस्करण',
-    date: '22-09-2026',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700',
-    pdfUrl: '',
-    pages: ['https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'],
-    totalPages: 12
-  },
-  {
-    id: 'indore-ed',
-    cityName: 'इंदौर',
-    editionName: 'इंदौर संस्करण',
-    date: '22-09-2026',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=700',
-    pdfUrl: '',
-    pages: ['https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200'],
-    totalPages: 14
-  }
-];
+const FALLBACK_COVER = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700';
+
+// Admin YYYY-MM-DD save karta hai, portal par DD-MM-YYYY dikhao
+const formatEditionDate = (d: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : d;
+};
+
+// Sorting ke liye DD-MM-YYYY ko bhi YYYY-MM-DD me badlo
+const sortableDate = (d: string) => {
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(d);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : d;
+};
 
 const EPAPER_PLANS = [
   {
@@ -169,6 +160,7 @@ const EP_STYLES = `
 .ep-close:hover{background:#dc2626}
 .ep-rstage{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:18px 12px}
 .ep-rstage img{width:100%;max-width:920px;height:auto;background:#fff;border-radius:4px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.ep-pdf{flex:1;width:100%;border:0;background:#fff}
 .ep-rnav{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));background:#171412;border-top:1px solid #2a2522}
 .ep-nav{background:#2a2522;color:#fff;padding:11px 22px;border-radius:12px;font-size:14.5px;min-width:104px}
 .ep-nav:hover:not(:disabled){background:#3a332f}
@@ -263,7 +255,8 @@ function EPaperComponent() {
   // Dynamic Site Slug from URL
   const siteSlug = (searchParams.get('site') || 'the-local-leader').toLowerCase();
 
-  const [editions, setEditions] = useState(DEFAULT_EDITIONS);
+  const [editions, setEditions] = useState<EPaperEdition[]>([]);
+  const [editionsLoading, setEditionsLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState('सभी');
   const [themeColor, setThemeColor] = useState('#ea580c');
   const [siteName, setSiteName] = useState('द लोकल लीडर');
@@ -333,34 +326,39 @@ function EPaperComponent() {
     const unsub = onSnapshot(
       query(collection(db, 'epaper')),
       (snapshot) => {
-        if (!snapshot.empty) {
-          const list: EPaperEdition[] = [];
-          snapshot.docs.forEach((docSnap) => {
-            const d = docSnap.data();
-            const targetSite = String(d.siteId || 'the-local-leader').toLowerCase();
-            if (targetSite === siteSlug || targetSite === 'all') {
-              list.push({
-                id: docSnap.id,
-                cityName: d.cityName || d.city || 'मुख्य',
-                editionName: d.editionName || d.title || `${siteName} ई-पेपर`,
-                date: d.date || '22-09-2026',
-                thumbnailUrl: d.thumbnailUrl || d.coverImage || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=700',
-                pdfUrl: d.pdfUrl || '',
-                pages:
-                  Array.isArray(d.pages) && d.pages.length > 0
-                    ? d.pages
-                    : [d.thumbnailUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200'],
-                totalPages: Number(d.totalPages || d.pages?.length || 10)
-              });
-            }
-          });
-          if (list.length > 0) setEditions(list);
-        }
+        const list: EPaperEdition[] = [];
+        snapshot.docs.forEach((docSnap) => {
+          const d = docSnap.data();
+          const targetSite = String(d.siteId || 'the-local-leader').toLowerCase();
+          // Admin me Draft rakhe gaye editions portal par nahi dikhte
+          if (String(d.status || '').toLowerCase() === 'draft') return;
+          if (targetSite === siteSlug || targetSite === 'all') {
+            const pages = Array.isArray(d.pages) ? d.pages.filter(Boolean) : [];
+            list.push({
+              id: docSnap.id,
+              cityName: d.cityName || d.city || 'मुख्य',
+              editionName: d.editionName || d.title || `${siteName} ई-पेपर`,
+              date: String(d.date || ''),
+              thumbnailUrl: d.thumbnailUrl || d.coverImage || FALLBACK_COVER,
+              pdfUrl: d.pdfUrl || '',
+              pages,
+              totalPages: Number(d.totalPages || pages.length || 0)
+            });
+          }
+        });
+        list.sort((a, b) => sortableDate(b.date).localeCompare(sortableDate(a.date)));
+        setEditions(list);
+        setEditionsLoading(false);
       },
-      console.error
+      (err) => {
+        console.error(err);
+        setEditionsLoading(false);
+      }
     );
     return () => unsub();
   }, [siteSlug, siteName]);
+
+  const cityChips = ['सभी', ...Array.from(new Set(editions.map((ed) => ed.cityName)))];
 
   const filteredEditions = editions.filter(
     (ed) => selectedCity === 'सभी' || ed.cityName.includes(selectedCity)
@@ -541,7 +539,7 @@ function EPaperComponent() {
 
         {/* City Filter */}
         <div className="ep-chips" role="tablist">
-          {['सभी', 'भोपाल', 'इंदौर', 'उज्जैन', 'देवास'].map((city) => (
+          {cityChips.map((city) => (
             <button
               key={city}
               role="tab"
@@ -555,10 +553,12 @@ function EPaperComponent() {
         </div>
 
         {/* Editions Grid */}
-        {filteredEditions.length === 0 ? (
+        {editionsLoading ? (
+          <div className="ep-empty">ई-पेपर लोड हो रहा है...</div>
+        ) : filteredEditions.length === 0 ? (
           <div className="ep-empty">
             <div className="ep-empty-ic">🗞️</div>
-            इस शहर का संस्करण अभी उपलब्ध नहीं है।
+            {editions.length === 0 ? 'इस पोर्टल का ई-पेपर अभी उपलब्ध नहीं है।' : 'इस शहर का संस्करण अभी उपलब्ध नहीं है।'}
           </div>
         ) : (
           <div className="ep-grid">
@@ -586,8 +586,8 @@ function EPaperComponent() {
                 </div>
 
                 <div className="ep-meta">
-                  <b>{edition.date}</b>
-                  <span>{edition.totalPages} पृष्ठ</span>
+                  <b>{formatEditionDate(edition.date)}</b>
+                  {edition.totalPages > 0 && <span>{edition.totalPages} पृष्ठ</span>}
                 </div>
 
                 <button
@@ -632,9 +632,14 @@ function EPaperComponent() {
               <strong className="ep-serif">
                 {siteName} ({readingEdition.cityName})
               </strong>
-              <small>{readingEdition.date}</small>
+              <small>{formatEditionDate(readingEdition.date)}</small>
             </div>
             <div className="ep-rbtns">
+              {readingEdition.pdfUrl && (
+                <a className="ep-btn ep-dl" href={readingEdition.pdfUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                  ↗<span className="ep-hide-sm"> PDF खोलें</span>
+                </a>
+              )}
               <button
                 className="ep-btn ep-dl"
                 disabled={!readingEdition.pdfUrl || downloadingId === readingEdition.id}
@@ -655,32 +660,39 @@ function EPaperComponent() {
             </div>
           </div>
 
-          <div className="ep-rstage">
-            <img
-              src={readingEdition.pages[currentPage]}
-              alt={`पृष्ठ ${currentPage + 1}`}
-            />
-          </div>
-
-          <div className="ep-rnav">
-            <button
-              className="ep-btn ep-nav"
-              disabled={currentPage === 0}
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            >
-              ← पिछला
-            </button>
-            <div className="ep-pageno">
-              {currentPage + 1} <span>/ {readingEdition.pages.length}</span>
+          {readingEdition.pages.length === 0 && readingEdition.pdfUrl ? (
+            // Page images nahi hain toh uploaded PDF seedha viewer me
+            <iframe className="ep-pdf" src={readingEdition.pdfUrl} title={`${siteName} ${readingEdition.cityName} ई-पेपर`} />
+          ) : (
+            <div className="ep-rstage">
+              <img
+                src={readingEdition.pages[currentPage] || readingEdition.thumbnailUrl}
+                alt={`पृष्ठ ${currentPage + 1}`}
+              />
             </div>
-            <button
-              className="ep-btn ep-nav"
-              disabled={currentPage >= readingEdition.pages.length - 1}
-              onClick={() => setCurrentPage((p) => Math.min(readingEdition.pages.length - 1, p + 1))}
-            >
-              अगला →
-            </button>
-          </div>
+          )}
+
+          {readingEdition.pages.length > 1 && (
+            <div className="ep-rnav">
+              <button
+                className="ep-btn ep-nav"
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              >
+                ← पिछला
+              </button>
+              <div className="ep-pageno">
+                {currentPage + 1} <span>/ {readingEdition.pages.length}</span>
+              </div>
+              <button
+                className="ep-btn ep-nav"
+                disabled={currentPage >= readingEdition.pages.length - 1}
+                onClick={() => setCurrentPage((p) => Math.min(readingEdition.pages.length - 1, p + 1))}
+              >
+                अगला →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
