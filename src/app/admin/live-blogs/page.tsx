@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { NETWORK_SITES } from '@/components/SiteSwitcher';
 import styles from '../Admin.module.css';
 
 interface UpdateItem {
@@ -21,17 +22,20 @@ interface LiveBlogData {
   createdAt?: any;
 }
 
-const NETWORK_PORTALS = [
-  { slug: 'all', name: 'सभी नेटवर्क (All Portals)' },
-  { slug: 'the-local-leader', name: 'द लोकल लीडर' },
-  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
-  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
-  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
-  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
-  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
-  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
-  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
-];
+// Asli portal slugs (wahi jo homepage ?site= / domain mapping use karta hai)
+const NETWORK_PORTALS = [{ slug: 'all', name: 'सभी नेटवर्क (All Portals)' }, ...NETWORK_SITES];
+
+// Purane slugs jo pehle is page se save hote the — kisi portal se match nahi karte the
+const LEGACY_SLUG_MAP: Record<string, string> = {
+  'state-express': 'the-provue-times',
+  'jan-chetna-news': 'jan-bharat-news',
+  'city-bulletin': 'news-info-24',
+  'national-spotlight': 'ndn-defence'
+};
+
+const normalizeSiteId = (siteId: string) => LEGACY_SLUG_MAP[siteId] || siteId;
+
+const portalName = (siteId: string) => NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(siteId))?.name || siteId;
 
 export default function LiveBlogsPage() {
   const [liveStreams, setLiveStreams] = useState<LiveBlogData[]>([]);
@@ -42,6 +46,7 @@ export default function LiveBlogsPage() {
   const [newYoutubeUrl, setNewYoutubeUrl] = useState('');
   const [newSiteId, setNewSiteId] = useState('all');
   const [saving, setSaving] = useState(false);
+  const [fixingLegacy, setFixingLegacy] = useState(false);
 
   // Quick update text per stream
   const [postTexts, setPostTexts] = useState<Record<string, string>>({});
@@ -151,8 +156,26 @@ export default function LiveBlogsPage() {
 
   const filteredStreams = liveStreams.filter(item => {
     if (selectedSiteFilter === 'all') return true;
-    return item.siteId === selectedSiteFilter || item.siteId === 'all';
+    return normalizeSiteId(item.siteId) === selectedSiteFilter || item.siteId === 'all';
   });
+
+  const legacyStreams = liveStreams.filter((item) => LEGACY_SLUG_MAP[item.siteId]);
+
+  // Purane slug wali streams ko asli portal slug par update karta hai, taaki portal par dikhne lagen
+  const handleFixLegacySlugs = async () => {
+    setFixingLegacy(true);
+    try {
+      await Promise.all(
+        legacyStreams.map((item) =>
+          updateDoc(doc(db, 'live_blogs', item.id), { siteId: LEGACY_SLUG_MAP[item.siteId], updatedAt: serverTimestamp() })
+        )
+      );
+      alert(`${legacyStreams.length} लाइव स्ट्रीम्स सही पोर्टल पर अपडेट हो गईं!`);
+    } catch (err: any) {
+      alert('त्रुटि: ' + err.message);
+    }
+    setFixingLegacy(false);
+  };
 
   return (
     <div style={{ color: '#fff', width: '100%' }}>
@@ -189,6 +212,21 @@ export default function LiveBlogsPage() {
           </select>
         </div>
       </div>
+
+      {legacyStreams.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', background: 'rgba(234,179,8,.1)', border: '1px solid rgba(234,179,8,.4)', color: '#fde68a', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px' }}>
+          <span>
+            ⚠️ {legacyStreams.length} लाइव स्ट्रीम्स पुराने slug पर सेव हैं, इसलिए ये किसी पोर्टल पर नहीं दिख रहीं।
+          </span>
+          <button
+            onClick={handleFixLegacySlugs}
+            disabled={fixingLegacy}
+            style={{ background: '#eab308', color: '#1a1a1a', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12.5px', fontWeight: 700, cursor: fixingLegacy ? 'not-allowed' : 'pointer' }}
+          >
+            {fixingLegacy ? 'अपडेट हो रहा है…' : 'सही पोर्टल slug पर अपडेट करें'}
+          </button>
+        </div>
+      )}
 
       {/* CREATE NEW LIVE STREAM FORM */}
       <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '20px', marginBottom: '28px', border: '1px solid #334155' }}>
@@ -296,7 +334,8 @@ export default function LiveBlogsPage() {
                     </span>
                   </div>
                   <span style={{ fontSize: '11px', color: '#cbd5e1', backgroundColor: '#334155', padding: '2px 8px', borderRadius: '10px' }}>
-                    {stream.siteId === 'all' ? 'All Portals' : stream.siteId}
+                    {stream.siteId === 'all' ? 'All Portals' : portalName(stream.siteId)}
+                    {LEGACY_SLUG_MAP[stream.siteId] ? ' ⚠️' : ''}
                   </span>
                 </div>
 
