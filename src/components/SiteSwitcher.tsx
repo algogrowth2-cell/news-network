@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { hasPremiumAccess } from '@/lib/premiumAccess';
 
 export interface SiteItem {
   slug: string;
@@ -154,26 +155,6 @@ export default function SiteSwitcher({
     }
   }, []);
 
-  const checkHasActivePlan = async (userEmail: string) => {
-    try {
-      const docRef = doc(db, 'subscriptions', userEmail);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.status === 'active') {
-          const expiry = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
-          if (new Date() < expiry) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (err) {
-      console.error('Error checking subscription:', err);
-      return false;
-    }
-  };
-
   const handleSelectSite = async (site: SiteItem) => {
     setDropdownOpen(false);
 
@@ -192,7 +173,8 @@ export default function SiteSwitcher({
     const userObj = JSON.parse(cached);
     setCurrentUser(userObj);
 
-    const hasPlan = await checkHasActivePlan(userObj.email);
+    // Paid subscription ya referral VIP (vip_all_access) — dono se access milta hai
+    const hasPlan = await hasPremiumAccess(userObj);
     if (hasPlan) {
       navigateToSite(site);
     } else {

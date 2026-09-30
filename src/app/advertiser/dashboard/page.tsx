@@ -39,11 +39,11 @@ const NETWORK_PORTALS = [
   { slug: 'the-local-leader', name: 'द लोकल लीडर' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
   { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
-  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स' },
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
-  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
-  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
-  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़' }
 ];
 
 const CLASSIFIED_CATEGORIES = [

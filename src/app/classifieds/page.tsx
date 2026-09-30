@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { collection, query, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 
@@ -46,7 +47,7 @@ function ClassifiedsContent() {
 
   // 1. Identify Site Slug from query
   useEffect(() => {
-    const qSite = searchParams.get('site') || 'the-local-leader';
+    const qSite = normalizeSiteId(searchParams.get('site') || 'the-local-leader');
     setSiteSlug(qSite.toLowerCase());
   }, [searchParams]);
 
@@ -94,7 +95,7 @@ function ClassifiedsContent() {
           const data = d.data();
           const st = String(data.status || 'active').toLowerCase();
           if (st === 'active' || st === 'approved') {
-            const itemSite = String(data.siteId || 'all').toLowerCase();
+            const itemSite = normalizeSiteId(data.siteId || 'all');
             if (!data.siteId || itemSite === siteSlug || itemSite === 'all') {
               directClassifieds.push({
                 id: d.id,
@@ -138,7 +139,7 @@ function ClassifiedsContent() {
             (st === 'active' || st === 'approved') &&
             (fmt === 'classified' || zn.includes('classified') || typ === 'classified')
           ) {
-            const itemSite = String(data.siteId || 'all').toLowerCase();
+            const itemSite = normalizeSiteId(data.siteId || 'all');
             if (!data.siteId || itemSite === siteSlug || itemSite === 'all') {
               adsClassifieds.push({
                 id: d.id,

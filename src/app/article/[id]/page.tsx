@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, getDoc, collection, addDoc, query, where, limit, getDocs, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import PremiumGate from '@/components/PremiumGate';
 
 interface ArticleDetail {
   id: string;
@@ -18,7 +20,14 @@ interface ArticleDetail {
   views?: number;
   siteId?: string;
   authorName?: string;
+  slug?: string;
+  status?: string;
 }
+
+const isPublished = (a: ArticleDetail) => {
+  const s = String(a.status || '').trim().toLowerCase();
+  return s === 'published' || s === 'approved';
+};
 
 interface CommentItem {
   id: string;
@@ -42,7 +51,8 @@ const DEFAULT_SITES_CONFIG: Record<string, any> = {
 export default function ArticleDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const articleId = params?.id as string;
+  // URL segment: Firestore doc id ya article ka slug — dono chalte hain
+  const routeParam = decodeURIComponent((params?.id as string) || '');
 
   const [siteSlug, setSiteSlug] = useState<string>('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
@@ -61,26 +71,36 @@ export default function ArticleDetailPage() {
     if (cached) { try { setReaderUser(JSON.parse(cached)); } catch (e) { console.error(e); } }
   }, []);
 
+  // Resolve hone ke baad asli Firestore doc id (comments/views isi se jude hain)
+  const articleId = article?.id || '';
+
   useEffect(() => {
-    if (!articleId) return;
+    if (!routeParam) return;
     async function fetchArticle() {
       setLoading(true);
       try {
-        const docRef = doc(db, 'articles', articleId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
+        // 1. Pehle direct document id se
+        let docSnap: any = await getDoc(doc(db, 'articles', routeParam));
+        // 2. Nahi mila toh slug se (homepage /article/{slug} link banata hai)
+        if (!docSnap.exists()) {
+          const slugSnap = await getDocs(query(collection(db, 'articles'), where('slug', '==', routeParam), limit(1)));
+          docSnap = slugSnap.empty ? null : slugSnap.docs[0];
+        }
+        if (docSnap) {
           const data = { id: docSnap.id, ...docSnap.data() } as ArticleDetail;
           setArticle(data);
           const querySite = searchParams.get('site');
-          const finalSlug = (querySite || data.siteId || 'the-local-leader').toLowerCase();
+          const finalSlug = normalizeSiteId(querySite || data.siteId || 'the-local-leader');
           setSiteSlug(finalSlug);
-          updateDoc(docRef, { views: increment(1) }).catch(() => {});
+          updateDoc(doc(db, 'articles', docSnap.id), { views: increment(1) }).catch(() => {});
+        } else {
+          setArticle(null);
         }
       } catch (err) { console.error('Error fetching article:', err); }
       setLoading(false);
     }
     fetchArticle();
-  }, [articleId, searchParams]);
+  }, [routeParam, searchParams]);
 
   useEffect(() => {
     if (!siteSlug) return;
@@ -98,9 +118,12 @@ export default function ArticleDetailPage() {
     if (!siteSlug) return;
     async function fetchSideArticles() {
       try {
-        const qSide = query(collection(db, 'articles'), where('siteId', 'in', [siteSlug, siteSlug.toLowerCase()]), limit(8));
+        const qSide = query(collection(db, 'articles'), where('siteId', 'in', siteIdAliases(siteSlug)), limit(20));
         const snap = await getDocs(qSide);
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as ArticleDetail)).filter((item) => item.id !== articleId);
+        // Sirf published articles, taaki related/trending links draft ya 404 par na jaayein
+        const list = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() } as ArticleDetail))
+          .filter((item) => item.id !== articleId && isPublished(item));
         setRelatedArticles(list.slice(0, 4));
         setTrendingArticles(list.slice(4, 8).length > 0 ? list.slice(4, 8) : list.slice(0, 4));
       } catch (e) { console.error('Sidebar articles fetch error:', e); }
@@ -182,6 +205,15 @@ export default function ArticleDetailPage() {
   return (
     <>
       <style jsx global>{allCSS}</style>
+
+      {/* Premium portal ka article direct link se khule toh bhi plan check */}
+      <PremiumGate
+        siteSlug={siteSlug}
+        siteName={siteName}
+        primaryColor={primary}
+        isEnglish={siteSlug === 'news-info-24' || siteSlug === 'ndn-defence'}
+        returnPath={`/article/${encodeURIComponent(routeParam)}?site=${siteSlug}`}
+      />
 
       <div className="ap-page" style={cssVars}>
 

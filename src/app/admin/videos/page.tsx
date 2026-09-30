@@ -11,6 +11,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
 interface VideoItem {
@@ -29,11 +30,11 @@ const NETWORK_PORTALS = [
   { slug: 'the-local-leader', name: 'द लोकल लीडर' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
   { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
-  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स' },
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
-  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
-  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
-  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़' }
 ];
 
 const VIDEO_CATEGORIES = [
@@ -145,7 +146,7 @@ export default function AdminVideosPage() {
 
   const filteredVideos = videos.filter((item) => {
     if (selectedSiteFilter === 'all') return true;
-    return item.siteId === selectedSiteFilter || item.siteId === 'all';
+    return normalizeSiteId(item.siteId) === selectedSiteFilter || item.siteId === 'all';
   });
 
   return (
@@ -257,7 +258,7 @@ export default function AdminVideosPage() {
                     {item.category || 'वीडियो'}
                   </span>
                   <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>
-                    पोर्टल: {item.siteId === 'all' ? 'All Portals' : item.siteId}
+                    पोर्टल: {item.siteId === 'all' ? 'All Portals' : NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(item.siteId))?.name || item.siteId}
                   </span>
                 </div>
 

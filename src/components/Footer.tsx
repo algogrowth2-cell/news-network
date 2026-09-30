@@ -14,11 +14,11 @@ const NETWORK_PORTALS = [
   { name: 'द लोकल लीडर', slug: 'the-local-leader', color: '#f26522' },
   { name: 'बाज़ार कारोबार', slug: 'bazar-karobar', color: '#e8541f' },
   { name: 'गोल्डन पर्ल क्रॉनिकल्स', slug: 'golden-pearl-chronicles', color: '#b08b1e' },
-  { name: 'द प्रोव्यू टाइम्स', slug: 'state-express', color: '#8a3b8f' },
+  { name: 'द प्रोव्यू टाइम्स', slug: 'the-provue-times', color: '#8a3b8f' },
   { name: 'देश की आवाज़', slug: 'desh-ki-aawaz', color: '#c0392b' },
-  { name: 'जन भारत न्यूज़', slug: 'jan-chetna-news', color: '#1d6fa5' },
-  { name: 'NEWS INFO 24', slug: 'city-bulletin', color: '#d12b2b' },
-  { name: 'डिफेंस न्यूज़', slug: 'national-spotlight', color: '#4a6741' }
+  { name: 'जन भारत न्यूज़', slug: 'jan-bharat-news', color: '#1d6fa5' },
+  { name: 'NEWS INFO 24', slug: 'news-info-24', color: '#d12b2b' },
+  { name: 'डिफेंस न्यूज़', slug: 'ndn-defence', color: '#4a6741' }
 ];
 
 const SOCIAL_LINKS = [

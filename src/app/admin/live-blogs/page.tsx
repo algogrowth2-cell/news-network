@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { NETWORK_SITES } from '@/components/SiteSwitcher';
+import { LEGACY_SLUG_MAP, normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
 interface UpdateItem {
@@ -24,16 +25,6 @@ interface LiveBlogData {
 
 // Asli portal slugs (wahi jo homepage ?site= / domain mapping use karta hai)
 const NETWORK_PORTALS = [{ slug: 'all', name: 'सभी नेटवर्क (All Portals)' }, ...NETWORK_SITES];
-
-// Purane slugs jo pehle is page se save hote the — kisi portal se match nahi karte the
-const LEGACY_SLUG_MAP: Record<string, string> = {
-  'state-express': 'the-provue-times',
-  'jan-chetna-news': 'jan-bharat-news',
-  'city-bulletin': 'news-info-24',
-  'national-spotlight': 'ndn-defence'
-};
-
-const normalizeSiteId = (siteId: string) => LEGACY_SLUG_MAP[siteId] || siteId;
 
 const portalName = (siteId: string) => NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(siteId))?.name || siteId;
 

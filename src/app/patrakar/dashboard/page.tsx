@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
+import { normalizeSiteId } from '@/lib/portals';
 import { 
   collection, 
   query, 
@@ -34,11 +35,11 @@ const NETWORK_WEBSITES = [
   { name: 'द लोकल लीडर', slug: 'the-local-leader' },
   { name: 'बाज़ार कारोबार', slug: 'bazar-karobar' },
   { name: 'गोल्डन पर्ल क्रॉनिकल्स', slug: 'golden-pearl-chronicles' },
-  { name: 'द प्रोव्यू टाइम्स', slug: 'state-express' },
+  { name: 'द प्रोव्यू टाइम्स', slug: 'the-provue-times' },
   { name: 'देश की आवाज़', slug: 'desh-ki-aawaz' },
-  { name: 'जन भारत न्यूज़', slug: 'jan-chetna-news' },
-  { name: 'NEWS INFO 24', slug: 'city-bulletin' },
-  { name: 'डिफेंस न्यूज़', slug: 'national-spotlight' }
+  { name: 'जन भारत न्यूज़', slug: 'jan-bharat-news' },
+  { name: 'NEWS INFO 24', slug: 'news-info-24' },
+  { name: 'डिफेंस न्यूज़', slug: 'ndn-defence' }
 ];
 
 export default function PatrakarDashboard() {
@@ -492,7 +493,7 @@ export default function PatrakarDashboard() {
                           {art.category}
                         </td>
                         <td style={{ padding: '14px 18px', color: themeColor, fontWeight: 600 }}>
-                          {NETWORK_WEBSITES.find(w => w.slug === art.siteId)?.name || art.siteId}
+                          {NETWORK_WEBSITES.find(w => w.slug === normalizeSiteId(art.siteId))?.name || art.siteId}
                         </td>
                         <td style={{ padding: '14px 18px' }}>
                           <span

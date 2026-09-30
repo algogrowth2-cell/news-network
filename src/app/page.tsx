@@ -1,20 +1,14 @@
 'use client';
-import { Fragment, Suspense, useEffect, useRef, useState } from 'react';
-import { collection, query, where, getDocs, getDoc, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { Fragment, Suspense, useEffect, useState } from 'react';
+import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import SiteSwitcher, {
-  FREE_SITE_SLUG,
-  NETWORK_SITES,
-  SUBSCRIPTION_PLANS,
-  RAZORPAY_KEY,
-  navigateToSite,
-  saveSubscription
-} from '@/components/SiteSwitcher';
-import { loadRazorpayScript } from '@/lib/razorpay';
+import SiteSwitcher from '@/components/SiteSwitcher';
+import PremiumGate from '@/components/PremiumGate';
+import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReferralRewardsModal from '@/components/ReferralRewardsModal';
 
@@ -92,34 +86,6 @@ const DEFAULT_RASHI_LIST = [
   { id: 'aquarius', name: 'कुंभ', nameEn: 'Aquarius', sign: '♒' },
   { id: 'pisces', name: 'मीन', nameEn: 'Pisces', sign: '♓' }
 ];
-
-const getCachedReader = () => {
-  try {
-    const cached = localStorage.getItem('reader_user');
-    return cached ? JSON.parse(cached) : null;
-  } catch {
-    return null;
-  }
-};
-
-const isPlanActive = (data: any) => {
-  if (!data || data.status !== 'active') return false;
-  const expiry = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
-  return new Date() < expiry;
-};
-
-// Premium portal ka access: paid plan (subscriptions/{email}) ya referral reward (vip_all_access/{phone})
-const hasPremiumAccess = async (user: any) => {
-  const checks: Promise<boolean>[] = [];
-  if (user?.email) {
-    checks.push(getDoc(doc(db, 'subscriptions', user.email)).then((snap) => snap.exists() && isPlanActive(snap.data())));
-  }
-  if (user?.phone) {
-    checks.push(getDoc(doc(db, 'vip_all_access', String(user.phone))).then((snap) => snap.exists() && isPlanActive(snap.data())));
-  }
-  const results = await Promise.allSettled(checks);
-  return results.some((r) => r.status === 'fulfilled' && r.value);
-};
 
 const PLAY_STORE_URL = 'https://play.google.com/store';
 const APP_STORE_URL = 'https://apps.apple.com';
@@ -301,20 +267,6 @@ body {
 .hp-search-row{display:flex;align-items:center;gap:10px}
 .hp-search-result{margin-top:12px;width:100%;text-align:left;background:#f7f6f3;border:0;border-radius:10px;padding:10px 12px;font-size:13.5px;cursor:pointer;color:#333}
 
-.hp-pw-overlay{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.65);backdrop-filter:blur(6px)}
-.hp-pw-checking{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:#f7f6f3;color:#888;font-size:14px}
-.hp-pw-box{background:#fff;border-radius:20px;max-width:480px;width:100%;max-height:92vh;overflow-y:auto;padding:26px;box-shadow:0 25px 60px rgba(0,0,0,.25);color:#0f172a}
-.hp-pw-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
-.hp-pw-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-bottom:8px}
-.hp-pw-title{margin:0;font-size:18px;font-weight:800;line-height:1.35}
-.hp-pw-text{margin:6px 0 0;font-size:13px;color:#64748b;line-height:1.5}
-.hp-pw-close{background:#f1f5f9;border:0;border-radius:50%;width:32px;height:32px;cursor:pointer;font-weight:800;font-size:14px;color:#64748b;flex-shrink:0}
-.hp-pw-plans{display:flex;flex-direction:column;gap:10px}
-.hp-pw-plan{border:2px solid #e2e8f0;background:#fff;border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;color:inherit}
-.hp-pw-pay{width:100%;margin-top:18px;color:#fff;border:0;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
-.hp-pw-pay:disabled{opacity:.7;cursor:not-allowed}
-.hp-pw-free{display:block;width:100%;margin-top:10px;background:none;border:0;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;text-decoration:underline}
-
 @keyframes hpPulse{0%,100%{opacity:1}50%{opacity:.6}}
 @keyframes hpSlide{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
@@ -388,12 +340,8 @@ function HomePageContent() {
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
-  // Premium portal paywall
+  // Portal slug resolve hone ke baad hi PremiumGate access check chalata hai
   const [slugResolved, setSlugResolved] = useState(false);
-  const [accessState, setAccessState] = useState<'checking' | 'granted' | 'paywall'>('checking');
-  const [paywallPlan, setPaywallPlan] = useState(SUBSCRIPTION_PLANS[0]);
-  const [paywallProcessing, setPaywallProcessing] = useState(false);
-  const loginPromptShownRef = useRef(false);
 
   // Check if current site should default to English
   const isEnglishSite = currentSlug === 'news-info-24' || currentSlug === 'ndn-defence' || currentSlug === 'national-defence-network';
@@ -542,89 +490,6 @@ function HomePageContent() {
     setReaderUser(null);
   };
 
-  // 🔒 PREMIUM PORTAL PAYWALL: the-local-leader free hai, baaki portals par login + active plan zaroori
-  useEffect(() => {
-    if (!slugResolved) return;
-
-    if (currentSlug === FREE_SITE_SLUG) {
-      setAccessState('granted');
-      return;
-    }
-
-    setAccessState('checking');
-    const user = getCachedReader();
-
-    if (!user) {
-      if (!loginPromptShownRef.current) {
-        loginPromptShownRef.current = true;
-        alert(isEnglishSite ? 'Please login first to read premium portals!' : 'प्रीमियम पोर्टल्स देखने के लिए कृपया पहले लॉगिन करें!');
-        router.replace(`/login?redirect=${encodeURIComponent(`/?site=${currentSlug}`)}`);
-      }
-      return;
-    }
-
-    let cancelled = false;
-    hasPremiumAccess(user).then((ok) => {
-      if (!cancelled) setAccessState(ok ? 'granted' : 'paywall');
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [slugResolved, currentSlug, isEnglishSite, router]);
-
-  const leaveToFreePortal = () => {
-    const freeSite = NETWORK_SITES.find((s) => s.slug === FREE_SITE_SLUG);
-    if (freeSite) navigateToSite(freeSite);
-  };
-
-  const handlePaywallPayment = async () => {
-    const user = getCachedReader();
-    if (!user?.email) {
-      router.push(`/login?redirect=${encodeURIComponent(`/?site=${currentSlug}`)}`);
-      return;
-    }
-
-    setPaywallProcessing(true);
-    const loaded = await loadRazorpayScript();
-    if (!loaded || !(window as any).Razorpay) {
-      alert(isEnglishSite ? 'Payment gateway failed to load. Please try again.' : 'Razorpay गेटवे लोड नहीं हो सका, कृपया पुनः प्रयास करें।');
-      setPaywallProcessing(false);
-      return;
-    }
-
-    const plan = paywallPlan;
-    const rzp = new (window as any).Razorpay({
-      key: RAZORPAY_KEY,
-      amount: plan.price * 100,
-      currency: 'INR',
-      name: 'न्यूज़ नेटवर्क ऑल-पोर्टल ऐक्सेस',
-      description: `${plan.name} - ${siteConfig?.name || currentSlug}`,
-      image: '/logos/the-local-leader.jpeg',
-      handler: async (response: any) => {
-        try {
-          await saveSubscription(user, plan, response.razorpay_payment_id, currentSlug);
-          alert(`🎉 भुगतान सफल! आपका ${plan.name} सक्रिय हो गया है।`);
-          setAccessState('granted');
-        } catch (err: any) {
-          console.error(err);
-          alert('डेटाबेस अपडेट में त्रुटि: ' + err.message);
-        }
-        setPaywallProcessing(false);
-      },
-      prefill: {
-        name: user.name || '',
-        email: user.email || '',
-        contact: user.phone || ''
-      },
-      theme: { color: primary },
-      modal: {
-        // Razorpay window band hone par sirf plan modal par wapas aate hain
-        ondismiss: () => setPaywallProcessing(false)
-      }
-    });
-    rzp.open();
-  };
-
   useEffect(() => {
     let rawSiteSlug = searchParams?.get('site') || '';
 
@@ -649,7 +514,7 @@ function HomePageContent() {
       rawSiteSlug = domainMap[hostname] || 'the-local-leader';
     }
 
-    const activeSiteSlug = decodeURIComponent(rawSiteSlug || 'the-local-leader').trim().toLowerCase().replace(/\s+/g, '-');
+    const activeSiteSlug = normalizeSiteId(decodeURIComponent(rawSiteSlug || 'the-local-leader'));
     setCurrentSlug(activeSiteSlug);
     setSlugResolved(true);
 
@@ -715,7 +580,7 @@ function HomePageContent() {
       const activeList: LiveBlogData[] = [];
       snap.forEach((d) => {
         const data = d.data();
-        const liveSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
+        const liveSite = normalizeSiteId(data.siteId);
         if (data.isActive && (liveSite === activeSiteSlug || data.siteId === 'all')) {
           activeList.push({ id: d.id, ...data } as LiveBlogData);
         }
@@ -726,7 +591,7 @@ function HomePageContent() {
     async function loadData() {
       setLoading(true);
       try {
-        const possibleSlugs = [activeSiteSlug, activeSiteSlug.replace(/-/g, ' ')];
+        const possibleSlugs = [...siteIdAliases(activeSiteSlug), activeSiteSlug.replace(/-/g, ' ')];
         if (activeSiteSlug.includes('provue')) possibleSlugs.push('the-proview-times');
         if (activeSiteSlug.includes('proview')) possibleSlugs.push('the-provue-times');
 
@@ -803,7 +668,7 @@ function HomePageContent() {
       snap.forEach((d) => {
         const data = d.data();
         const st = String(data.status || 'active').toLowerCase();
-        const cSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
+        const cSite = normalizeSiteId(data.siteId);
         if (st === 'active' || st === 'approved') {
           if (!data.siteId || cSite === activeSiteSlug || data.siteId === 'all') {
             directClassifieds.push({ id: d.id, ...data } as ClassifiedItem);
@@ -820,7 +685,7 @@ function HomePageContent() {
         const st = String(data.status || '').toLowerCase();
         const fmt = String(data.format || '').toLowerCase();
         const zn = String(data.zone || '').toLowerCase();
-        const aSite = String(data.siteId || '').trim().toLowerCase().replace(/\s+/g, '-');
+        const aSite = normalizeSiteId(data.siteId);
 
         if ((st === 'active' || st === 'approved') && (fmt === 'classified' || zn.includes('classified'))) {
           if (!data.siteId || aSite === activeSiteSlug || data.siteId === 'all') {
@@ -972,59 +837,13 @@ function HomePageContent() {
     <div className="hp-root" style={{ fontFamily: siteFont }}>
       <style dangerouslySetInnerHTML={{ __html: HP_STYLES }} />
 
-      {/* ═══ PREMIUM PAYWALL ═══ */}
-      {accessState === 'checking' && (
-        <div className="hp-pw-checking">{isEnglishSite ? 'Verifying access…' : 'ऐक्सेस की जाँच हो रही है…'}</div>
-      )}
-      {accessState === 'paywall' && (
-        <div className="hp-pw-overlay notranslate" translate="no" onClick={() => !paywallProcessing && leaveToFreePortal()}>
-          <div className="hp-pw-box" onClick={(e) => e.stopPropagation()}>
-            <div className="hp-pw-head">
-              <div>
-                <span className="hp-pw-pill" style={{ color: primary, background: tint(primary, 0.08) }}>
-                  {isEnglishSite ? 'Premium Network Access' : 'प्रीमियम नेटवर्क ऐक्सेस'}
-                </span>
-                <h3 className="hp-pw-title">{siteConfig?.name || currentSlug}</h3>
-                <p className="hp-pw-text">
-                  {isEnglishSite
-                    ? 'The Local Leader is free, this is a premium network portal. Choose a plan to get access to all portals.'
-                    : 'द लोकल लीडर मुफ़्त है, यह एक प्रीमियम नेटवर्क पोर्टल है। सभी पोर्टल्स का ऐक्सेस पाने के लिए प्लान चुनें।'}
-                </p>
-              </div>
-              <button className="hp-pw-close" onClick={leaveToFreePortal} disabled={paywallProcessing} aria-label="बंद करें">
-                ✕
-              </button>
-            </div>
-
-            <div className="hp-pw-plans">
-              {SUBSCRIPTION_PLANS.map((plan) => {
-                const isSelected = paywallPlan.id === plan.id;
-                return (
-                  <button
-                    key={plan.id}
-                    className="hp-pw-plan"
-                    onClick={() => setPaywallPlan(plan)}
-                    style={isSelected ? { borderColor: primary, background: tint(primary, 0.03) } : undefined}
-                  >
-                    <span style={{ minWidth: 0 }}>
-                      <span style={{ display: 'block', fontSize: '14px', fontWeight: 700 }}>{plan.name}</span>
-                      <span style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{plan.desc}</span>
-                    </span>
-                    <span style={{ fontSize: '20px', fontWeight: 800, color: primary, flexShrink: 0 }}>₹{plan.price}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button className="hp-pw-pay" onClick={handlePaywallPayment} disabled={paywallProcessing} style={{ background: primary }}>
-              💳 {paywallProcessing ? 'प्रक्रिया जारी है...' : `₹${paywallPlan.price} का भुगतान करें और ऐक्सेस पाएं`}
-            </button>
-            <button className="hp-pw-free" onClick={leaveToFreePortal} disabled={paywallProcessing}>
-              {isEnglishSite ? '← Go to The Local Leader (Free)' : '← द लोकल लीडर (मुफ़्त) पर जाएं'}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ═══ PREMIUM PAYWALL (the-local-leader free, baaki portals par plan zaroori) ═══ */}
+      <PremiumGate
+        siteSlug={slugResolved ? currentSlug : null}
+        siteName={siteConfig?.name}
+        primaryColor={primary}
+        isEnglish={isEnglishSite}
+      />
 
       {/* ═══ 1. MARKET TICKER ═══ */}
       <div className="hp-ticker">
@@ -1118,10 +937,10 @@ function HomePageContent() {
 
           {/* Desktop Tools */}
           <div className="hp-tools hp-desktop-tools">
-            <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link">
               ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
-            <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link">
               📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
@@ -1232,10 +1051,10 @@ function HomePageContent() {
           </div>
           {categoryButtons}
           <div className="hp-drawer-links">
-            <Link href={`/journalist?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link">
               ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
-            <Link href={`/advertise?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link">
               📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
           </div>

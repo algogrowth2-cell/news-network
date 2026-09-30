@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
 interface GalleryItem {
@@ -20,11 +21,11 @@ const NETWORK_PORTALS = [
   { slug: 'the-local-leader', name: 'द लोकल लीडर' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार' },
   { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स' },
-  { slug: 'state-express', name: 'द प्रोव्यू टाइम्स' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स' },
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
-  { slug: 'jan-chetna-news', name: 'जन भारत न्यूज़' },
-  { slug: 'city-bulletin', name: 'NEWS INFO 24' },
-  { slug: 'national-spotlight', name: 'डिफेंस न्यूज़' }
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़' }
 ];
 
 const GALLERY_CATEGORIES = [
@@ -130,7 +131,7 @@ export default function AdminGalleriesPage() {
   // Filtered List
   const filteredGalleries = galleries.filter((item) => {
     if (selectedSiteFilter === 'all') return true;
-    return item.siteId === selectedSiteFilter || item.siteId === 'all';
+    return normalizeSiteId(item.siteId) === selectedSiteFilter || item.siteId === 'all';
   });
 
   return (
@@ -275,7 +276,7 @@ export default function AdminGalleriesPage() {
 
                 <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>
-                    पोर्टल: <b>{item.siteId || 'all'}</b>
+                    पोर्टल: <b>{NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(item.siteId || 'all'))?.name || item.siteId || 'all'}</b>
                   </span>
                   <button
                     type="button"
