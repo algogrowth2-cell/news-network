@@ -1,12 +1,13 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { clearRoleSession } from '@/lib/roleSession';
 
 export default function RestrictedAdvertiserPage() {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('advertiser_user');
+    clearRoleSession('advertiser');
     router.push('/advertiser/login');
   };
 

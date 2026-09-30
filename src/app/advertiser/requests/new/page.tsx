@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
 
 export default function NewAdRequest() {
   const router = useRouter();
@@ -22,16 +23,27 @@ export default function NewAdRequest() {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    const cached = localStorage.getItem('advertiser_user');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      setUser(parsed);
-      if (parsed.status !== 'active') {
-        router.push('/advertiser/requests/restricted');
-      }
-    } else {
-      router.push('/advertiser/login');
+    // Sirf OTP-verified advertiser; profile Firestore se. Admin ne block kiya ho toh restricted page
+    const session = getRoleSession('advertiser');
+    if (!session) {
+      router.replace('/advertiser/login');
+      return;
     }
+    getProfileById('advertiser', session.id)
+      .then((profile) => {
+        if (!profile) {
+          clearRoleSession('advertiser');
+          router.replace('/advertiser/login');
+          return;
+        }
+        const d = profile.data;
+        setUser({ id: profile.id, phone: session.phone, email: d.email || '', name: d.businessName || d.contactName || 'विज्ञापनदाता' });
+        if (['blocked', 'suspended'].includes(String(d.status || '').toLowerCase())) router.replace('/advertiser/requests/restricted');
+      })
+      .catch(() => {
+        clearRoleSession('advertiser');
+        router.replace('/advertiser/login');
+      });
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +65,8 @@ export default function NewAdRequest() {
         endDate,
         status: 'pending', // Admin review required
         advertiserId: user?.id || '',
+        advertiserPhone: user?.phone || '',
+        advertiserEmail: user?.email || '',
         advertiserName: user?.name || '',
         portalSite: 'the-local-leader',
         impressions: 0,
@@ -83,7 +97,7 @@ export default function NewAdRequest() {
               <div style={{ fontSize: '11px', color: '#94a3b8' }}>{user?.name || 'User'}</div>
             </div>
           </div>
-          <button onClick={() => { localStorage.removeItem('advertiser_user'); router.push('/advertiser/login'); }} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer' }}>
+          <button onClick={() => { clearRoleSession('advertiser'); router.push('/advertiser/login'); }} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer' }}>
             [→ लॉग आउट
           </button>
         </div>

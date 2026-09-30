@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 
 export default function PatrakarNewSubmission() {
   const router = useRouter();
@@ -22,14 +23,26 @@ export default function PatrakarNewSubmission() {
   const [isBreaking, setIsBreaking] = useState(false);
 
   useEffect(() => {
-    const cached = localStorage.getItem('patrakar_user');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      setUser(parsed);
-      if (parsed.city) setCity(parsed.city);
-    } else {
-      router.push('/patrakar/login');
+    // Sirf OTP-verified + approved reporter; profile Firestore se
+    const session = getRoleSession('patrakar');
+    if (!session) {
+      router.replace('/patrakar/login');
+      return;
     }
+    getProfileById('patrakar', session.id)
+      .then((profile) => {
+        if (!profile || !isReporterApproved(profile.data)) {
+          clearRoleSession('patrakar');
+          router.replace(profile ? '/patrakar/login?status=pending' : '/patrakar/login');
+          return;
+        }
+        setUser({ id: profile.id, phone: session.phone, ...profile.data });
+        if (profile.data.city) setCity(profile.data.city);
+      })
+      .catch(() => {
+        clearRoleSession('patrakar');
+        router.replace('/patrakar/login');
+      });
   }, [router]);
 
   const categories = [
@@ -59,6 +72,7 @@ export default function PatrakarNewSubmission() {
         isBreaking,
         status: submitStatus, // 'pending_review' ya 'Draft'
         authorId: user?.id || '',
+        authorIdentifier: user?.phone || '',
         authorName: user?.name || 'पत्रकार',
         siteId: user?.portalSite || 'the-local-leader',
         views: 0,
@@ -75,7 +89,7 @@ export default function PatrakarNewSubmission() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('patrakar_user');
+    clearRoleSession('patrakar');
     router.push('/patrakar/login');
   };
 

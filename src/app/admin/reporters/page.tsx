@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import styles from '../Admin.module.css';
+import { isReporterApproved } from '@/lib/roleSession';
 
 export default function ReportersPage() {
   const [reporters, setReporters] = useState<any[]>([]);
@@ -47,8 +48,8 @@ export default function ReportersPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
               <th style={{ padding: '14px 16px' }}>Name</th>
-              <th style={{ padding: '14px 16px' }}>Email</th>
-              <th style={{ padding: '14px 16px' }}>Beat</th>
+              <th style={{ padding: '14px 16px' }}>Phone</th>
+              <th style={{ padding: '14px 16px' }}>Press ID</th>
               <th style={{ padding: '14px 16px' }}>City</th>
               <th style={{ padding: '14px 16px' }}>Status</th>
               <th style={{ padding: '14px 16px' }}>Actions</th>
@@ -60,27 +61,30 @@ export default function ReportersPage() {
             ) : reporters.length === 0 ? (
               <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>No journalist registration requests yet.</td></tr>
             ) : (
-              reporters.map(r => (
+              reporters.map(r => {
+                // Purane records me 'active' approved ka matlab tha
+                const approved = isReporterApproved(r);
+                return (
                 <tr key={r.id} style={{ borderBottom: '1px solid #1e293b' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 600 }}>{r.name}</td>
-                  <td style={{ padding: '12px 16px', color: '#38bdf8' }}>{r.email}</td>
-                  <td style={{ padding: '12px 16px' }}>{r.beat || '-'}</td>
+                  <td style={{ padding: '12px 16px', color: '#38bdf8' }}>{r.phone || r.mobile || '-'}</td>
+                  <td style={{ padding: '12px 16px' }}>{r.pressId || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>{r.city || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>
-                    <span style={{ 
-                      fontSize: '11px', 
-                      padding: '2px 8px', 
-                      borderRadius: '12px', 
-                      background: r.status === 'active' ? '#065f46' : '#854d0e', 
-                      color: r.status === 'active' ? '#34d399' : '#fde047' 
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      background: approved ? '#065f46' : r.status === 'rejected' ? '#7f1d1d' : '#854d0e',
+                      color: approved ? '#34d399' : r.status === 'rejected' ? '#fca5a5' : '#fde047'
                     }}>
-                      {r.status || 'pending'}
+                      {approved ? 'approved' : r.status || 'pending'}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    {r.status !== 'active' ? (
-                      <button 
-                        onClick={() => handleStatusChange(r.id, 'active')}
+                    {!approved ? (
+                      <button
+                        onClick={() => handleStatusChange(r.id, 'approved')}
                         style={{ color: '#22c55e', background: 'none', border: '1px solid #22c55e', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' }}
                       >
                         Approve
@@ -101,7 +105,8 @@ export default function ReportersPage() {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

@@ -9,9 +9,10 @@ import {
   onSnapshot, 
   addDoc, 
   serverTimestamp,
-  doc 
+  doc
 } from 'firebase/firestore';
 import Link from 'next/link';
+import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
 
 interface AdvertiserAd {
   id: string;
@@ -68,7 +69,7 @@ export default function AdvertiserDashboard() {
   const [siteLogo, setSiteLogo] = useState<string>('/logos/the-local-leader.jpeg');
 
   // User session state
-  const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; phone: string; email: string; name: string } | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -78,7 +79,7 @@ export default function AdvertiserDashboard() {
   const [classifiedCategory, setClassifiedCategory] = useState(CLASSIFIED_CATEGORIES[0]);
   const [city, setCity] = useState('');
   const [price, setPrice] = useState('');
-  const [contactPhone, setContactPhone] = useState('8103333381');
+  const [contactPhone, setContactPhone] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -102,22 +103,35 @@ export default function AdvertiserDashboard() {
     return () => unsubSite();
   }, []);
 
-  // 2. Check logged in advertiser session
+  // 2. Session guard: sirf OTP-verified advertiser; profile Firestore se (bina session seedha login)
   useEffect(() => {
-    const cachedUser = localStorage.getItem('advertiser_user');
-    if (cachedUser) {
-      try {
-        const parsed = JSON.parse(cachedUser);
-        setCurrentUser(parsed);
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      setCurrentUser({
-        email: 'algogrowth2@gmail.com',
-        name: 'pankaj'
-      });
+    const session = getRoleSession('advertiser');
+    if (!session) {
+      window.location.replace('/advertiser/login');
+      return;
     }
+    getProfileById('advertiser', session.id)
+      .then((profile) => {
+        // Profile na mile ya session ka phone match na kare toh session nakli/purana hai
+        if (!profile || (profile.data.phone !== session.phone && profile.data.mobile !== session.phone)) {
+          clearRoleSession('advertiser');
+          window.location.replace('/advertiser/login');
+          return;
+        }
+        const d = profile.data;
+        setCurrentUser({
+          id: profile.id,
+          phone: session.phone,
+          email: String(d.email || '').toLowerCase(),
+          name: d.businessName || d.contactName || d.contactPerson || 'विज्ञापनदाता'
+        });
+        setContactPhone(session.phone);
+      })
+      .catch((err) => {
+        console.error('Advertiser profile load error:', err);
+        clearRoleSession('advertiser');
+        window.location.replace('/advertiser/login');
+      });
   }, []);
 
   // 3. Fetch advertiser's ads in real-time (Dono: 'ads' aur 'classifieds' collections se)
@@ -229,6 +243,13 @@ export default function AdvertiserDashboard() {
   const handleSubmitAd = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Ad hamesha verified advertiser ke naam se hi save ho
+    if (!currentUser || !getRoleSession('advertiser')) {
+      clearRoleSession('advertiser');
+      window.location.replace('/advertiser/login');
+      return;
+    }
+
     if (!name.trim()) {
       alert('विज्ञापन का शीर्षक/नाम दर्ज करना आवश्यक है।');
       return;
@@ -244,14 +265,16 @@ export default function AdvertiserDashboard() {
           category: classifiedCategory,
           city: city.trim() || 'इंदौर/महू',
           price: price.trim() || '',
-          contactNumber: contactPhone.trim() || '8103333381',
+          contactNumber: contactPhone.trim() || currentUser.phone,
           imageUrl: imageUrl.trim() || '',
           siteId: selectedSite,
           status: 'active', // Direct active for sidebar classifieds
           format: 'classified',
           type: 'classified',
-          advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
-          advertiserName: currentUser?.name || 'pankaj',
+          advertiserId: currentUser.id,
+          advertiserPhone: currentUser.phone,
+          advertiserEmail: currentUser.email,
+          advertiserName: currentUser.name,
           createdAt: new Date().toISOString(),
           timestamp: serverTimestamp()
         });
@@ -277,8 +300,10 @@ export default function AdvertiserDashboard() {
           impressions: 0,
           clicks: 0,
           contactNumber: contactPhone.trim(),
-          advertiserEmail: currentUser?.email || 'algogrowth2@gmail.com',
-          advertiserName: currentUser?.name || 'pankaj',
+          advertiserId: currentUser.id,
+          advertiserPhone: currentUser.phone,
+          advertiserEmail: currentUser.email,
+          advertiserName: currentUser.name,
           createdAt: serverTimestamp()
         });
 
@@ -302,14 +327,23 @@ export default function AdvertiserDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('advertiser_user');
-    window.location.href = '/advertiser/login';
+    clearRoleSession('advertiser');
+    window.location.replace('/advertiser/login');
   };
 
   const activeCount = ads.filter(a => a.status === 'active').length;
   const pendingCount = ads.filter(a => a.status === 'pending').length;
   const totalViews = ads.reduce((acc, curr) => acc + (curr.impressions || 0), 0);
   const totalClicks = ads.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
+
+  // Session verify hone tak dashboard nahi dikhana
+  if (!currentUser) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#64748b', fontSize: '14px' }}>
+        सत्र की जांच की जा रही है...
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>

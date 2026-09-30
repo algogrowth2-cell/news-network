@@ -10,9 +10,11 @@ import {
   onSnapshot, 
   addDoc, 
   serverTimestamp,
-  doc 
+  doc,
+  updateDoc
 } from 'firebase/firestore';
 import Link from 'next/link';
+import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 
 declare global {
   interface Window {
@@ -85,30 +87,53 @@ export default function PatrakarDashboard() {
     return () => unsubSite();
   }, []);
 
-  // 2. Persistent Login Session
+  // 2. Session guard: sirf OTP-verified + admin-approved reporter; profile hamesha Firestore se
   useEffect(() => {
-    const cached = localStorage.getItem('patrakar_user');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        setReporter(parsed);
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      const defaultReporter = {
-        name: 'pankaj patidar',
-        phone: '8839287421',
-        email: 'reporter@thelocalleader.in',
-        membershipActive: true,
-        idNumber: 'LL-PRESS-7821',
-        designation: 'वरिष्ठ संवाददाता (Chief Bureau)',
-        validTill: '31 Dec 2027',
-        photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'
-      };
-      setReporter(defaultReporter);
-      localStorage.setItem('patrakar_user', JSON.stringify(defaultReporter));
+    const session = getRoleSession('patrakar');
+    if (!session) {
+      window.location.replace('/patrakar/login');
+      return;
     }
+    getProfileById('patrakar', session.id)
+      .then((profile) => {
+        // Session ka phone profile se match na kare toh session nakli/purana hai
+        if (!profile || (profile.data.phone !== session.phone && profile.data.mobile !== session.phone)) {
+          clearRoleSession('patrakar');
+          window.location.replace('/patrakar/login');
+          return;
+        }
+        if (!isReporterApproved(profile.data)) {
+          clearRoleSession('patrakar');
+          window.location.replace('/patrakar/login?status=pending');
+          return;
+        }
+        const d = profile.data;
+        // Press ID approval ke baad pehli baar dashboard khulne par banti hai (signup par nahi)
+        let pressId = d.pressId || d.idNumber || '';
+        if (!pressId) {
+          pressId = `LL-PRESS-${Date.now().toString().slice(-6)}`;
+          updateDoc(doc(db, 'reporters', profile.id), { pressId, pressIdIssuedAt: serverTimestamp() }).catch((err) =>
+            console.error('Press ID save error:', err)
+          );
+        }
+        setReporter({
+          id: profile.id,
+          name: d.name || 'संवाददाता',
+          phone: session.phone,
+          email: d.email || '',
+          city: d.city || '',
+          membershipActive: d.membershipActive === true,
+          idNumber: pressId,
+          designation: d.designation || 'अधिकृत संवाददाता (Reporter)',
+          validTill: d.validTill || '',
+          photo: d.photoUrl || ''
+        });
+      })
+      .catch((err) => {
+        console.error('Reporter profile load error:', err);
+        clearRoleSession('patrakar');
+        window.location.replace('/patrakar/login');
+      });
   }, []);
 
   // 3. Fetch real-time articles submitted by this reporter
@@ -157,8 +182,8 @@ export default function PatrakarDashboard() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('patrakar_user');
-    window.location.href = '/patrakar/login';
+    clearRoleSession('patrakar');
+    window.location.replace('/patrakar/login');
   };
 
   // 4. Membership Payment (₹499)
@@ -176,9 +201,11 @@ export default function PatrakarDashboard() {
       description: 'वार्षिक पत्रकार सदस्यता (Unlimited Articles Publishing)',
       handler: async function (response: any) {
         alert('सदस्यता भुगतान सफल! अब आप असीमित खबरें सबमिट कर सकते हैं।');
-        const updated = { ...reporter, membershipActive: true };
-        setReporter(updated);
-        localStorage.setItem('patrakar_user', JSON.stringify(updated));
+        setReporter({ ...reporter, membershipActive: true });
+        // Membership reporter ke Firestore profile me — localStorage me nahi
+        await updateDoc(doc(db, 'reporters', reporter.id), { membershipActive: true, membershipUpdatedAt: serverTimestamp() }).catch((err) =>
+          console.error('Membership update error:', err)
+        );
 
         await addDoc(collection(db, 'membership_transactions'), {
           reporterPhone: reporter.phone,
@@ -299,6 +326,15 @@ export default function PatrakarDashboard() {
   const totalArticles = articles.length;
   const approvedArticles = articles.filter(a => a.status === 'published' || a.status === 'approved').length;
   const pendingArticles = articles.filter(a => a.status === 'pending').length;
+
+  // Session + approval verify hone tak dashboard nahi dikhana
+  if (!reporter) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#64748b', fontSize: '14px' }}>
+        सत्र की जांच की जा रही है...
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', color: '#1e293b', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
@@ -660,11 +696,18 @@ export default function PatrakarDashboard() {
                 </div>
 
                 <div style={{ padding: '22px', textAlign: 'center' }}>
-                  <img 
-                    src={reporter?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'} 
-                    alt={reporter?.name} 
-                    style={{ width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }} 
-                  />
+                  {reporter?.photo ? (
+                    <img
+                      src={reporter.photo}
+                      alt={reporter?.name}
+                      style={{ width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }}
+                    />
+                  ) : (
+                    // Photo nahi hai toh stock image nahi — reporter ke naam ka pehla akshar
+                    <div style={{ width: '92px', height: '92px', borderRadius: '50%', border: `3px solid ${themeColor}`, margin: '0 auto 12px', display: 'grid', placeItems: 'center', fontSize: '36px', fontWeight: 800, color: themeColor, background: '#f8fafc' }}>
+                      {(reporter?.name || '?').trim().charAt(0)}
+                    </div>
+                  )}
                   <h3 style={{ fontSize: '19px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter?.name}</h3>
                   <div style={{ fontSize: '12.5px', color: themeColor, fontWeight: 700 }}>{reporter?.designation}</div>
 
