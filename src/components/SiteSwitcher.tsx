@@ -6,14 +6,16 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-interface SiteItem {
+export interface SiteItem {
   slug: string;
   name: string;
   tag: string;
   domain?: string;
 }
 
-const NETWORK_SITES: SiteItem[] = [
+export const FREE_SITE_SLUG = 'the-local-leader';
+
+export const NETWORK_SITES: SiteItem[] = [
   { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)', domain: 'thelocalleader.in' },
   { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)', domain: 'theproviewtimes.com' },
   { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'janbharatnews.com' },
@@ -24,14 +26,72 @@ const NETWORK_SITES: SiteItem[] = [
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)', domain: 'deshkiawaz.com' }
 ];
 
-const SUBSCRIPTION_PLANS = [
+export const SUBSCRIPTION_PLANS = [
   { id: 'trial_1', name: 'ट्रायल ऑफर (Trial Access)', price: 1, durationDays: 30, desc: 'सभी 7+ प्रीमियम पोर्टल्स का ऐक्सेस' },
   { id: 'monthly_21', name: 'मंथली प्लान (Monthly)', price: 21, durationDays: 30, desc: '₹21 प्रति माह - सभी पोर्टल्स' },
   { id: 'three_month_11', name: '3 महीने का स्पेशल प्लान', price: 11, durationDays: 90, desc: '₹11 में 3 महीने के लिए सभी पोर्टल्स' },
   { id: 'six_month_11', name: '6 महीने का मेगा प्लान', price: 11, durationDays: 180, desc: '₹11 में पूरे 6 महीने के लिए सभी पोर्टल्स' }
 ];
 
-const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
+export const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
+
+export type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[number];
+
+const getSsoSessionParam = () => {
+  try {
+    const cached = localStorage.getItem('reader_user');
+    if (cached) {
+      const encoded = btoa(encodeURIComponent(cached));
+      return `sso_session=${encoded}`;
+    }
+  } catch (err) {
+    console.error('SSO param generation error:', err);
+  }
+  return '';
+};
+
+// Portal par bhejta hai (SSO session ke saath), localhost/vercel par ?site= se
+export const navigateToSite = (site: SiteItem) => {
+  const ssoParam = getSsoSessionParam();
+  if (typeof window !== 'undefined') {
+    const currentHost = window.location.hostname.toLowerCase().replace('www.', '');
+    if (currentHost.includes('localhost') || currentHost.includes('vercel.app')) {
+      const queryStr = `?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
+      window.location.href = queryStr;
+      return;
+    }
+
+    if (site.domain) {
+      const targetUrl = `https://${site.domain}${ssoParam ? `?${ssoParam}` : ''}`;
+      window.location.href = targetUrl;
+    } else {
+      window.location.href = `/?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
+    }
+  }
+};
+
+// Payment success ke baad subscriptions/{email} me plan active karta hai
+export const saveSubscription = async (user: any, plan: SubscriptionPlan, paymentId: string, targetSlug: string) => {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+  await setDoc(
+    doc(db, 'subscriptions', user.email),
+    {
+      userEmail: user.email,
+      userName: user.name || 'Reader',
+      planId: plan.id,
+      planName: plan.name,
+      amount: plan.price,
+      paymentId: paymentId || 'test_pay_id',
+      status: 'active',
+      startedAt: serverTimestamp(),
+      expiresAt: expiresAt,
+      targetSite: targetSlug
+    },
+    { merge: true }
+  );
+};
 
 /* Sirf layout: desktop me button ke neeche dropdown, mobile me neeche se sheet */
 const SS_STYLES = `
@@ -94,38 +154,6 @@ export default function SiteSwitcher({
     }
   }, []);
 
-  const getSsoSessionParam = () => {
-    try {
-      const cached = localStorage.getItem('reader_user');
-      if (cached) {
-        const encoded = btoa(encodeURIComponent(cached));
-        return `sso_session=${encoded}`;
-      }
-    } catch (err) {
-      console.error('SSO param generation error:', err);
-    }
-    return '';
-  };
-
-  const navigateToSite = (site: SiteItem) => {
-    const ssoParam = getSsoSessionParam();
-    if (typeof window !== 'undefined') {
-      const currentHost = window.location.hostname.toLowerCase().replace('www.', '');
-      if (currentHost.includes('localhost') || currentHost.includes('vercel.app')) {
-        const queryStr = `?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
-        window.location.href = queryStr;
-        return;
-      }
-
-      if (site.domain) {
-        const targetUrl = `https://${site.domain}${ssoParam ? `?${ssoParam}` : ''}`;
-        window.location.href = targetUrl;
-      } else {
-        window.location.href = `/?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
-      }
-    }
-  };
-
   const checkHasActivePlan = async (userEmail: string) => {
     try {
       const docRef = doc(db, 'subscriptions', userEmail);
@@ -149,7 +177,7 @@ export default function SiteSwitcher({
   const handleSelectSite = async (site: SiteItem) => {
     setDropdownOpen(false);
 
-    if (site.slug === 'the-local-leader') {
+    if (site.slug === FREE_SITE_SLUG) {
       navigateToSite(site);
       return;
     }
@@ -195,25 +223,7 @@ export default function SiteSwitcher({
       image: '/logos/the-local-leader.jpeg',
       handler: async function (response: any) {
         try {
-          const now = new Date();
-          const expiresAt = new Date(now.getTime() + selectedPlan.durationDays * 24 * 60 * 60 * 1000);
-
-          await setDoc(
-            doc(db, 'subscriptions', currentUser.email),
-            {
-              userEmail: currentUser.email,
-              userName: currentUser.name || 'Reader',
-              planId: selectedPlan.id,
-              planName: selectedPlan.name,
-              amount: selectedPlan.price,
-              paymentId: response.razorpay_payment_id || 'test_pay_id',
-              status: 'active',
-              startedAt: serverTimestamp(),
-              expiresAt: expiresAt,
-              targetSite: selectedTargetSite?.slug || 'all'
-            },
-            { merge: true }
-          );
+          await saveSubscription(currentUser, selectedPlan, response.razorpay_payment_id, selectedTargetSite?.slug || 'all');
 
           alert(`🎉 भुगतान सफल! आपका ${selectedPlan.name} सक्रिय हो गया है।`);
           setModalOpen(false);
