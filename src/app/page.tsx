@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import PremiumGate from '@/components/PremiumGate';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
+import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReferralRewardsModal from '@/components/ReferralRewardsModal';
 
@@ -72,20 +73,23 @@ interface LiveBlogData {
   updates?: { id: string; time: string; update: string }[];
 }
 
-const DEFAULT_RASHI_LIST = [
-  { id: 'aries', name: 'मेष', nameEn: 'Aries', sign: '♈' },
-  { id: 'taurus', name: 'वृषभ', nameEn: 'Taurus', sign: '♉' },
-  { id: 'gemini', name: 'मिथुन', nameEn: 'Gemini', sign: '♊' },
-  { id: 'cancer', name: 'कर्क', nameEn: 'Cancer', sign: '♋' },
-  { id: 'leo', name: 'सिंह', nameEn: 'Leo', sign: '♌' },
-  { id: 'virgo', name: 'कन्या', nameEn: 'Virgo', sign: '♍' },
-  { id: 'libra', name: 'तुला', nameEn: 'Libra', sign: '♎' },
-  { id: 'scorpio', name: 'वृश्चिक', nameEn: 'Scorpio', sign: '♏' },
-  { id: 'sagittarius', name: 'धनु', nameEn: 'Sagittarius', sign: '♐' },
-  { id: 'capricorn', name: 'मकर', nameEn: 'Capricorn', sign: '♑' },
-  { id: 'aquarius', name: 'कुंभ', nameEn: 'Aquarius', sign: '♒' },
-  { id: 'pisces', name: 'मीन', nameEn: 'Pisces', sign: '♓' }
-];
+// Rashifal purana ho toh background me ek hi baar auto-sync API hit karo (server khud duplicate Gemini calls rokta hai)
+let rashifalSyncRequested = false;
+const triggerRashifalAutoSync = () => {
+  if (rashifalSyncRequested) return;
+  rashifalSyncRequested = true;
+  const sessionKey = `rashifal_sync_${todayIST()}`;
+  try {
+    if (sessionStorage.getItem(sessionKey)) return;
+    sessionStorage.setItem(sessionKey, '1');
+  } catch {}
+  fetch('/api/rashifal/auto-sync', { method: 'POST' }).catch(() => {});
+};
+
+const formatRashifalDate = (date: string, english: boolean) => {
+  const d = new Date(`${date}T00:00:00`);
+  return isNaN(d.getTime()) ? date : d.toLocaleDateString(english ? 'en-IN' : 'hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+};
 
 const PLAY_STORE_URL = 'https://play.google.com/store';
 const APP_STORE_URL = 'https://apps.apple.com';
@@ -711,6 +715,8 @@ function HomePageContent() {
         map[d.id] = d.data();
       });
       setRashifalData(map);
+      // Server ka data aaj ka nahi hai toh chupchaap auto-sync; update hote hi yahi listener naya data dikhayega
+      if (!snap.metadata.fromCache && !isRashifalFresh(map)) triggerRashifalAutoSync();
     });
 
     return () => {
@@ -761,7 +767,7 @@ function HomePageContent() {
   const hasLiveStreams = liveSessions.length > 0;
   const showLiveInFeed = hasLiveStreams && (activeCategory === 'होम' || activeCategory === 'Home' || activeCategory === 'लाइव' || activeCategory === 'Live');
 
-  const activeRashiItem = DEFAULT_RASHI_LIST.find((r) => r.id === selectedRashi) || DEFAULT_RASHI_LIST[0];
+  const activeRashiItem = RASHI_LIST.find((r) => r.id === selectedRashi) || RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
 
   const tint = (hex: string, op: number) => {
@@ -1290,10 +1296,10 @@ function HomePageContent() {
           )}
 
           {/* 🔮 RASHIFAL WIDGET */}
-          <div className="hp-box">
+          <div className="hp-box" id="rashifal" style={{ scrollMarginTop: '90px' }}>
             <h3 className="hp-box-title" style={{ borderColor: primary }}>🔮 {isEnglishSite ? "Today's Horoscope" : 'आज का राशिफल'}</h3>
             <div className="hp-rashi-grid">
-              {DEFAULT_RASHI_LIST.map((r) => {
+              {RASHI_LIST.map((r) => {
                 const isSel = selectedRashi === r.id;
                 return (
                   <button
@@ -1314,15 +1320,34 @@ function HomePageContent() {
               })}
             </div>
             <div style={{ background: '#faf9f6', borderRadius: '10px', padding: '12px' }}>
-              <strong style={{ fontSize: '14px', color: primary }}>
-                {activeRashiItem.sign} {isEnglishSite ? activeRashiItem.nameEn : activeRashiItem.name}
-              </strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: '14px', color: primary }}>
+                  {activeRashiItem.sign} {isEnglishSite ? activeRashiItem.nameEn : activeRashiItem.name}
+                </strong>
+                {activeRashiInfo?.date && (
+                  <span style={{ fontSize: '11.5px', color: '#888' }}>📅 {formatRashifalDate(activeRashiInfo.date, isEnglishSite)}</span>
+                )}
+              </div>
               <p className="hp-rashi-text" style={{ marginTop: '6px' }}>
                 {activeRashiInfo?.prediction ||
                   activeRashiInfo?.text ||
                   activeRashiInfo?.description ||
                   (isEnglishSite ? "Today's horoscope will be updated soon." : 'आज का राशिफल जल्द ही अपडेट किया जाएगा।')}
               </p>
+              {(activeRashiInfo?.luckyNumber || activeRashiInfo?.luckyColor) && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                  {activeRashiInfo?.luckyNumber && (
+                    <span style={{ fontSize: '12px', fontWeight: 600, background: '#fff', border: '1px solid #eae8e4', borderRadius: '20px', padding: '4px 10px', color: '#444' }}>
+                      🔢 {isEnglishSite ? 'Lucky No.' : 'शुभ अंक'}: <b style={{ color: primary }}>{activeRashiInfo.luckyNumber}</b>
+                    </span>
+                  )}
+                  {activeRashiInfo?.luckyColor && (
+                    <span style={{ fontSize: '12px', fontWeight: 600, background: '#fff', border: '1px solid #eae8e4', borderRadius: '20px', padding: '4px 10px', color: '#444' }}>
+                      🎨 {isEnglishSite ? 'Lucky Colour' : 'शुभ रंग'}: <b style={{ color: primary }}>{activeRashiInfo.luckyColor}</b>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
