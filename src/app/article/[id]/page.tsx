@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { doc, getDoc, collection, addDoc, query, where, limit, getDocs, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
+import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 
@@ -64,8 +65,10 @@ export default function ArticleDetailPage() {
   const [readerUser, setReaderUser] = useState<any>(null);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentSuccess, setCommentSuccess] = useState(false);
+  const [origin, setOrigin] = useState(''); // share links isi domain/portal ke
 
   useEffect(() => {
+    setOrigin(window.location.origin);
     const cached = localStorage.getItem('reader_user');
     if (cached) { try { setReaderUser(JSON.parse(cached)); } catch (e) { console.error(e); } }
   }, []);
@@ -162,13 +165,14 @@ export default function ArticleDetailPage() {
     setCommentSubmitting(false);
   };
 
-  const handleShare = (platform: 'whatsapp' | 'facebook' | 'twitter' | 'copy') => {
-    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const shareText = encodeURIComponent(`${article?.title} - ${siteName}`);
-    if (platform === 'whatsapp') { window.open(`https://api.whatsapp.com/send?text=${shareText}%20${encodeURIComponent(currentUrl)}`, '_blank'); }
-    else if (platform === 'facebook') { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`, '_blank'); }
-    else if (platform === 'twitter') { window.open(`https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(currentUrl)}`, '_blank'); }
-    else { navigator.clipboard.writeText(currentUrl); alert('खबर का लिंक कॉपी हो गया है!'); }
+  // Share hamesha current domain ke saaf permalink (/article/{slug}) ke saath — ?site= / sso jaise params ke bina
+  const shareContent: ShareContent | null =
+    article && origin
+      ? { title: article.title, summary: article.summary || article.content, url: `${origin}/article/${encodeURIComponent(article.slug || article.id)}` }
+      : null;
+
+  const handleCopyLink = async () => {
+    if (shareContent && (await copyShareLink(shareContent.url))) alert('खबर का लिंक कॉपी हो गया है!');
   };
 
   const primary = siteConfig?.primaryColor || '#ea580c';
@@ -260,12 +264,16 @@ export default function ArticleDetailPage() {
                   </div>
                 </div>
                 <div className="ap-share-row">
-                  <button type="button" onClick={() => handleShare('whatsapp')} className="ap-share-btn ap-share-wa">
+                  <a href={shareContent ? whatsappShareUrl(shareContent) : undefined} target="_blank" rel="noopener noreferrer" className="ap-share-btn ap-share-wa">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.612.616l4.556-1.472A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.24 0-4.326-.685-6.05-1.857l-.424-.296-2.698.872.892-2.637-.322-.453A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
                     WhatsApp
+                  </a>
+                  <a href={shareContent ? facebookShareUrl(shareContent.url) : undefined} target="_blank" rel="noopener noreferrer" className="ap-share-btn ap-share-fb">FB</a>
+                  <button type="button" onClick={() => shareContent && shareNativeOrWhatsApp(shareContent)} className="ap-share-btn ap-share-cp" aria-label="शेयर करें">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+                    शेयर
                   </button>
-                  <button type="button" onClick={() => handleShare('facebook')} className="ap-share-btn ap-share-fb">FB</button>
-                  <button type="button" onClick={() => handleShare('copy')} className="ap-share-btn ap-share-cp">
+                  <button type="button" onClick={handleCopyLink} className="ap-share-btn ap-share-cp">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                     कॉपी
                   </button>
@@ -291,8 +299,9 @@ export default function ArticleDetailPage() {
               <div className="ap-share-foot">
                 <span className="ap-share-foot-t">इस खबर को अपने दोस्तों के साथ साझा करें</span>
                 <div className="ap-share-foot-row">
-                  <button type="button" onClick={() => handleShare('whatsapp')} className="ap-share-btn ap-share-wa">WhatsApp</button>
-                  <button type="button" onClick={() => handleShare('twitter')} className="ap-share-btn ap-share-tw">X (Twitter)</button>
+                  <a href={shareContent ? whatsappShareUrl(shareContent) : undefined} target="_blank" rel="noopener noreferrer" className="ap-share-btn ap-share-wa">WhatsApp</a>
+                  <a href={shareContent ? twitterShareUrl(shareContent) : undefined} target="_blank" rel="noopener noreferrer" className="ap-share-btn ap-share-tw">X (Twitter)</a>
+                  <button type="button" onClick={() => shareContent && shareNativeOrWhatsApp(shareContent)} className="ap-share-btn ap-share-cp">शेयर</button>
                 </div>
               </div>
 
@@ -500,8 +509,8 @@ const allCSS = `
 .ap-eye-ico { color: #c0c8d4; }
 
 /* Share Buttons */
-.ap-share-row { display: flex; align-items: center; gap: 6px; }
-.ap-share-btn { display: inline-flex; align-items: center; gap: 5px; border: none; border-radius: 7px; padding: 6px 12px; font-size: 11.5px; font-weight: 650; cursor: pointer; font-family: inherit; transition: opacity .15s, transform .1s; }
+.ap-share-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ap-share-btn { display: inline-flex; align-items: center; gap: 5px; border: none; text-decoration: none; border-radius: 7px; padding: 6px 12px; font-size: 11.5px; font-weight: 650; cursor: pointer; font-family: inherit; transition: opacity .15s, transform .1s; }
 .ap-share-btn:hover { opacity: .88; }
 .ap-share-btn:active { transform: scale(.96); }
 .ap-share-wa { background: #25D366; color: #fff; }
@@ -522,7 +531,7 @@ const allCSS = `
 /* Share Footer */
 .ap-share-foot { background: #f8f9fb; border: 1px solid #ebeef3; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .ap-share-foot-t { font-size: 13px; font-weight: 650; color: #475569; }
-.ap-share-foot-row { display: flex; gap: 6px; }
+.ap-share-foot-row { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ══════ COMMENTS ══════ */
 .ap-cmt-sec { margin-top: 28px; background: #fff; border-radius: 16px; border: 1px solid #ebeef3; padding: 24px clamp(18px, 3.5vw, 34px); box-shadow: 0 1px 3px rgba(0,0,0,.025); }

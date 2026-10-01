@@ -76,6 +76,9 @@ const SOCIAL_LINKS = [
   }
 ];
 
+// Asli profile/channel URL bharte hi icon footer me dikhne lagega
+const activeSocialLinks = SOCIAL_LINKS.filter((s) => s.href && s.href !== '#');
+
 const ContactIcon = {
   location: (color: string) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -271,54 +274,23 @@ export default function Footer({
               {tagline || 'भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।'}
             </p>
 
-            {/* Social Icons */}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {SOCIAL_LINKS.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
-                  className={`gp-ft-social gp-ft-social-${s.label.toLowerCase().replace(/[^a-z]/g, '')}`}
-                  onClick={(e) => { e.preventDefault(); }}
-                >
-                  {s.icon}
-                </a>
-              ))}
-            </div>
-
-            {/* App Badges */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); alert('Google Play Store लिंक जल्द उपलब्ध होगा!'); }}
-                className="gp-ft-app-badge"
-              >
-                <svg width="20" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a1.076 1.076 0 01-.609-.964V2.778c0-.398.224-.744.609-.964z" fill="#4285F4"/>
-                  <path d="M17.727 8.273L13.793 12l3.934 3.727 4.43-2.479c.73-.407.73-1.09 0-1.496l-4.43-2.479z" fill="#FBBC04"/>
-                  <path d="M3.609 22.186c.28.26.638.33.988.166l13.13-7.352-3.934-3.727L3.609 22.186z" fill="#EA4335"/>
-                  <path d="M3.609 1.814L13.793 12l3.934-3.727L4.597 1.648c-.35-.163-.709-.094-.988.166z" fill="#34A853"/>
-                </svg>
-                <div>
-                  <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.1, letterSpacing: '0.2px' }}>यहाँ से पाएँ</small>
-                  <b style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-0.2px' }}>Google Play</b>
-                </div>
-              </a>
-
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); alert('Apple App Store लिंक जल्द उपलब्ध होगा!'); }}
-                className="gp-ft-app-badge"
-              >
-                <svg width="18" height="22" viewBox="0 0 17 20" fill="#16150f">
-                  <path d="M13.545 10.239c-.022-2.234 1.823-3.31 1.907-3.362-1.037-1.518-2.655-1.726-3.23-1.75-1.374-.14-2.685.81-3.384.81-.697 0-1.778-.79-2.921-.769A4.292 4.292 0 002.3 7.591c-1.546 2.68-.395 6.651 1.11 8.826.737 1.065 1.614 2.261 2.767 2.218 1.11-.045 1.53-.718 2.872-.718 1.342 0 1.718.718 2.893.696 1.194-.02 1.95-1.085 2.682-2.153.846-1.236 1.194-2.432 1.215-2.494-.027-.012-2.33-.894-2.354-3.548l.06-.179zM11.34 4.21c.612-.742 1.025-1.773.912-2.8-.882.036-1.949.587-2.581 1.329-.567.656-1.063 1.703-.93 2.71.985.076 1.99-.5 2.599-1.239z"/>
-                </svg>
-                <div>
-                  <small style={{ display: 'block', fontSize: '9px', color: '#8d897f', lineHeight: 1.1, letterSpacing: '0.2px' }}>डाउनलोड करें</small>
-                  <b style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-0.2px' }}>App Store</b>
-                </div>
-              </a>
-            </div>
+            {/* Social Icons — sirf wahi jinka asli URL SOCIAL_LINKS me bhara hai (href '#' wale chhupe rehte hain) */}
+            {activeSocialLinks.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+                {activeSocialLinks.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className={`gp-ft-social gp-ft-social-${s.label.toLowerCase().replace(/[^a-z]/g, '')}`}
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Column 2 — खबरें */}
@@ -345,7 +317,7 @@ export default function Footer({
                 </Link>
               </li>
               <li>
-                <Link href={`/?site=${currentSlug}#shok-sandesh`} className="gp-ft-cat-link">
+                <Link href={`/shok-sandesh?site=${currentSlug}`} className="gp-ft-cat-link">
                   शोक संदेश
                 </Link>
               </li>
@@ -357,16 +329,6 @@ export default function Footer({
               <li>
                 <Link href={`/?site=${currentSlug}#rashifal`} className="gp-ft-cat-link">
                   राशिफल
-                </Link>
-              </li>
-              <li>
-                <Link href={`/?site=${currentSlug}#mandi-bhav`} onClick={(e) => { e.preventDefault(); alert('मंडी भाव अपडेट जल्द लाइव होंगे!'); }} className="gp-ft-cat-link">
-                  मंडी भाव
-                </Link>
-              </li>
-              <li>
-                <Link href={`/?site=${currentSlug}#breaking`} onClick={(e) => { e.preventDefault(); alert('ब्रेकिंग न्यूज़ अलर्ट सब्स्क्रिप्शन सक्रिय है!'); }} className="gp-ft-cat-link">
-                  ब्रेकिंग अलर्ट
                 </Link>
               </li>
             </ul>
