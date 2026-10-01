@@ -326,17 +326,18 @@ function HomePageContent() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [currentDisplayDate, setCurrentDisplayDate] = useState('');
 
+  // API aane tak (ya fail ho toh) ye fallback — /api/market-rates ke FALLBACK jaise hi
   const [marketRates, setMarketRates] = useState<MarketRates>({
-    diesel: '₹95.20',
-    petrol: '₹102.12',
-    nifty: '23,897.7 points',
-    niftyChange: '-16.70',
+    diesel: '₹99.70',
+    petrol: '₹114.58',
+    nifty: '22,421.95',
+    niftyChange: '-294.25',
     niftyPositive: false,
-    sensex: '76,642.81 points',
-    sensexChange: '+72.41',
-    sensexPositive: true,
-    silver: '₹2,50,000',
-    gold: '₹1,56,810'
+    sensex: '71,909.70',
+    sensexChange: '-619.40',
+    sensexPositive: false,
+    silver: '₹1,99,900',
+    gold: '₹1,37,600'
   });
 
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
@@ -426,25 +427,38 @@ function HomePageContent() {
     return () => clearInterval(interval);
   }, [isEnglishSite]);
 
+  // Live ticker: /api/market-rates (server 1 ghante cache karta hai); har 15 min me refresh. Fail par pichhle rates bane rehte hain
   useEffect(() => {
-    const unsubMarket = onSnapshot(doc(db, 'settings', 'market'), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setMarketRates({
-          diesel: data.diesel || '₹95.20',
-          petrol: data.petrol || '₹102.12',
-          nifty: data.nifty || '23,897.7 points',
-          niftyChange: data.niftyChange || '-16.70',
-          niftyPositive: data.niftyPositive ?? false,
-          sensex: data.sensex || '76,642.81 points',
-          sensexChange: data.senseChange || '+72.41',
-          sensexPositive: data.sensexPositive ?? true,
-          silver: data.silver || '₹2,50,000',
-          gold: '₹1,56,810'
-        });
+    let cancelled = false;
+    const loadRates = async () => {
+      try {
+        const res = await fetch('/api/market-rates');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data?.nifty) {
+          setMarketRates({
+            diesel: data.diesel,
+            petrol: data.petrol,
+            nifty: data.nifty,
+            niftyChange: data.niftyChange,
+            niftyPositive: !!data.niftyPositive,
+            sensex: data.sensex,
+            sensexChange: data.sensexChange,
+            sensexPositive: !!data.sensexPositive,
+            silver: data.silver,
+            gold: data.gold
+          });
+        }
+      } catch (err) {
+        console.warn('Market rates load failed:', err);
       }
-    });
-    return () => unsubMarket();
+    };
+    loadRates();
+    const interval = setInterval(loadRates, 15 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   // 🔐 CROSS-DOMAIN SSO TOKEN READER & AUTH PERSISTENCE LISTENER
@@ -862,10 +876,10 @@ function HomePageContent() {
         <div className="hp-ticker-in">
           <div className="hp-ticker-items">
             {[
-              { label: isEnglishSite ? 'Petrol' : 'पेट्रोल', value: marketRates.petrol, color: '#fff' },
-              { label: isEnglishSite ? 'Diesel' : 'डीज़ल', value: marketRates.diesel, color: '#fff' },
+              { label: isEnglishSite ? 'Petrol (Indore)' : 'पेट्रोल (इंदौर)', value: marketRates.petrol, color: '#fff' },
+              { label: isEnglishSite ? 'Diesel (Indore)' : 'डीज़ल (इंदौर)', value: marketRates.diesel, color: '#fff' },
               {
-                label: isEnglishSite ? 'Nifty' : 'निफ्टी',
+                label: isEnglishSite ? 'Nifty 50' : 'निफ्टी 50',
                 value: `${marketRates.nifty} ${marketRates.niftyPositive ? '▲' : '▼'} ${marketRates.niftyChange}`,
                 color: marketRates.niftyPositive ? '#34d399' : '#f87171'
               },
@@ -874,8 +888,8 @@ function HomePageContent() {
                 value: `${marketRates.sensex} ${marketRates.sensexPositive ? '▲' : '▼'} ${marketRates.sensexChange}`,
                 color: marketRates.sensexPositive ? '#34d399' : '#f87171'
               },
-              { label: isEnglishSite ? 'Gold' : 'सोना', value: marketRates.gold, color: '#fbbf24' },
-              { label: isEnglishSite ? 'Silver' : 'चांदी', value: marketRates.silver, color: '#cbd5e1' }
+              { label: isEnglishSite ? 'Gold 10g*' : 'सोना 10 ग्रा.*', value: marketRates.gold, color: '#fbbf24' },
+              { label: isEnglishSite ? 'Silver 1kg*' : 'चांदी 1 किग्रा*', value: marketRates.silver, color: '#cbd5e1' }
             ].map((item, i) => (
               <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                 {i > 0 && <span className="hp-ticker-sep">│</span>}
