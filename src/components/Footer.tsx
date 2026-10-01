@@ -154,20 +154,23 @@ export default function Footer({
         .gp-ft-social-x:hover { background: #000000; }
         .gp-ft-social-instagram:hover { background: #E4405F; }
         .gp-ft-social-youtube:hover { background: #FF0000; }
+        /* Icons ek row me, WhatsApp button uske neeche left-aligned */
+        .gp-ft-social-block {
+          display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 20px;
+        }
         .gp-ft-social-row {
-          display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;
+          display: flex; flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap;
         }
         .gp-ft-social { text-decoration: none; }
         .gp-ft-wa-chat {
-          display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px;
-          border-radius: 18px; background: #25D366; color: #ffffff; font-size: 13px; font-weight: 700;
-          text-decoration: none; white-space: nowrap; transition: all 0.25s ease;
-          box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          margin-top: 14px; padding: 10px 16px; border-radius: 8px;
+          background: #25D366; color: #ffffff; font-size: 14px; font-weight: 500; line-height: 1.25;
+          text-decoration: none; white-space: nowrap; transition: background 0.2s ease, box-shadow 0.2s ease;
+          box-shadow: 0 1px 3px rgba(37,211,102,0.35);
         }
-        .gp-ft-wa-chat:hover { background: #1ebe5b; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,211,102,0.4); }
-        @media (max-width: 420px) {
-          .gp-ft-wa-chat { flex: 1 1 100%; justify-content: center; }
-        }
+        .gp-ft-wa-chat:hover { background: #1ebe5b; box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
+        .gp-ft-wa-chat:focus-visible { outline: 2px solid #128C7E; outline-offset: 2px; }
 
         .gp-ft-app-badge {
           border: 1.5px solid #e3e0da; border-radius: 10px; padding: 8px 14px;
@@ -289,21 +292,23 @@ export default function Footer({
               {tagline || 'भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।'}
             </p>
 
-            {/* Social Icons + official WhatsApp chat */}
-            <div className="gp-ft-social-row">
-              {SOCIAL_LINKS.map((s) => (
-                <a
-                  key={s.id}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.label}
-                  title={s.label}
-                  className={`gp-ft-social gp-ft-social-${s.id}`}
-                >
-                  {s.icon}
-                </a>
-              ))}
+            {/* Social Icons (ek row) + uske neeche official WhatsApp chat button */}
+            <div className="gp-ft-social-block">
+              <div className="gp-ft-social-row">
+                {SOCIAL_LINKS.map((s) => (
+                  <a
+                    key={s.id}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    title={s.label}
+                    className={`gp-ft-social gp-ft-social-${s.id}`}
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
               <a
                 href={WHATSAPP_CHAT_URL}
                 target="_blank"
