@@ -6,7 +6,6 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import PremiumGate from '@/components/PremiumGate';
 
 interface ArticleDetail {
   id: string;
@@ -90,7 +89,7 @@ export default function ArticleDetailPage() {
           const data = { id: docSnap.id, ...docSnap.data() } as ArticleDetail;
           setArticle(data);
           // Article ka apna siteId pehle — ?site= sirf tab jab article kisi ek portal ka na ho.
-          // Warna ?site=the-local-leader laga kar premium article ka paywall bypass ho jaata.
+          // Taaki article hamesha apne asli portal ki branding/sidebar ke saath dikhe.
           const articleSite = normalizeSiteId(data.siteId);
           const querySite = searchParams.get('site');
           const finalSlug =
@@ -209,15 +208,6 @@ export default function ArticleDetailPage() {
   return (
     <>
       <style jsx global>{allCSS}</style>
-
-      {/* Premium portal ka article direct link se khule toh bhi plan check */}
-      <PremiumGate
-        siteSlug={siteSlug}
-        siteName={siteName}
-        primaryColor={primary}
-        isEnglish={siteSlug === 'news-info-24' || siteSlug === 'ndn-defence'}
-        returnPath={`/article/${encodeURIComponent(routeParam)}?site=${siteSlug}`}
-      />
 
       <div className="ap-page" style={cssVars}>
 

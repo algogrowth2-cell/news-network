@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
-import PremiumGate from '@/components/PremiumGate';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
@@ -344,9 +343,6 @@ function HomePageContent() {
   const [rashifalData, setRashifalData] = useState<Record<string, any>>({});
   const [selectedRashi, setSelectedRashi] = useState('aries');
 
-  // Portal slug resolve hone ke baad hi PremiumGate access check chalata hai
-  const [slugResolved, setSlugResolved] = useState(false);
-
   // Check if current site should default to English
   const isEnglishSite = currentSlug === 'news-info-24' || currentSlug === 'ndn-defence' || currentSlug === 'national-defence-network';
 
@@ -520,7 +516,6 @@ function HomePageContent() {
 
     const activeSiteSlug = normalizeSiteId(decodeURIComponent(rawSiteSlug || 'the-local-leader'));
     setCurrentSlug(activeSiteSlug);
-    setSlugResolved(true);
 
     const unsubSite = onSnapshot(doc(db, 'sites', activeSiteSlug), (snap) => {
       if (snap.exists()) {
@@ -842,14 +837,6 @@ function HomePageContent() {
   return (
     <div className="hp-root" style={{ fontFamily: siteFont }}>
       <style dangerouslySetInnerHTML={{ __html: HP_STYLES }} />
-
-      {/* ═══ PREMIUM PAYWALL (the-local-leader free, baaki portals par plan zaroori) ═══ */}
-      <PremiumGate
-        siteSlug={slugResolved ? currentSlug : null}
-        siteName={siteConfig?.name}
-        primaryColor={primary}
-        isEnglish={isEnglishSite}
-      />
 
       {/* ═══ 1. MARKET TICKER ═══ */}
       <div className="hp-ticker">

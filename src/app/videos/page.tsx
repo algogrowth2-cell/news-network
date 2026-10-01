@@ -7,7 +7,6 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import PremiumGate from '@/components/PremiumGate';
 
 interface VideoItem {
   id: string;
@@ -118,18 +117,8 @@ function VideosContent() {
     return matchesCat && matchesSearch;
   });
 
-  // Slug seedha URL se, taaki pehle render me premium portal "free" na maana jaaye
-  const gateSlug = normalizeSiteId(searchParams.get('site') || 'the-local-leader');
-
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f3f0', color: '#1a1a1a', fontFamily: '"Mukta", system-ui, sans-serif', display: 'flex', flexDirection: 'column' }}>
-      <PremiumGate
-        siteSlug={gateSlug}
-        siteName={siteName}
-        primaryColor={primary}
-        isEnglish={gateSlug === 'news-info-24' || gateSlug === 'ndn-defence'}
-        returnPath={`/videos?site=${gateSlug}`}
-      />
 
       {/* ── TOP HEADER (CLEAN WHITE LIGHT THEME) ── */}
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>

@@ -1,22 +1,19 @@
 export interface SiteItem {
   slug: string;
   name: string;
-  tag: string;
   domain?: string;
 }
 
-export const FREE_SITE_SLUG = 'the-local-leader';
-
 // Network ke 8 standard portals — har form/filter/switcher inhi slugs ko use kare
 export const NETWORK_SITES: SiteItem[] = [
-  { slug: 'the-local-leader', name: 'द लोकल लीडर', tag: 'मुफ़्त (Free)', domain: 'thelocalleader.in' },
-  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', tag: 'प्रीमियम (Premium)', domain: 'theproviewtimes.com' },
-  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'janbharatnews.com' },
-  { slug: 'news-info-24', name: 'NEWS INFO 24', tag: 'प्रीमियम (Premium)', domain: 'newsinfo24.in' },
-  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', tag: 'प्रीमियम (Premium)', domain: 'nationaldefencenetwork.com' },
-  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', tag: 'प्रीमियम (Premium)', domain: 'bazarkarobar.com' },
-  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', tag: 'प्रीमियम (Premium)', domain: 'goldenpearlcorporation.com' },
-  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', tag: 'प्रीमियम (Premium)', domain: 'deshkiawaz.com' }
+  { slug: 'the-local-leader', name: 'द लोकल लीडर', domain: 'thelocalleader.in' },
+  { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', domain: 'theproviewtimes.com' },
+  { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', domain: 'janbharatnews.com' },
+  { slug: 'news-info-24', name: 'NEWS INFO 24', domain: 'newsinfo24.in' },
+  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', domain: 'nationaldefencenetwork.com' },
+  { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', domain: 'bazarkarobar.com' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', domain: 'goldenpearlcorporation.com' },
+  { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', domain: 'deshkiawaz.com' }
 ];
 
 // Purane dummy slugs jo pehle admin/advertiser/patrakar forms se save hote the.
