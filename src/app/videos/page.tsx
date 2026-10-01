@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import EmptyState from '@/components/EmptyState';
 
 interface VideoItem {
   id: string;
@@ -241,33 +242,26 @@ function VideosContent() {
             <span>वीडियो लोड हो रहे हैं…</span>
           </div>
         ) : filteredVideos.length === 0 ? (
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px dashed #cbd5e1', padding: '60px 20px', textAlign: 'center' }}>
-            <span style={{ fontSize: '46px', display: 'block', marginBottom: '10px', opacity: 0.5 }}>📹</span>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
-              {selectedCategory !== 'सभी' 
-                ? `"${selectedCategory}" श्रेणी में अभी कोई वीडियो नहीं है` 
-                : `वर्तमान में "${siteName}" के लिए कोई वीडियो बुलेटिन उपलब्ध नहीं है`}
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '420px', margin: '0 auto 18px' }}>
-              एडमिन द्वारा इस पोर्टल के लिए नए वीडियो अपलोड करने के बाद वे यहाँ प्रदर्शित होंगे।
-            </p>
-            <Link
-              href={`/?site=${siteSlug}`}
-              style={{
-                backgroundColor: primary,
-                color: '#fff',
-                textDecoration: 'none',
-                padding: '9px 22px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'inline-block',
-                boxShadow: `0 2px 8px ${primary}40`
-              }}
-            >
-              मुख्य समाचार देखें
-            </Link>
-          </div>
+          selectedCategory !== 'सभी' ? (
+            // Chuni hui category khaali — filter hata kar saare video
+            <EmptyState
+              primaryColor={primary}
+              icon={<span style={{ fontSize: '28px' }}>📹</span>}
+              title="इस श्रेणी में अभी कोई वीडियो उपलब्ध नहीं है"
+              message="हम जल्द ही इस श्रेणी में ताज़ा वीडियो अपडेट करेंगे। कृपया अन्य श्रेणियां देखें या मुख्य पृष्ठ पर वापस जाएं।"
+              actionLabel="सभी वीडियो देखें"
+              onAction={() => setSelectedCategory('सभी')}
+            />
+          ) : (
+            <EmptyState
+              primaryColor={primary}
+              icon={<span style={{ fontSize: '28px' }}>📹</span>}
+              title={`वर्तमान में "${siteName}" के लिए कोई वीडियो बुलेटिन उपलब्ध नहीं है`}
+              message="एडमिन द्वारा इस पोर्टल के लिए नए वीडियो अपलोड करने के बाद वे यहाँ प्रदर्शित होंगे।"
+              actionLabel="मुख्य पृष्ठ"
+              actionHref={`/?site=${siteSlug}`}
+            />
+          )
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
             {filteredVideos.map((vid) => (

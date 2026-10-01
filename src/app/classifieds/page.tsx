@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import EmptyState from '@/components/EmptyState';
 
 interface ClassifiedItem {
   id: string;
@@ -317,30 +318,29 @@ function ClassifiedsContent() {
             <span>क्लासिफाइड लोड हो रहे हैं…</span>
           </div>
         ) : filteredAds.length === 0 ? (
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px dashed #cbd5e1', padding: '60px 20px', textAlign: 'center' }}>
-            <span style={{ fontSize: '42px', display: 'block', marginBottom: '10px', opacity: 0.6 }}>📢</span>
-            <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b', marginBottom: '6px' }}>
-              {searchTerm ? `"${searchTerm}" के लिए कोई विज्ञापन नहीं मिला` : 'अभी इस श्रेणी में कोई सक्रिय विज्ञापन नहीं है'}
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '400px', margin: '0 auto 18px' }}>
-              अपना विज्ञापन नेटवर्क के हजारों पाठकों तक पहुंचाने के लिए विज्ञापनदाता पोर्टल पर जाएं।
-            </p>
-            <Link
-              href="/advertiser/login"
-              style={{
-                backgroundColor: primary,
-                color: '#fff',
-                padding: '9px 20px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'inline-block'
+          selectedCategory !== 'सभी' || searchTerm.trim() ? (
+            // Category / search khaali — filter hata kar saare classifieds
+            <EmptyState
+              primaryColor={primary}
+              icon={<span style={{ fontSize: '28px' }}>📢</span>}
+              title={searchTerm.trim() ? `"${searchTerm.trim()}" के लिए कोई विज्ञापन नहीं मिला` : 'इस श्रेणी में अभी कोई विज्ञापन उपलब्ध नहीं है'}
+              message="हम जल्द ही इस श्रेणी में नए विज्ञापन अपडेट करेंगे। कृपया अन्य श्रेणियां देखें या सभी विज्ञापन देखें।"
+              actionLabel="सभी विज्ञापन देखें"
+              onAction={() => {
+                setSelectedCategory('सभी');
+                setSearchTerm('');
               }}
-            >
-              + नया विज्ञापन दर्ज करें
-            </Link>
-          </div>
+            />
+          ) : (
+            <EmptyState
+              primaryColor={primary}
+              icon={<span style={{ fontSize: '28px' }}>📢</span>}
+              title="अभी कोई सक्रिय विज्ञापन नहीं है"
+              message="अपना विज्ञापन नेटवर्क के हजारों पाठकों तक पहुंचाने के लिए विज्ञापनदाता पोर्टल पर जाएं।"
+              actionLabel="+ नया विज्ञापन दर्ज करें"
+              actionHref="/advertiser/login"
+            />
+          )
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
             {filteredAds.map((ad) => (

@@ -12,6 +12,8 @@ import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReferralRewardsModal from '@/components/ReferralRewardsModal';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
+import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
+import { categoryMatches } from '@/lib/categories';
 
 interface ArticleItem {
   id: string;
@@ -93,6 +95,9 @@ const formatRashifalDate = (date: string, english: boolean) => {
 
 const PLAY_STORE_URL = 'https://play.google.com/store';
 const APP_STORE_URL = 'https://apps.apple.com';
+
+// Ye tabs koi category filter nahi lagate — saari khabrein
+const HOME_TABS = ['होम', 'Home', 'ताज़ा खबरें', 'Latest News', 'राशिफल', 'टॉप न्यूज़', 'Top News'];
 
 const TRENDING_TAGS_HI = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
 const TRENDING_TAGS_EN = ['Defence Budget', 'Military Drills', 'Border Security', 'Airforce Tech', 'Naval Fleet', 'Strategic Ties', 'Armed Forces'];
@@ -234,11 +239,6 @@ body {
 .hp-feed-ad{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:10px}
 .hp-feed-ad-label{font-size:10.5px;color:#999;letter-spacing:.04em;margin-bottom:6px}
 
-.hp-empty{background:#fff;border:1px dashed #d6d3cd;border-radius:14px;padding:40px 16px;text-align:center;color:#777}
-.hp-empty-ic{font-size:34px;margin-bottom:8px}
-.hp-empty h3{margin:0 0 6px;font-size:16px;color:#333}
-.hp-empty p{margin:0;font-size:13px}
-.hp-loading{text-align:center;padding:40px;color:#888;font-size:14px}
 
 .hp-rashi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
 .hp-rashi{border:1px solid #eae8e4;border-radius:8px;padding:6px 2px;font-size:11px;cursor:pointer;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;color:#444}
@@ -390,6 +390,23 @@ function HomePageContent() {
       setSearchTerm('');
     }
   };
+
+  // Empty state ka "सभी खबरें देखें": category / tag / search sab hata kar poora feed
+  const resetNewsFilters = () => {
+    setActiveCategory(isEnglishSite ? 'Home' : 'होम');
+    setActiveTrendTag('');
+    setSearchTerm('');
+    if (searchParams?.get('category')) router.replace(`/?site=${currentSlug}`);
+  };
+
+  // Footer jaise links /?category=राजनीति bhejte hain — wahi category tab khol do
+  useEffect(() => {
+    const categoryParam = searchParams?.get('category');
+    if (categoryParam) {
+      setActiveCategory(categoryParam);
+      setActiveTrendTag('');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const updateDate = () => {
@@ -733,6 +750,10 @@ function HomePageContent() {
   const categories = isEnglishSite ? CATEGORY_LIST_EN : CATEGORY_LIST_HI;
   const trendingTags = isEnglishSite ? TRENDING_TAGS_EN : TRENDING_TAGS_HI;
 
+  // Ye tabs saari khabrein dikhate hain; baaki koi bhi tab category filter hai
+  const isFilterCategory = !HOME_TABS.includes(activeCategory);
+  const isFilterActive = isFilterCategory || !!activeTrendTag || !!searchTerm.trim();
+
   const filteredArticles = articles.filter((art) => {
     const rawStatus = String(art.status || '').trim().toLowerCase();
     if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
@@ -745,13 +766,8 @@ function HomePageContent() {
       return contentStr.includes(tag);
     }
 
-    const matchesCategory =
-      activeCategory === 'होम' ||
-      activeCategory === 'Home' ||
-      activeCategory === 'ताज़ा खबरें' ||
-      activeCategory === 'Latest News' ||
-      activeCategory === 'राशिफल' ||
-      art.category?.toLowerCase() === activeCategory.toLowerCase();
+    // Hindi tab English category wale articles bhi dikhaye (राजनीति = Politics)
+    const matchesCategory = !isFilterCategory || categoryMatches(activeCategory, art.category);
 
     const cleanSearch = searchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -1174,32 +1190,50 @@ function HomePageContent() {
           {/* ── ARTICLES FEED ── */}
           {activeCategory === 'लाइव' || activeCategory === 'Live' ? (
             !hasLiveStreams && (
-              <div className="hp-empty">
-                <div className="hp-empty-ic">📡</div>
-                <h3>{isEnglishSite ? 'No active live stream right now' : 'वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है'}</h3>
-                <p>{isEnglishSite ? 'Live coverage will appear here once started.' : 'जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।'}</p>
-              </div>
+              <EmptyState
+                primaryColor={primary}
+                icon={<span style={{ fontSize: '28px' }}>📡</span>}
+                title={isEnglishSite ? 'No active live stream right now' : 'वर्तमान में कोई लाइव प्रसारण सक्रिय नहीं है'}
+                message={isEnglishSite ? 'Live coverage will appear here once started.' : 'जैसे ही कोई विशेष लाइव कवरेज शुरू होगी, वह यहाँ प्रदर्शित हो जाएगी।'}
+                actionLabel={isEnglishSite ? 'View All News' : 'सभी खबरें देखें'}
+                onAction={resetNewsFilters}
+              />
             )
           ) : loading ? (
-            <div className="hp-loading">{isEnglishSite ? 'Loading news…' : 'खबरें लोड हो रही हैं…'}</div>
+            <FeedSkeleton label={isEnglishSite ? 'Loading news…' : 'खबरें लोड हो रही हैं…'} />
           ) : filteredArticles.length === 0 && !showLiveInFeed ? (
-            <div className="hp-empty">
-              <div className="hp-empty-ic">📭</div>
-              <h3>
-                {activeTrendTag
-                  ? `No news found for "${activeTrendTag}"`
-                  : searchTerm
-                    ? `No news found for "${searchTerm}"`
+            isFilterActive ? (
+              // Category / trending tag / search me koi khabar nahi — filter hata kar saari khabrein dikhane ka button
+              <EmptyState
+                primaryColor={primary}
+                title={
+                  activeTrendTag || searchTerm
+                    ? isEnglishSite
+                      ? `No news found for "${activeTrendTag || searchTerm}"`
+                      : `"${activeTrendTag || searchTerm}" से जुड़ी कोई खबर नहीं मिली`
                     : isEnglishSite
-                      ? 'No approved news articles available yet'
-                      : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
-              </h3>
-              <p>
-                {isEnglishSite
-                  ? 'Articles will appear here once reviewed by the editor.'
-                  : 'संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।'}
-              </p>
-            </div>
+                      ? 'No news available in this category yet'
+                      : 'इस श्रेणी में अभी कोई खबर उपलब्ध नहीं है'
+                }
+                message={
+                  isEnglishSite
+                    ? 'We will update fresh news in this category soon. Please explore other categories or go back to the home page.'
+                    : 'हम जल्द ही इस श्रेणी में ताज़ा समाचार अपडेट करेंगे। कृपया अन्य श्रेणियां देखें या मुख्य पृष्ठ पर वापस जाएं।'
+                }
+                actionLabel={isEnglishSite ? 'View All News' : 'सभी खबरें देखें'}
+                onAction={resetNewsFilters}
+              />
+            ) : (
+              <EmptyState
+                primaryColor={primary}
+                title={isEnglishSite ? 'No approved news articles available yet' : 'अभी कोई स्वीकृत खबर उपलब्ध नहीं है'}
+                message={
+                  isEnglishSite
+                    ? 'Articles will appear here once reviewed by the editor.'
+                    : 'संपादक द्वारा समीक्षा एवं अनुमोदन के बाद ही खबरें यहां प्रदर्शित होती हैं।'
+                }
+              />
+            )
           ) : (
             <div className="hp-list">
               {filteredArticles[0] && (
