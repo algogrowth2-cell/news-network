@@ -13,7 +13,7 @@ import LanguageTranslator from '@/components/LanguageTranslator';
 import ReferralRewardsModal from '@/components/ReferralRewardsModal';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
 import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
-import { categoryMatches } from '@/lib/categories';
+import { categoryMatches, matchesTrendTag } from '@/lib/categories';
 
 interface ArticleItem {
   id: string;
@@ -760,11 +760,8 @@ function HomePageContent() {
 
     if (activeCategory === 'लाइव' || activeCategory === 'Live') return false;
 
-    if (activeTrendTag) {
-      const tag = activeTrendTag.trim().toLowerCase();
-      const contentStr = `${art.title || ''} ${art.titleHi || ''} ${art.summary || ''} ${art.category || ''}`.toLowerCase();
-      return contentStr.includes(tag);
-    }
+    // Trending tag active ho toh sirf us topic ki khabrein (title / summary / content / category / tags me)
+    if (activeTrendTag) return matchesTrendTag(activeTrendTag, art);
 
     // Hindi tab English category wale articles bhi dikhaye (राजनीति = Politics)
     const matchesCategory = !isFilterCategory || categoryMatches(activeCategory, art.category);
@@ -779,7 +776,10 @@ function HomePageContent() {
   });
 
   const hasLiveStreams = liveSessions.length > 0;
-  const showLiveInFeed = hasLiveStreams && (activeCategory === 'होम' || activeCategory === 'Home' || activeCategory === 'लाइव' || activeCategory === 'Live');
+  // Live streams sirf Live tab ya bina filter wale Home par — tag/search active ho toh sirf matching khabrein
+  const showLiveInFeed =
+    hasLiveStreams &&
+    (activeCategory === 'लाइव' || activeCategory === 'Live' || ((activeCategory === 'होम' || activeCategory === 'Home') && !activeTrendTag && !searchTerm.trim()));
 
   const activeRashiItem = RASHI_LIST.find((r) => r.id === selectedRashi) || RASHI_LIST[0];
   const activeRashiInfo = rashifalData[selectedRashi];
@@ -1207,18 +1207,26 @@ function HomePageContent() {
               <EmptyState
                 primaryColor={primary}
                 title={
-                  activeTrendTag || searchTerm
+                  activeTrendTag
                     ? isEnglishSite
-                      ? `No news found for "${activeTrendTag || searchTerm}"`
-                      : `"${activeTrendTag || searchTerm}" से जुड़ी कोई खबर नहीं मिली`
-                    : isEnglishSite
-                      ? 'No news available in this category yet'
-                      : 'इस श्रेणी में अभी कोई खबर उपलब्ध नहीं है'
+                      ? 'No news available on this topic yet'
+                      : 'इस विषय में अभी कोई खबर उपलब्ध नहीं है'
+                    : searchTerm.trim()
+                      ? isEnglishSite
+                        ? `No news found for "${searchTerm.trim()}"`
+                        : `"${searchTerm.trim()}" से जुड़ी कोई खबर नहीं मिली`
+                      : isEnglishSite
+                        ? 'No news available in this category yet'
+                        : 'इस श्रेणी में अभी कोई खबर उपलब्ध नहीं है'
                 }
                 message={
-                  isEnglishSite
-                    ? 'We will update fresh news in this category soon. Please explore other categories or go back to the home page.'
-                    : 'हम जल्द ही इस श्रेणी में ताज़ा समाचार अपडेट करेंगे। कृपया अन्य श्रेणियां देखें या मुख्य पृष्ठ पर वापस जाएं।'
+                  activeTrendTag
+                    ? isEnglishSite
+                      ? 'Fresh news related to this trending topic will be updated soon.'
+                      : 'इस ट्रेंडिंग टॉपिक से संबंधित ताज़ा समाचार जल्द ही अपडेट किए जाएंगे।'
+                    : isEnglishSite
+                      ? 'We will update fresh news in this category soon. Please explore other categories or go back to the home page.'
+                      : 'हम जल्द ही इस श्रेणी में ताज़ा समाचार अपडेट करेंगे। कृपया अन्य श्रेणियां देखें या मुख्य पृष्ठ पर वापस जाएं।'
                 }
                 actionLabel={isEnglishSite ? 'View All News' : 'सभी खबरें देखें'}
                 onAction={resetNewsFilters}

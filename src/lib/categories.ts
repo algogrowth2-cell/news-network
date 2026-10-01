@@ -20,6 +20,30 @@ const norm = (value: string) => value.trim().toLowerCase();
 
 const groupOf = (value: string) => CATEGORY_GROUPS.find((g) => g.some((name) => norm(name) === norm(value)));
 
+// Trending tag (jaise "मंडी भाव") ka article se match: title, summary, poora content, category aur tags array me.
+// Poora phrase mile, ya phrase ke saare shabd (2+ akshar wale) kahin na kahin hon.
+export function matchesTrendTag(
+  tag: string,
+  article: { title?: string; titleHi?: string; summary?: string; content?: string; category?: string; tags?: string[] }
+) {
+  const haystack = [
+    article.title,
+    article.titleHi,
+    article.summary,
+    (article.content || '').replace(/<[^>]*>/g, ' '),
+    article.category,
+    ...(Array.isArray(article.tags) ? article.tags : [])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const phrase = norm(tag);
+  if (!phrase) return false;
+  if (haystack.includes(phrase)) return true;
+  const words = phrase.split(/\s+/).filter((w) => w.length >= 2);
+  return words.length > 1 && words.every((w) => haystack.includes(w));
+}
+
 // Tab ki category aur article ki category ek hi group (ya bilkul same naam) ki hain?
 export function categoryMatches(tab: string, articleCategory?: string) {
   if (!articleCategory) return false;
