@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { createReaderWithReferral } from '@/lib/referralService';
+import { isReaderRegistered } from '@/lib/readerLookup';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
 
 const fieldErrorStyle: React.CSSProperties = { display: 'block', marginTop: '5px', fontSize: '12px', color: '#dc2626', fontWeight: 500 };
@@ -27,6 +28,8 @@ function LoginAndSignupContent() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  // Mobile number ka account check: signup me pehle se registered / login me registered nahi
+  const [accountError, setAccountError] = useState<'registered' | 'unregistered' | null>(null);
 
   // Strict validation: signup me naam + email + mobile, login me sirf mobile
   const nameOk = isValidName(name);
@@ -54,6 +57,7 @@ function LoginAndSignupContent() {
     setOtp('');
     setMsg({ text: '', type: '' });
     setSubmitAttempted(false);
+    setAccountError(null);
   };
 
   // 1. Send SMS OTP via 2Factor Endpoint
@@ -63,9 +67,30 @@ function LoginAndSignupContent() {
 
     // Galat input par OTP nahi — errors har field ke neeche dikhte hain
     setSubmitAttempted(true);
+    setAccountError(null);
     if (!formValid) return;
 
     setLoading(true);
+    try {
+      // OTP se pehle hi existence check: signup me duplicate aur login me unregistered number block (SMS kharch nahi)
+      const registered = await isReaderRegistered(phone);
+      if (authMode === 'signup' && registered) {
+        setAccountError('registered');
+        setLoading(false);
+        return;
+      }
+      if (authMode === 'login' && !registered) {
+        setAccountError('unregistered');
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Reader lookup error:', err);
+      setMsg({ text: 'खाते की जांच नहीं हो पाई, कृपया पुनः प्रयास करें।', type: 'error' });
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/auth/otp', {
         method: 'POST',
@@ -421,13 +446,32 @@ function LoginAndSignupContent() {
                   maxLength={10}
                   placeholder="10 अंकों का मोबाइल नंबर"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/[^0-9]/g, ''));
+                    setAccountError(null);
+                  }}
                   required
                   aria-invalid={showPhoneError}
                   style={{ width: '100%', padding: '10px 12px', border: 'none', fontSize: '15px', outline: 'none' }}
                 />
               </div>
               {showPhoneError && <span style={fieldErrorStyle}>{VALIDATION_MSG.mobile}</span>}
+              {accountError && (
+                <div style={{ ...fieldErrorStyle, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }} role="alert">
+                  <span>
+                    {accountError === 'registered'
+                      ? 'यह मोबाइल नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।'
+                      : 'यह मोबाइल नंबर पंजीकृत नहीं है। कृपया नया खाता बनाएं।'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => switchMode(accountError === 'registered' ? 'login' : 'signup')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: '#ea580c', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    {accountError === 'registered' ? 'लॉगिन करें' : 'खाता बनाएं / साइन अप करें'}
+                  </button>
+                </div>
+              )}
             </div>
 
             <button

@@ -22,10 +22,12 @@ export default function PatrakarSignupPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorAction(null);
     setMessage('');
     const mobile = cleanPhone(phone);
     if (!isValidName(name)) return setError(VALIDATION_MSG.name);
@@ -35,7 +37,8 @@ export default function PatrakarSignupPage() {
     setLoading(true);
     try {
       if (await findProfileByPhone('patrakar', mobile)) {
-        setError('यह नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।');
+        setError('यह मोबाइल नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।');
+        setErrorAction({ href: '/patrakar/login', label: 'लॉगिन करें' });
       } else {
         const res = await sendOtp(mobile);
         if (res.ok && res.sessionId) {
@@ -108,6 +111,7 @@ export default function PatrakarSignupPage() {
       subtitle={step === 'form' ? 'मोबाइल OTP से सत्यापित आवेदन' : step === 'otp' ? 'मोबाइल पर प्राप्त OTP दर्ज करें' : 'आवेदन सेव करें'}
       message={message}
       error={error}
+      errorAction={errorAction}
       footer={
         <div>
           पहले से पंजीकृत हैं?{' '}

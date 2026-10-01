@@ -20,6 +20,7 @@ export default function AdvertiserLoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
 
   useEffect(() => {
     if (getRoleSession('advertiser')) {
@@ -32,6 +33,7 @@ export default function AdvertiserLoginPage() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorAction(null);
     setMessage('');
     const mobile = cleanPhone(phone);
     if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
@@ -40,7 +42,8 @@ export default function AdvertiserLoginPage() {
     try {
       const profile = await findProfileByPhone('advertiser', mobile);
       if (!profile) {
-        setError('यह नंबर विज्ञापनदाता के रूप में पंजीकृत नहीं है। कृपया पहले साइनअप करें।');
+        setError('यह मोबाइल नंबर पंजीकृत नहीं है। कृपया नया खाता बनाएं।');
+        setErrorAction({ href: '/advertiser/signup', label: 'खाता बनाएं / साइन अप करें' });
       } else {
         const res = await sendOtp(mobile);
         if (res.ok && res.sessionId) {
@@ -90,6 +93,7 @@ export default function AdvertiserLoginPage() {
       subtitle={step === 'phone' ? 'पंजीकृत मोबाइल नंबर से OTP लॉगिन' : 'मोबाइल पर प्राप्त OTP दर्ज करें'}
       message={message}
       error={error}
+      errorAction={errorAction}
       footer={
         <div>
           नया विज्ञापनदाता खाता?{' '}

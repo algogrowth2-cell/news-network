@@ -21,6 +21,7 @@ export default function PatrakarLoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
 
   useEffect(() => {
     // Valid session hai toh dashboard (wahan approval dobara check hota hai)
@@ -36,6 +37,7 @@ export default function PatrakarLoginPage() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorAction(null);
     setMessage('');
     const mobile = cleanPhone(phone);
     if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
@@ -45,7 +47,8 @@ export default function PatrakarLoginPage() {
       // OTP bhejne se pehle hi registration/approval check — bina registration SMS kharch nahi
       const profile = await findProfileByPhone('patrakar', mobile);
       if (!profile) {
-        setError('यह नंबर पत्रकार के रूप में पंजीकृत नहीं है। कृपया पहले साइनअप करें।');
+        setError('यह मोबाइल नंबर पंजीकृत नहीं है। कृपया नया खाता बनाएं।');
+        setErrorAction({ href: '/patrakar/signup', label: 'खाता बनाएं / साइन अप करें' });
       } else if (String(profile.data.status || '').toLowerCase() === 'rejected') {
         setError('आपका पत्रकार आवेदन अस्वीकृत किया गया है। अधिक जानकारी के लिए संपादकीय टीम से संपर्क करें।');
       } else if (!isReporterApproved(profile.data)) {
@@ -113,6 +116,7 @@ export default function PatrakarLoginPage() {
       subtitle={step === 'phone' ? 'पंजीकृत मोबाइल नंबर से OTP लॉगिन' : 'मोबाइल पर प्राप्त OTP दर्ज करें'}
       message={message}
       error={error}
+      errorAction={errorAction}
       footer={
         <div>
           नए पत्रकार हैं?{' '}

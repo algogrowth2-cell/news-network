@@ -79,6 +79,7 @@ export default function RoleAuthLayout({
   subtitle,
   message,
   error,
+  errorAction,
   footer,
   children
 }: {
@@ -87,6 +88,7 @@ export default function RoleAuthLayout({
   subtitle: string;
   message?: string;
   error?: string;
+  errorAction?: { href: string; label: string } | null; // error ke saath "लॉगिन करें" / "साइन अप करें" jaisa link
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -107,8 +109,13 @@ export default function RoleAuthLayout({
           </div>
         )}
         {error && (
-          <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
+          <div role="alert" style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', textAlign: 'center' }}>
             {error}
+            {errorAction && (
+              <Link href={errorAction.href} style={{ display: 'block', marginTop: '6px', color: '#ea580c', fontWeight: 700, textDecoration: 'underline' }}>
+                {errorAction.label}
+              </Link>
+            )}
           </div>
         )}
 

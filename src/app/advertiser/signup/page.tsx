@@ -24,10 +24,12 @@ export default function AdvertiserSignupPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorAction(null);
     setMessage('');
     const mobile = cleanPhone(phone);
     if (!businessName.trim()) return setError('कृपया व्यापार / एजेंसी का नाम दर्ज करें।');
@@ -42,7 +44,8 @@ export default function AdvertiserSignupPage() {
         await getDocs(query(collection(db, 'advertisers'), where('email', '==', email.trim().toLowerCase()), limit(1)))
       ).empty;
       if (await findProfileByPhone('advertiser', mobile)) {
-        setError('यह नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।');
+        setError('यह मोबाइल नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।');
+        setErrorAction({ href: '/advertiser/login', label: 'लॉगिन करें' });
       } else if (emailTaken) {
         setError('यह ईमेल पहले से किसी विज्ञापनदाता खाते से जुड़ा है। कृपया दूसरा ईमेल दें या लॉगिन करें।');
       } else {
@@ -107,6 +110,7 @@ export default function AdvertiserSignupPage() {
       subtitle={step === 'form' ? 'मोबाइल OTP से सत्यापित खाता' : step === 'otp' ? 'मोबाइल पर प्राप्त OTP दर्ज करें' : 'खाता सेव करें'}
       message={message}
       error={error}
+      errorAction={errorAction}
       footer={
         <div>
           पहले से खाता है?{' '}
