@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
 import { db } from '@/lib/firebase';
 import { 
   collection, 
@@ -35,42 +36,49 @@ interface ShokSandeshItem {
   createdAt?: any;
 }
 
-const INITIAL_DEMO_POSTS: ShokSandeshItem[] = [
-  {
-    id: 'demo-1',
-    name: 'रामनारायण प्रसाद जी',
-    relation: 'पिता जी',
-    passedDate: 'बुधवार, 10.04.2026',
-    eventDate: '20-04-2026',
-    eventTime: 'अपराह्न 1:00 बजे के उपरांत (तेरहवीं एवं ब्रह्मभोज)',
-    venue: 'समस्त कार्यक्रम हमारे निवास स्थल से संपन्न होंगे',
-    address: '545 क/19, राजाजीपुरम, लखनऊ',
-    familyMembers: 'संदीप जोशी, मनीष जोशी, प्रवीण जोशी (पुत्र), चिराग जोशी',
-    contactNumber: '9829019116, 8200000634',
-    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    templateId: 'floral-white',
-    status: 'approved'
-  },
-  {
-    id: 'demo-2',
-    name: 'रेखा सतपति जी',
-    relation: 'माताजी',
-    passedDate: 'बृहस्पतिवार, 23.11.2026',
-    eventDate: '04-12-2026',
-    eventTime: 'दोपहर 1:00 बजे (ब्राह्मण भोज एवं प्रसाद) | पगड़ी: शाम 4 बजे',
-    venue: 'निवास स्थल',
-    address: 'फ्लैट नंबर 7ए/3बी दूसरी मंजिल, बांगुर एवेन्यू, कोलकाता',
-    familyMembers: 'शिवकुमार, नटवर, वासु, विक्रांत (भाई), भास्कर - सोनी (पुत्र-पुत्रवधु)',
-    contactNumber: '9877535988',
-    photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
-    templateId: 'golden-frame',
-    status: 'approved'
-  }
-];
+// ---- Form validation helpers ----
+const HINDI_DAYS = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'बृहस्पतिवार', 'शुक्रवार', 'शनिवार'];
+const pad2 = (n: number) => String(n).padStart(2, '0');
+// Local date (UTC nahi) — warna IST me raat 12 se 5:30 tak "kal" aata
+const toISODate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const shiftISO = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return toISODate(d);
+};
+const parseISO = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+// Card par purane format me hi: "बुधवार, 10.04.2026" aur "20-04-2026"
+const formatPassedDate = (iso: string) => {
+  const d = parseISO(iso);
+  return `${HINDI_DAYS[d.getDay()]}, ${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+};
+const formatEventDate = (iso: string) => {
+  const d = parseISO(iso);
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+};
+// Parivar ke naam: akshar, space, comma, (), - , . allowed; ank aur < > @ # $ % ^ & * = _ [ ] { } ~ hata do
+const sanitizeFamily = (v: string) => v.replace(/[<>@#$%^&*=_[\]{}~0-9\\|`"+/]/g, '').replace(/ {2,}/g, ' ').slice(0, 300);
+// Pata / samay jaise free text: sirf code jaise chinh hatao (ank allowed — makan no., samay)
+const sanitizeFreeText = (v: string, max: number) => v.replace(/[<>{}[\]~^`\\|]/g, '').slice(0, max);
+const hasLetters = (v: string, min = 2) => (v.match(/\p{L}/gu) || []).length >= min;
+const MAX_PAST_DAYS = 730; // dehavsan tithi 2 saal se purani nahi
+
+// Photo na ho toh kisi anjaan vyakti ki stock photo nahi — saada diya placeholder
+const NO_PHOTO =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="#f1f5f9"/><text x="60" y="76" font-size="46" text-anchor="middle">🕯️</text></svg>'
+  );
+
+// Firestore document 1 MB tak — base64 photo ~33% badhti hai, isliye 700 KB tak
+const MAX_PHOTO_BYTES = 700 * 1024;
 
 export default function ShokSandeshPage() {
   const [activeTab, setActiveTab] = useState<'feed' | 'create'>('feed');
-  const [posts, setPosts] = useState<ShokSandeshItem[]>(INITIAL_DEMO_POSTS);
+  const [posts, setPosts] = useState<ShokSandeshItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 5 Canva Design Templates
@@ -86,11 +94,26 @@ export default function ShokSandeshPage() {
   const [address, setAddress] = useState('');
   const [familyMembers, setFamilyMembers] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Strict validation — galat data submit nahi hoga, error har field ke neeche
+  const todayISO = toISODate(new Date());
+  const minPassedISO = shiftISO(-MAX_PAST_DAYS);
+  const maxEventISO = shiftISO(365);
+  const nameOk = isValidName(name);
+  const relationOk = !relation.trim() || isValidName(relation);
+  const passedOk = !!passedDate && passedDate <= todayISO && passedDate >= minPassedISO;
+  const eventOk = !eventDate || (eventDate <= maxEventISO && (!passedDate || eventDate >= passedDate));
+  const addressOk = address.trim().length >= 5;
+  const familyOk = hasLetters(familyMembers);
+  const contactOk = !contactNumber || isValidIndianMobile(contactNumber);
+  const formValid = nameOk && relationOk && passedOk && eventOk && addressOk && familyOk && contactOk;
+  const showErr = (ok: boolean, value: string) => !ok && (submitAttempted || value.length > 0);
 
   // Image Upload Handling
   const [imageType, setImageType] = useState<'file' | 'url'>('file');
   const [photoUrl, setPhotoUrl] = useState('');
-  const [imagePreview, setImagePreview] = useState<string>('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400');
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   // Payment & Submit State
   const [hasMembership, setHasMembership] = useState(false);
@@ -141,11 +164,8 @@ export default function ShokSandeshPage() {
         ...d.data()
       } as ShokSandeshItem));
 
-      if (liveList.length > 0) {
-        setPosts([...liveList, ...INITIAL_DEMO_POSTS]);
-      } else {
-        setPosts(INITIAL_DEMO_POSTS);
-      }
+      // Sirf asli (admin-approved) Firestore shok sandesh
+      setPosts(liveList);
       setLoading(false);
     }, (err) => {
       console.error(err);
@@ -168,8 +188,14 @@ export default function ShokSandeshPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('कृपया 2 MB से छोटी फ़ोटो चुनें।');
+    if (!file.type.startsWith('image/')) {
+      alert('कृपया केवल फ़ोटो (JPG/PNG) चुनें।');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      alert('कृपया 700 KB से छोटी फ़ोटो चुनें।');
+      e.target.value = '';
       return;
     }
 
@@ -235,8 +261,9 @@ export default function ShokSandeshPage() {
   const handleSubmitShokSandesh = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) {
-      alert('कृपया दिवंगत स्वजन का नाम दर्ज करें।');
+    setSubmitAttempted(true);
+    if (!formValid) {
+      alert('कृपया लाल रंग में दिखाई गई जानकारी को सही करें।');
       return;
     }
 
@@ -252,13 +279,15 @@ export default function ShokSandeshPage() {
       await addDoc(collection(db, 'shok_sandesh'), {
         name: name.trim(),
         relation: relation.trim(),
-        passedDate: passedDate || 'हाल ही में',
-        eventDate: eventDate || 'शीघ्र सूचित किया जाएगा',
+        passedDate: formatPassedDate(passedDate),
+        passedDateISO: passedDate,
+        eventDate: eventDate ? formatEventDate(eventDate) : 'शीघ्र सूचित किया जाएगा',
+        eventDateISO: eventDate || null,
         eventTime: eventTime.trim(),
         venue: venue.trim(),
         address: address.trim(),
-        familyMembers: familyMembers.trim(),
-        contactNumber: contactNumber.trim(),
+        familyMembers: familyMembers.trim().replace(/,\s*$/, ''),
+        contactNumber: contactNumber,
         photoUrl: photoUrl || imagePreview,
         templateId: selectedTemplate,
         status: 'pending', // Awaiting Admin verification
@@ -305,7 +334,7 @@ export default function ShokSandeshPage() {
           </div>
 
           <div style={{ width: '130px', height: '130px', margin: '0 auto 16px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3.5px solid #d97706', boxShadow: '0 4px 14px rgba(217,119,6,0.2)', overflow: 'hidden' }}>
-            <img src={data.photoUrl || imagePreview} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 0 10px' }}>
@@ -317,9 +346,9 @@ export default function ShokSandeshPage() {
           </div>
 
           <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, margin: '0 0 16px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे श्रद्धेय {data.relation || 'पिता जी'}, <br />
-            <b style={{ fontSize: '18px', color: '#92400e', fontWeight: 800 }}>स्व० श्री {data.name || 'रामनारायण प्रसाद जी'}</b> <br />
-            का स्वर्गवास {data.passedDate || 'बुधवार, 10.04.2026'} को हो गया है। <br />
+            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे श्रद्धेय {data.relation || 'स्वजन'}, <br />
+            <b style={{ fontSize: '18px', color: '#92400e', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
+            का स्वर्गवास {data.passedDate || '—'} को हो गया है। <br />
             <span style={{ fontSize: '12.5px', color: '#64748b' }}>
               उनकी दिवंगत आत्मा की शांति हेतु आयोजित कार्यक्रम में सम्मिलित होकर हमें कृतार्थ करें।
             </span>
@@ -327,15 +356,15 @@ export default function ShokSandeshPage() {
 
           <div style={{ background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px' }}>
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#92400e', marginBottom: '4px' }}>॥ तेरहवीं / पगड़ी कार्यक्रम ॥</div>
-            <div style={{ fontSize: '13px', color: '#78350f' }}><b>दिनांक:</b> {data.eventDate || '20-04-2026'} | <b>समय:</b> {data.eventTime || 'अपराह्न 1:00 बजे'}</div>
-            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '4px' }}><b>स्थान:</b> {data.address || '545 क/19, राजाजीपुरम, लखनऊ'}</div>
+            <div style={{ fontSize: '13px', color: '#78350f' }}><b>दिनांक:</b> {data.eventDate || '—'} | <b>समय:</b> {data.eventTime || '—'}</div>
+            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '4px' }}><b>स्थान:</b> {data.address || 'निवास स्थल'}</div>
           </div>
 
           <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '8px 0 14px' }}>🪔 🪔 🪔</div>
 
           <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
             <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#475569' }}>{data.familyMembers || 'समस्त जोशी परिवार एवं मित्रगण'}</div>
+            <div style={{ fontSize: '12.5px', color: '#475569' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
             {data.contactNumber && <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px' }}>मो. {data.contactNumber}</div>}
           </div>
         </div>
@@ -365,7 +394,7 @@ export default function ShokSandeshPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '14px' }}>
             <span style={{ fontSize: '22px' }}>🕯️</span>
             <div style={{ width: '120px', height: '145px', border: '3px solid #b45309', padding: '3px', background: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
-              <img src={data.photoUrl || imagePreview} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <span style={{ fontSize: '22px' }}>🕯️</span>
           </div>
@@ -379,22 +408,22 @@ export default function ShokSandeshPage() {
           </div>
 
           <p style={{ fontSize: '13.5px', color: '#451a03', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी पूजनीय {data.relation || 'माताजी'}, <br />
-            <b style={{ fontSize: '18px', color: '#9a3412', fontWeight: 800 }}>स्व० {data.name || 'रेखा सतपति जी'}</b> <br />
-            का स्वर्गवास {data.passedDate || 'बृहस्पतिवार, 23.11.2026'} को हो गया है।
+            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी पूजनीय {data.relation || 'स्वजन'}, <br />
+            <b style={{ fontSize: '18px', color: '#9a3412', fontWeight: 800 }}>स्व० {data.name || 'दिवंगत का नाम'}</b> <br />
+            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
           </p>
 
           <div style={{ background: '#fef3c7', borderRadius: '8px', padding: '12px', marginBottom: '14px', border: '1px solid #fde68a' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#78350f' }}>ब्राह्मण भोज एवं प्रसाद</div>
-            <div style={{ fontSize: '12.5px', color: '#92400e', marginTop: '2px' }}>दिनांक: {data.eventDate || '04-12-2026'} | {data.eventTime || 'दोपहर 1:00 बजे'}</div>
-            <div style={{ fontSize: '12px', color: '#78350f', marginTop: '4px' }}>स्थान: {data.address || 'बांगुर एवेन्यू, कोलकाता'}</div>
+            <div style={{ fontSize: '12.5px', color: '#92400e', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
+            <div style={{ fontSize: '12px', color: '#78350f', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
           </div>
 
           <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
 
           <div style={{ borderTop: '1px dashed #d97706', paddingTop: '10px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#78350f' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '2px' }}>{data.familyMembers || 'समस्त सतपति परिवार'}</div>
+            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
             {data.contactNumber && <div style={{ fontSize: '11px', color: '#78350f', marginTop: '2px' }}>संपर्क: {data.contactNumber}</div>}
           </div>
         </div>
@@ -422,7 +451,7 @@ export default function ShokSandeshPage() {
           </div>
 
           <div style={{ width: '130px', height: '130px', margin: '0 auto 14px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3px solid #3b82f6', overflow: 'hidden' }}>
-            <img src={data.photoUrl || imagePreview} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
           </div>
 
           <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1e3a8a', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>
@@ -430,14 +459,14 @@ export default function ShokSandeshPage() {
           </h3>
 
           <p style={{ fontSize: '13.5px', color: '#1e293b', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी {data.relation || 'धर्मपत्नी'}, <br />
-            <b style={{ fontSize: '18px', color: '#1d4ed8', fontWeight: 800 }}>स्व० श्रीमती {data.name || 'सुमित्रा देवी जी'}</b> <br />
-            का स्वर्गवास {data.passedDate || '01.09.2026'} को हो गया है।
+            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी {data.relation || 'स्वजन'}, <br />
+            <b style={{ fontSize: '18px', color: '#1d4ed8', fontWeight: 800 }}>स्व० श्रीमती {data.name || 'दिवंगत का नाम'}</b> <br />
+            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
           </p>
 
           <div style={{ background: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid #bfdbfe', marginBottom: '14px' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>॥ श्राद्ध एवं पगड़ी कार्यक्रम ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#334155', marginTop: '2px' }}>दिनांक: {data.eventDate || '13.09.2026'} | {data.eventTime || 'प्रीतिभोज दोपहर 1 बजे'}</div>
+            <div style={{ fontSize: '12.5px', color: '#334155', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
           </div>
 
@@ -475,7 +504,7 @@ export default function ShokSandeshPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '14px' }}>
             <span>🌸</span>
             <div style={{ width: '120px', height: '145px', border: '3px solid #e11d48', padding: '3px', borderRadius: '6px', overflow: 'hidden' }}>
-              <img src={data.photoUrl || imagePreview} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <span>🌸</span>
           </div>
@@ -485,22 +514,22 @@ export default function ShokSandeshPage() {
           </h3>
 
           <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे पूजनीय {data.relation || 'पिता जी'}, <br />
-            <b style={{ fontSize: '18px', color: '#be123c', fontWeight: 800 }}>स्व० श्री {data.name || 'पवन कुमार जी'}</b> <br />
-            का स्वर्गवास {data.passedDate || '23.11.2026'} को हो गया है।
+            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे पूजनीय {data.relation || 'स्वजन'}, <br />
+            <b style={{ fontSize: '18px', color: '#be123c', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
+            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
           </p>
 
           <div style={{ background: '#fff1f2', borderRadius: '10px', padding: '12px', border: '1px solid #fecdd3', marginBottom: '14px' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, color: '#9f1239' }}>॥ ब्राह्मण भोज एवं पगड़ी ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#4c0519', marginTop: '2px' }}>दिनांक: {data.eventDate || '04-12-2026'} | {data.eventTime || 'दोपहर 1:00 बजे'}</div>
-            <div style={{ fontSize: '12px', color: '#881337', marginTop: '4px' }}>स्थान: {data.address || 'बांगुर एवेन्यू'}</div>
+            <div style={{ fontSize: '12.5px', color: '#4c0519', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
+            <div style={{ fontSize: '12px', color: '#881337', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
           </div>
 
           <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
 
           <div style={{ borderTop: '1px solid #fecdd3', paddingTop: '10px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#9f1239' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12px', color: '#334155', marginTop: '2px' }}>{data.familyMembers || 'समस्त लोहारीवाला परिवार'}</div>
+            <div style={{ fontSize: '12px', color: '#334155', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
             {data.contactNumber && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>मो. {data.contactNumber}</div>}
           </div>
         </div>
@@ -527,7 +556,7 @@ export default function ShokSandeshPage() {
         </div>
 
         <div style={{ width: '130px', height: '130px', margin: '0 auto 14px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3px solid #64748b', overflow: 'hidden' }}>
-          <img src={data.photoUrl || imagePreview} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         </div>
 
         <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>
@@ -536,13 +565,13 @@ export default function ShokSandeshPage() {
 
         <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.65, margin: '0 0 14px' }}>
           अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे श्रद्धेय {data.relation || 'स्वजन'}, <br />
-          <b style={{ fontSize: '18px', color: '#0f172a', fontWeight: 800 }}>स्व० श्री {data.name || 'रामनारायण जी'}</b> <br />
-          का स्वर्गवास {data.passedDate || '10.04.2026'} को हो गया है।
+          <b style={{ fontSize: '18px', color: '#0f172a', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
+          का स्वर्गवास {data.passedDate || '—'} को हो गया है।
         </p>
 
         <div style={{ background: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>॥ तेरहवीं कार्यक्रम ॥</div>
-          <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>दिनांक: {data.eventDate || '20-04-2026'} | {data.eventTime || 'अपराह्न 1:00 बजे'}</div>
+          <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
         </div>
 
@@ -550,7 +579,7 @@ export default function ShokSandeshPage() {
 
         <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>॥ शोकाकुल परिवार ॥</div>
-          <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{data.familyMembers || 'समस्त परिवार एवं मित्रगण'}</div>
+          <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
           {data.contactNumber && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>मो. {data.contactNumber}</div>}
         </div>
       </div>
@@ -811,9 +840,12 @@ export default function ShokSandeshPage() {
                       required
                       placeholder="उदा. रामनारायण प्रसाद जी"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
+                      maxLength={60}
+                      onChange={(e) => setName(sanitizeName(e.target.value))}
+                      aria-invalid={showErr(nameOk, name)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(nameOk, name) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                     />
+                    {showErr(nameOk, name) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>{VALIDATION_MSG.name}</span>}
                   </div>
 
                   <div>
@@ -822,33 +854,43 @@ export default function ShokSandeshPage() {
                       type="text"
                       placeholder="उदा. हमारे पूज्य पिता जी"
                       value={relation}
-                      onChange={(e) => setRelation(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
+                      maxLength={40}
+                      onChange={(e) => setRelation(sanitizeName(e.target.value))}
+                      aria-invalid={showErr(relationOk, relation)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(relationOk, relation) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                     />
+                    {showErr(relationOk, relation) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>संबंध में केवल अक्षर लिखें (अंक या विशेष चिह्न नहीं)</span>}
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>स्वर्गवास तिथि</label>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>स्वर्गवास तिथि *</label>
                     <input
-                      type="text"
-                      placeholder="उदा. बुधवार, 10.04.2026"
+                      type="date"
+                      required
+                      min={minPassedISO}
+                      max={todayISO}
                       value={passedDate}
                       onChange={(e) => setPassedDate(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
+                      aria-invalid={showErr(passedOk, passedDate)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(passedOk, passedDate) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                     />
+                    {showErr(passedOk, passedDate) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>{passedDate > todayISO ? 'स्वर्गवास तिथि भविष्य की नहीं हो सकती' : 'कृपया कैलेंडर से सही स्वर्गवास तिथि चुनें'}</span>}
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>तेरहवीं / श्रद्धांजलि तिथि</label>
                     <input
-                      type="text"
-                      placeholder="उदा. 20-04-2026"
+                      type="date"
+                      min={passedDate || minPassedISO}
+                      max={maxEventISO}
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
+                      aria-invalid={showErr(eventOk, eventDate)}
+                      style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(eventOk, eventDate) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                     />
+                    {showErr(eventOk, eventDate) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>{passedDate && eventDate < passedDate ? 'यह तिथि स्वर्गवास तिथि के बाद की होनी चाहिए' : 'कृपया कैलेंडर से सही तिथि चुनें'}</span>}
                   </div>
                 </div>
 
@@ -857,7 +899,8 @@ export default function ShokSandeshPage() {
                   <input
                     type="text"
                     value={eventTime}
-                    onChange={(e) => setEventTime(e.target.value)}
+                    maxLength={120}
+                    onChange={(e) => setEventTime(sanitizeFreeText(e.target.value, 120))}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                   />
                 </div>
@@ -869,9 +912,12 @@ export default function ShokSandeshPage() {
                     required
                     placeholder="उदा. 545 क/19, राजाजीपुरम, लखनऊ"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13px' }}
+                    maxLength={200}
+                    onChange={(e) => setAddress(sanitizeFreeText(e.target.value, 200))}
+                    aria-invalid={showErr(addressOk, address)}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(addressOk, address) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13px' }}
                   />
+                    {showErr(addressOk, address) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>कृपया कार्यक्रम स्थल का पूरा पता लिखें</span>}
                 </div>
 
                 <div>
@@ -881,20 +927,27 @@ export default function ShokSandeshPage() {
                     required
                     placeholder="उदा. संदीप, मनीष, प्रवीण (पुत्र) एवं समस्त परिवार"
                     value={familyMembers}
-                    onChange={(e) => setFamilyMembers(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13px' }}
+                    maxLength={300}
+                    onChange={(e) => setFamilyMembers(sanitizeFamily(e.target.value))}
+                    aria-invalid={showErr(familyOk, familyMembers)}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(familyOk, familyMembers) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13px' }}
                   />
+                    {showErr(familyOk, familyMembers) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>कृपया शोकाकुल परिवार के नाम लिखें (अंक या विशेष चिह्न नहीं)</span>}
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>संपर्क नंबर (Mobile Number)</label>
                   <input
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="उदा. 9829012345"
                     value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
+                    onChange={(e) => setContactNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                    aria-invalid={showErr(contactOk, contactNumber)}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `1.5px solid ${showErr(contactOk, contactNumber) ? '#dc2626' : '#cbd5e1'}`, borderRadius: '8px', padding: '9px 12px', fontSize: '13.5px' }}
                   />
+                    {showErr(contactOk, contactNumber) && <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#dc2626' }}>{VALIDATION_MSG.mobile}</span>}
                 </div>
 
                 {/* Membership Payment Status Bar */}
@@ -961,8 +1014,8 @@ export default function ShokSandeshPage() {
               {renderCard({
                 name,
                 relation,
-                passedDate,
-                eventDate,
+                passedDate: passedDate ? formatPassedDate(passedDate) : '',
+                eventDate: eventDate ? formatEventDate(eventDate) : '',
                 eventTime,
                 venue,
                 address,
