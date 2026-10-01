@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import RoleAuthLayout, { authButton, authInput, authLabel, authLinkButton, OtpInput, PhoneInput } from '@/components/RoleAuthLayout';
 import { cleanPhone, findProfileByPhone, profileDocId } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
+import { isValidIndianMobile, isValidName, VALIDATION_MSG } from '@/lib/validation';
 
 
 // Naya patrakar: OTP se mobile verify -> reporters/{rp_phone} (status: pending, admin approve karega)
@@ -27,8 +28,8 @@ export default function PatrakarSignupPage() {
     setError('');
     setMessage('');
     const mobile = cleanPhone(phone);
-    if (!name.trim()) return setError('कृपया अपना पूरा नाम दर्ज करें।');
-    if (mobile.length !== 10) return setError('कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।');
+    if (!isValidName(name)) return setError(VALIDATION_MSG.name);
+    if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
     if (!city.trim()) return setError('कृपया शहर / जिला दर्ज करें।');
 
     setLoading(true);

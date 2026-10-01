@@ -11,6 +11,7 @@ import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReferralRewardsModal from '@/components/ReferralRewardsModal';
+import ReaderProfileMenu from '@/components/ReaderProfileMenu';
 
 interface ArticleItem {
   id: string;
@@ -178,8 +179,6 @@ body {
 .hp-tool-link{font-size:12px;font-weight:600;color:#555;text-decoration:none;padding:5px 9px;border-radius:8px;border:1px solid #e5e3df;background:#fff;white-space:nowrap}
 .hp-tool-link:hover{background:#f5f4f1}
 .hp-login{color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap}
-.hp-user{display:flex;align-items:center;gap:6px;background:#f5f4f1;border:1px solid #e5e3df;border-radius:20px;padding:4px 5px 4px 12px;font-size:12.5px;font-weight:600;white-space:nowrap}
-.hp-user button{background:#fff;border:1px solid #e5e3df;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:10px;color:#888;display:flex;align-items:center;justify-content:center}
 .hp-mobile-tools{display:none;align-items:center;gap:8px}
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
@@ -487,7 +486,11 @@ function HomePageContent() {
       console.error('Signout error:', err);
     }
     localStorage.removeItem('reader_user');
+    localStorage.removeItem('shok_user');
     setReaderUser(null);
+    setReferralModalOpen(false);
+    // Logout ke baad usi portal ka public homepage
+    router.replace(`/?site=${currentSlug}`);
   };
 
   useEffect(() => {
@@ -948,12 +951,13 @@ function HomePageContent() {
               {isEnglishSite ? 'Search' : 'खोजें'}
             </button>
             {readerUser ? (
-              <div className="hp-user">
-                👤 {readerUser.name ? readerUser.name.slice(0, 8) : isEnglishSite ? 'User' : 'यूज़र'}
-                <button onClick={handleReaderLogout} aria-label="लॉगआउट" title="लॉगआउट">
-                  ✕
-                </button>
-              </div>
+              <ReaderProfileMenu
+                user={readerUser}
+                primaryColor={primary}
+                isEnglish={isEnglishSite}
+                onLogout={handleReaderLogout}
+                onOpenRewards={() => setReferralModalOpen(true)}
+              />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary }}>
                 {isEnglishSite ? 'Login' : 'लॉगिन'}
@@ -972,12 +976,14 @@ function HomePageContent() {
               <SearchIcon size={15} />
             </button>
             {readerUser ? (
-              <div className="hp-user" style={{ paddingLeft: '8px' }}>
-                👤
-                <button onClick={handleReaderLogout} aria-label="लॉगआउट">
-                  ✕
-                </button>
-              </div>
+              <ReaderProfileMenu
+                user={readerUser}
+                primaryColor={primary}
+                isEnglish={isEnglishSite}
+                compact
+                onLogout={handleReaderLogout}
+                onOpenRewards={() => setReferralModalOpen(true)}
+              />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary, padding: '6px 12px', fontSize: '12px' }}>
                 {isEnglishSite ? 'Login' : 'लॉगिन'}

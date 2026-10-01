@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import RoleAuthLayout, { authButton, authInput, authLabel, authLinkButton, OtpInput, PhoneInput } from '@/components/RoleAuthLayout';
 import { cleanPhone, findProfileByPhone, profileDocId, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
+import { isValidEmail, isValidIndianMobile, isValidName, VALIDATION_MSG } from '@/lib/validation';
 
 // Naya advertiser: OTP se mobile verify -> advertisers/{adv_phone} -> session -> dashboard
 export default function AdvertiserSignupPage() {
@@ -30,9 +31,9 @@ export default function AdvertiserSignupPage() {
     setMessage('');
     const mobile = cleanPhone(phone);
     if (!businessName.trim()) return setError('कृपया व्यापार / एजेंसी का नाम दर्ज करें।');
-    if (!contactName.trim()) return setError('कृपया संपर्क व्यक्ति का नाम दर्ज करें।');
-    if (mobile.length !== 10) return setError('कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('कृपया सही ईमेल आईडी दर्ज करें।');
+    if (!isValidName(contactName)) return setError(VALIDATION_MSG.name);
+    if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
+    if (!isValidEmail(email)) return setError(VALIDATION_MSG.email);
 
     setLoading(true);
     try {

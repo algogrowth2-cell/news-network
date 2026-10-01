@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { createReaderWithReferral } from '@/lib/referralService';
+import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
+
+const fieldErrorStyle: React.CSSProperties = { display: 'block', marginTop: '5px', fontSize: '12px', color: '#dc2626', fontWeight: 500 };
 
 function LoginAndSignupContent() {
   const router = useRouter();
@@ -23,6 +26,17 @@ function LoginAndSignupContent() {
   const [sessionId, setSessionId] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Strict validation: signup me naam + email + mobile, login me sirf mobile
+  const nameOk = isValidName(name);
+  const emailOk = isValidEmail(email);
+  const phoneOk = isValidIndianMobile(phone);
+  const formValid = phoneOk && (authMode === 'login' || (nameOk && emailOk));
+  // Error tab dikhao jab user ne kuch likha ho ya submit dabaya ho
+  const showNameError = authMode === 'signup' && (submitAttempted || name.length > 0) && !nameOk;
+  const showEmailError = authMode === 'signup' && (submitAttempted || email.length > 0) && !emailOk;
+  const showPhoneError = (submitAttempted || phone.length === 10) && !phoneOk;
 
   // Detect referral code from URL parameter (?ref=...)
   useEffect(() => {
@@ -39,6 +53,7 @@ function LoginAndSignupContent() {
     setStep('input');
     setOtp('');
     setMsg({ text: '', type: '' });
+    setSubmitAttempted(false);
   };
 
   // 1. Send SMS OTP via 2Factor Endpoint
@@ -46,21 +61,9 @@ function LoginAndSignupContent() {
     e.preventDefault();
     setMsg({ text: '', type: '' });
 
-    if (authMode === 'signup') {
-      if (!name.trim()) {
-        setMsg({ text: 'कृपया अपना पूरा नाम दर्ज करें।', type: 'error' });
-        return;
-      }
-      if (!email.trim() || !email.includes('@')) {
-        setMsg({ text: 'कृपया सही ईमेल आईडी दर्ज करें।', type: 'error' });
-        return;
-      }
-    }
-
-    if (!phone || phone.length !== 10) {
-      setMsg({ text: 'कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।', type: 'error' });
-      return;
-    }
+    // Galat input par OTP nahi — errors har field ke neeche dikhte hain
+    setSubmitAttempted(true);
+    if (!formValid) return;
 
     setLoading(true);
     try {
@@ -351,10 +354,13 @@ function LoginAndSignupContent() {
                     type="text"
                     placeholder="अपना नाम लिखें"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => setName(sanitizeName(e.target.value))}
+                    maxLength={60}
                     required
-                    style={inputStyle}
+                    aria-invalid={showNameError}
+                    style={{ ...inputStyle, borderColor: showNameError ? '#dc2626' : undefined }}
                   />
+                  {showNameError && <span style={fieldErrorStyle}>{VALIDATION_MSG.name}</span>}
                 </div>
 
                 <div>
@@ -363,10 +369,13 @@ function LoginAndSignupContent() {
                     type="email"
                     placeholder="example@gmail.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.replace(/\s/g, ''))}
+                    maxLength={254}
                     required
-                    style={inputStyle}
+                    aria-invalid={showEmailError}
+                    style={{ ...inputStyle, borderColor: showEmailError ? '#dc2626' : undefined }}
                   />
+                  {showEmailError && <span style={fieldErrorStyle}>{VALIDATION_MSG.email}</span>}
                 </div>
 
                 <div>
@@ -389,7 +398,7 @@ function LoginAndSignupContent() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  border: '1px solid #cbd5e1',
+                  border: `1px solid ${showPhoneError ? '#dc2626' : '#cbd5e1'}`,
                   borderRadius: '8px',
                   overflow: 'hidden'
                 }}
@@ -414,12 +423,18 @@ function LoginAndSignupContent() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                   required
+                  aria-invalid={showPhoneError}
                   style={{ width: '100%', padding: '10px 12px', border: 'none', fontSize: '15px', outline: 'none' }}
                 />
               </div>
+              {showPhoneError && <span style={fieldErrorStyle}>{VALIDATION_MSG.mobile}</span>}
             </div>
 
-            <button type="submit" disabled={loading} style={submitStyle}>
+            <button
+              type="submit"
+              disabled={loading || !formValid}
+              style={{ ...submitStyle, ...(!formValid ? { opacity: 0.55, cursor: 'not-allowed' } : {}) }}
+            >
               {loading
                 ? 'SMS OTP भेजा जा रहा है...'
                 : authMode === 'signup'

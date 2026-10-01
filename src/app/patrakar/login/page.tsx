@@ -6,6 +6,7 @@ import Link from 'next/link';
 import RoleAuthLayout, { authButton, authLabel, authLinkButton, OtpInput, PhoneInput } from '@/components/RoleAuthLayout';
 import { cleanPhone, findProfileByPhone, getRoleSession, isReporterApproved, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
+import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
 
 const PENDING_MSG = 'आपका अकाउंट एडमिन वेरिफिकेशन के लिए पेंडिंग है। स्वीकृति के बाद ही डैशबोर्ड खुलेगा।';
 
@@ -37,7 +38,7 @@ export default function PatrakarLoginPage() {
     setError('');
     setMessage('');
     const mobile = cleanPhone(phone);
-    if (mobile.length !== 10) return setError('कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।');
+    if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
 
     setLoading(true);
     try {

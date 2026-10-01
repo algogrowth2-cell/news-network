@@ -6,6 +6,7 @@ import Link from 'next/link';
 import RoleAuthLayout, { authButton, authLabel, authLinkButton, OtpInput, PhoneInput } from '@/components/RoleAuthLayout';
 import { cleanPhone, findProfileByPhone, getRoleSession, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
+import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
 
 // Sirf registered advertiser ka OTP login; session me sirf advertiser ka doc id + phone
 export default function AdvertiserLoginPage() {
@@ -33,7 +34,7 @@ export default function AdvertiserLoginPage() {
     setError('');
     setMessage('');
     const mobile = cleanPhone(phone);
-    if (mobile.length !== 10) return setError('कृपया 10 अंकों का सही मोबाइल नंबर दर्ज करें।');
+    if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
 
     setLoading(true);
     try {
