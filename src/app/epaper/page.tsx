@@ -76,7 +76,7 @@ const EP_STYLES = `
 .ep-header-in{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ep-brand{display:flex;align-items:center;gap:11px;min-width:0}
 .ep-logo{width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#fff;flex-shrink:0}
-.ep-title{font-weight:800;font-size:19px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+.ep-title{font-weight:800;font-size:19px;line-height:1.45;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:-2px 0}
 .ep-sub{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .ep-live{width:7px;height:7px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.18)}
 .ep-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}

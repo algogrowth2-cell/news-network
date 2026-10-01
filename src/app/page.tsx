@@ -176,7 +176,7 @@ body {
 .hp-menu-btn{display:none;background:none;border:0;padding:6px;cursor:pointer;color:#333;flex-shrink:0}
 .hp-brand{display:flex;align-items:center;gap:10px;min-width:0;text-decoration:none;color:inherit}
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
-.hp-site-name{font-size:17px;font-weight:800;margin:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hp-nav{display:flex;gap:2px}
 .hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
