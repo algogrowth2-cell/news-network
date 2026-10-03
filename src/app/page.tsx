@@ -1104,6 +1104,43 @@ function HomePageContent() {
             <div className="hp-ad-slot">विज्ञापन · 728 × 90</div>
           )}
 
+          {/* ── TRENDING TAGS — banner ad ke neeche, khabron ke upar ── */}
+          {activeCategory !== 'लाइव' && activeCategory !== 'Live' && (
+            <div className="hp-tags">
+              <span className="hp-tags-label" style={{ color: primary }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                  <polyline points="17 6 23 6 23 12" />
+                </svg>
+                {isEnglishSite ? 'Trending' : 'ट्रेंडिंग'}
+              </span>
+              {trendingTags.map((t) => {
+                const isTagActive = activeTrendTag === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => handleTrendTagClick(t)}
+                    style={{
+                      fontSize: '12.5px',
+                      fontWeight: isTagActive ? 600 : 500,
+                      border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
+                      borderRadius: '20px',
+                      padding: '5px 14px',
+                      color: isTagActive ? '#fff' : '#555',
+                      background: isTagActive ? primary : '#fff',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      outline: 'none',
+                      transition: 'all .15s ease'
+                    }}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Live Section Heading */}
           {(activeCategory === 'लाइव' || activeCategory === 'Live') && (
             <h2 className="hp-section-title" style={{ borderColor: primary }}>
@@ -1285,43 +1322,6 @@ function HomePageContent() {
                 ))}
               </div>
             </section>
-          )}
-
-          {/* ── TRENDING TAGS ── */}
-          {activeCategory !== 'लाइव' && activeCategory !== 'Live' && (
-            <div className="hp-tags">
-              <span className="hp-tags-label" style={{ color: primary }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                  <polyline points="17 6 23 6 23 12" />
-                </svg>
-                {isEnglishSite ? 'Trending' : 'ट्रेंडिंग'}
-              </span>
-              {trendingTags.map((t) => {
-                const isTagActive = activeTrendTag === t;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => handleTrendTagClick(t)}
-                    style={{
-                      fontSize: '12.5px',
-                      fontWeight: isTagActive ? 600 : 500,
-                      border: `1px solid ${isTagActive ? primary : '#eae8e4'}`,
-                      borderRadius: '20px',
-                      padding: '5px 14px',
-                      color: isTagActive ? '#fff' : '#555',
-                      background: isTagActive ? primary : '#fff',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      outline: 'none',
-                      transition: 'all .15s ease'
-                    }}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
           )}
         </main>
 
