@@ -3,8 +3,8 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'NewsAdmin Network',
-  description: 'Multi-site News Publishing Platform',
+  title: 'Golden Pearl News',
+  description: 'Golden Pearl News — Discover The Truth, Discover The World',
 };
 
 export default function RootLayout({
