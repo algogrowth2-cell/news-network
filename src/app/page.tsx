@@ -10,7 +10,6 @@ import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
-import ReferralRewardsModal from '@/components/ReferralRewardsModal';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
 import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
 import { categoryMatches, matchesTrendTag } from '@/lib/categories';
@@ -319,7 +318,6 @@ function HomePageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTrendTag, setActiveTrendTag] = useState('');
   const [readerUser, setReaderUser] = useState<any>(null);
-  const [referralModalOpen, setReferralModalOpen] = useState(false);
 
   const [liveSessions, setLiveSessions] = useState<LiveBlogData[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -362,14 +360,9 @@ function HomePageContent() {
 
   const handleCategoryClick = (cat: string) => {
     if (cat === 'रेफर और कमाएं' || cat === 'Refer & Earn') {
-      const cached = localStorage.getItem('reader_user');
-      if (!cached) {
-        alert(isEnglishSite ? 'Please login to get your referral link and rewards!' : 'रेफरल लिंक और रिवार्ड पाने के लिए कृपया पहले लॉगिन करें!');
-        router.push(`/login?redirect=${encodeURIComponent(`/?site=${currentSlug}`)}`);
-        return;
-      }
-      setReferralModalOpen(true);
+      // Refer page khud login maangta hai (login ke baad wapas /refer)
       setDrawerOpen(false);
+      router.push('/refer');
       return;
     }
     if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
@@ -519,7 +512,6 @@ function HomePageContent() {
     localStorage.removeItem('reader_user');
     localStorage.removeItem('shok_user');
     setReaderUser(null);
-    setReferralModalOpen(false);
     // Logout ke baad usi portal ka public homepage
     router.replace(`/?site=${currentSlug}`);
   };
@@ -986,7 +978,7 @@ function HomePageContent() {
                 primaryColor={primary}
                 isEnglish={isEnglishSite}
                 onLogout={handleReaderLogout}
-                onOpenRewards={() => setReferralModalOpen(true)}
+                onOpenRewards={() => router.push('/refer')}
               />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary }}>
@@ -1012,7 +1004,7 @@ function HomePageContent() {
                 isEnglish={isEnglishSite}
                 compact
                 onLogout={handleReaderLogout}
-                onOpenRewards={() => setReferralModalOpen(true)}
+                onOpenRewards={() => router.push('/refer')}
               />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary, padding: '6px 12px', fontSize: '12px' }}>
@@ -1441,17 +1433,6 @@ function HomePageContent() {
           </div>
         </aside>
       </div>
-
-      {/* ═══ REFERRAL REWARD MODAL ═══ */}
-      {readerUser && (
-        <ReferralRewardsModal
-          isOpen={referralModalOpen}
-          onClose={() => setReferralModalOpen(false)}
-          userPhone={readerUser.phone}
-          userEmail={readerUser.email}
-          primaryColor={primary}
-        />
-      )}
 
       <Footer
         siteName={siteConfig?.name || 'द लोकल लीडर'}

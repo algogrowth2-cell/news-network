@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { createReaderWithReferral } from '@/lib/referralService';
+import { createReaderWithReferral, normalizeReferralInput } from '@/lib/referralService';
 import { isReaderRegistered } from '@/lib/readerLookup';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
 
@@ -45,7 +45,7 @@ function LoginAndSignupContent() {
   useEffect(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {
-      setReferralCode(refParam.trim());
+      setReferralCode(normalizeReferralInput(refParam));
       setAuthMode('signup'); // Agar referral link se aaya hai toh direct signup mode open karein
     }
   }, [searchParams]);
@@ -136,6 +136,7 @@ function LoginAndSignupContent() {
         let finalName = name.trim();
         let finalEmail = email.trim();
         let referralRecorded = false;
+        let referralRejected = false;
 
         // Firestore user profile save/sync
         try {
@@ -157,6 +158,7 @@ function LoginAndSignupContent() {
             try {
               const result = await createReaderWithReferral(profile, referralCode);
               referralRecorded = result.created && result.referral === 'recorded';
+              referralRejected = result.created && !!referralCode && result.referral !== 'recorded';
             } catch (txErr) {
               // Referral transaction fail ho toh bhi signup na ruke — user bina referral ke banao
               console.error('Referral transaction failed, creating user without referral:', txErr);
@@ -195,7 +197,9 @@ function LoginAndSignupContent() {
         setMsg({
           text: referralRecorded
             ? '🎉 नया खाता बन गया और रेफरल सफलतापूर्वक जुड़ गया! लॉगिन हो रहे हैं...'
-            : authMode === 'signup'
+            : referralRejected
+              ? '🎉 नया खाता बन गया! (रेफरल कोड मान्य नहीं था, इसलिए रेफरल नहीं जुड़ा) लॉगिन हो रहे हैं...'
+              : authMode === 'signup'
               ? '🎉 नया खाता बन गया! लॉगिन हो रहे हैं...'
               : '✓ OTP सत्यापित! लॉगिन सफल रहा...',
           type: 'success'
@@ -407,11 +411,16 @@ function LoginAndSignupContent() {
                   <label style={labelStyle}>रेफरल कोड (वैकल्पिक / Optional)</label>
                   <input
                     type="text"
-                    placeholder="रेफरल कोड (यदि हो)"
+                    placeholder="उदा. GPAB12CD"
                     value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.trim())}
-                    style={inputStyle}
+                    maxLength={16}
+                    autoCapitalize="characters"
+                    onChange={(e) => setReferralCode(normalizeReferralInput(e.target.value))}
+                    style={{ ...inputStyle, textTransform: 'uppercase', letterSpacing: referralCode ? '1px' : undefined }}
                   />
+                  <span style={{ display: 'block', marginTop: '4px', fontSize: '11.5px', color: '#64748b' }}>
+                    किसी दोस्त ने कोड दिया है तो यहाँ डालें — उन्हें 3 महीने का ई-पेपर फ्री मिलेगा
+                  </span>
                 </div>
               </>
             )}

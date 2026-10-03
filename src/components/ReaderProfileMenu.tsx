@@ -62,7 +62,7 @@ export default function ReaderProfileMenu({
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [stats, setStats] = useState<{ referrals: number; pendingRewards: number } | null>(null);
+  const [stats, setStats] = useState<{ referrals: number; months: number; code: string } | null>(null);
 
   const initial = (user.name || 'प').trim().charAt(0).toUpperCase();
   const shortName = user.name ? (user.name.length > 10 ? `${user.name.slice(0, 10)}…` : user.name) : isEnglish ? 'User' : 'यूज़र';
@@ -81,7 +81,8 @@ export default function ReaderProfileMenu({
         if (cancelled) return;
         setStats({
           referrals: Number(userSnap.data()?.successfulReferralsCount || rewardsSnap.size || 0),
-          pendingRewards: rewardsSnap.docs.filter((d) => d.data().status === 'pending_selection').length
+          months: Number(userSnap.data()?.referralRewardMonths || 0),
+          code: userSnap.data()?.referralCode || ''
         });
       })
       .catch((err) => console.error('Referral summary load error:', err));
@@ -111,8 +112,8 @@ export default function ReaderProfileMenu({
   };
 
   const t = isEnglish
-    ? { title: 'My Profile', mobile: 'Mobile', email: 'Email', refCode: 'Referral Code', refTitle: '🎁 Refer & Earn', referrals: 'Successful referrals', rewards: 'Rewards to claim', viewRewards: 'View rewards & share link', logout: 'Logout' }
-    : { title: 'मेरी प्रोफ़ाइल', mobile: 'मोबाइल', email: 'ईमेल', refCode: 'रेफरल कोड', refTitle: '🎁 रेफर और कमाएं', referrals: 'सफल रेफरल', rewards: 'क्लेम करने योग्य रिवार्ड', viewRewards: 'रिवार्ड और रेफरल लिंक देखें', logout: 'लॉगआउट' };
+    ? { title: 'My Profile', mobile: 'Mobile', email: 'Email', refCode: 'Referral Code', refTitle: '🎁 Refer & Earn', referrals: 'Successful referrals', rewards: 'Free e-paper months', viewRewards: 'Refer & share link', logout: 'Logout' }
+    : { title: 'मेरी प्रोफ़ाइल', mobile: 'मोबाइल', email: 'ईमेल', refCode: 'रेफरल कोड', refTitle: '🎁 रेफर और कमाएं', referrals: 'सफल रेफरल', rewards: 'फ्री ई-पेपर महीने', viewRewards: 'रेफरल कोड व लिंक शेयर करें', logout: 'लॉगआउट' };
 
   return (
     <>
@@ -147,7 +148,9 @@ export default function ReaderProfileMenu({
                 {user.phone && (
                   <div className="rp-row">
                     <span className="rp-label">{t.refCode}</span>
-                    <span className="rp-value" style={{ color: primaryColor }}>{user.phone}</span>
+                    <span className="rp-value" style={{ color: primaryColor, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', letterSpacing: '1px' }}>
+                      {stats ? stats.code || (isEnglish ? 'Open Refer & Earn' : 'रेफर पेज खोलें') : '…'}
+                    </span>
                   </div>
                 )}
 
@@ -160,7 +163,7 @@ export default function ReaderProfileMenu({
                         {t.referrals}
                       </span>
                       <span>
-                        <b>{stats ? stats.pendingRewards : '…'}</b>
+                        <b>{stats ? stats.months : '…'}</b>
                         {t.rewards}
                       </span>
                     </div>

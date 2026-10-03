@@ -516,6 +516,9 @@ function EPaperComponent() {
               <button className="ep-btn ep-hero-cta" onClick={handleOpenSubscribe}>
                 सब्सक्रिप्शन लें →
               </button>
+              <Link href="/refer" style={{ display: 'block', marginTop: '10px', fontSize: '13px', fontWeight: 700, color: 'var(--brand)', textDecoration: 'none' }}>
+                🎁 या दोस्तों को रेफर करें और 3 महीने फ्री पाएं →
+              </Link>
             </div>
             <div className="ep-hero-plans">
               {EPAPER_PLANS.map((plan) => (
