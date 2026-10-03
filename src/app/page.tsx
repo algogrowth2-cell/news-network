@@ -362,7 +362,7 @@ function HomePageContent() {
     if (cat === 'रेफर और कमाएं' || cat === 'Refer & Earn') {
       // Refer page khud login maangta hai (login ke baad wapas /refer)
       setDrawerOpen(false);
-      router.push('/refer');
+      router.push(`/refer?site=${currentSlug}`);
       return;
     }
     if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
@@ -978,7 +978,7 @@ function HomePageContent() {
                 primaryColor={primary}
                 isEnglish={isEnglishSite}
                 onLogout={handleReaderLogout}
-                onOpenRewards={() => router.push('/refer')}
+                onOpenRewards={() => router.push(`/refer?site=${currentSlug}`)}
               />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary }}>
@@ -1004,7 +1004,7 @@ function HomePageContent() {
                 isEnglish={isEnglishSite}
                 compact
                 onLogout={handleReaderLogout}
-                onOpenRewards={() => router.push('/refer')}
+                onOpenRewards={() => router.push(`/refer?site=${currentSlug}`)}
               />
             ) : (
               <Link href="/login" className="hp-login" style={{ background: primary, padding: '6px 12px', fontSize: '12px' }}>
