@@ -15,7 +15,8 @@ import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
 import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
-import { categoryMatches, matchesTrendTag } from '@/lib/categories';
+import { categoryMatches, matchesTrendTag, setDynamicCategories } from '@/lib/categories';
+import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 
 interface ArticleItem {
   id: string;
@@ -106,35 +107,24 @@ const HOME_TABS = ['होम', 'Home', 'ताज़ा खबरें', 'Late
 const TRENDING_TAGS_HI = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
 const TRENDING_TAGS_EN = ['Defence Budget', 'Military Drills', 'Border Security', 'Airforce Tech', 'Naval Fleet', 'Strategic Ties', 'Armed Forces'];
 
-const CATEGORY_LIST_HI: { key: string; icon: string }[] = [
+// Menu: aage/peeche ke fixed tab + beech me admin (Categories) se aane wali categories
+const MENU_HEAD_HI = [
   { key: 'होम', icon: '🏠' },
   { key: 'रेफर और कमाएं', icon: '🎁' },
   { key: 'लाइव', icon: '🔴' },
-  { key: 'वीडियो', icon: '📹' },
-  { key: 'राजनीति', icon: '🏛️' },
-  { key: 'व्यापार', icon: '📈' },
-  { key: 'स्वास्थ्य', icon: '🩺' },
-  { key: 'जीवनशैली', icon: '🌿' },
-  { key: 'राज्य', icon: '🇮🇳' },
-  { key: 'शोक संदेश', icon: '🕯️' },
-  { key: 'ई-पेपर', icon: '📄' },
-  { key: 'अपराध', icon: '🚨' },
-  { key: 'खेल', icon: '🏏' }
+  { key: 'वीडियो', icon: '📹' }
 ];
-
-const CATEGORY_LIST_EN: { key: string; icon: string }[] = [
+const MENU_TAIL_HI = [
+  { key: 'शोक संदेश', icon: '🕯️' },
+  { key: 'ई-पेपर', icon: '📄' }
+];
+const MENU_HEAD_EN = [
   { key: 'Home', icon: '🏠' },
   { key: 'Refer & Earn', icon: '🎁' },
   { key: 'Live', icon: '🔴' },
-  { key: 'Videos', icon: '📹' },
-  { key: 'Defence', icon: '🛡️' },
-  { key: 'Strategic', icon: '🌐' },
-  { key: 'Army & Airforce', icon: '✈️' },
-  { key: 'Naval Operations', icon: '⚓' },
-  { key: 'National Security', icon: '🇮🇳' },
-  { key: 'E-Paper', icon: '📄' },
-  { key: 'Special Reports', icon: '📑' }
+  { key: 'Videos', icon: '📹' }
 ];
+const MENU_TAIL_EN = [{ key: 'E-Paper', icon: '📄' }];
 
 const HP_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&display=swap');
@@ -312,6 +302,14 @@ function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentSlug, setCurrentSlug] = useState('the-local-leader');
+  // Admin → Categories (Firestore); load hone tak shuruaati list
+  const [taxonomy, setTaxonomy] = useState<CategoryItem[]>(() => DEFAULT_CATEGORIES.map((c) => ({ ...c, id: c.slug })));
+  useEffect(() => {
+    fetchCategories().then((list) => {
+      setDynamicCategories(list);
+      setTaxonomy(list);
+    });
+  }, []);
   const [siteConfig, setSiteConfig] = useState<Record<string, any> | null>(null);
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [headerAd, setHeaderAd] = useState<AdItem | null>(null);
@@ -748,7 +746,10 @@ function HomePageContent() {
   const headerBg = siteConfig?.headerBg || '#ffffff';
   const siteFont = siteConfig?.fontFamily || '"Mukta", system-ui, -apple-system, sans-serif';
 
-  const categories = isEnglishSite ? CATEGORY_LIST_EN : CATEGORY_LIST_HI;
+  const portalCats = taxonomy
+    .filter((c) => c.showInMenu && categoryOnPortal(c, currentSlug))
+    .map((c) => ({ key: isEnglishSite ? c.name : c.nameHi, icon: c.icon }));
+  const categories = isEnglishSite ? [...MENU_HEAD_EN, ...portalCats, ...MENU_TAIL_EN] : [...MENU_HEAD_HI, ...portalCats, ...MENU_TAIL_HI];
   const trendingTags = isEnglishSite ? TRENDING_TAGS_EN : TRENDING_TAGS_HI;
 
   // Ye tabs saari khabrein dikhate hain; baaki koi bhi tab category filter hai

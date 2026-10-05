@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import PatrakarIdCardPanel from '@/components/PatrakarIdCardPanel';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
+import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 
 declare global {
@@ -60,6 +61,11 @@ export default function PatrakarDashboard() {
   // Article Form State
   const [artTitle, setArtTitle] = useState('');
   const [artCategory, setArtCategory] = useState('राजनीति');
+  // Admin → Categories se (chune portal ki active categories)
+  const [catList, setCatList] = useState<CategoryItem[]>(() => DEFAULT_CATEGORIES.map((c) => ({ ...c, id: c.slug })));
+  useEffect(() => {
+    fetchCategories().then(setCatList);
+  }, []);
   const [artSiteId, setArtSiteId] = useState('the-local-leader');
   const [artSummary, setArtSummary] = useState('');
   const [artContent, setArtContent] = useState('');
@@ -614,13 +620,14 @@ export default function PatrakarDashboard() {
                     onChange={(e) => setArtCategory(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                   >
-                    <option value="राजनीति">राजनीति</option>
-                    <option value="अपराध">अपराध</option>
-                    <option value="व्यापार">व्यापार</option>
-                    <option value="राज्य">राज्य / ज़िला</option>
-                    <option value="खेल">खेल</option>
-                    <option value="स्वास्थ्य">स्वास्थ्य</option>
-                    <option value="जीवनशैली">जीवनशैली</option>
+                    {catList
+                      .filter((c) => categoryOnPortal(c, artSiteId))
+                      .map((c) => (
+                        <option key={c.id} value={c.nameHi}>
+                          {c.nameHi} ({c.name})
+                        </option>
+                      ))}
+                    {!catList.some((c) => c.nameHi === artCategory) && <option value={artCategory}>{artCategory}</option>}
                   </select>
                 </div>
               </div>

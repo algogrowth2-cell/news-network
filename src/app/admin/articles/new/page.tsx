@@ -9,22 +9,8 @@ import { fallbackFor } from '@/lib/siteTheme';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { isDirectVideo, makeSlug, readTimeMinutes, stripHtml, suggestTags, youtubeEmbedUrl, youtubeId } from '@/lib/articles';
 import { uploadArticleMedia, uploadErrorMessage, validateMedia, type MediaKind } from '@/lib/mediaUpload';
+import { DEFAULT_CATEGORIES, fetchCategories, fetchStatesAndCities, type CategoryItem, type CityItem, type StateItem } from '@/lib/taxonomy';
 
-// Homepage tabs ke hisaab se (English naam lib/categories ke group se match hote hain)
-const CATEGORIES: { value: string; en: string }[] = [
-  { value: 'राजनीति', en: 'Politics' },
-  { value: 'देश', en: 'National' },
-  { value: 'राज्य', en: 'State' },
-  { value: 'व्यापार', en: 'Business' },
-  { value: 'खेल', en: 'Sports' },
-  { value: 'अपराध', en: 'Crime' },
-  { value: 'स्वास्थ्य', en: 'Health' },
-  { value: 'जीवनशैली', en: 'Lifestyle' },
-  { value: 'मनोरंजन', en: 'Entertainment' },
-  { value: 'तकनीक', en: 'Technology' },
-  { value: 'कृषि', en: 'Agriculture' },
-  { value: 'रक्षा', en: 'Defence' }
-];
 
 // Homepage ke trending tags — sujhaav me bhi
 const BASE_TAGS = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग', 'Breaking News', 'Elections', 'Weather'];
@@ -235,6 +221,20 @@ export default function NewArticlePage() {
   const [source, setSource] = useState('');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
+  // Admin → Categories / States & Cities se
+  const [catList, setCatList] = useState<CategoryItem[]>(() => DEFAULT_CATEGORIES.map((c) => ({ ...c, id: c.slug })));
+  const [stateList, setStateList] = useState<StateItem[]>([]);
+  const [cityList, setCityList] = useState<CityItem[]>([]);
+  useEffect(() => {
+    fetchCategories().then((l) => setCatList(l.filter((c) => c.active)));
+    fetchStatesAndCities().then(({ states, cities }) => {
+      setStateList(states.filter((x) => x.active));
+      setCityList(cities.filter((x) => x.active));
+    });
+  }, []);
+  // Chune rajya ke shehar (Hindi ya English naam se)
+  const chosenState = stateList.find((x) => [x.nameHi, x.name].some((n) => n.toLowerCase() === state.trim().toLowerCase()));
+  const citiesForState = chosenState ? cityList.filter((c) => c.stateSlug === chosenState.slug) : cityList;
   const [isBreaking, setIsBreaking] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [allowComments, setAllowComments] = useState(true);
@@ -561,11 +561,25 @@ export default function NewArticlePage() {
               </div>
               <div>
                 <label style={S.label}>राज्य</label>
-                <input style={S.input} placeholder="जैसे: मध्य प्रदेश" value={state} maxLength={40} onChange={(e) => setState(e.target.value)} />
+                <input style={S.input} list="ae-states" placeholder="चुनें या लिखें — जैसे: मध्य प्रदेश" value={state} maxLength={40} onChange={(e) => setState(e.target.value)} />
+                <datalist id="ae-states">
+                  {stateList.map((x) => (
+                    <option key={x.id} value={x.nameHi}>
+                      {x.name}
+                    </option>
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label style={S.label}>शहर / जिला</label>
-                <input style={S.input} placeholder="जैसे: इंदौर" value={city} maxLength={40} onChange={(e) => setCity(e.target.value)} />
+                <input style={S.input} list="ae-cities" placeholder="चुनें या लिखें — जैसे: इंदौर" value={city} maxLength={40} onChange={(e) => setCity(e.target.value)} />
+                <datalist id="ae-cities">
+                  {citiesForState.map((x) => (
+                    <option key={x.id} value={x.nameHi}>
+                      {x.name}
+                    </option>
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label style={S.label}>Thumbnail कैप्शन / फ़ोटो क्रेडिट</label>
@@ -646,9 +660,9 @@ export default function NewArticlePage() {
             <label style={S.label}>श्रेणी (Category) *</label>
             <select style={S.input} value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">श्रेणी चुनें</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.value} ({c.en})
+              {catList.map((c) => (
+                <option key={c.id} value={c.nameHi}>
+                  {c.icon} {c.nameHi} ({c.name})
                 </option>
               ))}
             </select>

@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
+import { DEFAULT_CATEGORIES, fetchCategories } from '@/lib/taxonomy';
 
 export default function PatrakarNewSubmission() {
   const router = useRouter();
@@ -45,10 +46,11 @@ export default function PatrakarNewSubmission() {
       });
   }, [router]);
 
-  const categories = [
-    'National', 'Business', 'Politics', 'Sports', 'Technology', 
-    'Entertainment', 'Health', 'Crime', 'Lifestyle', 'Agriculture'
-  ];
+  // Admin → Categories se (active)
+  const [categories, setCategories] = useState<string[]>(() => DEFAULT_CATEGORIES.map((c) => c.nameHi));
+  useEffect(() => {
+    fetchCategories().then((l) => setCategories(l.filter((c) => c.active).map((c) => c.nameHi)));
+  }, []);
 
   const handleSubmit = async (submitStatus: 'Draft' | 'pending_review') => {
     if (submitStatus === 'pending_review') {

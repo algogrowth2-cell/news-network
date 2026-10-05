@@ -18,7 +18,21 @@ const CATEGORY_GROUPS: string[][] = [
 
 const norm = (value: string) => value.trim().toLowerCase();
 
-const groupOf = (value: string) => CATEGORY_GROUPS.find((g) => g.some((name) => norm(name) === norm(value)));
+// Admin (Firestore) ki categories: [English naam, Hindi naam, slug] — website load hote hi setDynamicCategories se aati hain
+let DYNAMIC_GROUPS: string[][] = [];
+export function setDynamicCategories(list: { name: string; nameHi: string; slug: string }[]) {
+  DYNAMIC_GROUPS = list.map((c) => [c.name, c.nameHi, c.slug].filter(Boolean));
+}
+
+const groupOf = (value: string) => {
+  const key = norm(value);
+  const dynamic = DYNAMIC_GROUPS.find((g) => g.some((name) => norm(name) === key));
+  const names = dynamic || [value];
+  // Purane alias (जैसे 'राज्य / ज़िला', 'sport') bhi saath me
+  const legacy = CATEGORY_GROUPS.find((g) => g.some((name) => names.some((n) => norm(n) === norm(name))));
+  if (!dynamic && !legacy) return undefined;
+  return [...names, ...(legacy || [])];
+};
 
 // Trending tag (jaise "मंडी भाव") ka article se match: title, summary, poora content, category aur tags array me.
 // Poora phrase mile, ya phrase ke saare shabd (2+ akshar wale) kahin na kahin hon.
