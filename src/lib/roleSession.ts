@@ -74,7 +74,7 @@ export async function getProfileById(role: PortalRole, id: string): Promise<Role
 export async function findProfileByPhone(role: PortalRole, phone: string): Promise<RoleProfile | null> {
   try {
     const res = await fetch('/api/auth/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: role, phone }) });
-    if (res.status !== 503) {
+    if (res.status < 500) { // 5xx = server tayyar nahi / gadbad — seedha Firestore
       if (!res.ok) throw new Error('lookup ' + res.status);
       const d = await res.json();
       return d.found ? { id: d.id, data: { status: d.status, consent: { version: d.consentVersion } } } : null;

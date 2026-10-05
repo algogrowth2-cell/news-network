@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { collection, doc, getDocs, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { FieldValue as AdminFieldValue } from 'firebase-admin/firestore';
 import { getAdmin } from '@/lib/firebaseAdmin';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 
@@ -98,8 +97,8 @@ export async function POST() {
 /*
  * Database adapter: Admin SDK (Firestore rules ke baad bhi chalta hai) — configure na ho toh purana client SDK.
  */
-function syncStore() {
-  const admin = getAdmin();
+async function syncStore() {
+  const admin = (await getAdmin());
   if (admin) {
     const d = admin.db;
     const lockRef = d.collection('settings').doc('rashifal_sync');
@@ -114,7 +113,7 @@ function syncStore() {
       setLock: (data: any) => lockRef.set(data).then(() => undefined),
       writeAll: async (items: [string, any][], lock: any) => {
         const b = d.batch();
-        items.forEach(([id, data]) => b.set(d.collection('rashifal').doc(id), { ...data, updatedAt: AdminFieldValue.serverTimestamp() }));
+        items.forEach(([id, data]) => b.set(d.collection('rashifal').doc(id), { ...data, updatedAt: admin.FieldValue.serverTimestamp() }));
         b.set(lockRef, lock);
         await b.commit();
       }
@@ -141,7 +140,7 @@ function syncStore() {
 
 async function runAutoSync() {
   const today = todayIST();
-  const store = syncStore();
+  const store = await syncStore();
 
   try {
     // 1. Aaj ka data pehle se hai? Toh AI call bilkul nahi

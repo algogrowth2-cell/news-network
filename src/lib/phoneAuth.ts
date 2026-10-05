@@ -13,7 +13,7 @@ export const SECURE_AUTH = process.env.NEXT_PUBLIC_SECURE_AUTH === '1';
  *  503 = server setting (service account) nahi; 401 = user ke paas naya Firebase token nahi
  *  (deploy se pehle ka login). SECURE_AUTH chalu hone ke baad 401 par fallback NAHI — dobara login.
  */
-export const legacyFallback = (status: number) => status === 503 || (status === 401 && !SECURE_AUTH);
+export const legacyFallback = (status: number) => status === 503 || ((status === 401 || status >= 500) && !SECURE_AUTH);
 
 export async function signInWithServerToken(token: string | null | undefined) {
   if (!token) return null;

@@ -2,14 +2,13 @@
 //  - public `epaper/{id}`: naam, tareekh, cover (PDF link NAHI)
 //  - private `epaper_files/{id}`: pdfUrl, pdfStoragePath, pages — sirf admin / server
 //  - subscriber ko 10 minute ka signed link; Storage ke public "download token" hata diye jaate hain
-import { FieldValue } from 'firebase-admin/firestore';
 import { adminBucket, getAdmin } from '@/lib/firebaseAdmin';
 
 const toDate = (v: any): Date | null => (v?.toDate ? v.toDate() : v ? new Date(v) : null);
 
 /** Is mobile ka e-paper subscription abhi chalu hai? */
 export async function hasActiveEpaper(phone: string): Promise<boolean> {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return false;
   const { db } = admin;
   const now = Date.now();
@@ -43,7 +42,7 @@ export async function revokeDownloadToken(path: string) {
 
 /** Edition ka PDF link (signed, 10 min) + purane pages */
 export async function editionFile(id: string): Promise<{ url: string; pages: string[] } | null> {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return null;
   const { db } = admin;
   const priv = (await db.collection('epaper_files').doc(id).get()).data();
@@ -67,7 +66,7 @@ export async function editionFile(id: string): Promise<{ url: string; pages: str
  * aur Storage ka public download token band.
  */
 export async function secureAllEditions() {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return { moved: 0, revoked: 0 };
   const { db } = admin;
   let moved = 0;
@@ -81,13 +80,13 @@ export async function secureAllEditions() {
     const hasSecrets = 'pdfUrl' in x || 'pages' in x || 'pdfStoragePath' in x;
     if (hasSecrets) {
       await db.collection('epaper_files').doc(d.id).set(
-        { pdfUrl, pdfStoragePath: path, pages: (x.pages || priv.pages || []).filter(Boolean), updatedAt: FieldValue.serverTimestamp() },
+        { pdfUrl, pdfStoragePath: path, pages: (x.pages || priv.pages || []).filter(Boolean), updatedAt: admin.FieldValue.serverTimestamp() },
         { merge: true }
       );
       await d.ref.update({
-        pdfUrl: FieldValue.delete(),
-        pages: FieldValue.delete(),
-        pdfStoragePath: FieldValue.delete(),
+        pdfUrl: admin.FieldValue.delete(),
+        pages: admin.FieldValue.delete(),
+        pdfStoragePath: admin.FieldValue.delete(),
         hasPdf: !!pdfUrl,
         totalPages: Number(x.totalPages || (x.pages || []).length || 0)
       });

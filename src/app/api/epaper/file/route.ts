@@ -9,7 +9,7 @@ import { editionFile, hasActiveEpaper } from '@/lib/epaperServer';
  * Sirf chalu subscription wale pathak (Bearer token) ya admin (session cookie).
  */
 export async function GET(req: Request) {
-  if (!getAdmin()) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
+  if (!(await getAdmin())) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const id = new URL(req.url).searchParams.get('id') || '';
   if (!/^[A-Za-z0-9_-]{4,64}$/.test(id)) return NextResponse.json({ error: 'bad-id' }, { status: 400 });
 

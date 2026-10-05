@@ -5,7 +5,7 @@ import { ensureReferralCodeCore } from '@/lib/referralService';
 
 /* Login pathak ka apna referral code (na ho toh banta hai) */
 export async function POST(req: Request) {
-  const store = adminStore();
+  const store = await adminStore();
   if (!store) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

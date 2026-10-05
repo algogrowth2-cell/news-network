@@ -13,7 +13,7 @@ export async function POST() {
     ok = false;
   }
   if (!ok) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!getAdmin()) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
+  if (!(await getAdmin())) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   try {
     return NextResponse.json(await secureAllEditions());
   } catch (err) {

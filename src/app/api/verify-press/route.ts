@@ -6,7 +6,7 @@ import { getAdmin } from '@/lib/firebaseAdmin';
  * Mobile, email, pata waghera nahi (reporters collection ab public nahi padhi ja sakti).
  */
 export async function GET(req: Request) {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const id = (new URL(req.url).searchParams.get('id') || '').trim().toUpperCase().slice(0, 30);
   if (!/^[A-Z0-9]+-\d{4}-\d+$/.test(id)) return NextResponse.json({ found: false });

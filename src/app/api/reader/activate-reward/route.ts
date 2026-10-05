@@ -5,8 +5,8 @@ import { activatePendingRewardCore } from '@/lib/referralService';
 
 /* Purana 'pending_selection' reward → 3 maah e-paper (sirf usi referrer ka reward) */
 export async function POST(req: Request) {
-  const store = adminStore();
-  const admin = getAdmin();
+  const store = await adminStore();
+  const admin = (await getAdmin());
   if (!store || !admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

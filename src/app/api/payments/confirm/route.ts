@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_SANDESH_PRICE, type PaymentKind } from '@/lib/plans';
@@ -14,7 +13,7 @@ const toDate = (v: any): Date | null => (v?.toDate ? v.toDate() : v ? new Date(v
 const clean = (s: any, max: number) => String(s || '').replace(/[<>{}[\]`]/g, '').trim().slice(0, max);
 
 export async function POST(req: Request) {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const { db } = admin;
 
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
   try {
     const result = await db.runTransaction(async (tx) => {
       if ((await tx.get(payRef)).exists) throw new Error('payment-used');
-      const base = { kind, amount, phone, testMode: v.testMode, createdAt: FieldValue.serverTimestamp() };
+      const base = { kind, amount, phone, testMode: v.testMode, createdAt: admin.FieldValue.serverTimestamp() };
 
       if (kind === 'epaper') {
         const user = (await tx.get(db.collection('users').doc(`u_${phone}`))).data() || {};
@@ -66,8 +65,8 @@ export async function POST(req: Request) {
             amount,
             paymentId,
             status: 'active',
-            startedAt: FieldValue.serverTimestamp(),
-            expiresAt: Timestamp.fromDate(expiresAt),
+            startedAt: admin.FieldValue.serverTimestamp(),
+            expiresAt: admin.Timestamp.fromDate(expiresAt),
             siteId: clean(body.siteId, 60)
           },
           { merge: true }
@@ -86,7 +85,7 @@ export async function POST(req: Request) {
           rep = q.docs[0].data();
         }
         if (kind === 'membership') {
-          tx.update(repRef, { membershipActive: true, membershipUpdatedAt: FieldValue.serverTimestamp() });
+          tx.update(repRef, { membershipActive: true, membershipUpdatedAt: admin.FieldValue.serverTimestamp() });
           tx.set(db.collection('membership_transactions').doc(paymentId), {
             reporterId: repRef.id,
             reporterPhone: phone,
@@ -95,7 +94,7 @@ export async function POST(req: Request) {
             amount,
             status: 'success',
             testMode: v.testMode,
-            createdAt: FieldValue.serverTimestamp()
+            createdAt: admin.FieldValue.serverTimestamp()
           });
         } else {
           const d = body.delivery || {};
@@ -110,7 +109,7 @@ export async function POST(req: Request) {
             paymentId,
             status: 'pending_dispatch',
             testMode: v.testMode,
-            createdAt: FieldValue.serverTimestamp()
+            createdAt: admin.FieldValue.serverTimestamp()
           });
         }
         tx.set(payRef, { ...base, reporterId: repRef.id });

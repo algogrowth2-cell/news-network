@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { PRESS_ID_PREFIX } from '@/lib/pressCard';
 
@@ -8,7 +7,7 @@ import { PRESS_ID_PREFIX } from '@/lib/pressCard';
  * counters aur pressIds sirf yahin likhe jaate hain — patrakar browser se kram nahi badal sakta.
  */
 export async function POST(req: Request) {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
@@ -37,20 +36,20 @@ export async function POST(req: Request) {
       if (rep.cardStatus === 'revoked') throw new Error('revoked');
       const existing = rep.pressIds?.[siteSlug];
       if (existing) {
-        tx.update(repRef, { cardSiteId: siteSlug, pressId: existing, cardUpdatedAt: FieldValue.serverTimestamp() });
+        tx.update(repRef, { cardSiteId: siteSlug, pressId: existing, cardUpdatedAt: admin.FieldValue.serverTimestamp() });
         return { pressId: existing as string, issuedOn: rep.pressIdIssuedOn?.[siteSlug] || new Date().toISOString() };
       }
       const next = Number((await tx.get(counterRef)).data()?.next || 1);
       const pressId = `${prefix}-${year}-${String(next).padStart(3, '0')}`;
       const issuedOn = new Date().toISOString();
-      tx.set(counterRef, { next: next + 1, prefix, year, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(counterRef, { next: next + 1, prefix, year, updatedAt: admin.FieldValue.serverTimestamp() }, { merge: true });
       tx.update(repRef, {
         [`pressIds.${siteSlug}`]: pressId,
         [`pressIdIssuedOn.${siteSlug}`]: issuedOn,
-        pressIdList: FieldValue.arrayUnion(pressId),
+        pressIdList: admin.FieldValue.arrayUnion(pressId),
         pressId,
         cardSiteId: siteSlug,
-        cardUpdatedAt: FieldValue.serverTimestamp()
+        cardUpdatedAt: admin.FieldValue.serverTimestamp()
       });
       return { pressId, issuedOn };
     });

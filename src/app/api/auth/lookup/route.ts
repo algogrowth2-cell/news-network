@@ -25,7 +25,7 @@ const limited = (ip: string) => {
 };
 
 export async function POST(req: Request) {
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   if (limited((req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown')) {
     return NextResponse.json({ error: 'rate-limited' }, { status: 429 });

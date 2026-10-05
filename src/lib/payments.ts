@@ -13,7 +13,7 @@ export async function confirmPayment(
   try {
     const res = await authFetch('/api/payments/confirm', { method: 'POST', body: JSON.stringify({ kind, paymentId, ...extra }) });
     // Deploy se pehle ka login (naya token nahi) — SECURE_AUTH band hai toh purana tareeka, taaki paise kat kar bhi activation na ruke
-    if (res.status === 401 && !SECURE_AUTH) return { ok: false, fallback: true };
+    if ((res.status === 401 || res.status >= 500) && !SECURE_AUTH) return { ok: false, fallback: true };
     if (res.status === 503) {
       const d = await res.json().catch(() => ({}));
       // Server tayyar hai par payment-verify band (live key bina secret) — fallback NAHI

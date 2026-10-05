@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
       // Firebase pehchaan (Admin SDK configure ho aur ticket sahi ho tab)
       let firebaseToken: string | null = null;
-      const admin = getAdmin();
+      const admin = (await getAdmin());
       if (admin && t) {
         // email claim: purane e-paper subscription docs email se jude hain (rules unhe isi se pehchaante hain)
         const user = (await admin.db.collection('users').doc(`u_${t.phone}`).get()).data();

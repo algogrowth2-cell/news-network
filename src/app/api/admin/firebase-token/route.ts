@@ -16,7 +16,7 @@ export async function POST() {
     session = null;
   }
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  const admin = getAdmin();
+  const admin = (await getAdmin());
   if (!admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const uid = `admin_${createHash('sha256').update(session.email).digest('hex').slice(0, 24)}`;
   const token = await admin.auth.createCustomToken(uid, { admin: true, adminEmail: session.email });

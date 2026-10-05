@@ -5,7 +5,7 @@ import { createReaderWithReferralCore } from '@/lib/referralService';
 
 /* OTP-verified pathak ka naya khata + referral reward (server par — referrer ka data browser nahi chhoota) */
 export async function POST(req: Request) {
-  const store = adminStore();
+  const store = await adminStore();
   if (!store) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
