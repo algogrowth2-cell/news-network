@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Link from 'next/link';
+import { setMarketingConsent } from '@/lib/consent';
 
 export interface ReaderProfile {
   uid?: string;
@@ -63,6 +65,9 @@ export default function ReaderProfileMenu({
   const [confirming, setConfirming] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [stats, setStats] = useState<{ referrals: number; months: number; code: string } | null>(null);
+  // DPDP: marketing sahmati — yahin se chalu/band (wapas lena dene jitna aasaan)
+  const [marketing, setMarketing] = useState<boolean | null>(null);
+  const [savingMk, setSavingMk] = useState(false);
 
   const initial = (user.name || 'प').trim().charAt(0).toUpperCase();
   const shortName = user.name ? (user.name.length > 10 ? `${user.name.slice(0, 10)}…` : user.name) : isEnglish ? 'User' : 'यूज़र';
@@ -84,6 +89,7 @@ export default function ReaderProfileMenu({
           months: Number(userSnap.data()?.referralRewardMonths || 0),
           code: userSnap.data()?.referralCode || ''
         });
+        setMarketing(userSnap.data()?.consent?.marketing === true);
       })
       .catch((err) => console.error('Referral summary load error:', err));
     return () => {
@@ -182,6 +188,40 @@ export default function ReaderProfileMenu({
                     )}
                   </div>
                 )}
+
+                {user.phone && marketing !== null && (
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '14px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
+                    <span>📣 {isEnglish ? 'Offers & promotional messages' : 'ऑफ़र व प्रचार संदेश (SMS/WhatsApp/ईमेल)'}</span>
+                    <input
+                      type="checkbox"
+                      checked={marketing}
+                      disabled={savingMk}
+                      style={{ width: '18px', height: '18px', accentColor: primaryColor }}
+                      onChange={async (e) => {
+                        const next = e.target.checked;
+                        setSavingMk(true);
+                        try {
+                          await setMarketingConsent('reader', user.phone!, ['users', user.uid || `u_${user.phone}`], next);
+                          setMarketing(next);
+                        } catch (err) {
+                          console.error('Marketing consent update error:', err);
+                        } finally {
+                          setSavingMk(false);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#64748b' }}>
+                  🔒{' '}
+                  <Link href="/privacy-policy#dpdp" style={{ color: '#64748b' }}>
+                    {isEnglish ? 'Privacy & consent' : 'गोपनीयता व सहमति'}
+                  </Link>{' '}
+                  ·{' '}
+                  <Link href="/delete-account" style={{ color: '#64748b' }}>
+                    {isEnglish ? 'Delete account' : 'खाता हटाएं'}
+                  </Link>
+                </div>
 
                 <button type="button" className="rp-btn rp-logout" onClick={() => setConfirming(true)}>
                   ⎋ {t.logout}

@@ -7,6 +7,8 @@ import { collection, doc, getDocs, limit, query, setDoc, serverTimestamp, where 
 import { db } from '@/lib/firebase';
 import RoleAuthLayout, { authButton, authInput, authLabel, authLinkButton, OtpInput, PhoneInput } from '@/components/RoleAuthLayout';
 import { cleanPhone, findProfileByPhone, profileDocId, setRoleSession } from '@/lib/roleSession';
+import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
+import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidEmail, isValidIndianMobile, isValidName, VALIDATION_MSG } from '@/lib/validation';
 
@@ -25,6 +27,8 @@ export default function AdvertiserSignupPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
+  // DPDP: notice + sahmati (zaroori + 18+ + vaikalpik marketing)
+  const [consent, setConsent] = useState<ConsentValue>(EMPTY_CONSENT);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +40,8 @@ export default function AdvertiserSignupPage() {
     if (!isValidName(contactName)) return setError(VALIDATION_MSG.name);
     if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
     if (!isValidEmail(email)) return setError(VALIDATION_MSG.email);
+    const ce = consentError(consent, 'signup');
+    if (ce) return setError(ce);
 
     setLoading(true);
     try {
@@ -77,8 +83,12 @@ export default function AdvertiserSignupPage() {
         email: email.trim().toLowerCase(),
         role: 'advertiser',
         phoneVerified: true,
+        consent: { version: CONSENT_VERSION, acceptedAt: serverTimestamp(), marketing: consent.marketing, ageConfirmed: consent.age },
         createdAt: serverTimestamp()
       });
+      recordConsent({ role: 'advertiser', phone: mobile, marketing: consent.marketing, ageConfirmed: consent.age, action: 'signup' }).catch((e) =>
+        console.error('Consent log error:', e)
+      );
       setRoleSession('advertiser', id, mobile);
       setMessage('खाता बन गया! डैशबोर्ड खोला जा रहा है...');
       router.replace('/advertiser/dashboard');
@@ -138,7 +148,8 @@ export default function AdvertiserSignupPage() {
             <label style={authLabel}>ईमेल आईडी *</label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={authInput} placeholder="business@email.com" />
           </div>
-          <button type="submit" disabled={loading} style={authButton(loading)}>
+          <ConsentNotice role="advertiser" mode="signup" value={consent} onChange={setConsent} />
+          <button type="submit" disabled={loading || !consent.agree || !consent.age} style={authButton(loading || !consent.agree || !consent.age)}>
             {loading ? 'जांच की जा रही है...' : '💬 OTP भेजें और खाता बनाएं'}
           </button>
         </form>

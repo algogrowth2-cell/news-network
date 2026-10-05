@@ -9,6 +9,8 @@ import { cleanPhone, findProfileByPhone, profileDocId } from '@/lib/roleSession'
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, isValidName, VALIDATION_MSG } from '@/lib/validation';
 import { getActivePortal } from '@/lib/siteTheme';
+import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
+import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 
 
 // Naya patrakar: OTP se mobile verify -> reporters/{rp_phone} (status: pending, admin approve karega)
@@ -24,6 +26,8 @@ export default function PatrakarSignupPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
+  // DPDP: notice + sahmati (zaroori + 18+ + vaikalpik marketing)
+  const [consent, setConsent] = useState<ConsentValue>(EMPTY_CONSENT);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +38,8 @@ export default function PatrakarSignupPage() {
     if (!isValidName(name)) return setError(VALIDATION_MSG.name);
     if (!isValidIndianMobile(mobile)) return setError(VALIDATION_MSG.mobile);
     if (!city.trim()) return setError('कृपया शहर / जिला दर्ज करें।');
+    const ce = consentError(consent, 'signup');
+    if (ce) return setError(ce);
 
     setLoading(true);
     try {
@@ -69,8 +75,13 @@ export default function PatrakarSignupPage() {
         status: 'pending',
         role: 'reporter',
         phoneVerified: true,
+        consent: { version: CONSENT_VERSION, acceptedAt: serverTimestamp(), marketing: consent.marketing, ageConfirmed: consent.age },
         createdAt: serverTimestamp()
       });
+      // Sahmati ka saboot (log) — fail ho toh bhi aavedan bana rahe
+      recordConsent({ role: 'patrakar', phone: mobile, marketing: consent.marketing, ageConfirmed: consent.age, action: 'signup', portal: getActivePortal(null) }).catch((e) =>
+        console.error('Consent log error:', e)
+      );
       setStep('done');
       setMessage('');
     } catch (err: any) {
@@ -137,7 +148,8 @@ export default function PatrakarSignupPage() {
             <label style={authLabel}>शहर / जिला *</label>
             <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} style={authInput} placeholder="उदा. इंदौर" />
           </div>
-          <button type="submit" disabled={loading} style={authButton(loading)}>
+          <ConsentNotice role="patrakar" mode="signup" value={consent} onChange={setConsent} />
+          <button type="submit" disabled={loading || !consent.agree || !consent.age} style={authButton(loading || !consent.agree || !consent.age)}>
             {loading ? 'जांच की जा रही है...' : '💬 OTP भेजें और आवेदन करें'}
           </button>
         </form>

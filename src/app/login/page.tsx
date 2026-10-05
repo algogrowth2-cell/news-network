@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { createReaderWithReferral, normalizeReferralInput } from '@/lib/referralService';
 import { isReaderRegistered } from '@/lib/readerLookup';
+import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
+import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
 
 const fieldErrorStyle: React.CSSProperties = { display: 'block', marginTop: '5px', fontSize: '12px', color: '#dc2626', fontWeight: 500 };
@@ -30,6 +32,10 @@ function LoginAndSignupContent() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   // Mobile number ka account check: signup me pehle se registered / login me registered nahi
   const [accountError, setAccountError] = useState<'registered' | 'unregistered' | null>(null);
+  // DPDP: signup par hamesha; login par sirf jinki profile me is version ki sahmati nahi
+  const [consent, setConsent] = useState<ConsentValue>(EMPTY_CONSENT);
+  const [needConsent, setNeedConsent] = useState(false);
+  const [recordOnVerify, setRecordOnVerify] = useState(false);
 
   // Strict validation: signup me naam + email + mobile, login me sirf mobile
   const nameOk = isValidName(name);
@@ -83,6 +89,28 @@ function LoginAndSignupContent() {
         setAccountError('unregistered');
         setLoading(false);
         return;
+      }
+      if (authMode === 'signup') {
+        const ce = consentError(consent, 'signup');
+        if (ce) {
+          setMsg({ text: ce, type: 'error' });
+          setLoading(false);
+          return;
+        }
+        setRecordOnVerify(true);
+      } else {
+        const prof = await getDoc(doc(db, 'users', `u_${phone}`));
+        const has = prof.exists() && prof.data().consent?.version === CONSENT_VERSION;
+        if (!has) {
+          const ce = consentError(consent, 'signup');
+          if (ce) {
+            setNeedConsent(true);
+            setMsg({ text: 'DPDP नियमों के अनुसार आगे बढ़ने से पहले कृपया नीचे गोपनीयता नोटिस पढ़कर सहमति दें।', type: 'error' });
+            setLoading(false);
+            return;
+          }
+        }
+        setRecordOnVerify(!has);
       }
     } catch (err) {
       console.error('Reader lookup error:', err);
@@ -189,6 +217,13 @@ function LoginAndSignupContent() {
           role: 'reader',
           verified: true
         };
+
+        // DPDP sahmati ka record (profile + log)
+        if (recordOnVerify) {
+          await recordConsent({ role: 'reader', phone, profilePath: ['users', userId], marketing: consent.marketing, ageConfirmed: consent.age, action: authMode === 'signup' ? 'signup' : 'login' }).catch(
+            (e) => console.error('Consent log error:', e)
+          );
+        }
 
         // Save session in local storage for navbar & portal
         localStorage.setItem('reader_user', JSON.stringify(userObj));
@@ -482,6 +517,8 @@ function LoginAndSignupContent() {
                 </div>
               )}
             </div>
+
+            {(authMode === 'signup' || needConsent) && <ConsentNotice role="reader" mode="signup" value={consent} onChange={setConsent} />}
 
             <button
               type="submit"

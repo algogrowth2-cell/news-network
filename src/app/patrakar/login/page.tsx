@@ -7,6 +7,8 @@ import RoleAuthLayout, { authButton, authLabel, authLinkButton, OtpInput, PhoneI
 import { cleanPhone, findProfileByPhone, getRoleSession, isReporterApproved, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
+import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
+import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { getActivePortal } from '@/lib/siteTheme';
 
 const PENDING_MSG = 'आपका अकाउंट एडमिन वेरिफिकेशन के लिए पेंडिंग है। स्वीकृति के बाद ही डैशबोर्ड खुलेगा।';
@@ -23,6 +25,10 @@ export default function PatrakarLoginPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
+  // DPDP: jinki profile me is notice-version ki sahmati nahi (purane users), unse ek baar
+  const [needConsent, setNeedConsent] = useState(false);
+  const [consent, setConsent] = useState<ConsentValue>(EMPTY_CONSENT);
+  const [consentProfileId, setConsentProfileId] = useState('');
 
   useEffect(() => {
     // Kis portal se patrakar portal khula — dashboard, ID card aur certificate usi portal ke banenge
@@ -56,7 +62,12 @@ export default function PatrakarLoginPage() {
         setError('आपका पत्रकार आवेदन अस्वीकृत किया गया है। अधिक जानकारी के लिए संपादकीय टीम से संपर्क करें।');
       } else if (!isReporterApproved(profile.data)) {
         setError(PENDING_MSG);
+      } else if (profile.data.consent?.version !== CONSENT_VERSION && consentError(consent, 'signup')) {
+        setNeedConsent(true);
+        setConsentProfileId(profile.id);
+        setError('DPDP नियमों के अनुसार आगे बढ़ने से पहले कृपया नीचे गोपनीयता नोटिस पढ़कर सहमति दें।');
       } else {
+        if (profile.data.consent?.version !== CONSENT_VERSION) setConsentProfileId(profile.id);
         const res = await sendOtp(mobile);
         if (res.ok && res.sessionId) {
           setSessionId(res.sessionId);
@@ -92,6 +103,11 @@ export default function PatrakarLoginPage() {
         setError(PENDING_MSG);
         setStep('phone');
       } else {
+        if (consentProfileId) {
+          await recordConsent({ role: 'patrakar', phone: mobile, profilePath: ['reporters', consentProfileId], marketing: consent.marketing, ageConfirmed: consent.age, action: 'login' }).catch(
+            (e) => console.error('Consent log error:', e)
+          );
+        }
         setRoleSession('patrakar', profile.id, mobile);
         setMessage('लॉगिन सफल! डैशबोर्ड खोला जा रहा है...');
         router.replace('/patrakar/dashboard');
@@ -135,6 +151,7 @@ export default function PatrakarLoginPage() {
             <label style={authLabel}>पंजीकृत मोबाइल नंबर *</label>
             <PhoneInput value={phone} onChange={setPhone} />
           </div>
+          {needConsent && <ConsentNotice role="patrakar" mode="signup" value={consent} onChange={setConsent} />}
           <button type="submit" disabled={loading} style={authButton(loading)}>
             {loading ? 'जांच की जा रही है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
           </button>

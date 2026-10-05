@@ -7,6 +7,8 @@ import RoleAuthLayout, { authButton, authLabel, authLinkButton, OtpInput, PhoneI
 import { cleanPhone, findProfileByPhone, getRoleSession, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
+import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
+import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 
 // Sirf registered advertiser ka OTP login; session me sirf advertiser ka doc id + phone
 export default function AdvertiserLoginPage() {
@@ -21,6 +23,10 @@ export default function AdvertiserLoginPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
+  // DPDP: jinki profile me is notice-version ki sahmati nahi (purane users), unse ek baar
+  const [needConsent, setNeedConsent] = useState(false);
+  const [consent, setConsent] = useState<ConsentValue>(EMPTY_CONSENT);
+  const [consentProfileId, setConsentProfileId] = useState('');
 
   useEffect(() => {
     if (getRoleSession('advertiser')) {
@@ -44,7 +50,11 @@ export default function AdvertiserLoginPage() {
       if (!profile) {
         setError('यह मोबाइल नंबर पंजीकृत नहीं है। कृपया नया खाता बनाएं।');
         setErrorAction({ href: '/advertiser/signup', label: 'खाता बनाएं / साइन अप करें' });
+      } else if (profile.data.consent?.version !== CONSENT_VERSION && consentError(consent, 'signup')) {
+        setNeedConsent(true);
+        setError('DPDP नियमों के अनुसार आगे बढ़ने से पहले कृपया नीचे गोपनीयता नोटिस पढ़कर सहमति दें।');
       } else {
+        if (profile.data.consent?.version !== CONSENT_VERSION) setConsentProfileId(profile.id);
         const res = await sendOtp(mobile);
         if (res.ok && res.sessionId) {
           setProfileId(profile.id);
@@ -72,6 +82,11 @@ export default function AdvertiserLoginPage() {
       setError(res.message);
       setLoading(false);
       return;
+    }
+    if (consentProfileId) {
+      await recordConsent({ role: 'advertiser', phone: cleanPhone(phone), profilePath: ['advertisers', consentProfileId], marketing: consent.marketing, ageConfirmed: consent.age, action: 'login' }).catch(
+        (e) => console.error('Consent log error:', e)
+      );
     }
     setRoleSession('advertiser', profileId, cleanPhone(phone));
     setMessage('लॉगिन सफल! डैशबोर्ड खोला जा रहा है...');
@@ -109,6 +124,7 @@ export default function AdvertiserLoginPage() {
             <label style={authLabel}>पंजीकृत मोबाइल नंबर *</label>
             <PhoneInput value={phone} onChange={setPhone} />
           </div>
+          {needConsent && <ConsentNotice role="advertiser" mode="signup" value={consent} onChange={setConsent} />}
           <button type="submit" disabled={loading} style={authButton(loading)}>
             {loading ? 'जांच की जा रही है...' : '💬 SMS द्वारा OTP प्राप्त करें'}
           </button>

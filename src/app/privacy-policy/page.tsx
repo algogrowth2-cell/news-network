@@ -10,9 +10,10 @@ const SECTIONS = [
   { id: 'thirdparty', num: '5', title: 'तृतीय पक्ष सेवाएं' },
   { id: 'rights', num: '6', title: 'आपके अधिकार' },
   { id: 'deletion', num: '7', title: 'खाता एवं डेटा हटाना' },
-  { id: 'children', num: '8', title: 'बच्चों की गोपनीयता' },
-  { id: 'changes', num: '9', title: 'नीति में परिवर्तन' },
-  { id: 'contact', num: '10', title: 'संपर्क करें' },
+  { id: 'dpdp', num: '8', title: 'सहमति एवं DPDP अधिनियम' },
+  { id: 'children', num: '9', title: 'बच्चों की गोपनीयता' },
+  { id: 'changes', num: '10', title: 'नीति में परिवर्तन' },
+  { id: 'contact', num: '11', title: 'संपर्क करें' },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -466,14 +467,69 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* Section 8 */}
-            <section id="children" className="pp-section">
+            {/* Section 8 — DPDP Act 2023 / DPDP Rules 2025 */}
+            <section id="dpdp" className="pp-section">
               <div className="pp-section-head">
                 <span className="pp-section-num">8</span>
+                <h2 className="pp-section-title">सहमति एवं डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023</h2>
+              </div>
+              <div className="pp-body">
+                <p>
+                  हम डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023 (DPDP Act) और DPDP नियम, 2025 के अनुसार “डेटा फ़िड्यूशियरी” के रूप में आपका डेटा संसाधित
+                  करते हैं। डेटा फ़िड्यूशियरी: <b>Golden Pearl News Network</b> (द लोकल लीडर एवं नेटवर्क के सभी पोर्टल)।
+                </p>
+                <p>
+                  <b>सहमति कैसे ली जाती है:</b> पाठक, पत्रकार या विज्ञापनदाता खाता बनाते (और पुराने उपयोगकर्ताओं से अगले लॉगिन पर) समय हम एक स्पष्ट नोटिस
+                  दिखाते हैं — कौन सा डेटा, किस काम के लिए, किसके साथ साझा और कितने समय तक। आप खुद checkbox चुनकर सहमति देते हैं; कोई भी checkbox पहले से
+                  चुना हुआ नहीं होता। प्रचार/मार्केटिंग संदेशों की सहमति अलग और वैकल्पिक है — उसे न देने पर भी सेवा मिलती है।
+                </p>
+                <p>
+                  <b>सहमति का रिकॉर्ड:</b> हर सहमति का संस्करण, समय और माध्यम सुरक्षित रखा जाता है, ताकि आवश्यकता होने पर दिखाया जा सके।
+                </p>
+                <p>
+                  <b>सहमति वापस लेना:</b> आप किसी भी समय सहमति वापस ले सकते हैं — प्रचार संदेशों के लिए अपनी प्रोफ़ाइल से, और पूरे खाते के लिए{' '}
+                  <Link href="/delete-account" style={{ color: primary, fontWeight: 600 }}>
+                    खाता हटाएं पेज
+                  </Link>{' '}
+                  से। वापसी उतनी ही आसान है जितनी सहमति देना; इससे पहले हुए वैध उपयोग पर असर नहीं पड़ता।
+                </p>
+                <p>
+                  <b>आपके अधिकार (DPDP धारा 11–14):</b> अपने डेटा का सारांश और उसके उपयोग की जानकारी पाना; सुधार, पूरा करवाना या अद्यतन करना; डेटा हटवाना;
+                  शिकायत निवारण; और मृत्यु या अक्षमता की स्थिति में अपने अधिकारों के लिए किसी व्यक्ति को नामित (nominate) करना। अनुरोध के लिए ईमेल करें:
+                  goldenpearlnews@gmail.com — हम 30 दिनों के भीतर उत्तर देते हैं।
+                </p>
+                <p>
+                  <b>शिकायत:</b> पहले हमारे शिकायत अधिकारी से संपर्क करें (
+                  <Link href="/grievance" style={{ color: primary }}>
+                    शिकायत निवारण
+                  </Link>
+                  , goldenpearlnews@gmail.com, +91 8103333381)। समाधान से संतुष्ट न होने पर आप भारत के डेटा संरक्षण बोर्ड (Data Protection Board of India) में
+                  शिकायत कर सकते हैं।
+                </p>
+                <p>
+                  <b>डेटा उल्लंघन:</b> किसी डेटा उल्लंघन की स्थिति में हम प्रभावित उपयोगकर्ताओं और डेटा संरक्षण बोर्ड को नियमानुसार सूचित करेंगे।
+                </p>
+                <p style={{ fontSize: '14px', color: '#666' }}>
+                  <i>
+                    English: Golden Pearl News Network is the Data Fiduciary under the Digital Personal Data Protection Act, 2023. We take free, specific, informed
+                    and unambiguous consent through a clear notice at signup (no pre-ticked boxes; marketing consent is separate and optional), keep a record of
+                    each consent, and let you withdraw consent as easily as you gave it. You may exercise your rights to access, correction, erasure, grievance
+                    redressal and nomination by writing to goldenpearlnews@gmail.com, and may complain to the Data Protection Board of India.
+                  </i>
+                </p>
+              </div>
+            </section>
+
+            {/* Section 9 */}
+            <section id="children" className="pp-section">
+              <div className="pp-section-head">
+                <span className="pp-section-num">9</span>
                 <h2 className="pp-section-title">बच्चों की गोपनीयता</h2>
               </div>
               <div className="pp-body">
                 <p>
+                  DPDP अधिनियम के अनुसार 18 वर्ष से कम आयु का व्यक्ति “बच्चा” है। खाता बनाते समय उपयोगकर्ता पुष्टि करता है कि उसकी आयु 18 वर्ष या अधिक है।
+                  हम बच्चों का व्यक्तिगत डेटा माता-पिता/अभिभावक की सत्यापित सहमति के बिना नहीं लेते, न ही उन्हें लक्षित विज्ञापन या ट्रैकिंग करते हैं।
                   हमारी सेवाएं 13 वर्ष से कम उम्र के बच्चों के लिए अभिप्रेत नहीं हैं।
                   हम जानबूझकर 13 वर्ष से कम उम्र के बच्चों से व्यक्तिगत जानकारी एकत्रित
                   नहीं करते। यदि किसी अभिभावक को ऐसा लगता है कि उनके बच्चे ने हमें
@@ -482,10 +538,10 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* Section 9 */}
+            {/* Section 10 */}
             <section id="changes" className="pp-section">
               <div className="pp-section-head">
-                <span className="pp-section-num">9</span>
+                <span className="pp-section-num">10</span>
                 <h2 className="pp-section-title">नीति में परिवर्तन</h2>
               </div>
               <div className="pp-body">
@@ -497,10 +553,10 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* Section 10 */}
+            {/* Section 11 */}
             <section id="contact" className="pp-section">
               <div className="pp-section-head">
-                <span className="pp-section-num">10</span>
+                <span className="pp-section-num">11</span>
                 <h2 className="pp-section-title">संपर्क करें</h2>
               </div>
               <div className="pp-body">

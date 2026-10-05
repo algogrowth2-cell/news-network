@@ -169,6 +169,7 @@ export default function AdminLayout({
         { label: 'Membership', icon: '💳', href: '/admin/membership' },
         { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
         { label: 'Account Deletion', icon: '🗑️', href: '/admin/deletion-requests' },
+        { label: 'Consent Log', icon: '🔒', href: '/admin/consents' },
         { label: 'Referrals', icon: '🎁', href: '/admin/referrals' },
         { label: 'Comments', icon: '💬', href: '/admin/comments' },
         { label: 'Analytics', icon: '📊', href: '/admin/analytics' }
