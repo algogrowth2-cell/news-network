@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, getDoc, collection, addDoc, query, where, limit, getDocs, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
+import { articleSiteIds, normalizeSiteId } from '@/lib/portals';
 import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -124,7 +124,7 @@ export default function ArticleDetailPage() {
     if (!siteSlug) return;
     async function fetchSideArticles() {
       try {
-        const qSide = query(collection(db, 'articles'), where('siteId', 'in', siteIdAliases(siteSlug)), limit(20));
+        const qSide = query(collection(db, 'articles'), where('siteId', 'in', articleSiteIds(siteSlug)), limit(20));
         const snap = await getDocs(qSide);
         // Sirf published articles, taaki related/trending links draft ya 404 par na jaayein
         const list = snap.docs

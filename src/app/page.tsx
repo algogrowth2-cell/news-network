@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
-import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
+import { articleSiteIds, normalizeSiteId } from '@/lib/portals';
 import { rememberPortal } from '@/lib/siteTheme';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
@@ -618,9 +618,8 @@ function HomePageContent() {
     async function loadData() {
       setLoading(true);
       try {
-        const possibleSlugs = [...siteIdAliases(activeSiteSlug), activeSiteSlug.replace(/-/g, ' ')];
-        if (activeSiteSlug.includes('provue')) possibleSlugs.push('the-proview-times');
-        if (activeSiteSlug.includes('proview')) possibleSlugs.push('the-provue-times');
+        // Sirf isi portal par post hui khabrein (dusre portal / purane demo slugs ki nahi)
+        const possibleSlugs = articleSiteIds(activeSiteSlug);
 
         const qArt = query(collection(db, 'articles'), where('siteId', 'in', possibleSlugs));
         const artSnap = await getDocs(qArt);

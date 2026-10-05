@@ -31,8 +31,10 @@ export const normalizeSiteId = (siteId: unknown) => {
   return LEGACY_SLUG_MAP[s] || s;
 };
 
-// Firestore `where('siteId', 'in', ...)` queries ke liye: asli slug + uske purane aliases
-export const siteIdAliases = (slug: string) => [
-  slug,
-  ...Object.keys(LEGACY_SLUG_MAP).filter((legacy) => LEGACY_SLUG_MAP[legacy] === slug)
-];
+// Khabrein sirf usi portal ki jahan post hui — purane dummy slugs (state-express, city-bulletin…) ki khabrein kisi asli portal par nahi.
+// Sirf usi portal ke naam ki likhavat ke roop shamil: 'the-local-leader' / 'the local leader', provue / proview.
+export const articleSiteIds = (slug: string) => {
+  const ids = new Set([slug, slug.replace(/-/g, ' ')]);
+  if (slug === 'the-provue-times') ids.add('the-proview-times');
+  return Array.from(ids);
+};
