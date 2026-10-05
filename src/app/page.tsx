@@ -7,7 +7,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
-import { articleSiteIds, normalizeSiteId } from '@/lib/portals';
+import { normalizeSiteId } from '@/lib/portals';
+import { fetchPortalArticles } from '@/lib/articleQueries';
+import { isArticleLive } from '@/lib/articles';
 import { rememberPortal } from '@/lib/siteTheme';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
@@ -29,6 +31,8 @@ interface ArticleItem {
   status?: string;
   tags?: string[];
   videoUrl?: string;
+  publishAt?: any;
+  siteIds?: string[];
 }
 
 interface AdItem {
@@ -618,18 +622,8 @@ function HomePageContent() {
     async function loadData() {
       setLoading(true);
       try {
-        // Sirf isi portal par post hui khabrein (dusre portal / purane demo slugs ki nahi)
-        const possibleSlugs = articleSiteIds(activeSiteSlug);
-
-        const qArt = query(collection(db, 'articles'), where('siteId', 'in', possibleSlugs));
-        const artSnap = await getDocs(qArt);
-        const approvedArticles = artSnap.docs
-          .map((d) => ({ id: d.id, ...d.data() } as ArticleItem))
-          .filter((art) => {
-            const s = String(art.status || '').trim().toLowerCase();
-            return s === 'published' || s === 'approved';
-          });
-        setArticles(approvedArticles);
+        // Sirf isi portal ki live khabrein (siteId ya multi-portal siteIds), nayi pehle; scheduled apne samay par
+        setArticles(await fetchPortalArticles<ArticleItem>(activeSiteSlug));
 
         const qAds = query(collection(db, 'ads'));
         const adSnap = await getDocs(qAds);
@@ -762,8 +756,7 @@ function HomePageContent() {
   const isFilterActive = isFilterCategory || !!activeTrendTag || !!searchTerm.trim();
 
   const filteredArticles = articles.filter((art) => {
-    const rawStatus = String(art.status || '').trim().toLowerCase();
-    if (rawStatus !== 'published' && rawStatus !== 'approved') return false;
+    if (!isArticleLive(art)) return false;
 
     if (activeCategory === 'लाइव' || activeCategory === 'Live') return false;
 

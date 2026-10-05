@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, getDoc, collection, addDoc, query, where, limit, getDocs, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { articleSiteIds, normalizeSiteId } from '@/lib/portals';
+import { normalizeSiteId } from '@/lib/portals';
+import { fetchPortalArticles } from '@/lib/articleQueries';
+import { isArticleLive, isDirectVideo, looksLikeHtml, sanitizeArticleHtml, youtubeEmbedUrl, youtubeId } from '@/lib/articles';
 import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -22,12 +24,18 @@ interface ArticleDetail {
   authorName?: string;
   slug?: string;
   status?: string;
+  publishAt?: any;
+  siteIds?: string[];
+  videoUrl?: string;
+  gallery?: string[];
+  tags?: string[];
+  imageCaption?: string;
+  location?: string;
+  source?: string;
+  readTime?: number;
+  allowComments?: boolean;
+  isBreaking?: boolean;
 }
-
-const isPublished = (a: ArticleDetail) => {
-  const s = String(a.status || '').trim().toLowerCase();
-  return s === 'published' || s === 'approved';
-};
 
 interface CommentItem {
   id: string;
@@ -90,13 +98,24 @@ export default function ArticleDetailPage() {
         }
         if (docSnap) {
           const data = { id: docSnap.id, ...docSnap.data() } as ArticleDetail;
+          if (!isArticleLive(data)) {
+            setArticle(null);
+            setLoading(false);
+            return;
+          }
           setArticle(data);
           // Article ka apna siteId pehle — ?site= sirf tab jab article kisi ek portal ka na ho.
           // Taaki article hamesha apne asli portal ki branding/sidebar ke saath dikhe.
           const articleSite = normalizeSiteId(data.siteId);
           const querySite = searchParams.get('site');
+          const portals = (data.siteIds || []).map(normalizeSiteId);
+          const qSite = querySite ? normalizeSiteId(querySite) : '';
           const finalSlug =
-            articleSite && articleSite !== 'all' ? articleSite : normalizeSiteId(querySite || 'the-local-leader');
+            qSite && portals.includes(qSite)
+              ? qSite
+              : articleSite && articleSite !== 'all'
+                ? articleSite
+                : portals[0] || normalizeSiteId(querySite || 'the-local-leader');
           setSiteSlug(finalSlug);
           updateDoc(doc(db, 'articles', docSnap.id), { views: increment(1) }).catch(() => {});
         } else {
@@ -124,12 +143,8 @@ export default function ArticleDetailPage() {
     if (!siteSlug) return;
     async function fetchSideArticles() {
       try {
-        const qSide = query(collection(db, 'articles'), where('siteId', 'in', articleSiteIds(siteSlug)), limit(20));
-        const snap = await getDocs(qSide);
-        // Sirf published articles, taaki related/trending links draft ya 404 par na jaayein
-        const list = snap.docs
-          .map((d) => ({ id: d.id, ...d.data() } as ArticleDetail))
-          .filter((item) => item.id !== articleId && isPublished(item));
+        // Sirf isi portal ki live khabrein, taaki related/trending links draft ya 404 par na jaayein
+        const list = (await fetchPortalArticles<ArticleDetail>(siteSlug, 20)).filter((item) => item.id !== articleId);
         setRelatedArticles(list.slice(0, 4));
         setTrendingArticles(list.slice(4, 8).length > 0 ? list.slice(4, 8) : list.slice(0, 4));
       } catch (e) { console.error('Sidebar articles fetch error:', e); }
@@ -280,11 +295,36 @@ export default function ArticleDetailPage() {
                 </div>
               </div>
 
-              {/* Hero Image */}
-              {article.image && (
-                <figure className="ap-hero">
-                  <img src={article.image} alt={article.title} className="ap-hero-img" />
+              {/* Hero: mukhya video ho toh video, warna photo */}
+              {article.videoUrl && youtubeId(article.videoUrl) ? (
+                <figure className="ap-hero ap-hero-video">
+                  <iframe
+                    src={youtubeEmbedUrl(youtubeId(article.videoUrl)!)}
+                    title={article.title}
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                  />
                 </figure>
+              ) : article.videoUrl && isDirectVideo(article.videoUrl) ? (
+                <figure className="ap-hero ap-hero-video">
+                  <video src={article.videoUrl} poster={article.image || undefined} controls preload="metadata" />
+                </figure>
+              ) : (
+                article.image && (
+                  <figure className="ap-hero">
+                    <img src={article.image} alt={article.title} className="ap-hero-img" />
+                    {article.imageCaption && <figcaption className="ap-caption">{article.imageCaption}</figcaption>}
+                  </figure>
+                )
+              )}
+
+              {(article.location || article.readTime || article.source) && (
+                <div className="ap-meta-row">
+                  {article.location && <span>📍 {article.location}</span>}
+                  {article.readTime ? <span>⏱ {article.readTime} मिनट पढ़ें</span> : null}
+                  {article.source && <span>स्रोत: {article.source}</span>}
+                </div>
               )}
 
               {/* Summary */}
@@ -293,7 +333,33 @@ export default function ArticleDetailPage() {
               )}
 
               {/* Body */}
+              {article.content && looksLikeHtml(article.content) ? (
+                <div className="ap-body ap-rich" dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }} />
+              ) : (
               <div className="ap-body">{article.content || article.summary || 'खबर का विस्तृत विवरण जल्द ही उपलब्ध कराया जाएगा।'}</div>
+              )}
+
+              {/* Photo gallery */}
+              {article.gallery && article.gallery.length > 0 && (
+                <div className="ap-gallery">
+                  {article.gallery.map((g, i) => (
+                    <a key={g} href={g} target="_blank" rel="noopener noreferrer">
+                      <img src={g} alt={`${article.title} — फ़ोटो ${i + 1}`} loading="lazy" />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* Tags */}
+              {article.tags && article.tags.length > 0 && (
+                <div className="ap-tags">
+                  {article.tags.map((t) => (
+                    <span key={t} className="ap-tag" style={{ borderColor: primary, color: primary }}>
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Share Footer */}
               <div className="ap-share-foot">
@@ -308,6 +374,7 @@ export default function ArticleDetailPage() {
             </article>
 
             {/* ──── COMMENTS ──── */}
+            {article.allowComments !== false && (
             <section className="ap-cmt-sec">
               <h3 className="ap-cmt-h">पाठकों की राय / टिप्पणियां <span className="ap-cmt-badge">{comments.length}</span></h3>
 
@@ -349,6 +416,7 @@ export default function ArticleDetailPage() {
                 </div>
               )}
             </section>
+            )}
 
             {/* ──── RELATED ──── */}
             {relatedArticles.length > 0 && (
@@ -527,6 +595,25 @@ const allCSS = `
 
 /* Body */
 .ap-body { font-size: 17px; line-height: 1.88; color: #1e293b; white-space: pre-line; margin-bottom: 32px; }
+.ap-rich { white-space: normal; }
+.ap-rich p { margin: 0 0 18px; }
+.ap-rich h2 { font-size: 23px; line-height: 1.45; margin: 28px 0 12px; color: #0f172a; }
+.ap-rich h3 { font-size: 19.5px; line-height: 1.5; margin: 24px 0 10px; color: #0f172a; }
+.ap-rich ul, .ap-rich ol { padding-left: 26px; margin: 0 0 18px; }
+.ap-rich li { margin-bottom: 6px; }
+.ap-rich blockquote { border-left: 4px solid #cbd5e1; margin: 20px 0; padding: 10px 18px; background: #f8f9fb; border-radius: 0 10px 10px 0; color: #334155; }
+.ap-rich a { color: #2563eb; text-decoration: underline; word-break: break-word; }
+.ap-rich img, .ap-rich video { max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 18px auto; }
+.ap-rich iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; margin: 18px 0; display: block; }
+.ap-rich figure { margin: 20px 0; }
+.ap-rich figcaption, .ap-caption { font-size: 13px; color: #64748b; text-align: center; margin-top: 6px; padding: 0 12px 8px; }
+.ap-rich hr { border: 0; border-top: 1px solid #e2e8f0; margin: 26px 0; }
+.ap-hero-video iframe, .ap-hero-video video { width: 100%; aspect-ratio: 16 / 9; border: 0; display: block; background: #000; }
+.ap-meta-row { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: #64748b; margin: -10px 0 20px; }
+.ap-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0 0 26px; }
+.ap-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; display: block; }
+.ap-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 26px; }
+.ap-tag { border: 1px solid; border-radius: 99px; padding: 4px 12px; font-size: 13px; font-weight: 600; background: #fff; }
 
 /* Share Footer */
 .ap-share-foot { background: #f8f9fb; border: 1px solid #ebeef3; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
