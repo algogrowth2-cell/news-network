@@ -9,9 +9,10 @@ const SECTIONS = [
   { id: 'security', num: '4', title: 'डेटा सुरक्षा' },
   { id: 'thirdparty', num: '5', title: 'तृतीय पक्ष सेवाएं' },
   { id: 'rights', num: '6', title: 'आपके अधिकार' },
-  { id: 'children', num: '7', title: 'बच्चों की गोपनीयता' },
-  { id: 'changes', num: '8', title: 'नीति में परिवर्तन' },
-  { id: 'contact', num: '9', title: 'संपर्क करें' },
+  { id: 'deletion', num: '7', title: 'खाता एवं डेटा हटाना' },
+  { id: 'children', num: '8', title: 'बच्चों की गोपनीयता' },
+  { id: 'changes', num: '9', title: 'नीति में परिवर्तन' },
+  { id: 'contact', num: '10', title: 'संपर्क करें' },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -399,17 +400,76 @@ export default function PrivacyPolicyPage() {
                 <ul>
                   <li>अपने व्यक्तिगत डेटा तक पहुंच का अनुरोध करना</li>
                   <li>गलत या अपूर्ण जानकारी में सुधार कराना</li>
-                  <li>अपना खाता और संबंधित डेटा हटवाना</li>
+                  <li>
+                    अपना खाता और संबंधित डेटा हटवाना —{' '}
+                    <Link href="/delete-account" style={{ color: primary, fontWeight: 600 }}>
+                      यहाँ अनुरोध करें
+                    </Link>
+                  </li>
                   <li>विपणन संचार से ऑप्ट-आउट करना</li>
                   <li>डेटा प्रोसेसिंग पर आपत्ति दर्ज कराना</li>
                 </ul>
               </div>
             </section>
 
-            {/* Section 7 */}
-            <section id="children" className="pp-section">
+            {/* Section 7 — Google Play "Data safety" ke liye */}
+            <section id="deletion" className="pp-section">
               <div className="pp-section-head">
                 <span className="pp-section-num">7</span>
+                <h2 className="pp-section-title">खाता एवं डेटा हटाना (Account &amp; Data Deletion)</h2>
+              </div>
+              <div className="pp-body">
+                <p>
+                  आप किसी भी समय अपना पाठक, पत्रकार या विज्ञापनदाता खाता और उससे जुड़ा व्यक्तिगत डेटा हटवा सकते हैं — वेबसाइट और मोबाइल ऐप दोनों के लिए, ऐप
+                  इंस्टॉल किए बिना भी।
+                </p>
+                <p>
+                  <b>कैसे अनुरोध करें:</b>
+                </p>
+                <ul>
+                  <li>
+                    <Link href="/delete-account" style={{ color: primary, fontWeight: 600 }}>
+                      खाता हटाने का अनुरोध पेज
+                    </Link>{' '}
+                    खोलें, अपना पंजीकृत मोबाइल नंबर डालें और SMS में आए OTP से पुष्टि करें; या
+                  </li>
+                  <li>
+                    <a href="mailto:goldenpearlnews@gmail.com?subject=Account%20Deletion%20Request" style={{ color: primary, fontWeight: 600 }}>
+                      goldenpearlnews@gmail.com
+                    </a>{' '}
+                    पर विषय “Account Deletion Request” के साथ अपना नाम, पंजीकृत मोबाइल नंबर और खाता प्रकार भेजें।
+                  </li>
+                </ul>
+                <p>
+                  <b>क्या हटाया जाता है:</b> आपकी प्रोफ़ाइल (नाम, मोबाइल नंबर, ईमेल, शहर, फ़ोटो), पत्रकार प्रेस आईडी की जानकारी, विज्ञापनदाता प्रोफ़ाइल, रेफरल
+                  कोड व रेफरल इतिहास, ई-पेपर सब्सक्रिप्शन और आपकी टिप्पणियां।
+                </p>
+                <p>
+                  <b>क्या रखा जाता है:</b> भुगतान एवं लेन-देन के रिकॉर्ड, भारतीय कर एवं कानूनी आवश्यकताओं के अनुसार अधिकतम 8 वर्ष तक। पहले से प्रकाशित
+                  खबरें/विज्ञापन बने रह सकते हैं, पर उनसे आपकी व्यक्तिगत संपर्क जानकारी हटा दी जाती है।
+                </p>
+                <p>
+                  <b>समय-सीमा:</b> सत्यापित अनुरोध 30 दिनों के भीतर पूरा किया जाता है और पूरा होने पर आपको सूचित किया जाता है। खाता हटने के बाद सक्रिय
+                  सब्सक्रिप्शन और रेफरल रिवॉर्ड समाप्त हो जाते हैं और डेटा वापस नहीं लाया जा सकता।
+                </p>
+                <p style={{ fontSize: '14px', color: '#666' }}>
+                  <i>
+                    English: You can request deletion of your account and associated data at any time, without installing the app, via{' '}
+                    <Link href="/delete-account" style={{ color: primary }}>
+                      /delete-account
+                    </Link>{' '}
+                    (verified by OTP) or by emailing goldenpearlnews@gmail.com with the subject “Account Deletion Request”. We delete your profile, press ID
+                    details, advertiser profile, referral data, e-paper subscription and comments within 30 days. Payment records are retained for up to 8 years as
+                    required by law.
+                  </i>
+                </p>
+              </div>
+            </section>
+
+            {/* Section 8 */}
+            <section id="children" className="pp-section">
+              <div className="pp-section-head">
+                <span className="pp-section-num">8</span>
                 <h2 className="pp-section-title">बच्चों की गोपनीयता</h2>
               </div>
               <div className="pp-body">
@@ -422,10 +482,10 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* Section 8 */}
+            {/* Section 9 */}
             <section id="changes" className="pp-section">
               <div className="pp-section-head">
-                <span className="pp-section-num">8</span>
+                <span className="pp-section-num">9</span>
                 <h2 className="pp-section-title">नीति में परिवर्तन</h2>
               </div>
               <div className="pp-body">
@@ -437,10 +497,10 @@ export default function PrivacyPolicyPage() {
               </div>
             </section>
 
-            {/* Section 9 */}
+            {/* Section 10 */}
             <section id="contact" className="pp-section">
               <div className="pp-section-head">
-                <span className="pp-section-num">9</span>
+                <span className="pp-section-num">10</span>
                 <h2 className="pp-section-title">संपर्क करें</h2>
               </div>
               <div className="pp-body">

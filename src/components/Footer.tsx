@@ -430,6 +430,8 @@ export default function Footer({
             <Link href="/editorial-guidelines" className="gp-ft-policy-link">संपादकीय दिशानिर्देश</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
             <Link href="/grievance" className="gp-ft-policy-link">शिकायत निवारण</Link>
+            <span style={{ color: '#e3e0da' }}>·</span>
+            <Link href="/delete-account" className="gp-ft-policy-link">खाता हटाएं</Link>
           </div>
 
           <button onClick={scrollToTop} className="gp-ft-scroll-top" aria-label="ऊपर जाएँ" title="ऊपर जाएँ">

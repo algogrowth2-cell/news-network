@@ -168,6 +168,7 @@ export default function AdminLayout({
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
         { label: 'Membership', icon: '💳', href: '/admin/membership' },
         { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
+        { label: 'Account Deletion', icon: '🗑️', href: '/admin/deletion-requests' },
         { label: 'Referrals', icon: '🎁', href: '/admin/referrals' },
         { label: 'Comments', icon: '💬', href: '/admin/comments' },
         { label: 'Analytics', icon: '📊', href: '/admin/analytics' }
