@@ -65,9 +65,7 @@ export const ROLE_NOTICE: Record<ConsentRole, RoleNotice> = {
 
 export const SHARED_WITH = [
   'Google Firebase — डेटा स्टोरेज (सुरक्षित सर्वर)',
-  '2Factor — SMS से OTP भेजना (सिर्फ मोबाइल नंबर)',
-  'Razorpay — भुगतान (कार्ड/UPI विवरण सीधे Razorpay के पास)',
-  'Vercel — वेबसाइट होस्टिंग'
+  'Razorpay — भुगतान (कार्ड/UPI विवरण सीधे Razorpay के पास)'
 ];
 
 export const RIGHTS = [
