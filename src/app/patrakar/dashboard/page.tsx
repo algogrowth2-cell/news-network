@@ -14,6 +14,7 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import Link from 'next/link';
+import PatrakarIdCardPanel from '@/components/PatrakarIdCardPanel';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 
 declare global {
@@ -670,83 +671,17 @@ export default function PatrakarDashboard() {
           </div>
         )}
 
-        {/* TAB 3: ID CARD & CERTIFICATE */}
-        {activeTab === 'id-card' && (
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: 0 }}>पत्रकार प्रेस आईडी कार्ड & प्रमाणपत्र</h2>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>डिजिटल डाउनलोड करें या घर बैठे ओरिजिनल लैमिनेटेड किट मंगवाएं।</p>
-              </div>
-              <button
-                onClick={() => window.print()}
-                style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer' }}
-              >
-                📥 डिजिटल डाउनलोड / प्रिंट
-              </button>
+        {/* TAB 3: ID CARD & CERTIFICATE — chune portal ka Media ID Card + Pradhikaran Patra */}
+        {activeTab === 'id-card' && reporter?.id && (
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '18px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: 0 }}>पत्रकार मीडिया आईडी कार्ड & प्राधिकरण पत्र</h2>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+                पोर्टल चुनें, अपनी फ़ोटो लगाएं और कार्ड व प्रमाणपत्र PNG / PDF में डाउनलोड करें।
+              </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
-              
-              {/* ID Card */}
-              <div style={{ backgroundColor: '#ffffff', color: '#0f172a', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: `2px solid ${themeColor}` }}>
-                <div style={{ backgroundColor: themeColor, padding: '16px', textAlign: 'center', color: '#ffffff' }}>
-                  <b style={{ fontSize: '18px', letterSpacing: '0.5px' }}>{siteName} डिजिटल मीडिया</b>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.9 }}>Official Press Identity Card</div>
-                </div>
-
-                <div style={{ padding: '22px', textAlign: 'center' }}>
-                  {reporter?.photo ? (
-                    <img
-                      src={reporter.photo}
-                      alt={reporter?.name}
-                      style={{ width: '92px', height: '92px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${themeColor}`, margin: '0 auto 12px' }}
-                    />
-                  ) : (
-                    // Photo nahi hai toh stock image nahi — reporter ke naam ka pehla akshar
-                    <div style={{ width: '92px', height: '92px', borderRadius: '50%', border: `3px solid ${themeColor}`, margin: '0 auto 12px', display: 'grid', placeItems: 'center', fontSize: '36px', fontWeight: 800, color: themeColor, background: '#f8fafc' }}>
-                      {(reporter?.name || '?').trim().charAt(0)}
-                    </div>
-                  )}
-                  <h3 style={{ fontSize: '19px', fontWeight: 700, margin: '0 0 2px 0', color: '#0f172a' }}>{reporter?.name}</h3>
-                  <div style={{ fontSize: '12.5px', color: themeColor, fontWeight: 700 }}>{reporter?.designation}</div>
-
-                  <div style={{ marginTop: '18px', borderTop: '1px dashed #cbd5e1', paddingTop: '14px', textAlign: 'left', fontSize: '12.5px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div><b>प्रेस आईडी सं:</b> <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{reporter?.idNumber}</span></div>
-                    <div><b>संपर्क:</b> +91 {reporter?.phone}</div>
-                    <div><b>वैधता (Validity):</b> {reporter?.validTill}</div>
-                    <div><b>मुख्यालय:</b> स्टेशन रोड, भरूच (गुजरात)</div>
-                  </div>
-
-                  <div style={{ marginTop: '16px', background: '#f8fafc', padding: '10px', borderRadius: '8px', fontSize: '10.5px', color: '#64748b' }}>
-                    यह कार्ड अधिकृत समाचार संकलन हेतु मान्य है। कानून व्यवस्था के अनुपालन में सहयोग अपेक्षित है।
-                  </div>
-                </div>
-              </div>
-
-              {/* Certificate */}
-              <div style={{ backgroundColor: '#fffdfa', color: '#1e293b', borderRadius: '16px', padding: '26px', border: `6px double ${themeColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-                <div style={{ fontSize: '11.5px', color: themeColor, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                  Certificate of Accreditation
-                </div>
-                <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '10px 0', color: '#78350f', fontFamily: 'Georgia, serif' }}>
-                  प्रमाणपत्र एवं अधिमान्यता
-                </h3>
-                <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#451a03', margin: '16px 0' }}>
-                  प्रमाणित किया जाता है कि <b>श्री/श्रीमती {reporter?.name}</b> हमारे डिजिटल मीडिया नेटवर्क '{siteName}' के अधिकृत पत्रकार के रूप में पंजीकृत हैं।
-                </p>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '32px', borderTop: `1px solid ${themeColor}`, paddingTop: '12px', fontSize: '11.5px', color: '#78350f' }}>
-                  <div>
-                    <b>आईडी सं:</b> <span style={{ fontFamily: 'monospace' }}>{reporter?.idNumber}</span>
-                  </div>
-                  <div>
-                    <b>हस्ताक्षर:</b> मुख्य संपादक
-                  </div>
-                </div>
-              </div>
-
-            </div>
+            <PatrakarIdCardPanel reporterDocId={reporter.id} themeColor={themeColor} />
 
             {/* Delivery CTA */}
             <div style={{ marginTop: '24px', backgroundColor: '#ffffff', border: `1.5px solid ${themeColor}`, borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>

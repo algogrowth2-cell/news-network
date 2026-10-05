@@ -130,7 +130,8 @@ export default function AdminLayout({
     {
       heading: 'Modules',
       items: [
-        { label: 'Reporters', icon: '🪪', href: '/admin/reporters' },
+        { label: 'Reporters', icon: '🧑‍💼', href: '/admin/reporters' },
+        { label: 'Press ID Cards', icon: '🪪', href: '/admin/press-cards' },
         { label: 'Ads & Revenue', icon: '📢', href: '/admin/ads' },
         { label: 'Classifieds', icon: '📋', href: '/admin/classifieds' },
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
