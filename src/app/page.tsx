@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId, siteIdAliases } from '@/lib/portals';
+import { rememberPortal } from '@/lib/siteTheme';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
@@ -542,6 +543,7 @@ function HomePageContent() {
 
     const activeSiteSlug = normalizeSiteId(decodeURIComponent(rawSiteSlug || 'the-local-leader'));
     setCurrentSlug(activeSiteSlug);
+    rememberPortal(activeSiteSlug); // patrakar portal / ID card isi portal ke bane
 
     const unsubSite = onSnapshot(doc(db, 'sites', activeSiteSlug), (snap) => {
       if (snap.exists()) {

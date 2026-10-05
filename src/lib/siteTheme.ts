@@ -28,4 +28,43 @@ export function resolveSiteSlug(siteParam?: string | null): string {
   return DEFAULT_SITE_SLUG;
 }
 
-export const fallbackFor = (slug: string) => SITE_FALLBACKS[slug] || SITE_FALLBACKS[DEFAULT_SITE_SLUG];
+const PORTAL_KEY = 'active_portal';
+const isNetworkSlug = (slug: string) => NETWORK_SITES.some((s) => s.slug === slug);
+
+/** Homepage jis portal par khula, use yaad rakho (patrakar/refer jaise pages usi portal ke bane) */
+export function rememberPortal(slug: string) {
+  if (typeof window === 'undefined' || !isNetworkSlug(slug)) return;
+  try {
+    localStorage.setItem(PORTAL_KEY, slug);
+  } catch {
+    /* storage band ho toh domain/default se kaam chalega */
+  }
+}
+
+/**
+ * Abhi kaunsa portal: ?site= (aur yaad rakho) → portal ka apna domain → pichhli baar khola portal → The Local Leader.
+ * Patrakar dashboard, ID card, certificate isi se apna logo/naam/rang lete hain.
+ */
+export function getActivePortal(siteParam?: string | null): string {
+  if (siteParam) {
+    const slug = normalizeSiteId(decodeURIComponent(siteParam));
+    if (isNetworkSlug(slug)) {
+      rememberPortal(slug);
+      return slug;
+    }
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase().replace(/^www\./, '');
+    const match = NETWORK_SITES.find((s) => s.domain === host);
+    if (match) return match.slug;
+    try {
+      const saved = localStorage.getItem(PORTAL_KEY) || '';
+      if (isNetworkSlug(saved)) return saved;
+    } catch {
+      /* ignore */
+    }
+  }
+  return DEFAULT_SITE_SLUG;
+}
+
+export const fallbackFor =(slug: string) => SITE_FALLBACKS[slug] || SITE_FALLBACKS[DEFAULT_SITE_SLUG];

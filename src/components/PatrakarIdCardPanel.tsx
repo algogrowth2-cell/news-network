@@ -3,14 +3,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, increment, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { NETWORK_SITES } from '@/lib/portals';
 import { fallbackFor } from '@/lib/siteTheme';
 import PressCardViewer from '@/components/PressCardViewer';
 import { BLOOD_GROUPS, buildPressCardData, issuePressId, resizePhoto } from '@/lib/pressCard';
 
 interface Props {
   reporterDocId: string;
-  themeColor: string;
+  /** Jis portal se patrakar portal khula — card/certificate usi ka */
+  siteSlug: string;
 }
 
 const label: React.CSSProperties = { display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' };
@@ -27,13 +27,12 @@ const input: React.CSSProperties = {
 
 /*
  * Patrakar ka apna ID card + pradhikaran patra:
- *  - kis portal ka patrakar (logo/naam/rang/ID prefix usi ka), photo, blood group, karyakshetra
+ *  - portal = jis site se patrakar portal khola (logo/naam/rang/ID prefix usi ka); photo, blood group, karyakshetra
  *  - naam, padnaam, validity admin ke haath me (Admin → Press ID Cards)
  */
-export default function PatrakarIdCardPanel({ reporterDocId, themeColor }: Props) {
+export default function PatrakarIdCardPanel({ reporterDocId, siteSlug }: Props) {
   const [rep, setRep] = useState<any>(null);
   const [site, setSite] = useState<{ slug: string; name?: string; primaryColor?: string; logoUrl?: string } | null>(null);
-  const [siteSlug, setSiteSlug] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [workArea, setWorkArea] = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,7 +49,6 @@ export default function PatrakarIdCardPanel({ reporterDocId, themeColor }: Props
       const d = snap.data();
       if (!d) return;
       setRep(d);
-      setSiteSlug((cur) => cur || d.cardSiteId || 'the-local-leader');
       if (!dirty) {
         setBloodGroup(d.bloodGroup || '');
         setWorkArea(d.workArea || d.city || '');
@@ -69,14 +67,15 @@ export default function PatrakarIdCardPanel({ reporterDocId, themeColor }: Props
     });
   }, [siteSlug]);
 
-  // Pehli baar: chune portal ki Press ID abhi tak nahi bani toh bana do
+  // Is portal ki Press ID nahi bani toh bana do; bani hai toh admin ke liye "abhi ka portal" yahi
   const hasIdForSite = !!rep?.pressIds?.[siteSlug];
+  const needsIssue = !!rep && rep.cardStatus !== 'revoked' && (!hasIdForSite || rep.cardSiteId !== siteSlug);
   useEffect(() => {
-    if (!rep || !siteSlug || hasIdForSite || rep.cardStatus === 'revoked' || siteSlug !== (rep.cardSiteId || 'the-local-leader')) return;
+    if (!needsIssue) return;
     issuePressId(reporterDocId, siteSlug).catch((err) => console.error('Press ID issue error:', err));
-  }, [rep, siteSlug, hasIdForSite, reporterDocId]);
+  }, [needsIssue, siteSlug, reporterDocId]);
 
-  const brand = site?.primaryColor || fallbackFor(siteSlug || 'the-local-leader').primaryColor || themeColor;
+  const brand = site?.primaryColor || fallbackFor(siteSlug).primaryColor;
   const cardData = useMemo(() => {
     if (!rep || !site || !hasIdForSite) return null;
     return buildPressCardData({ ...rep, bloodGroup, workArea }, site, origin);
@@ -153,22 +152,12 @@ export default function PatrakarIdCardPanel({ reporterDocId, themeColor }: Props
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
           <div>
-            <label style={label}>किस पोर्टल का पत्रकार कार्ड *</label>
-            <select
-              value={siteSlug}
-              onChange={(e) => {
-                setSiteSlug(e.target.value);
-                setDirty(true);
-              }}
-              style={input}
-            >
-              {NETWORK_SITES.map((s) => (
-                <option key={s.slug} value={s.slug}>
-                  {fallbackFor(s.slug).name}
-                  {rep.pressIds?.[s.slug] ? ` · ${rep.pressIds[s.slug]}` : ''}
-                </option>
-              ))}
-            </select>
+            <label style={label}>पोर्टल</label>
+            <div style={{ ...input, display: 'flex', alignItems: 'center', gap: '8px', background: '#fff', borderColor: brand, fontWeight: 700, color: brand }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: brand, flexShrink: 0 }} />
+              {site?.name || fallbackFor(siteSlug).name}
+              {rep.pressIds?.[siteSlug] && <span style={{ marginLeft: 'auto', fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '12px', color: '#475569' }}>{rep.pressIds[siteSlug]}</span>}
+            </div>
           </div>
           <div>
             <label style={label}>ब्लड ग्रुप</label>

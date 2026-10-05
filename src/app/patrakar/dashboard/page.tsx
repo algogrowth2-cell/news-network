@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import PatrakarIdCardPanel from '@/components/PatrakarIdCardPanel';
+import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 
 declare global {
@@ -75,9 +76,17 @@ export default function PatrakarDashboard() {
   // Razorpay Test Key Config
   const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
-  // 1. Fetch Dynamic Site Color & Config
+  // 1. Jis portal se patrakar portal khula, usi ka rang/naam/logo (?site= → domain → pichhla portal)
+  const [portalSlug, setPortalSlug] = useState('');
   useEffect(() => {
-    const unsubSite = onSnapshot(doc(db, 'sites', 'the-local-leader'), (snap) => {
+    const slug = getActivePortal(new URLSearchParams(window.location.search).get('site'));
+    const fb = fallbackFor(slug);
+    setPortalSlug(slug);
+    setThemeColor(fb.primaryColor);
+    setSiteName(fb.name);
+    setSiteLogo(fb.logoUrl);
+    setArtSiteId(slug); // nayi khabar ka default portal bhi yahi
+    const unsubSite = onSnapshot(doc(db, 'sites', slug), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         if (data.primaryColor) setThemeColor(data.primaryColor);
@@ -681,7 +690,7 @@ export default function PatrakarDashboard() {
               </p>
             </div>
 
-            <PatrakarIdCardPanel reporterDocId={reporter.id} themeColor={themeColor} />
+            {portalSlug && <PatrakarIdCardPanel reporterDocId={reporter.id} siteSlug={portalSlug} />}
 
             {/* Delivery CTA */}
             <div style={{ marginTop: '24px', backgroundColor: '#ffffff', border: `1.5px solid ${themeColor}`, borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>

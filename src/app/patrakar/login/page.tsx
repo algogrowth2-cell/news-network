@@ -7,6 +7,7 @@ import RoleAuthLayout, { authButton, authLabel, authLinkButton, OtpInput, PhoneI
 import { cleanPhone, findProfileByPhone, getRoleSession, isReporterApproved, setRoleSession } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
+import { getActivePortal } from '@/lib/siteTheme';
 
 const PENDING_MSG = 'आपका अकाउंट एडमिन वेरिफिकेशन के लिए पेंडिंग है। स्वीकृति के बाद ही डैशबोर्ड खुलेगा।';
 
@@ -24,6 +25,8 @@ export default function PatrakarLoginPage() {
   const [errorAction, setErrorAction] = useState<{ href: string; label: string } | null>(null);
 
   useEffect(() => {
+    // Kis portal se patrakar portal khula — dashboard, ID card aur certificate usi portal ke banenge
+    getActivePortal(new URLSearchParams(window.location.search).get('site'));
     // Valid session hai toh dashboard (wahan approval dobara check hota hai)
     if (getRoleSession('patrakar')) {
       router.replace('/patrakar/dashboard');

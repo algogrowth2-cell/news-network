@@ -8,6 +8,7 @@ import RoleAuthLayout, { authButton, authInput, authLabel, authLinkButton, OtpIn
 import { cleanPhone, findProfileByPhone, profileDocId } from '@/lib/roleSession';
 import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, isValidName, VALIDATION_MSG } from '@/lib/validation';
+import { getActivePortal } from '@/lib/siteTheme';
 
 
 // Naya patrakar: OTP se mobile verify -> reporters/{rp_phone} (status: pending, admin approve karega)
@@ -64,6 +65,7 @@ export default function PatrakarSignupPage() {
         name: name.trim(),
         phone: mobile,
         city: city.trim(),
+        appliedFromSite: getActivePortal(new URLSearchParams(window.location.search).get('site')),
         status: 'pending',
         role: 'reporter',
         phoneVerified: true,
