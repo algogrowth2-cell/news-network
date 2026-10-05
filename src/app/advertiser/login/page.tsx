@@ -52,7 +52,7 @@ export default function AdvertiserLoginPage() {
         setErrorAction({ href: '/advertiser/signup', label: 'खाता बनाएं / साइन अप करें' });
       } else if (profile.data.consent?.version !== CONSENT_VERSION && consentError(consent, 'signup')) {
         setNeedConsent(true);
-        setError('DPDP नियमों के अनुसार आगे बढ़ने से पहले कृपया नीचे गोपनीयता नोटिस पढ़कर सहमति दें।');
+        setError('आपकी सुरक्षा के लिए, आगे बढ़ने से पहले कृपया नीचे दी गई गोपनीयता सूचना पढ़कर सहमति दें।');
       } else {
         if (profile.data.consent?.version !== CONSENT_VERSION) setConsentProfileId(profile.id);
         const res = await sendOtp(mobile);

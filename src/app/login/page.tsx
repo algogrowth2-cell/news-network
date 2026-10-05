@@ -105,7 +105,7 @@ function LoginAndSignupContent() {
           const ce = consentError(consent, 'signup');
           if (ce) {
             setNeedConsent(true);
-            setMsg({ text: 'DPDP नियमों के अनुसार आगे बढ़ने से पहले कृपया नीचे गोपनीयता नोटिस पढ़कर सहमति दें।', type: 'error' });
+            setMsg({ text: 'आपकी सुरक्षा के लिए, आगे बढ़ने से पहले कृपया नीचे दी गई गोपनीयता सूचना पढ़कर सहमति दें।', type: 'error' });
             setLoading(false);
             return;
           }

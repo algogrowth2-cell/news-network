@@ -14,7 +14,7 @@ export const EMPTY_CONSENT: ConsentValue = { agree: false, age: false, marketing
 
 /** Form submit se pehle jaanch — galti ho toh Hindi sandesh */
 export function consentError(v: ConsentValue, mode: 'signup' | 'login') {
-  if (!v.agree) return 'आगे बढ़ने के लिए कृपया गोपनीयता नोटिस पढ़कर सहमति दें (checkbox चुनें)।';
+  if (!v.agree) return 'आगे बढ़ने के लिए कृपया गोपनीयता सूचना पढ़कर सहमति दें (checkbox चुनें)।';
   if (mode === 'signup' && !v.age) return 'कृपया पुष्टि करें कि आपकी आयु 18 वर्ष या उससे अधिक है।';
   return '';
 }
@@ -56,14 +56,14 @@ export default function ConsentNotice({
     <div className="cn" style={{ ['--cn-brand' as any]: brandColor }}>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="cn-head">
-        <b>🔒 गोपनीयता नोटिस (DPDP अधिनियम, 2023)</b>
+        <b>🔒 आपकी गोपनीयता — डेटा उपयोग एवं सहमति</b>
         <button type="button" className="cn-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? 'छोटा करें ▲' : 'पूरा नोटिस पढ़ें ▼'}
+          {open ? 'छोटा करें ▲' : 'पूरी जानकारी पढ़ें ▼'}
         </button>
       </div>
 
       {open && (
-        <div className="cn-body" tabIndex={0} aria-label="गोपनीयता नोटिस">
+        <div className="cn-body" tabIndex={0} aria-label="गोपनीयता सूचना">
           <p style={{ margin: 0 }}>
             {DATA_FIDUCIARY} ({n.title}) आपका व्यक्तिगत डेटा केवल नीचे बताए कामों के लिए, आपकी सहमति से इस्तेमाल करता है।
           </p>
@@ -126,7 +126,7 @@ export default function ConsentNotice({
         <input type="checkbox" checked={value.agree} onChange={(e) => set('agree', e.target.checked)} />
         <span>
           <span className="cn-req">* </span>
-          मैंने गोपनीयता नोटिस पढ़ लिया है और ऊपर बताए कामों के लिए अपने व्यक्तिगत डेटा के उपयोग की सहमति देता/देती हूँ।
+          मैंने गोपनीयता सूचना पढ़ लिया है और ऊपर बताए कामों के लिए अपने व्यक्तिगत डेटा के उपयोग की सहमति देता/देती हूँ।
         </span>
       </label>
       {mode === 'signup' && (
@@ -144,7 +144,7 @@ export default function ConsentNotice({
           </label>
         </>
       )}
-      <div className="cn-ver">नोटिस संस्करण {CONSENT_VERSION}</div>
+      <div className="cn-ver">सूचना संस्करण {CONSENT_VERSION}</div>
     </div>
   );
 }
