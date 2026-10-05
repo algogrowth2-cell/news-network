@@ -30,39 +30,39 @@ const CATEGORIES: { value: string; en: string }[] = [
 const BASE_TAGS = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग', 'Breaking News', 'Elections', 'Weather'];
 
 const S = {
-  card: { background: '#0b1120', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px' } as React.CSSProperties,
-  label: { display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' } as React.CSSProperties,
+  card: { background: 'var(--bg-0b1120)', border: '1px solid var(--bd-1e293b)', borderRadius: '10px', padding: '16px' } as React.CSSProperties,
+  label: { display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--fg-cbd5e1)', marginBottom: '6px' } as React.CSSProperties,
   hint: { fontSize: '11px', color: '#64748b', marginTop: '5px' } as React.CSSProperties,
-  input: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', background: '#020617', border: '1px solid #334155', borderRadius: '6px', color: '#fff', fontSize: '14px', outline: 'none', fontFamily: 'inherit' } as React.CSSProperties
+  input: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', background: 'var(--bg-020617)', border: '1px solid var(--bd-334155)', borderRadius: '6px', color: 'var(--fg-fff)', fontSize: '14px', outline: 'none', fontFamily: 'inherit' } as React.CSSProperties
 };
 
 const PAGE_CSS = `
 .ae-grid{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:22px}
 @media(max-width:1100px){.ae-grid{grid-template-columns:1fr}}
-.ae-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;font-size:12px;border:1px solid #2563eb;background:#1e3a8a;color:#bfdbfe}
-.ae-chip button{background:none;border:0;color:#93c5fd;cursor:pointer;font-size:13px;padding:0;line-height:1}
-.ae-sug{padding:4px 10px;border-radius:16px;font-size:12px;border:1px dashed #475569;background:transparent;color:#94a3b8;cursor:pointer;font-family:inherit}
-.ae-sug:hover{border-color:#38bdf8;color:#e0f2fe}
-.ae-site{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;color:#e2e8f0;border:1px solid transparent}
-.ae-site:hover{background:#0f172a}
-.ae-site.on{border-color:#1d4ed8;background:#0f1d3a}
+.ae-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:16px;font-size:12px;border:1px solid #2563eb;background:var(--bg-1e3a8a);color:var(--fg-bfdbfe)}
+.ae-chip button{background:none;border:0;color:var(--fg-93c5fd);cursor:pointer;font-size:13px;padding:0;line-height:1}
+.ae-sug{padding:4px 10px;border-radius:16px;font-size:12px;border:1px dashed var(--bd-475569);background:transparent;color:var(--fg-94a3b8);cursor:pointer;font-family:inherit}
+.ae-sug:hover{border-color:#38bdf8;color:var(--fg-e0f2fe)}
+.ae-site{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--fg-e2e8f0);border:1px solid transparent}
+.ae-site:hover{background:var(--bg-0f172a)}
+.ae-site.on{border-color:#1d4ed8;background:var(--bg-0f1d3a)}
 .ae-site input{accent-color:#2563eb;width:16px;height:16px}
-.ae-drop{border:1.5px dashed #334155;border-radius:8px;padding:20px;text-align:center;cursor:pointer;color:#cbd5e1;background:transparent;width:100%;font-family:inherit}
-.ae-drop:hover,.ae-drop.drag{border-color:#38bdf8;background:#0b1730}
+.ae-drop{border:1.5px dashed var(--bd-334155);border-radius:8px;padding:20px;text-align:center;cursor:pointer;color:var(--fg-cbd5e1);background:transparent;width:100%;font-family:inherit}
+.ae-drop:hover,.ae-drop.drag{border-color:#38bdf8;background:var(--bg-0b1730)}
 .ae-tab{background:none;border:0;padding:8px 4px;cursor:pointer;font-size:13.5px;font-family:inherit}
-.ae-seg{display:flex;background:#020617;border:1px solid #334155;border-radius:8px;padding:3px;gap:3px}
-.ae-seg button{flex:1;border:0;border-radius:6px;padding:8px 6px;font-size:12.5px;cursor:pointer;background:transparent;color:#94a3b8;font-family:inherit}
+.ae-seg{display:flex;background:var(--bg-020617);border:1px solid var(--bd-334155);border-radius:8px;padding:3px;gap:3px}
+.ae-seg button{flex:1;border:0;border-radius:6px;padding:8px 6px;font-size:12.5px;cursor:pointer;background:transparent;color:var(--fg-94a3b8);font-family:inherit}
 .ae-seg button.on{background:#2563eb;color:#fff;font-weight:600}
-.ae-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;font-size:13px;color:#e2e8f0;cursor:pointer}
+.ae-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;font-size:13px;color:var(--fg-e2e8f0);cursor:pointer}
 .ae-switch input{accent-color:#2563eb;width:16px;height:16px}
-.ae-thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid #334155}
+.ae-thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--bd-334155)}
 .ae-thumb img,.ae-thumb video,.ae-thumb iframe{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border:0;background:#000}
-.ae-x{position:absolute;top:6px;right:6px;background:rgba(2,6,23,.85);color:#fff;border:1px solid #475569;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer}
+.ae-x{position:absolute;top:6px;right:6px;background:rgba(2,6,23,.85);color:#fff;border:1px solid var(--bd-475569);border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer}
 .ae-gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .ae-gal div{position:relative}
 .ae-gal img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block}
-.ae-err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);color:#fca5a5;border-radius:8px;padding:10px 12px;font-size:13px}
-.ae-ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;border-radius:8px;padding:10px 12px;font-size:13px}
+.ae-err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);color:var(--fg-fca5a5);border-radius:8px;padding:10px 12px;font-size:13px}
+.ae-ok{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);color:var(--fg-6ee7b7);border-radius:8px;padding:10px 12px;font-size:13px}
 `;
 
 type PublishMode = 'now' | 'schedule';
@@ -163,7 +163,7 @@ function MediaBox({
             {kind === 'image' ? 'PNG, JPG, WebP · max 10MB · या यहाँ खींचकर छोड़ें' : 'MP4, WebM, MOV · max 200MB'}
           </div>
           {pct !== null && (
-            <div style={{ height: '4px', background: '#1e293b', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
+            <div style={{ height: '4px', background: 'var(--bg-1e293b)', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: '#38bdf8', transition: 'width .2s' }} />
             </div>
           )}
@@ -188,12 +188,12 @@ function MediaBox({
             onChange={(e) => setUrlDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), applyUrl())}
           />
-          <button type="button" onClick={applyUrl} style={{ background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', borderRadius: '6px', padding: '0 12px', fontSize: '12px', cursor: 'pointer' }}>
+          <button type="button" onClick={applyUrl} style={{ background: 'var(--bg-1e293b)', border: '1px solid var(--bd-334155)', color: 'var(--fg-e2e8f0)', borderRadius: '6px', padding: '0 12px', fontSize: '12px', cursor: 'pointer' }}>
             जोड़ें
           </button>
         </div>
       )}
-      {err && <div style={{ ...S.hint, color: '#f87171' }}>{err}</div>}
+      {err && <div style={{ ...S.hint, color: 'var(--fg-f87171)' }}>{err}</div>}
     </div>
   );
 }
@@ -393,19 +393,19 @@ export default function NewArticlePage() {
 
   const tabStyle = (t: string): React.CSSProperties => ({
     borderBottom: activeTab === t ? '2px solid #2563eb' : '2px solid transparent',
-    color: activeTab === t ? '#38bdf8' : '#94a3b8'
+    color: activeTab === t ? 'var(--fg-38bdf8)' : 'var(--fg-94a3b8)'
   });
 
   const previewUrl = `https://${NETWORK_SITES.find((s) => s.slug === sites[0])?.domain || 'thelocalleader.in'}/article/${slug || 'news'}`;
 
   return (
-    <div style={{ color: '#fff', maxWidth: '1400px', margin: '0 auto', paddingBottom: '60px' }}>
+    <div style={{ color: 'var(--fg-fff)', maxWidth: '1400px', margin: '0 auto', paddingBottom: '60px' }}>
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link href="/admin/articles" style={{ color: '#fff', textDecoration: 'none', fontSize: '18px', fontWeight: 700 }} aria-label="वापस">
+          <Link href="/admin/articles" style={{ color: 'var(--fg-fff)', textDecoration: 'none', fontSize: '18px', fontWeight: 700 }} aria-label="वापस">
             ←
           </Link>
           <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>New Article</h1>
@@ -415,7 +415,7 @@ export default function NewArticlePage() {
             type="button"
             onClick={() => handleSave('draft')}
             disabled={!!saving}
-            style={{ padding: '9px 16px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+            style={{ padding: '9px 16px', background: 'var(--bg-1e293b)', border: '1px solid var(--bd-334155)', color: 'var(--fg-fff)', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
           >
             {saving === 'draft' ? 'सेव हो रहा है…' : '💾 Save Draft'}
           </button>
@@ -437,7 +437,7 @@ export default function NewArticlePage() {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #1e293b', marginBottom: '20px' }} role="tablist">
+      <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--bd-1e293b)', marginBottom: '20px' }} role="tablist">
         {(
           [
             ['content', 'Content'],
@@ -533,7 +533,7 @@ export default function NewArticlePage() {
                 <label style={S.label}>Focus Keyword</label>
                 <input style={S.input} placeholder="जैसे: इंदौर मंडी भाव" value={focusKeyword} onChange={(e) => setFocusKeyword(e.target.value)} />
                 {focusKeyword && (
-                  <div style={{ ...S.hint, color: (title + plainContent).toLowerCase().includes(focusKeyword.toLowerCase()) ? '#6ee7b7' : '#fbbf24' }}>
+                  <div style={{ ...S.hint, color: (title + plainContent).toLowerCase().includes(focusKeyword.toLowerCase()) ? 'var(--fg-6ee7b7)' : 'var(--fg-fbbf24)' }}>
                     {(title + plainContent).toLowerCase().includes(focusKeyword.toLowerCase()) ? '✓ कीवर्ड शीर्षक/कंटेंट में है' : 'कीवर्ड शीर्षक या कंटेंट में नहीं मिला'}
                   </div>
                 )}
@@ -618,9 +618,9 @@ export default function NewArticlePage() {
                 marginBottom: '8px',
                 padding: '9px',
                 borderRadius: '7px',
-                border: `1px solid ${allSelected ? '#16a34a' : '#334155'}`,
-                background: allSelected ? 'rgba(22,163,74,.15)' : '#020617',
-                color: allSelected ? '#86efac' : '#e2e8f0',
+                border: `1px solid ${allSelected ? '#16a34a' : 'var(--bd-334155)'}`,
+                background: allSelected ? 'rgba(22,163,74,.15)' : 'var(--bg-020617)',
+                color: allSelected ? 'var(--fg-86efac)' : 'var(--fg-e2e8f0)',
                 fontWeight: 600,
                 fontSize: '13px',
                 cursor: 'pointer'

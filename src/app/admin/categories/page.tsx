@@ -19,11 +19,11 @@ export default function CategoriesPage() {
   ]);
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Categories ({categories.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Manage global news categories and multi-language tags</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Manage global news categories and multi-language tags</p>
         </div>
         <button className={styles.btnPrimary}>+ New Category</button>
       </div>
@@ -31,7 +31,7 @@ export default function CategoriesPage() {
       <div className={styles.formCard} style={{ overflowX: 'auto', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-1e293b)', background: 'var(--bg-0b1120)', color: 'var(--fg-94a3b8)' }}>
               <th style={{ padding: '14px 16px' }}>Color</th>
               <th style={{ padding: '14px 16px' }}>Name (EN)</th>
               <th style={{ padding: '14px 16px' }}>Name (Hindi)</th>
@@ -42,16 +42,16 @@ export default function CategoriesPage() {
           </thead>
           <tbody>
             {categories.map((c) => (
-              <tr key={c.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <tr key={c.id} style={{ borderBottom: '1px solid var(--bd-1e293b)' }}>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: c.color }} />
                 </td>
                 <td style={{ padding: '12px 16px', fontWeight: 600 }}>{c.name}</td>
                 <td style={{ padding: '12px 16px' }}>{c.nameHi}</td>
-                <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{c.slug}</td>
+                <td style={{ padding: '12px 16px', color: 'var(--fg-94a3b8)' }}>{c.slug}</td>
                 <td style={{ padding: '12px 16px' }}>{c.order}</td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: '#065f46', color: '#34d399' }}>Active</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: 'var(--bg-065f46)', color: 'var(--fg-34d399)' }}>Active</span>
                 </td>
               </tr>
             ))}

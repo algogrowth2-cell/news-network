@@ -34,11 +34,11 @@ export default function PageBuilder() {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Page Builder</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Design home page section layouts per website</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Design home page section layouts per website</p>
         </div>
         <button onClick={() => alert('Layout saved!')} className={styles.btnPrimary}>Save Layout</button>
       </div>
@@ -66,8 +66,8 @@ export default function PageBuilder() {
                 key={idx} 
                 style={{ 
                   padding: '14px', 
-                  background: '#0b1120', 
-                  border: '1px solid #334155', 
+                  background: 'var(--bg-0b1120)', 
+                  border: '1px solid var(--bd-334155)', 
                   borderRadius: '6px', 
                   display: 'flex', 
                   justifyContent: 'space-between',
@@ -93,10 +93,10 @@ export default function PageBuilder() {
                 onClick={() => addSection(item)}
                 style={{
                   padding: '10px',
-                  background: '#0b1120',
-                  border: '1px dashed #475569',
+                  background: 'var(--bg-0b1120)',
+                  border: '1px dashed var(--bd-475569)',
                   borderRadius: '6px',
-                  color: '#94a3b8',
+                  color: 'var(--fg-94a3b8)',
                   textAlign: 'left',
                   cursor: 'pointer',
                   fontSize: '13px'

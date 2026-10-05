@@ -184,15 +184,15 @@ export default function AdminObituariesPage() {
     : items;
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#070b14', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ padding: '24px', backgroundColor: 'var(--bg-070b14)', minHeight: '100vh', color: 'var(--fg-e2e8f0)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', margin: '0 0 4px 0' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-ffffff)', margin: '0 0 4px 0' }}>
             शोक संदेश / श्रद्धांजलि ({items.length})
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: 0 }}>
             Obituary notices, memorial listings & condolences
           </p>
         </div>
@@ -224,8 +224,8 @@ export default function AdminObituariesPage() {
         <button
           onClick={() => setActiveTab('pending')}
           style={{
-            backgroundColor: activeTab === 'pending' ? '#f59e0b' : '#0e1626',
-            color: activeTab === 'pending' ? '#000000' : '#fbbf24',
+            backgroundColor: activeTab === 'pending' ? '#f59e0b' : 'var(--bg-0e1626)',
+            color: activeTab === 'pending' ? '#000000' : 'var(--fg-fbbf24)',
             border: '1px solid #f59e0b',
             borderRadius: '6px',
             padding: '7px 16px',
@@ -240,9 +240,9 @@ export default function AdminObituariesPage() {
         <button
           onClick={() => setActiveTab('approved')}
           style={{
-            backgroundColor: activeTab === 'approved' ? '#10b981' : '#0e1626',
-            color: activeTab === 'approved' ? '#ffffff' : '#94a3b8',
-            border: '1px solid #1e293b',
+            backgroundColor: activeTab === 'approved' ? '#10b981' : 'var(--bg-0e1626)',
+            color: activeTab === 'approved' ? '#ffffff' : 'var(--fg-94a3b8)',
+            border: '1px solid var(--bd-1e293b)',
             borderRadius: '6px',
             padding: '7px 16px',
             fontSize: '12.5px',
@@ -256,9 +256,9 @@ export default function AdminObituariesPage() {
         <button
           onClick={() => setActiveTab('all')}
           style={{
-            backgroundColor: activeTab === 'all' ? '#1e293b' : '#0e1626',
-            color: '#ffffff',
-            border: '1px solid #1e293b',
+            backgroundColor: activeTab === 'all' ? 'var(--bg-1e293b)' : 'var(--bg-0e1626)',
+            color: 'var(--fg-ffffff)',
+            border: '1px solid var(--bd-1e293b)',
             borderRadius: '6px',
             padding: '7px 16px',
             fontSize: '12.5px',
@@ -271,9 +271,9 @@ export default function AdminObituariesPage() {
       </div>
 
       {/* Main Table Matching your exact Screenshot Header */}
-      <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '10px', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: 'var(--bg-0e1626)', border: '1px solid var(--bd-1e293b)', borderRadius: '10px', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--fg-94a3b8)', fontSize: '14px' }}>
             डेटा लोड हो रहा है...
           </div>
         ) : displayedItems.length === 0 ? (
@@ -284,7 +284,7 @@ export default function AdminObituariesPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#0a101d', borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '12px' }}>
+                <tr style={{ backgroundColor: 'var(--bg-0a101d)', borderBottom: '1px solid var(--bd-1e293b)', color: 'var(--fg-94a3b8)', fontSize: '12px' }}>
                   <th style={{ padding: '14px 18px', fontWeight: 600 }}>Type</th>
                   <th style={{ padding: '14px 18px', fontWeight: 600 }}>Deceased</th>
                   <th style={{ padding: '14px 18px', fontWeight: 600 }}>Family</th>
@@ -299,11 +299,11 @@ export default function AdminObituariesPage() {
                   <tr 
                     key={item.id} 
                     style={{ 
-                      borderBottom: idx === displayedItems.length - 1 ? 'none' : '1px solid #162238'
+                      borderBottom: idx === displayedItems.length - 1 ? 'none' : '1px solid var(--bd-162238)'
                     }}
                   >
                     <td style={{ padding: '14px 18px' }}>
-                      <span style={{ fontSize: '11px', background: '#1e293b', color: '#94a3b8', padding: '3px 8px', borderRadius: '4px', textTransform: 'capitalize' }}>
+                      <span style={{ fontSize: '11px', background: 'var(--bg-1e293b)', color: 'var(--fg-94a3b8)', padding: '3px 8px', borderRadius: '4px', textTransform: 'capitalize' }}>
                         {item.templateId || 'Standard'}
                       </span>
                     </td>
@@ -314,17 +314,17 @@ export default function AdminObituariesPage() {
                           <img 
                             src={item.photoUrl} 
                             alt={item.name} 
-                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #475569' }} 
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--bd-475569)' }} 
                           />
                         )}
                         <div>
-                          <div style={{ color: '#ffffff', fontWeight: 600 }}>स्व० {item.name}</div>
-                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{item.relation}</div>
+                          <div style={{ color: 'var(--fg-ffffff)', fontWeight: 600 }}>स्व० {item.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--fg-94a3b8)' }}>{item.relation}</div>
                         </div>
                       </div>
                     </td>
 
-                    <td style={{ padding: '14px 18px', color: '#cbd5e1', maxWidth: '200px' }}>
+                    <td style={{ padding: '14px 18px', color: 'var(--fg-cbd5e1)', maxWidth: '200px' }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.familyMembers || '-'}
                       </div>
@@ -333,13 +333,13 @@ export default function AdminObituariesPage() {
                       )}
                     </td>
 
-                    <td style={{ padding: '14px 18px', color: '#94a3b8', maxWidth: '180px' }}>
+                    <td style={{ padding: '14px 18px', color: 'var(--fg-94a3b8)', maxWidth: '180px' }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.address || '-'}
                       </div>
                     </td>
 
-                    <td style={{ padding: '14px 18px', color: '#cbd5e1', fontSize: '12px' }}>
+                    <td style={{ padding: '14px 18px', color: 'var(--fg-cbd5e1)', fontSize: '12px' }}>
                       <div><b>कार्यक्रम:</b> {item.eventDate || '-'}</div>
                       <div style={{ color: '#64748b', fontSize: '11px' }}>स्वर्गवास: {item.passedDate || '-'}</div>
                     </td>
@@ -356,8 +356,8 @@ export default function AdminObituariesPage() {
                             item.status === 'approved' ? 'rgba(16, 185, 129, 0.15)' :
                             item.status === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                           color: 
-                            item.status === 'approved' ? '#34d399' :
-                            item.status === 'pending' ? '#fbbf24' : '#f87171',
+                            item.status === 'approved' ? 'var(--fg-34d399)' :
+                            item.status === 'pending' ? 'var(--fg-fbbf24)' : 'var(--fg-f87171)',
                           border: `1px solid ${
                             item.status === 'approved' ? 'rgba(16, 185, 129, 0.3)' :
                             item.status === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'
@@ -394,8 +394,8 @@ export default function AdminObituariesPage() {
                             type="button"
                             onClick={() => handleReject(item.id)}
                             style={{
-                              backgroundColor: '#334155',
-                              color: '#cbd5e1',
+                              backgroundColor: 'var(--bg-334155)',
+                              color: 'var(--fg-cbd5e1)',
                               border: 'none',
                               borderRadius: '5px',
                               padding: '5px 10px',
@@ -412,8 +412,8 @@ export default function AdminObituariesPage() {
                           onClick={() => handleDelete(item.id, item.name || '')}
                           style={{
                             backgroundColor: 'transparent',
-                            color: '#f87171',
-                            border: '1px solid #334155',
+                            color: 'var(--fg-f87171)',
+                            border: '1px solid var(--bd-334155)',
                             borderRadius: '5px',
                             padding: '5px 10px',
                             fontSize: '12px',
@@ -435,105 +435,105 @@ export default function AdminObituariesPage() {
       {/* Admin New Entry Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
-          <div style={{ backgroundColor: '#0e1626', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: '0 0 16px 0' }}>
+          <div style={{ backgroundColor: 'var(--bg-0e1626)', border: '1px solid var(--bd-1e293b)', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-ffffff)', margin: '0 0 16px 0' }}>
               नया शोक संदेश जोड़ें (Direct Live)
             </h2>
 
             <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>दिवंगत का नाम *</label>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>दिवंगत का नाम *</label>
                 <input
                   type="text"
                   required
                   placeholder="उदा. रामनारायण प्रसाद जी"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>संबंध</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>संबंध</label>
                   <input
                     type="text"
                     value={formData.relation}
                     onChange={(e) => setFormData({ ...formData, relation: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>स्वर्गवास तिथि</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>स्वर्गवास तिथि</label>
                   <input
                     type="text"
                     placeholder="10.04.2026"
                     value={formData.passedDate}
                     onChange={(e) => setFormData({ ...formData, passedDate: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>कार्यक्रम दिनांक</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>कार्यक्रम दिनांक</label>
                   <input
                     type="text"
                     placeholder="20-04-2026"
                     value={formData.eventDate}
                     onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>समय</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>समय</label>
                   <input
                     type="text"
                     value={formData.eventTime}
                     onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>पता / स्थान</label>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>पता / स्थान</label>
                 <textarea
                   rows={2}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>शोकाकुल परिवार</label>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>शोकाकुल परिवार</label>
                 <textarea
                   rows={2}
                   value={formData.familyMembers}
                   onChange={(e) => setFormData({ ...formData, familyMembers: e.target.value })}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>फ़ोटो URL</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>फ़ोटो URL</label>
                   <input
                     type="url"
                     value={formData.photoUrl}
                     onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>संपर्क नंबर</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px' }}>संपर्क नंबर</label>
                   <input
                     type="tel"
                     value={formData.contactNumber}
                     onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#162238', border: '1px solid #27354f', borderRadius: '6px', padding: '8px 12px', color: '#ffffff', fontSize: '13px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '8px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
                   />
                 </div>
               </div>
@@ -542,7 +542,7 @@ export default function AdminObituariesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#94a3b8', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                  style={{ backgroundColor: 'var(--bg-1e293b)', border: '1px solid var(--bd-334155)', color: 'var(--fg-94a3b8)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
                 >
                   Cancel
                 </button>

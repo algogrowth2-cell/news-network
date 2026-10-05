@@ -19,11 +19,11 @@ export default function LocationsPage() {
   ];
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>States & Cities</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Geographical news-mapping database</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Geographical news-mapping database</p>
         </div>
       </div>
 
@@ -42,8 +42,8 @@ export default function LocationsPage() {
                   padding: '10px 14px', 
                   borderRadius: '6px', 
                   cursor: 'pointer',
-                  background: selectedState === st ? '#2563eb' : '#0b1120',
-                  color: selectedState === st ? '#fff' : '#94a3b8',
+                  background: selectedState === st ? '#2563eb' : 'var(--bg-0b1120)',
+                  color: selectedState === st ? '#fff' : 'var(--fg-94a3b8)',
                   fontSize: '13.5px'
                 }}
               >
@@ -60,7 +60,7 @@ export default function LocationsPage() {
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+              <tr style={{ borderBottom: '1px solid var(--bd-334155)', color: 'var(--fg-94a3b8)' }}>
                 <th style={{ padding: '10px' }}>Name</th>
                 <th style={{ padding: '10px' }}>Hindi Name</th>
                 <th style={{ padding: '10px' }}>Slug</th>
@@ -69,12 +69,12 @@ export default function LocationsPage() {
             </thead>
             <tbody>
               {cities.map(c => (
-                <tr key={c.slug} style={{ borderBottom: '1px solid #1e293b' }}>
+                <tr key={c.slug} style={{ borderBottom: '1px solid var(--bd-1e293b)' }}>
                   <td style={{ padding: '12px 10px', fontWeight: 600 }}>{c.name}</td>
                   <td style={{ padding: '12px 10px' }}>{c.nameHi}</td>
-                  <td style={{ padding: '12px 10px', color: '#94a3b8' }}>{c.slug}</td>
+                  <td style={{ padding: '12px 10px', color: 'var(--fg-94a3b8)' }}>{c.slug}</td>
                   <td style={{ padding: '12px 10px' }}>
-                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: '#065f46', color: '#34d399' }}>{c.status}</span>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: 'var(--bg-065f46)', color: 'var(--fg-34d399)' }}>{c.status}</span>
                   </td>
                 </tr>
               ))}

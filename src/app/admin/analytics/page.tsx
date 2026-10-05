@@ -145,16 +145,16 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: 'var(--fg-fff)', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Performance Analytics</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '4px 0 0' }}>
             Firebase Firestore se real-time dynamic data live sync ho raha hai.
           </p>
         </div>
         {loading && (
-          <span style={{ fontSize: '12px', color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--fg-38bdf8)', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
             डेटा लोड हो रहा है…
           </span>
         )}
@@ -163,9 +163,9 @@ export default function AnalyticsPage() {
       {/* METRIC CARDS GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
         {cards.map((c) => (
-          <div key={c.label} className={styles.formCard} style={{ borderLeft: `4px solid ${c.color}`, backgroundColor: '#1e242b', borderRadius: '10px', padding: '16px' }}>
-            <div style={{ fontSize: '12.5px', color: '#94a3b8', fontWeight: 500 }}>{c.label}</div>
-            <div style={{ fontSize: '26px', fontWeight: 800, marginTop: '6px', color: '#f8fafc' }}>
+          <div key={c.label} className={styles.formCard} style={{ borderLeft: `4px solid ${c.color}`, backgroundColor: 'var(--bg-1e242b)', borderRadius: '10px', padding: '16px' }}>
+            <div style={{ fontSize: '12.5px', color: 'var(--fg-94a3b8)', fontWeight: 500 }}>{c.label}</div>
+            <div style={{ fontSize: '26px', fontWeight: 800, marginTop: '6px', color: 'var(--fg-f8fafc)' }}>
               {loading ? '...' : c.val}
             </div>
           </div>
@@ -173,20 +173,20 @@ export default function AnalyticsPage() {
       </div>
 
       {/* TOP VIEWED ARTICLES TABLE */}
-      <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '12px', padding: '20px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px', color: '#f8fafc' }}>
+      <div className={styles.formCard} style={{ backgroundColor: 'var(--bg-1e242b)', borderRadius: '12px', padding: '20px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px', color: 'var(--fg-f8fafc)' }}>
           🔥 सबसे ज़्यादा पढ़ी गईं खबरें (Top Performing Articles)
         </h3>
 
         {topArticles.length === 0 ? (
-          <div style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ color: 'var(--fg-94a3b8)', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>
             अभी कोई खबर उपलब्ध नहीं है
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+                <tr style={{ borderBottom: '1px solid var(--bd-334155)', color: 'var(--fg-94a3b8)' }}>
                   <th style={{ padding: '10px 8px' }}>रैंक</th>
                   <th style={{ padding: '10px 8px' }}>खबर का शीर्षक</th>
                   <th style={{ padding: '10px 8px' }}>श्रेणी</th>
@@ -196,20 +196,20 @@ export default function AnalyticsPage() {
               </thead>
               <tbody>
                 {topArticles.map((art, idx) => (
-                  <tr key={art.id} style={{ borderBottom: '1px solid #242c35' }}>
+                  <tr key={art.id} style={{ borderBottom: '1px solid var(--bd-242c35)' }}>
                     <td style={{ padding: '12px 8px', fontWeight: 700, color: '#f97316' }}>#{idx + 1}</td>
-                    <td style={{ padding: '12px 8px', color: '#f8fafc', fontWeight: 500, maxWidth: '380px' }}>
+                    <td style={{ padding: '12px 8px', color: 'var(--fg-f8fafc)', fontWeight: 500, maxWidth: '380px' }}>
                       {art.title}
                     </td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>
-                      <span style={{ backgroundColor: '#334155', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>
+                    <td style={{ padding: '12px 8px', color: 'var(--fg-94a3b8)' }}>
+                      <span style={{ backgroundColor: 'var(--bg-334155)', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>
                         {art.category}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 8px', color: '#cbd5e1', fontSize: '12px' }}>
+                    <td style={{ padding: '12px 8px', color: 'var(--fg-cbd5e1)', fontSize: '12px' }}>
                       {art.siteId}
                     </td>
-                    <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: '#38bdf8' }}>
+                    <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 700, color: 'var(--fg-38bdf8)' }}>
                       👁 {art.views?.toLocaleString() || 0}
                     </td>
                   </tr>

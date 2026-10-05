@@ -150,14 +150,14 @@ export default function AdminVideosPage() {
   });
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: 'var(--fg-fff)', width: '100%' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--fg-f8fafc)' }}>
             📹 वीडियो बुलेटिन प्रबंधन (Video Management)
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '4px 0 0' }}>
             पोर्टल-वाइज़ वीडियो बुलेटिन अपलोड और मैनेज करें।
           </p>
         </div>
@@ -167,9 +167,9 @@ export default function AdminVideosPage() {
             value={selectedSiteFilter}
             onChange={(e) => setSelectedSiteFilter(e.target.value)}
             style={{
-              backgroundColor: '#1e242b',
-              color: '#f8fafc',
-              border: '1px solid #334155',
+              backgroundColor: 'var(--bg-1e242b)',
+              color: 'var(--fg-f8fafc)',
+              border: '1px solid var(--bd-334155)',
               borderRadius: '8px',
               padding: '8px 12px',
               fontSize: '13px',
@@ -205,16 +205,16 @@ export default function AdminVideosPage() {
 
       {/* Videos List */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--fg-94a3b8)' }}>
           वीडियो लोड हो रहे हैं…
         </div>
       ) : filteredVideos.length === 0 ? (
-        <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '50px 20px', textAlign: 'center' }}>
+        <div className={styles.formCard} style={{ backgroundColor: 'var(--bg-1e242b)', borderRadius: '14px', padding: '50px 20px', textAlign: 'center' }}>
           <span style={{ fontSize: '42px', display: 'block', marginBottom: '10px', opacity: 0.6 }}>📹</span>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', marginBottom: '6px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-f8fafc)', marginBottom: '6px' }}>
             इस पोर्टल के लिए कोई वीडियो उपलब्ध नहीं है
           </h3>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '0 0 16px' }}>
             ऊपर दिए गए बटन से इस पोर्टल के लिए नया YouTube वीडियो अपलोड करें।
           </p>
           <button
@@ -232,9 +232,9 @@ export default function AdminVideosPage() {
               key={item.id}
               className={styles.formCard}
               style={{
-                backgroundColor: '#1e242b',
+                backgroundColor: 'var(--bg-1e242b)',
                 borderRadius: '12px',
-                border: '1px solid #334155',
+                border: '1px solid var(--bd-334155)',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column'
@@ -254,25 +254,25 @@ export default function AdminVideosPage() {
 
               <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ backgroundColor: '#334155', color: '#f97316', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
+                  <span style={{ backgroundColor: 'var(--bg-334155)', color: '#f97316', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px' }}>
                     {item.category || 'वीडियो'}
                   </span>
-                  <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--fg-38bdf8)', fontWeight: 600 }}>
                     पोर्टल: {item.siteId === 'all' ? 'All Portals' : NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(item.siteId))?.name || item.siteId}
                   </span>
                 </div>
 
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px', lineHeight: 1.4 }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--fg-f8fafc)', margin: '0 0 6px', lineHeight: 1.4 }}>
                   {item.title}
                 </h4>
 
                 {item.description && (
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-94a3b8)', margin: '0 0 12px', lineHeight: 1.5 }}>
                     {item.description}
                   </p>
                 )}
 
-                <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--bd-334155)', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => handleDeleteVideo(item.id, item.title)}
@@ -315,23 +315,23 @@ export default function AdminVideosPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: '#1e242b',
+              backgroundColor: 'var(--bg-1e242b)',
               borderRadius: '16px',
               maxWidth: '520px',
               width: '100%',
               padding: '24px',
-              border: '1px solid #334155',
+              border: '1px solid var(--bd-334155)',
               boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--fg-f8fafc)', margin: 0 }}>
                 📹 नया वीडियो बुलेटिन अपलोड करें
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                style={{ background: '#334155', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#fff', cursor: 'pointer', fontWeight: 800 }}
+                style={{ background: 'var(--bg-334155)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: 'var(--fg-fff)', cursor: 'pointer', fontWeight: 800 }}
               >
                 ✕
               </button>
@@ -347,19 +347,19 @@ export default function AdminVideosPage() {
                 <select
                   value={siteId}
                   onChange={(e) => setSiteId(e.target.value)}
-                  style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1.5px solid #ea580c', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
+                  style={{ width: '100%', padding: '11px 12px', borderRadius: '8px', border: '1.5px solid #ea580c', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13.5px', outline: 'none', fontWeight: 600 }}
                 >
                   {NETWORK_PORTALS.map((p) => (
                     <option key={p.slug} value={p.slug}>{p.name}</option>
                   ))}
                 </select>
-                <small style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                <small style={{ fontSize: '11px', color: 'var(--fg-94a3b8)', display: 'block', marginTop: '4px' }}>
                   यदि आप &apos;द लोकल लीडर&apos; चुनेंगे, तो यह सिर्फ उसी वेबसाइट पर दिखेगा।
                 </small>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   वीडियो का शीर्षक (Title) *
                 </label>
                 <input
@@ -368,12 +368,12 @@ export default function AdminVideosPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   YouTube Video Link / URL *
                 </label>
                 <input
@@ -382,18 +382,18 @@ export default function AdminVideosPage() {
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   श्रेणी (Category)
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
                 >
                   {VIDEO_CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -402,7 +402,7 @@ export default function AdminVideosPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   संक्षिप्त विवरण (Description)
                 </label>
                 <textarea
@@ -410,7 +410,7 @@ export default function AdminVideosPage() {
                   placeholder="वीडियो के बारे में संक्षेप में लिखें..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none', resize: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none', resize: 'none' }}
                 />
               </div>
 
@@ -418,7 +418,7 @@ export default function AdminVideosPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer' }}
+                  style={{ backgroundColor: 'var(--bg-334155)', color: 'var(--fg-fff)', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer' }}
                 >
                   रद्द करें
                 </button>

@@ -44,30 +44,30 @@ const formatBytes = (bytes: number) => (bytes > 1024 * 1024 ? `${(bytes / 1024 /
 
 const EP_STYLES = `
 .ea-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ea-tabs{display:inline-flex;background:#0b1120;border:1px solid #1e293b;border-radius:9px;padding:3px;margin-bottom:10px}
-.ea-tab{background:none;border:0;color:#94a3b8;padding:6px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
-.ea-tab.on{background:#1e293b;color:#fff}
-.ea-drop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1.5px dashed #334155;border-radius:10px;padding:14px;background:#0b1120}
-.ea-file-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.ea-tabs{display:inline-flex;background:var(--bg-0b1120);border:1px solid var(--bd-1e293b);border-radius:9px;padding:3px;margin-bottom:10px}
+.ea-tab{background:none;border:0;color:var(--fg-94a3b8);padding:6px 14px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.ea-tab.on{background:var(--bg-1e293b);color:var(--fg-fff)}
+.ea-drop{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1.5px dashed var(--bd-334155);border-radius:10px;padding:14px;background:var(--bg-0b1120)}
+.ea-file-btn{background:var(--bg-1e293b);border:1px solid var(--bd-334155);color:var(--fg-e2e8f0);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .ea-file-btn:disabled{opacity:.5;cursor:not-allowed}
 .ea-hint{font-size:12px;color:#64748b}
-.ea-bar{height:8px;background:#1e293b;border-radius:99px;overflow:hidden;margin-top:10px}
+.ea-bar{height:8px;background:var(--bg-1e293b);border-radius:99px;overflow:hidden;margin-top:10px}
 .ea-bar-fill{height:100%;background:#2563eb;transition:width .2s ease}
 .ea-bar-fill.done{background:#10b981}
-.ea-status{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#94a3b8;margin-top:6px}
-.ea-err{font-size:12.5px;color:#fca5a5;margin-top:8px}
-.ea-ok{font-size:12.5px;color:#6ee7b7;margin-top:8px;word-break:break-all}
-.ea-cancel{background:none;border:0;color:#fca5a5;font-size:12px;cursor:pointer;padding:0;font-family:inherit}
-.ea-thumb-preview{width:90px;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #334155;background:#0b1120}
+.ea-status{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--fg-94a3b8);margin-top:6px}
+.ea-err{font-size:12.5px;color:var(--fg-fca5a5);margin-top:8px}
+.ea-ok{font-size:12.5px;color:var(--fg-6ee7b7);margin-top:8px;word-break:break-all}
+.ea-cancel{background:none;border:0;color:var(--fg-fca5a5);font-size:12px;cursor:pointer;padding:0;font-family:inherit}
+.ea-thumb-preview{width:90px;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid var(--bd-334155);background:var(--bg-0b1120)}
 .ea-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-.ea-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px;display:flex;gap:12px}
-.ea-card img{width:70px;aspect-ratio:3/4;object-fit:cover;border-radius:6px;background:#1e293b;flex-shrink:0}
-.ea-card-body{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#94a3b8}
-.ea-card-title{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ea-card{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;padding:12px;display:flex;gap:12px}
+.ea-card img{width:70px;aspect-ratio:3/4;object-fit:cover;border-radius:6px;background:var(--bg-1e293b);flex-shrink:0}
+.ea-card-body{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--fg-94a3b8)}
+.ea-card-title{font-size:14px;font-weight:700;color:var(--fg-fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ea-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;width:fit-content}
 .ea-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
-.ea-act{background:#1e293b;border:1px solid #334155;color:#e2e8f0;font-size:11.5px;padding:4px 9px;border-radius:6px;cursor:pointer;text-decoration:none;font-family:inherit}
-.ea-act.danger{color:#fca5a5;border-color:#7f1d1d}
+.ea-act{background:var(--bg-1e293b);border:1px solid var(--bd-334155);color:var(--fg-e2e8f0);font-size:11.5px;padding:4px 9px;border-radius:6px;cursor:pointer;text-decoration:none;font-family:inherit}
+.ea-act.danger{color:var(--fg-fca5a5);border-color:var(--bd-7f1d1d)}
 @media(max-width:700px){.ea-grid{grid-template-columns:1fr}}
 `;
 
@@ -310,13 +310,13 @@ export default function EPaperPage() {
   );
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <style dangerouslySetInnerHTML={{ __html: EP_STYLES }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>E-Paper Editions ({editions.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Desktop se PDF / cover upload karein ya URL paste karein — selected portal ke /epaper par turant live</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Desktop se PDF / cover upload karein ya URL paste karein — selected portal ke /epaper par turant live</p>
         </div>
       </div>
 
@@ -403,7 +403,7 @@ export default function EPaperPage() {
         {pdfUrl && pdfMode === 'upload' && (
           <div className="ea-ok">
             ✓ PDF ready:{' '}
-            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6ee7b7' }}>
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--fg-6ee7b7)' }}>
               preview kholein ↗
             </a>
           </div>
@@ -435,14 +435,14 @@ export default function EPaperPage() {
             const isLive = ed.status !== 'draft';
             return (
               <div key={ed.id} className="ea-card">
-                {ed.thumbnailUrl ? <img src={ed.thumbnailUrl} alt='' /> : <div style={{ width: 70, aspectRatio: '3/4', borderRadius: 6, background: "#1e293b", flexShrink: 0 }} />}
+                {ed.thumbnailUrl ? <img src={ed.thumbnailUrl} alt='' /> : <div style={{ width: 70, aspectRatio: '3/4', borderRadius: 6, background: "var(--bg-1e293b)", flexShrink: 0 }} />}
                 <div className="ea-card-body">
                   <span className="ea-card-title">{ed.editionName}</span>
                   <span>
                     {ed.cityName} · {ed.date}
                   </span>
                   <span>{siteName(ed.siteId)}</span>
-                  <span className="ea-pill" style={{ background: isLive ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.15)', color: isLive ? '#6ee7b7' : '#cbd5e1' }}>
+                  <span className="ea-pill" style={{ background: isLive ? 'rgba(16,185,129,.15)' : 'rgba(148,163,184,.15)', color: isLive ? 'var(--fg-6ee7b7)' : 'var(--fg-cbd5e1)' }}>
                     {isLive ? '● Live' : 'Draft'}
                   </span>
                   <div className="ea-actions">

@@ -168,27 +168,27 @@ export default function LiveBlogsPage() {
   };
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: 'var(--fg-fff)', width: '100%' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--fg-f8fafc)' }}>
             🔴 मल्टीपल लाइव स्ट्रीम्स (Multi Live Manager)
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '4px 0 0' }}>
             एक साथ कई YouTube लाइव स्ट्रीम्स को अलग-अलग या सभी पोर्टल्स पर लाइव करें और रोकें।
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#94a3b8' }}>फिल्टर पोर्टल:</span>
+          <span style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>फिल्टर पोर्टल:</span>
           <select
             value={selectedSiteFilter}
             onChange={(e) => setSelectedSiteFilter(e.target.value)}
             style={{
-              backgroundColor: '#1e242b',
-              color: '#fff',
-              border: '1px solid #334155',
+              backgroundColor: 'var(--bg-1e242b)',
+              color: 'var(--fg-fff)',
+              border: '1px solid var(--bd-334155)',
               borderRadius: '8px',
               padding: '8px 12px',
               fontSize: '13px',
@@ -219,14 +219,14 @@ export default function LiveBlogsPage() {
       )}
 
       {/* CREATE NEW LIVE STREAM FORM */}
-      <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '20px', marginBottom: '28px', border: '1px solid #334155' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px 0', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className={styles.formCard} style={{ backgroundColor: 'var(--bg-1e242b)', borderRadius: '14px', padding: '20px', marginBottom: '28px', border: '1px solid var(--bd-334155)' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px 0', color: 'var(--fg-f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>+</span> नई लाइव स्ट्रीम जोड़ें (Add New Stream)
         </h2>
 
         <form onSubmit={handleCreateLiveStream} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '5px', fontWeight: 600 }}>
               लाइव का शीर्षक (Title) *
             </label>
             <input
@@ -235,12 +235,12 @@ export default function LiveBlogsPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               required
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '5px', fontWeight: 600 }}>
               YouTube Live / Video Link *
             </label>
             <input
@@ -249,18 +249,18 @@ export default function LiveBlogsPage() {
               value={newYoutubeUrl}
               onChange={(e) => setNewYoutubeUrl(e.target.value)}
               required
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '5px', fontWeight: 600 }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '5px', fontWeight: 600 }}>
               टारगेट पोर्टल
             </label>
             <select
               value={newSiteId}
               onChange={(e) => setNewSiteId(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
             >
               {NETWORK_PORTALS.map((p) => (
                 <option key={p.slug} value={p.slug}>{p.name}</option>
@@ -292,12 +292,12 @@ export default function LiveBlogsPage() {
 
       {/* ACTIVE & SAVED STREAMS LIST */}
       <div>
-        <h2 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '16px', color: '#f8fafc' }}>
+        <h2 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '16px', color: 'var(--fg-f8fafc)' }}>
           वर्तमान लाइव स्ट्रीम्स ({filteredStreams.length})
         </h2>
 
         {filteredStreams.length === 0 ? (
-          <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '12px', padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className={styles.formCard} style={{ backgroundColor: 'var(--bg-1e242b)', borderRadius: '12px', padding: '40px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>
             अभी कोई लाइव स्ट्रीम सक्रिय नहीं है। ऊपर दिए गए फॉर्म से नई लाइव स्ट्रीम जोड़ें।
           </div>
         ) : (
@@ -307,23 +307,23 @@ export default function LiveBlogsPage() {
                 key={stream.id}
                 className={styles.formCard}
                 style={{
-                  backgroundColor: '#1e242b',
+                  backgroundColor: 'var(--bg-1e242b)',
                   borderRadius: '14px',
-                  border: `1.5px solid ${stream.isActive ? '#ef4444' : '#334155'}`,
+                  border: `1.5px solid ${stream.isActive ? '#ef4444' : 'var(--bd-334155)'}`,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column'
                 }}
               >
                 {/* Header status bar */}
-                <div style={{ padding: '10px 16px', backgroundColor: stream.isActive ? '#ef444415' : '#0f172a', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '10px 16px', backgroundColor: stream.isActive ? '#ef444415' : 'var(--bg-0f172a)', borderBottom: '1px solid var(--bd-334155)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: stream.isActive ? '#ef4444' : '#64748b' }} />
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: stream.isActive ? '#ef4444' : '#94a3b8' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: stream.isActive ? '#ef4444' : 'var(--fg-94a3b8)' }}>
                       {stream.isActive ? '🔴 LIVE ACTIVE' : '⏹️ PAUSED / STOPPED'}
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#cbd5e1', backgroundColor: '#334155', padding: '2px 8px', borderRadius: '10px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--fg-cbd5e1)', backgroundColor: 'var(--bg-334155)', padding: '2px 8px', borderRadius: '10px' }}>
                     {stream.siteId === 'all' ? 'All Portals' : portalName(stream.siteId)}
                     {LEGACY_SLUG_MAP[stream.siteId] ? ' ⚠️' : ''}
                   </span>
@@ -344,7 +344,7 @@ export default function LiveBlogsPage() {
 
                 {/* Stream Info & Controls */}
                 <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <h3 style={{ fontSize: '15.5px', fontWeight: 700, margin: '0 0 14px 0', color: '#f8fafc', lineHeight: 1.35 }}>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: 700, margin: '0 0 14px 0', color: 'var(--fg-f8fafc)', lineHeight: 1.35 }}>
                     {stream.title}
                   </h3>
 
@@ -387,8 +387,8 @@ export default function LiveBlogsPage() {
                   </div>
 
                   {/* Bullet updates section */}
-                  <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px dashed #334155' }}>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px dashed var(--bd-334155)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--fg-94a3b8)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                       इस स्ट्रीम के लिए ब्रेकिंग बुलेट जोड़ें:
                     </span>
                     <div style={{ display: 'flex', gap: '6px' }}>
@@ -398,7 +398,7 @@ export default function LiveBlogsPage() {
                         value={postTexts[stream.id] || ''}
                         onChange={(e) => setPostTexts(prev => ({ ...prev, [stream.id]: e.target.value }))}
                         onKeyDown={(e) => { if (e.key === 'Enter') handlePostBullet(stream.id); }}
-                        style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '12px', outline: 'none' }}
+                        style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '12px', outline: 'none' }}
                       />
                       <button
                         type="button"
@@ -412,7 +412,7 @@ export default function LiveBlogsPage() {
                     {stream.updates && stream.updates.length > 0 && (
                       <div style={{ marginTop: '10px', maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {[...stream.updates].slice(-3).reverse().map(u => (
-                          <div key={u.id} style={{ fontSize: '11.5px', color: '#cbd5e1' }}>
+                          <div key={u.id} style={{ fontSize: '11.5px', color: 'var(--fg-cbd5e1)' }}>
                             <span style={{ color: '#ea580c', fontWeight: 700 }}>[{u.time}]</span> {u.update}
                           </div>
                         ))}

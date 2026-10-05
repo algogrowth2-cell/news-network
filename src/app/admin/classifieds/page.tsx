@@ -6,11 +6,11 @@ export default function ClassifiedsPage() {
   const [ads] = useState<any[]>([]);
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Classified Ads ({ads.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Local community advertisements, real estate & notices</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Local community advertisements, real estate & notices</p>
         </div>
         <button className={styles.btnPrimary}>+ New Ad</button>
       </div>
@@ -18,7 +18,7 @@ export default function ClassifiedsPage() {
       <div className={styles.formCard} style={{ overflowX: 'auto', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-1e293b)', background: 'var(--bg-0b1120)', color: 'var(--fg-94a3b8)' }}>
               <th style={{ padding: '14px 16px' }}>Category</th>
               <th style={{ padding: '14px 16px' }}>Title</th>
               <th style={{ padding: '14px 16px' }}>City</th>
@@ -30,7 +30,7 @@ export default function ClassifiedsPage() {
           </thead>
           <tbody>
             <tr>
-              <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: '#94a3b8' }}>
+              <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>
                 No classified ads found.
               </td>
             </tr>

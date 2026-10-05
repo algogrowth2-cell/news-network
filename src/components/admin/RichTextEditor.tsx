@@ -13,27 +13,27 @@ interface Props {
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const ED_CSS = `
-.rte-wrap{border:1px solid #334155;border-radius:8px;background:#020617;overflow:hidden}
-.rte-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#0b1120;border-bottom:1px solid #334155;position:sticky;top:0;z-index:2}
-.rte-btn{background:#1e293b;border:1px solid transparent;color:#cbd5e1;min-width:32px;height:30px;padding:0 9px;border-radius:5px;cursor:pointer;font-size:12.5px;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:4px}
-.rte-btn:hover{background:#334155;color:#fff}
+.rte-wrap{border:1px solid var(--bd-334155);border-radius:8px;background:var(--bg-020617);overflow:hidden}
+.rte-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--bg-0b1120);border-bottom:1px solid var(--bd-334155);position:sticky;top:0;z-index:2}
+.rte-btn{background:var(--bg-1e293b);border:1px solid transparent;color:var(--fg-cbd5e1);min-width:32px;height:30px;padding:0 9px;border-radius:5px;cursor:pointer;font-size:12.5px;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.rte-btn:hover{background:var(--bg-334155);color:var(--fg-fff)}
 .rte-btn:focus-visible{outline:2px solid #38bdf8;outline-offset:1px}
 .rte-btn:disabled{opacity:.5;cursor:wait}
-.rte-sep{width:1px;background:#334155;margin:3px 2px}
-.rte-area{min-height:340px;max-height:70vh;overflow-y:auto;padding:16px 18px;color:#e2e8f0;font-size:15px;line-height:1.75;outline:none}
+.rte-sep{width:1px;background:var(--bg-334155);margin:3px 2px}
+.rte-area{min-height:340px;max-height:70vh;overflow-y:auto;padding:16px 18px;color:var(--fg-e2e8f0);font-size:15px;line-height:1.75;outline:none}
 .rte-area:empty::before{content:attr(data-placeholder);color:#64748b}
-.rte-area h2{font-size:22px;margin:18px 0 8px;color:#fff}
-.rte-area h3{font-size:18px;margin:16px 0 6px;color:#fff}
+.rte-area h2{font-size:22px;margin:18px 0 8px;color:var(--fg-fff)}
+.rte-area h3{font-size:18px;margin:16px 0 6px;color:var(--fg-fff)}
 .rte-area p{margin:0 0 12px}
-.rte-area blockquote{border-left:3px solid #38bdf8;margin:12px 0;padding:6px 14px;color:#cbd5e1;background:#0b1120}
+.rte-area blockquote{border-left:3px solid #38bdf8;margin:12px 0;padding:6px 14px;color:var(--fg-cbd5e1);background:var(--bg-0b1120)}
 .rte-area ul,.rte-area ol{padding-left:24px;margin:0 0 12px}
-.rte-area a{color:#38bdf8}
+.rte-area a{color:var(--fg-38bdf8)}
 .rte-area img,.rte-area video{max-width:100%;border-radius:6px;display:block;margin:10px 0}
 .rte-area iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;margin:10px 0}
 .rte-area figure{margin:12px 0}
-.rte-area figcaption{font-size:12.5px;color:#94a3b8;text-align:center}
-.rte-area hr{border:0;border-top:1px solid #334155;margin:18px 0}
-.rte-status{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;border-top:1px solid #1e293b;font-size:11.5px;color:#64748b}
+.rte-area figcaption{font-size:12.5px;color:var(--fg-94a3b8);text-align:center}
+.rte-area hr{border:0;border-top:1px solid var(--bd-334155);margin:18px 0}
+.rte-status{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;border-top:1px solid var(--bd-1e293b);font-size:11.5px;color:#64748b}
 `;
 
 /** contentEditable par aadharit editor — HTML deta hai (article page par sanitize karke dikhta hai) */
@@ -231,7 +231,7 @@ export default function RichTextEditor({ value, onChange, placeholder = 'खब�
           {uploading
             ? `${uploading.kind === 'image' ? 'फ़ोटो' : 'वीडियो'} अपलोड हो रहा है… ${uploading.pct}%`
             : error
-              ? <span style={{ color: '#f87171' }}>{error}</span>
+              ? <span style={{ color: 'var(--fg-f87171)' }}>{error}</span>
               : 'टिप: फ़ोटो/वीडियो वहीं जुड़ेगा जहाँ कर्सर है'}
         </span>
         <span>{words} शब्द · ~{Math.max(1, Math.round(words / 200))} मिनट पढ़ने का समय</span>

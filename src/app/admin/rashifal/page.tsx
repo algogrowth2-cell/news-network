@@ -77,16 +77,16 @@ export default function AdminRashifalPage() {
   };
 
   return (
-    <div style={{ color: '#fff', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ color: 'var(--fg-fff)', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>दैनिक राशिफल प्रबंधन (Daily Horoscope)</h1>
-        <p style={{ fontSize: '13px', color: '#94a3b8' }}>12 राशियों का दैनिक राशिफल, शुभ अंक और शुभ रंग लाइव अपडेट करें</p>
+        <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>12 राशियों का दैनिक राशिफल, शुभ अंक और शुभ रंग लाइव अपडेट करें</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px' }}>
         {/* Rashi Select Sidebar */}
         <div className={styles.formCard} style={{ padding: '12px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, padding: '8px 12px', borderBottom: '1px solid #1e293b', marginBottom: '8px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, padding: '8px 12px', borderBottom: '1px solid var(--bd-1e293b)', marginBottom: '8px' }}>
             राशियां चुनें
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -105,13 +105,13 @@ export default function AdminRashifalPage() {
                     borderRadius: '6px',
                     border: 'none',
                     cursor: 'pointer',
-                    background: isSelected ? '#ea580c' : '#0b1120',
+                    background: isSelected ? '#ea580c' : 'var(--bg-0b1120)',
                     color: '#fff',
                     textAlign: 'left'
                   }}
                 >
                   <span style={{ fontSize: '14px', fontWeight: 600 }}>{r.sign} {r.name}</span>
-                  <span style={{ fontSize: '11px', color: isSelected ? '#fff' : hasData ? '#4ade80' : '#94a3b8' }}>
+                  <span style={{ fontSize: '11px', color: isSelected ? 'var(--fg-fff)' : hasData ? '#4ade80' : 'var(--fg-94a3b8)' }}>
                     {hasData ? '● अपडेटेड' : '○ रिक्त'}
                   </span>
                 </button>
@@ -122,7 +122,7 @@ export default function AdminRashifalPage() {
 
         {/* Prediction Form */}
         <div className={styles.formCard}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #1e293b', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--bd-1e293b)', paddingBottom: '14px' }}>
             <span style={{ fontSize: '28px' }}>{selectedRashi.sign}</span>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{selectedRashi.name}</h2>

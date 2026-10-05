@@ -135,14 +135,14 @@ export default function AdminGalleriesPage() {
   });
 
   return (
-    <div style={{ color: '#fff', width: '100%' }}>
+    <div style={{ color: 'var(--fg-fff)', width: '100%' }}>
       {/* Header bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--fg-f8fafc)' }}>
             📸 फोटो गैलरी प्रबंधन (Photo Galleries)
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '4px 0 0' }}>
             वेबसाइट एवं नेटवर्क पोर्टल्स के लिए फोटो गैलरी अपलोड और प्रबंधित करें।
           </p>
         </div>
@@ -153,9 +153,9 @@ export default function AdminGalleriesPage() {
             value={selectedSiteFilter}
             onChange={(e) => setSelectedSiteFilter(e.target.value)}
             style={{
-              backgroundColor: '#1e242b',
-              color: '#f8fafc',
-              border: '1px solid #334155',
+              backgroundColor: 'var(--bg-1e242b)',
+              color: 'var(--fg-f8fafc)',
+              border: '1px solid var(--bd-334155)',
               borderRadius: '8px',
               padding: '8px 12px',
               fontSize: '13px',
@@ -194,16 +194,16 @@ export default function AdminGalleriesPage() {
 
       {/* Gallery Cards Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--fg-94a3b8)' }}>
           गैलरी लोड हो रही है…
         </div>
       ) : filteredGalleries.length === 0 ? (
-        <div className={styles.formCard} style={{ backgroundColor: '#1e242b', borderRadius: '14px', padding: '50px 20px', textAlign: 'center' }}>
+        <div className={styles.formCard} style={{ backgroundColor: 'var(--bg-1e242b)', borderRadius: '14px', padding: '50px 20px', textAlign: 'center' }}>
           <span style={{ fontSize: '42px', display: 'block', marginBottom: '10px', opacity: 0.6 }}>🖼️</span>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', marginBottom: '6px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-f8fafc)', marginBottom: '6px' }}>
             अभी कोई फोटो गैलरी उपलब्ध नहीं है
           </h3>
-          <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', margin: '0 0 16px' }}>
             अपने पोर्टल के लिए ऊपर दिए गए बटन से नई फोटो अपलोड करें।
           </p>
           <button
@@ -230,15 +230,15 @@ export default function AdminGalleriesPage() {
               key={item.id}
               className={styles.formCard}
               style={{
-                backgroundColor: '#1e242b',
+                backgroundColor: 'var(--bg-1e242b)',
                 borderRadius: '12px',
-                border: '1px solid #334155',
+                border: '1px solid var(--bd-334155)',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column'
               }}
             >
-              <div style={{ width: '100%', height: '180px', backgroundColor: '#0f172a', position: 'relative' }}>
+              <div style={{ width: '100%', height: '180px', backgroundColor: 'var(--bg-0f172a)', position: 'relative' }}>
                 <img
                   src={item.imageUrl}
                   alt={item.title}
@@ -265,16 +265,16 @@ export default function AdminGalleriesPage() {
               </div>
 
               <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px', lineHeight: 1.4 }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--fg-f8fafc)', margin: '0 0 6px', lineHeight: 1.4 }}>
                   {item.title}
                 </h4>
                 {item.caption && (
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--fg-94a3b8)', margin: '0 0 12px', lineHeight: 1.5 }}>
                     {item.caption}
                   </p>
                 )}
 
-                <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--bd-334155)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', color: '#64748b' }}>
                     पोर्टल: <b>{NETWORK_PORTALS.find((p) => p.slug === normalizeSiteId(item.siteId || 'all'))?.name || item.siteId || 'all'}</b>
                   </span>
@@ -320,23 +320,23 @@ export default function AdminGalleriesPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: '#1e242b',
+              backgroundColor: 'var(--bg-1e242b)',
               borderRadius: '16px',
               maxWidth: '520px',
               width: '100%',
               padding: '24px',
-              border: '1px solid #334155',
+              border: '1px solid var(--bd-334155)',
               boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--fg-f8fafc)', margin: 0 }}>
                 📸 नई फोटो गैलरी अपलोड करें
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                style={{ background: '#334155', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: '#fff', cursor: 'pointer', fontWeight: 800 }}
+                style={{ background: 'var(--bg-334155)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', color: 'var(--fg-fff)', cursor: 'pointer', fontWeight: 800 }}
               >
                 ✕
               </button>
@@ -344,7 +344,7 @@ export default function AdminGalleriesPage() {
 
             <form onSubmit={handleAddPhoto} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   फोटो का शीर्षक (Title) *
                 </label>
                 <input
@@ -353,12 +353,12 @@ export default function AdminGalleriesPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   Image URL (Direct link) *
                 </label>
                 <input
@@ -367,19 +367,19 @@ export default function AdminGalleriesPage() {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13.5px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                     श्रेणी (Category)
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
                   >
                     {GALLERY_CATEGORIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
@@ -388,13 +388,13 @@ export default function AdminGalleriesPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                     पोर्टल (Site)
                   </label>
                   <select
                     value={siteId}
                     onChange={(e) => setSiteId(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none' }}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none' }}
                   >
                     {NETWORK_PORTALS.map((p) => (
                       <option key={p.slug} value={p.slug}>{p.name}</option>
@@ -404,7 +404,7 @@ export default function AdminGalleriesPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}>
+                <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '4px', fontWeight: 600 }}>
                   संक्षिप्त विवरण / कैप्शन (Caption)
                 </label>
                 <textarea
@@ -412,7 +412,7 @@ export default function AdminGalleriesPage() {
                   placeholder="फोटो के संदर्भ में एक या दो लाइन विवरण..."
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff', fontSize: '13px', outline: 'none', resize: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--bd-334155)', backgroundColor: 'var(--bg-0f172a)', color: 'var(--fg-fff)', fontSize: '13px', outline: 'none', resize: 'none' }}
                 />
               </div>
 
@@ -420,7 +420,7 @@ export default function AdminGalleriesPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer' }}
+                  style={{ backgroundColor: 'var(--bg-334155)', color: 'var(--fg-fff)', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '13px', cursor: 'pointer' }}
                 >
                   रद्द करें
                 </button>

@@ -32,36 +32,36 @@ interface ReporterData {
 
 /* Responsive layout (sirf design) */
 const AD_STYLES = `
-.ad-root{min-height:100vh;background:#020617;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;padding:24px}
+.ad-root{min-height:100vh;background:var(--bg-020617);color:var(--fg-e2e8f0);font-family:system-ui,-apple-system,sans-serif;padding:24px}
 .ad-root *{box-sizing:border-box}
 .ad-wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .ad-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.ad-title{margin:0;font-size:24px;font-weight:800;color:#fff}
-.ad-sub{margin:4px 0 0;font-size:13px;color:#94a3b8}
+.ad-title{margin:0;font-size:24px;font-weight:800;color:var(--fg-fff)}
+.ad-sub{margin:4px 0 0;font-size:13px;color:var(--fg-94a3b8)}
 .ad-select-wrap{display:flex;align-items:center;gap:8px}
-.ad-select{background:#0f172a;color:#fff;border:1px solid #334155;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;cursor:pointer}
+.ad-select{background:var(--bg-0f172a);color:var(--fg-fff);border:1px solid var(--bd-334155);border-radius:10px;padding:9px 12px;font-size:13px;outline:none;cursor:pointer}
 .ad-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.ad-card{background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:18px}
-.ad-card-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:700;letter-spacing:.06em;color:#94a3b8}
-.ad-card-num{font-size:30px;font-weight:800;color:#fff;margin-top:10px}
+.ad-card{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:14px;padding:18px}
+.ad-card-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--fg-94a3b8)}
+.ad-card-num{font-size:30px;font-weight:800;color:var(--fg-fff);margin-top:10px}
 .ad-card-note{font-size:12px;color:#64748b;margin-top:6px}
 .ad-live{background:rgba(16,185,129,.15);color:#10b981;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
 .ad-main{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
-.ad-panel{background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:18px}
+.ad-panel{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:14px;padding:18px}
 .ad-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
-.ad-panel-title{margin:0;font-size:16px;font-weight:700;color:#fff}
+.ad-panel-title{margin:0;font-size:16px;font-weight:700;color:var(--fg-fff)}
 .ad-link{color:#ea580c;font-size:13px;font-weight:600;text-decoration:none}
 .ad-table-wrap{overflow-x:auto}
 .ad-table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-.ad-table th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;color:#64748b;padding:10px 8px;border-bottom:1px solid #1e293b}
-.ad-table td{padding:11px 8px;border-bottom:1px solid #111827;color:#cbd5e1}
-.ad-table td.t{color:#fff;font-weight:600;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ad-pill{display:inline-block;background:#1e293b;color:#cbd5e1;font-size:11px;padding:3px 8px;border-radius:8px}
+.ad-table th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;color:#64748b;padding:10px 8px;border-bottom:1px solid var(--bd-1e293b)}
+.ad-table td{padding:11px 8px;border-bottom:1px solid var(--bd-111827);color:var(--fg-cbd5e1)}
+.ad-table td.t{color:var(--fg-fff);font-weight:600;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-pill{display:inline-block;background:var(--bg-1e293b);color:var(--fg-cbd5e1);font-size:11px;padding:3px 8px;border-radius:8px}
 .ad-empty{text-align:center;color:#64748b;font-size:13px;padding:30px 10px}
 .ad-sites{display:flex;flex-direction:column;gap:8px}
-.ad-count{background:#1e293b;color:#fff;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px}
+.ad-count{background:var(--bg-1e293b);color:var(--fg-fff);font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px}
 .ad-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.ad-action{display:flex;align-items:center;justify-content:center;gap:8px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px 12px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:border-color .15s}
+.ad-action{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;padding:16px 12px;color:var(--fg-fff);text-decoration:none;font-size:14px;font-weight:600;transition:border-color .15s}
 .ad-action:hover{border-color:#ea580c}
 @media(max-width:1000px){
   .ad-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
 
           {/* Dynamic Site Selector */}
           <div className="ad-select-wrap">
-            <span style={{ fontSize: '13px', color: '#94a3b8' }}>Select Portal:</span>
+            <span style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Select Portal:</span>
             <select className="ad-select" value={selectedSite} onChange={(e) => setSelectedSite(e.target.value)}>
               {networkSites.map((site) => (
                 <option key={site.slug} value={site.slug}>
@@ -268,7 +268,7 @@ export default function AdminDashboardPage() {
               <span>📢</span>
             </div>
             <div className="ad-card-num">{loading ? '...' : activeAdsCount}</div>
-            <div style={{ fontSize: '12px', color: pendingAdsCount > 0 ? '#f87171' : '#10b981', marginTop: '6px', fontWeight: 600 }}>
+            <div style={{ fontSize: '12px', color: pendingAdsCount > 0 ? 'var(--fg-f87171)' : '#10b981', marginTop: '6px', fontWeight: 600 }}>
               {pendingAdsCount > 0 ? `⚠️ ${pendingAdsCount} Pending Approval` : '✓ All Ads Active'}
             </div>
           </div>
@@ -307,8 +307,8 @@ export default function AdminDashboardPage() {
                         <td>
                           <span className="ad-pill">{art.category || 'General'}</span>
                         </td>
-                        <td style={{ color: '#94a3b8' }}>{art.siteId || 'the-local-leader'}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700, color: '#fff' }}>{(art.views || 0).toLocaleString()}</td>
+                        <td style={{ color: 'var(--fg-94a3b8)' }}>{art.siteId || 'the-local-leader'}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--fg-fff)' }}>{(art.views || 0).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -342,12 +342,12 @@ export default function AdminDashboardPage() {
                         alignItems: 'center',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        background: isSelected ? '#1e293b' : '#090d16',
-                        border: isSelected ? '1px solid #ea580c' : '1px solid #1e293b',
+                        background: isSelected ? 'var(--bg-1e293b)' : 'var(--bg-090d16)',
+                        border: isSelected ? '1px solid #ea580c' : '1px solid var(--bd-1e293b)',
                         cursor: 'pointer'
                       }}
                     >
-                      <span style={{ fontSize: '13px', fontWeight: isSelected ? 700 : 500, color: '#fff' }}>{site.name}</span>
+                      <span style={{ fontSize: '13px', fontWeight: isSelected ? 700 : 500, color: 'var(--fg-fff)' }}>{site.name}</span>
                       <span className="ad-count">{count}</span>
                     </div>
                   );

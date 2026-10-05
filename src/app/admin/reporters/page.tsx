@@ -35,18 +35,18 @@ export default function ReportersPage() {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Reporters ({reporters.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Review and approve new field reporter registrations</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Review and approve new field reporter registrations</p>
         </div>
       </div>
 
       <div className={styles.formCard} style={{ overflowX: 'auto', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-1e293b)', background: 'var(--bg-0b1120)', color: 'var(--fg-94a3b8)' }}>
               <th style={{ padding: '14px 16px' }}>Name</th>
               <th style={{ padding: '14px 16px' }}>Phone</th>
               <th style={{ padding: '14px 16px' }}>Press ID</th>
@@ -57,17 +57,17 @@ export default function ReportersPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Loading...</td></tr>
+              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>Loading...</td></tr>
             ) : reporters.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>No journalist registration requests yet.</td></tr>
+              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>No journalist registration requests yet.</td></tr>
             ) : (
               reporters.map(r => {
                 // Purane records me 'active' approved ka matlab tha
                 const approved = isReporterApproved(r);
                 return (
-                <tr key={r.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                <tr key={r.id} style={{ borderBottom: '1px solid var(--bd-1e293b)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 600 }}>{r.name}</td>
-                  <td style={{ padding: '12px 16px', color: '#38bdf8' }}>{r.phone || r.mobile || '-'}</td>
+                  <td style={{ padding: '12px 16px', color: 'var(--fg-38bdf8)' }}>{r.phone || r.mobile || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>{r.pressId || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>{r.city || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>
@@ -75,8 +75,8 @@ export default function ReportersPage() {
                       fontSize: '11px',
                       padding: '2px 8px',
                       borderRadius: '12px',
-                      background: approved ? '#065f46' : r.status === 'rejected' ? '#7f1d1d' : '#854d0e',
-                      color: approved ? '#34d399' : r.status === 'rejected' ? '#fca5a5' : '#fde047'
+                      background: approved ? 'var(--bg-065f46)' : r.status === 'rejected' ? 'var(--bg-7f1d1d)' : 'var(--bg-854d0e)',
+                      color: approved ? 'var(--fg-34d399)' : r.status === 'rejected' ? 'var(--fg-fca5a5)' : 'var(--fg-fde047)'
                     }}>
                       {approved ? 'approved' : r.status || 'pending'}
                     </span>

@@ -12,10 +12,10 @@ export default function AdminSettingsPage() {
   });
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>Account Settings</h1>
       
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #1e293b', paddingBottom: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--bd-1e293b)', paddingBottom: '8px' }}>
         {(['account', 'password', 'security'] as const).map(tab => (
           <button
             key={tab}
@@ -24,7 +24,7 @@ export default function AdminSettingsPage() {
               padding: '8px 16px',
               borderRadius: '6px',
               border: 'none',
-              background: activeTab === tab ? '#2563eb' : '#0b1120',
+              background: activeTab === tab ? '#2563eb' : 'var(--bg-0b1120)',
               color: '#fff',
               cursor: 'pointer',
               fontSize: '13.5px',
@@ -77,7 +77,7 @@ export default function AdminSettingsPage() {
         {activeTab === 'security' && (
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '8px' }}>Two-Factor Authentication</h3>
-            <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>Enhance account security with SMS or Authenticator verification.</p>
+            <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)', marginBottom: '16px' }}>Enhance account security with SMS or Authenticator verification.</p>
             <button className={styles.btnPrimary}>Enable 2FA</button>
           </div>
         )}

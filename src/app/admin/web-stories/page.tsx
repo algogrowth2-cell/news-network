@@ -15,28 +15,28 @@ export default function WebStoriesPage() {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Web Stories ({stories.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>AMP and vertical story format creator for mobile readers</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>AMP and vertical story format creator for mobile readers</p>
         </div>
         <button onClick={() => setShowModal(true)} className={styles.btnPrimary}>+ New Story</button>
       </div>
 
       <div className={styles.formCard}>
         {stories.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--fg-94a3b8)' }}>
             <p>No stories created yet. Tap "+ New Story" to create a vertical mobile story.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
             {stories.map(s => (
-              <div key={s.id} style={{ background: '#0b1120', border: '1px solid #1e293b', borderRadius: '8px', overflow: 'hidden' }}>
+              <div key={s.id} style={{ background: 'var(--bg-0b1120)', border: '1px solid var(--bd-1e293b)', borderRadius: '8px', overflow: 'hidden' }}>
                 <img src={s.coverImage || 'https://via.placeholder.com/300x500'} alt={s.title} style={{ width: '100%', height: '240px', objectFit: 'cover' }} />
                 <div style={{ padding: '10px' }}>
                   <p style={{ fontWeight: 600, fontSize: '13.5px' }}>{s.title}</p>
-                  <span style={{ fontSize: '11px', color: '#38bdf8' }}>{s.site}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--fg-38bdf8)' }}>{s.site}</span>
                 </div>
               </div>
             ))}
@@ -58,7 +58,7 @@ export default function WebStoriesPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button type="submit" className={styles.btnPrimary}>Create Story</button>
-              <button type="button" onClick={() => setShowModal(false)} className={styles.btnPrimary} style={{ background: '#334155' }}>Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className={styles.btnPrimary} style={{ background: 'var(--bg-334155)' }}>Cancel</button>
             </div>
           </form>
         </div>

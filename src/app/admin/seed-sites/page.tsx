@@ -149,10 +149,10 @@ export default function SeedSitesPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0b1120', color: '#fff', padding: '40px 20px', fontFamily: 'system-ui' }}>
-      <div style={{ maxWidth: '650px', margin: '0 auto', background: '#1e293b', padding: '32px', borderRadius: '12px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-0b1120)', color: 'var(--fg-fff)', padding: '40px 20px', fontFamily: 'system-ui' }}>
+      <div style={{ maxWidth: '650px', margin: '0 auto', background: 'var(--bg-1e293b)', padding: '32px', borderRadius: '12px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 10px 0' }}>Network Sites Initialization (JPEG)</h1>
-        <p style={{ color: '#94a3b8', fontSize: '13.5px', lineHeight: '1.6' }}>
+        <p style={{ color: 'var(--fg-94a3b8)', fontSize: '13.5px', lineHeight: '1.6' }}>
           Yeh action aapki saari 8 news portals ko unke authentic JPEG logos aur theme colors ke saath database me live kar dega.
         </p>
 
@@ -165,13 +165,13 @@ export default function SeedSitesPage() {
         </button>
 
         {status && (
-          <div style={{ marginTop: '20px', padding: '14px', borderRadius: '8px', background: status.includes('Success') ? '#065f46' : '#7f1d1d', color: '#fff', fontSize: '13.5px' }}>
+          <div style={{ marginTop: '20px', padding: '14px', borderRadius: '8px', background: status.includes('Success') ? 'var(--bg-065f46)' : 'var(--bg-7f1d1d)', color: 'var(--fg-fff)', fontSize: '13.5px' }}>
             {status}
           </div>
         )}
 
         <div style={{ marginTop: '24px' }}>
-          <Link href="/admin/sites" style={{ color: '#38bdf8', fontSize: '13px', textDecoration: 'none' }}>
+          <Link href="/admin/sites" style={{ color: 'var(--fg-38bdf8)', fontSize: '13px', textDecoration: 'none' }}>
             ← Back to Admin Sites
           </Link>
         </div>

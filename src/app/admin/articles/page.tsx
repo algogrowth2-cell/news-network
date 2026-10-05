@@ -58,11 +58,11 @@ export default function ArticlesPage() {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Articles ({articles.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Real-time news tracking, live view analytics, and review management</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Real-time news tracking, live view analytics, and review management</p>
         </div>
         <button 
           onClick={() => router.push('/admin/articles/new')} 
@@ -75,7 +75,7 @@ export default function ArticlesPage() {
       <div className={styles.formCard} style={{ overflowX: 'auto', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-1e293b)', background: 'var(--bg-0b1120)', color: 'var(--fg-94a3b8)' }}>
               <th style={{ padding: '14px 16px' }}>Title</th>
               <th style={{ padding: '14px 16px' }}>Author</th>
               <th style={{ padding: '14px 16px' }}>Portal Site</th>
@@ -88,11 +88,11 @@ export default function ArticlesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Loading articles...</td>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>Loading articles...</td>
               </tr>
             ) : articles.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>
                   No articles yet.
                 </td>
               </tr>
@@ -104,17 +104,17 @@ export default function ArticlesPage() {
                 const at = toJsDate(a.publishAt);
 
                 return (
-                  <tr key={a.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                  <tr key={a.id} style={{ borderBottom: '1px solid var(--bd-1e293b)' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 600, maxWidth: '320px' }}>
                       {a.title}
                       {a.titleHi && a.titleHi !== a.title && (
-                        <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{a.titleHi}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--fg-94a3b8)', fontWeight: 400 }}>{a.titleHi}</div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#38bdf8' }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--fg-38bdf8)' }}>
                       {a.authorName || a.author || 'Staff'}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#fb923c' }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--fg-fb923c)' }}>
                       {portalLabel(a)}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
@@ -123,21 +123,21 @@ export default function ArticlesPage() {
                         padding: '3px 10px', 
                         borderRadius: '12px', 
                         fontWeight: 700,
-                        background: isPublished ? '#065f46' : isScheduled ? '#3b0764' : '#451a03', 
-                        color: isPublished ? '#34d399' : isScheduled ? '#d8b4fe' : '#fbbf24' 
+                        background: isPublished ? 'var(--bg-065f46)' : isScheduled ? 'var(--bg-3b0764)' : 'var(--bg-451a03)', 
+                        color: isPublished ? 'var(--fg-34d399)' : isScheduled ? 'var(--fg-d8b4fe)' : 'var(--fg-fbbf24)' 
                       }}>
                         {isPublished ? 'Published' : isScheduled ? 'Scheduled' : rawStatus === 'draft' ? 'Draft' : 'Pending'}
                       </span>
                       {isScheduled && at && (
-                        <div style={{ fontSize: '11px', color: '#c4b5fd', marginTop: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--fg-c4b5fd)', marginTop: '4px' }}>
                           {at.toLocaleString('hi-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#38bdf8' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--fg-38bdf8)' }}>
                       👁️ {a.views ?? 0}
                     </td>
-                    <td style={{ padding: '12px 16px', color: '#94a3b8' }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--fg-94a3b8)' }}>
                       {a.createdAt ? String(a.createdAt).split('T')[0] : 'Today'}
                     </td>
                     <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>

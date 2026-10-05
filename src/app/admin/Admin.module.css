@@ -3,8 +3,8 @@
   display: flex;
   height: 100vh;
   width: 100vw;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: var(--bg-0f172a);
+  color: var(--fg-f8fafc);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
@@ -13,8 +13,8 @@
 .sidebar {
   width: 260px;
   min-width: 260px;
-  background-color: #0b1120;
-  border-right: 1px solid #1e293b;
+  background-color: var(--bg-0b1120);
+  border-right: 1px solid var(--bd-1e293b);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -22,13 +22,13 @@
 
 .sidebarHeader {
   padding: 18px 20px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--bd-1e293b);
   font-weight: 700;
   font-size: 18px;
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #ffffff;
+  color: var(--fg-ffffff);
   letter-spacing: -0.02em;
 }
 
@@ -56,7 +56,7 @@
 }
 
 .menu::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--bg-1e293b);
   border-radius: 4px;
 }
 
@@ -66,7 +66,7 @@
   gap: 12px;
   padding: 8px 12px;
   border-radius: 6px;
-  color: #94a3b8;
+  color: var(--fg-94a3b8);
   font-size: 13.5px;
   font-weight: 500;
   margin-bottom: 2px;
@@ -75,8 +75,8 @@
 }
 
 .navItem:hover {
-  background-color: #1e293b;
-  color: #f8fafc;
+  background-color: var(--bg-1e293b);
+  color: var(--fg-f8fafc);
 }
 
 .navItemActive {
@@ -92,14 +92,14 @@
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  background-color: #090d16;
+  background-color: var(--bg-090d16);
 }
 
 .topNavbar {
   height: 60px;
   min-height: 60px;
-  background-color: #0b1120;
-  border-bottom: 1px solid #1e293b;
+  background-color: var(--bg-0b1120);
+  border-bottom: 1px solid var(--bd-1e293b);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -114,10 +114,10 @@
 
 /* Cards & Forms */
 .formCard {
-  background-color: #0f172a;
+  background-color: var(--bg-0f172a);
   border-radius: 8px;
   padding: 20px;
-  border: 1px solid #1e293b;
+  border: 1px solid var(--bd-1e293b);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
 
@@ -129,7 +129,7 @@
   display: block;
   font-size: 12.5px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--fg-94a3b8);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -138,10 +138,10 @@
 .inputControl {
   width: 100%;
   padding: 9px 12px;
-  background-color: #0b1120;
-  border: 1px solid #334155;
+  background-color: var(--bg-0b1120);
+  border: 1px solid var(--bd-334155);
   border-radius: 6px;
-  color: #f8fafc;
+  color: var(--fg-f8fafc);
   font-size: 14px;
   outline: none;
   box-sizing: border-box;

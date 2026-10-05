@@ -1,0 +1,16 @@
+/*
+ * Admin panel theme — har page ke rang CSS variables se aate hain:
+ *   --bg-xxxxxx (background), --bd-xxxxxx (border), --fg-xxxxxx (text)
+ * Dark me value wahi purana rang (xxxxxx), Light me uska saaf light jodidaar.
+ * .al-root[data-theme] par lagta hai (layout.tsx).
+ */
+const DARK = '--bg-020617:#020617;--bg-065f46:#065f46;--bg-070b14:#070b14;--bg-090d16:#090d16;--bg-0a101d:#0a101d;--bg-0b1120:#0b1120;--bg-0b1730:#0b1730;--bg-0e1626:#0e1626;--bg-0f172a:#0f172a;--bg-0f1d3a:#0f1d3a;--bg-111827:#111827;--bg-131d33:#131d33;--bg-162238:#162238;--bg-1a1a2e:#1a1a2e;--bg-1e242b:#1e242b;--bg-1e293b:#1e293b;--bg-1e3a8a:#1e3a8a;--bg-1f293d:#1f293d;--bg-27354f:#27354f;--bg-334155:#334155;--bg-3b0764:#3b0764;--bg-451a03:#451a03;--bg-475569:#475569;--bg-7f1d1d:#7f1d1d;--bg-854d0e:#854d0e;--bd-020617:#020617;--bd-065f46:#065f46;--bd-0a101d:#0a101d;--bd-0b1120:#0b1120;--bd-0e1626:#0e1626;--bd-0f172a:#0f172a;--bd-111827:#111827;--bd-162238:#162238;--bd-1e293b:#1e293b;--bd-1e3a8a:#1e3a8a;--bd-1f293d:#1f293d;--bd-242c35:#242c35;--bd-27354f:#27354f;--bd-334155:#334155;--bd-475569:#475569;--bd-7f1d1d:#7f1d1d;--fg-34d399:#34d399;--fg-38bdf8:#38bdf8;--fg-60a5fa:#60a5fa;--fg-6ee7b7:#6ee7b7;--fg-7dd3fc:#7dd3fc;--fg-86efac:#86efac;--fg-93c5fd:#93c5fd;--fg-94a3b8:#94a3b8;--fg-a5b4fc:#a5b4fc;--fg-bfdbfe:#bfdbfe;--fg-c4b5fd:#c4b5fd;--fg-cbd5e1:#cbd5e1;--fg-d8b4fe:#d8b4fe;--fg-e0f2fe:#e0f2fe;--fg-e2e8f0:#e2e8f0;--fg-f1f5f9:#f1f5f9;--fg-f87171:#f87171;--fg-f8fafc:#f8fafc;--fg-fb923c:#fb923c;--fg-fbbf24:#fbbf24;--fg-fca5a5:#fca5a5;--fg-fcd34d:#fcd34d;--fg-fdba74:#fdba74;--fg-fde047:#fde047;--fg-fecaca:#fecaca;--fg-fff:#ffffff;--fg-ffffff:#ffffff';
+const LIGHT = '--bg-020617:#ffffff;--bg-065f46:#d1fae5;--bg-070b14:#f1f5f9;--bg-090d16:#f8fafc;--bg-0a101d:#f8fafc;--bg-0b1120:#f8fafc;--bg-0b1730:#eff6ff;--bg-0e1626:#ffffff;--bg-0f172a:#ffffff;--bg-0f1d3a:#eff6ff;--bg-111827:#f1f5f9;--bg-131d33:#ffffff;--bg-162238:#f1f5f9;--bg-1a1a2e:#ffffff;--bg-1e242b:#f1f5f9;--bg-1e293b:#eef2f7;--bg-1e3a8a:#dbeafe;--bg-1f293d:#eef2f7;--bg-27354f:#e2e8f0;--bg-334155:#e2e8f0;--bg-3b0764:#ede9fe;--bg-451a03:#fef3c7;--bg-475569:#cbd5e1;--bg-7f1d1d:#fee2e2;--bg-854d0e:#fef9c3;--bd-020617:#e2e8f0;--bd-065f46:#a7f3d0;--bd-0a101d:#e2e8f0;--bd-0b1120:#e2e8f0;--bd-0e1626:#e2e8f0;--bd-0f172a:#e2e8f0;--bd-111827:#e2e8f0;--bd-162238:#e2e8f0;--bd-1e293b:#e2e8f0;--bd-1e3a8a:#bfdbfe;--bd-1f293d:#e2e8f0;--bd-242c35:#e2e8f0;--bd-27354f:#dbe2ea;--bd-334155:#cbd5e1;--bd-475569:#94a3b8;--bd-7f1d1d:#fecaca;--fg-34d399:#047857;--fg-38bdf8:#0284c7;--fg-60a5fa:#1d4ed8;--fg-6ee7b7:#047857;--fg-7dd3fc:#0369a1;--fg-86efac:#15803d;--fg-93c5fd:#1d4ed8;--fg-94a3b8:#64748b;--fg-a5b4fc:#4338ca;--fg-bfdbfe:#1d4ed8;--fg-c4b5fd:#6d28d9;--fg-cbd5e1:#334155;--fg-d8b4fe:#6d28d9;--fg-e0f2fe:#0369a1;--fg-e2e8f0:#1e293b;--fg-f1f5f9:#0f172a;--fg-f87171:#dc2626;--fg-f8fafc:#0f172a;--fg-fb923c:#c2410c;--fg-fbbf24:#b45309;--fg-fca5a5:#b91c1c;--fg-fcd34d:#b45309;--fg-fdba74:#c2410c;--fg-fde047:#a16207;--fg-fecaca:#b91c1c;--fg-fff:#0f172a;--fg-ffffff:#0f172a';
+
+export const ADMIN_THEME_CSS = `
+.al-root[data-theme='dark']{color-scheme:dark;--a-page:#020617;--a-shadow:none;${DARK}}
+.al-root[data-theme='light']{color-scheme:light;--a-page:#f1f5f9;--a-shadow:0 1px 3px rgba(15,23,42,.07);${LIGHT}}
+`;
+
+export type AdminTheme = 'light' | 'dark';
+export const ADMIN_THEME_KEY = 'admin_theme';

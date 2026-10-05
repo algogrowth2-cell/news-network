@@ -24,20 +24,20 @@ interface RewardInfo {
 
 const RF_STYLES = `
 .rf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
-.rf-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px}
-.rf-card-label{font-size:12px;color:#94a3b8;font-weight:600}
-.rf-card-value{font-size:28px;font-weight:800;color:#fff;margin-top:6px}
+.rf-card{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;padding:16px}
+.rf-card-label{font-size:12px;color:var(--fg-94a3b8);font-weight:600}
+.rf-card-value{font-size:28px;font-weight:800;color:var(--fg-fff);margin-top:6px}
 .rf-top{grid-column:span 2}
-.rf-top-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid #1e293b;color:#cbd5e1}
+.rf-top-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--bd-1e293b);color:var(--fg-cbd5e1)}
 .rf-top-row:last-child{border-bottom:0}
-.rf-rank{color:#fb923c;font-weight:800;margin-right:6px}
+.rf-rank{color:var(--fg-fb923c);font-weight:800;margin-right:6px}
 .rf-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.rf-input{flex:1;min-width:220px;background:#0b1120;border:1px solid #334155;color:#fff;border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
-.rf-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
-.rf-table-wrap{background:#0f172a;border:1px solid #1e293b;border-radius:12px;overflow-x:auto}
+.rf-input{flex:1;min-width:220px;background:var(--bg-0b1120);border:1px solid var(--bd-334155);color:var(--fg-fff);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
+.rf-btn{background:var(--bg-1e293b);border:1px solid var(--bd-334155);color:var(--fg-e2e8f0);border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.rf-table-wrap{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;overflow-x:auto}
 .rf-table{width:100%;border-collapse:collapse;font-size:13px;min-width:960px}
-.rf-table th{text-align:left;padding:12px 14px;background:#0b1120;color:#94a3b8;font-weight:600;border-bottom:1px solid #1e293b;white-space:nowrap}
-.rf-table td{padding:11px 14px;border-bottom:1px solid #1e293b;color:#e2e8f0;vertical-align:top}
+.rf-table th{text-align:left;padding:12px 14px;background:var(--bg-0b1120);color:var(--fg-94a3b8);font-weight:600;border-bottom:1px solid var(--bd-1e293b);white-space:nowrap}
+.rf-table td{padding:11px 14px;border-bottom:1px solid var(--bd-1e293b);color:var(--fg-e2e8f0);vertical-align:top}
 .rf-sub{display:block;font-size:11.5px;color:#64748b;margin-top:2px}
 .rf-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .rf-empty{padding:40px;text-align:center;color:#64748b}
@@ -151,18 +151,18 @@ export default function AdminReferralsPage() {
   }, [successful, search, newestFirst]);
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <style dangerouslySetInnerHTML={{ __html: RF_STYLES }} />
 
       <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700 }}>🎁 Refer & Earn — Referrals</h1>
-        <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+        <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>
           Naye user ke OTP signup par referral apne aap verify hota hai (self-referral aur duplicate block) aur referrer ko turant 3 mahine ka free e-paper mil jaata hai — koi manual approval nahi
         </p>
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.4)', color: '#fca5a5', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.4)', color: 'var(--fg-fca5a5)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', marginBottom: '16px' }}>
           ⚠️ {error}
         </div>
       )}
@@ -174,15 +174,15 @@ export default function AdminReferralsPage() {
         </div>
         <div className="rf-card">
           <div className="rf-card-label">Auto Verified</div>
-          <div className="rf-card-value" style={{ color: '#6ee7b7' }}>{autoVerifiedCount}</div>
+          <div className="rf-card-value" style={{ color: 'var(--fg-6ee7b7)' }}>{autoVerifiedCount}</div>
         </div>
         <div className="rf-card">
           <div className="rf-card-label">Free E-paper Diya (mahine)</div>
-          <div className="rf-card-value" style={{ color: '#fbbf24' }}>{epaperMonthsGranted}</div>
+          <div className="rf-card-value" style={{ color: 'var(--fg-fbbf24)' }}>{epaperMonthsGranted}</div>
         </div>
         <div className="rf-card">
           <div className="rf-card-label">Reward Activate Baaki (purane)</div>
-          <div className="rf-card-value" style={{ color: pendingRewardCount ? '#fb923c' : '#fff' }}>{pendingRewardCount}</div>
+          <div className="rf-card-value" style={{ color: pendingRewardCount ? 'var(--fg-fb923c)' : 'var(--fg-fff)' }}>{pendingRewardCount}</div>
         </div>
         <div className="rf-card">
           <div className="rf-card-label">Aaj ke Referrals</div>
@@ -255,9 +255,9 @@ export default function AdminReferralsPage() {
                   <td style={{ fontFamily: 'ui-monospace, Menlo, Consolas, monospace', whiteSpace: 'nowrap' }}>{r.codeUsed || '—'}</td>
                   <td>
                     {r.verifiedAutomatically ? (
-                      <span className="rf-badge" style={{ background: 'rgba(16,185,129,.15)', color: '#6ee7b7' }}>✓ Auto Verified</span>
+                      <span className="rf-badge" style={{ background: 'rgba(16,185,129,.15)', color: 'var(--fg-6ee7b7)' }}>✓ Auto Verified</span>
                     ) : (
-                      <span className="rf-badge" style={{ background: 'rgba(148,163,184,.15)', color: '#cbd5e1' }}>Legacy</span>
+                      <span className="rf-badge" style={{ background: 'rgba(148,163,184,.15)', color: 'var(--fg-cbd5e1)' }}>Legacy</span>
                     )}
                   </td>
                   <td>
@@ -266,7 +266,7 @@ export default function AdminReferralsPage() {
                       if (isEpaperGranted(rw))
                         return (
                           <>
-                            <span className="rf-badge" style={{ background: 'rgba(251,191,36,.15)', color: '#fcd34d' }}>📰 3 माह E-paper</span>
+                            <span className="rf-badge" style={{ background: 'rgba(251,191,36,.15)', color: 'var(--fg-fcd34d)' }}>📰 3 माह E-paper</span>
                             {rw?.validTill && (
                               <span className="rf-sub">
                                 {rw.validTill.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} tak
@@ -275,9 +275,9 @@ export default function AdminReferralsPage() {
                           </>
                         );
                       if (rw?.status === 'claimed')
-                        return <span className="rf-badge" style={{ background: 'rgba(96,165,250,.15)', color: '#93c5fd' }}>VIP (purana)</span>;
+                        return <span className="rf-badge" style={{ background: 'rgba(96,165,250,.15)', color: 'var(--fg-93c5fd)' }}>VIP (purana)</span>;
                       if (rw?.status === 'pending_selection')
-                        return <span className="rf-badge" style={{ background: 'rgba(251,146,60,.15)', color: '#fdba74' }}>Activate baaki</span>;
+                        return <span className="rf-badge" style={{ background: 'rgba(251,146,60,.15)', color: 'var(--fg-fdba74)' }}>Activate baaki</span>;
                       return <span className="rf-sub">—</span>;
                     })()}
                   </td>

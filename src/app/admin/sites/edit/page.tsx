@@ -133,7 +133,7 @@ export default function EditSitePage() {
   };
 
   if (loading) {
-    return <div style={{ color: '#fff', padding: '40px' }}>Loading site configuration...</div>;
+    return <div style={{ color: 'var(--fg-fff)', padding: '40px' }}>Loading site configuration...</div>;
   }
 
   const cardStyle: React.CSSProperties = {
@@ -172,7 +172,7 @@ export default function EditSitePage() {
           <button onClick={() => router.back()} style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '14px' }}>
             ←
           </button>
-          <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: '#fff' }}>Edit Site</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: 'var(--fg-fff)' }}>Edit Site</h1>
         </div>
 
         <button
@@ -300,8 +300,8 @@ export default function EditSitePage() {
             </div>
 
             {/* Live Theme Preview Box */}
-            <div style={{ background: '#0b1120', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b', marginTop: '6px' }}>
-              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview</span>
+            <div style={{ background: 'var(--bg-0b1120)', padding: '16px', borderRadius: '8px', border: '1px solid var(--bd-1e293b)', marginTop: '6px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--fg-94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview</span>
               <div style={{ background: headerBg, padding: '10px 14px', borderRadius: '6px', color: '#fff', fontWeight: 800, marginTop: '8px' }}>
                 {name}
               </div>

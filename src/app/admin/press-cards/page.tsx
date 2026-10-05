@@ -30,38 +30,38 @@ interface Row {
 
 const PC_CSS = `
 .pc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
-.pc-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px}
-.pc-card-label{font-size:12px;color:#94a3b8;font-weight:600}
-.pc-card-value{font-size:28px;font-weight:800;color:#fff;margin-top:6px}
+.pc-card{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;padding:16px}
+.pc-card-label{font-size:12px;color:var(--fg-94a3b8);font-weight:600}
+.pc-card-value{font-size:28px;font-weight:800;color:var(--fg-fff);margin-top:6px}
 .pc-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.pc-input,.pc-select{background:#0b1120;border:1px solid #334155;color:#fff;border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
+.pc-input,.pc-select{background:var(--bg-0b1120);border:1px solid var(--bd-334155);color:var(--fg-fff);border-radius:8px;padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
 .pc-input{flex:1;min-width:220px}
-.pc-tab{background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.pc-tab{background:var(--bg-1e293b);border:1px solid var(--bd-334155);color:var(--fg-cbd5e1);border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
 .pc-tab.on{background:#ea580c;border-color:#ea580c;color:#fff}
-.pc-wrap{background:#0f172a;border:1px solid #1e293b;border-radius:12px;overflow-x:auto}
+.pc-wrap{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:12px;overflow-x:auto}
 .pc-table{width:100%;border-collapse:collapse;font-size:13px;min-width:1100px}
-.pc-table th{text-align:left;padding:12px 14px;background:#0b1120;color:#94a3b8;font-weight:600;border-bottom:1px solid #1e293b;white-space:nowrap}
-.pc-table td{padding:10px 14px;border-bottom:1px solid #1e293b;color:#e2e8f0;vertical-align:middle}
+.pc-table th{text-align:left;padding:12px 14px;background:var(--bg-0b1120);color:var(--fg-94a3b8);font-weight:600;border-bottom:1px solid var(--bd-1e293b);white-space:nowrap}
+.pc-table td{padding:10px 14px;border-bottom:1px solid var(--bd-1e293b);color:var(--fg-e2e8f0);vertical-align:middle}
 .pc-sub{display:block;font-size:11.5px;color:#64748b;margin-top:2px}
 .pc-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .pc-btn{background:#ea580c;border:0;color:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
-.pc-btn.ghost{background:transparent;border:1px solid #475569;color:#e2e8f0}
-.pc-btn.danger{background:#7f1d1d;color:#fecaca}
+.pc-btn.ghost{background:transparent;border:1px solid var(--bd-475569);color:var(--fg-e2e8f0)}
+.pc-btn.danger{background:var(--bg-7f1d1d);color:var(--fg-fecaca)}
 .pc-empty{padding:40px;text-align:center;color:#64748b}
 .pc-modal{position:fixed;inset:0;background:rgba(2,6,23,.75);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto}
-.pc-box{background:#0f172a;border:1px solid #1e293b;border-radius:16px;width:100%;max-width:1060px;padding:20px;color:#e2e8f0}
+.pc-box{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);border-radius:16px;width:100%;max-width:1060px;padding:20px;color:var(--fg-e2e8f0)}
 .pc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-.pc-grid label{display:block;font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:5px}
+.pc-grid label{display:block;font-size:12px;color:var(--fg-94a3b8);font-weight:600;margin-bottom:5px}
 .pc-grid .pc-input,.pc-grid .pc-select{width:100%;box-sizing:border-box;min-width:0}
 .pc-preview{background:#f8fafc;border-radius:12px;padding:16px;color:#0f172a}
 `;
 
 const statusBadge = (r: Row) => {
-  if (r.revoked) return { text: 'Revoked', bg: 'rgba(239,68,68,.15)', fg: '#fca5a5' };
-  if (!r.approved) return { text: 'Reporter not approved', bg: 'rgba(148,163,184,.15)', fg: '#cbd5e1' };
-  if (!r.hasCard) return { text: 'Card nahi bana', bg: 'rgba(148,163,184,.15)', fg: '#cbd5e1' };
-  if (r.validTill && r.validTill.getTime() < Date.now()) return { text: 'Expired', bg: 'rgba(251,191,36,.15)', fg: '#fcd34d' };
-  return { text: '✓ Active', bg: 'rgba(16,185,129,.15)', fg: '#6ee7b7' };
+  if (r.revoked) return { text: 'Revoked', bg: 'rgba(239,68,68,.15)', fg: 'var(--fg-fca5a5)' };
+  if (!r.approved) return { text: 'Reporter not approved', bg: 'rgba(148,163,184,.15)', fg: 'var(--fg-cbd5e1)' };
+  if (!r.hasCard) return { text: 'Card nahi bana', bg: 'rgba(148,163,184,.15)', fg: 'var(--fg-cbd5e1)' };
+  if (r.validTill && r.validTill.getTime() < Date.now()) return { text: 'Expired', bg: 'rgba(251,191,36,.15)', fg: 'var(--fg-fcd34d)' };
+  return { text: '✓ Active', bg: 'rgba(16,185,129,.15)', fg: 'var(--fg-6ee7b7)' };
 };
 
 const isoDay = (d: Date | null) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '');
@@ -138,17 +138,17 @@ export default function AdminPressCardsPage() {
   const revokedCount = rows.filter((r) => r.revoked).length;
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <style dangerouslySetInnerHTML={{ __html: PC_CSS }} />
       <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: 700 }}>🪪 Press ID Cards</h1>
-        <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+        <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>
           Har patrakar ka Media ID Card aur Pradhikaran Patra — portal, Press ID, photo, padnaam, vaidhta aur downloads. Yahin se edit, revoke aur download karein.
         </p>
       </div>
 
       {error && (
-        <div style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.4)', color: '#fca5a5', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.4)', color: 'var(--fg-fca5a5)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', marginBottom: '16px' }}>
           ⚠️ {error}
         </div>
       )}
@@ -160,15 +160,15 @@ export default function AdminPressCardsPage() {
         </div>
         <div className="pc-card">
           <div className="pc-card-label">Photo ke saath</div>
-          <div className="pc-card-value" style={{ color: '#6ee7b7' }}>{withPhoto}</div>
+          <div className="pc-card-value" style={{ color: 'var(--fg-6ee7b7)' }}>{withPhoto}</div>
         </div>
         <div className="pc-card">
           <div className="pc-card-label">Total Downloads</div>
-          <div className="pc-card-value" style={{ color: '#fcd34d' }}>{totalDownloads}</div>
+          <div className="pc-card-value" style={{ color: 'var(--fg-fcd34d)' }}>{totalDownloads}</div>
         </div>
         <div className="pc-card">
           <div className="pc-card-label">Revoked</div>
-          <div className="pc-card-value" style={{ color: revokedCount ? '#fca5a5' : '#fff' }}>{revokedCount}</div>
+          <div className="pc-card-value" style={{ color: revokedCount ? 'var(--fg-fca5a5)' : 'var(--fg-fff)' }}>{revokedCount}</div>
         </div>
       </div>
 
@@ -400,7 +400,7 @@ function EditModal({ row, origin, onClose }: { row: Row; origin: string; onClose
           <button className="pc-btn" onClick={save} disabled={saving}>
             {saving ? 'Saving…' : '💾 Save'}
           </button>
-          {msg && <span style={{ fontSize: '13px', color: msg.startsWith('✓') ? '#6ee7b7' : '#fca5a5' }}>{msg}</span>}
+          {msg && <span style={{ fontSize: '13px', color: msg.startsWith('✓') ? 'var(--fg-6ee7b7)' : 'var(--fg-fca5a5)' }}>{msg}</span>}
           <span className="pc-sub" style={{ marginTop: 0 }}>
             ID card downloads: {Number(row.raw.idCardDownloads || 0)} · Certificate downloads: {Number(row.raw.certificateDownloads || 0)}
           </span>

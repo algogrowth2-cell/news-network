@@ -244,7 +244,7 @@ export default function SitesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           {activeTab === 'list' ? (
-            <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#fff' }}>Sites ({sites.length})</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--fg-fff)' }}>Sites ({sites.length})</h1>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button 
@@ -253,7 +253,7 @@ export default function SitesPage() {
               >
                 ←
               </button>
-              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: '#fff' }}>Edit Site</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: 'var(--fg-fff)' }}>Edit Site</h1>
             </div>
           )}
         </div>
@@ -404,27 +404,27 @@ export default function SitesPage() {
       {activeTab === 'list' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
           {sites.map((site) => (
-            <div key={site.id} className={styles.formCard} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#0b1120', border: '1px solid #1e293b' }}>
+            <div key={site.id} className={styles.formCard} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--bg-0b1120)', border: '1px solid var(--bd-1e293b)' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>{site.name}</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-fff)' }}>{site.name}</span>
                   <span style={{ 
                     fontSize: '11px', 
                     padding: '2px 8px', 
                     borderRadius: '12px', 
-                    background: site.active ? '#065f46' : '#991b1b', 
-                    color: site.active ? '#34d399' : '#fca5a5',
+                    background: site.active ? 'var(--bg-065f46)' : '#991b1b', 
+                    color: site.active ? 'var(--fg-34d399)' : 'var(--fg-fca5a5)',
                     fontWeight: 700
                   }}>
                     {site.active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '8px' }}>{site.domain}</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Language: {site.language} | Region: {site.region || 'India'}</div>
+                <div style={{ fontSize: '13px', color: 'var(--fg-38bdf8)', marginBottom: '8px' }}>{site.domain}</div>
+                <div style={{ fontSize: '12px', color: 'var(--fg-94a3b8)' }}>Language: {site.language} | Region: {site.region || 'India'}</div>
 
                 {/* Color Palette Preview */}
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>Theme:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--fg-94a3b8)' }}>Theme:</span>
                   <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: site.primaryColor, border: '1px solid #fff' }} title="Primary" />
                   <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: site.secondaryColor, border: '1px solid #fff' }} title="Secondary" />
                 </div>
@@ -432,7 +432,7 @@ export default function SitesPage() {
 
               <button 
                 onClick={() => handleEditClick(site)} 
-                style={{ marginTop: '16px', background: '#1e293b', color: '#38bdf8', border: '1px solid #38bdf8', borderRadius: '6px', padding: '8px', width: '100%', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ marginTop: '16px', background: 'var(--bg-1e293b)', color: 'var(--fg-38bdf8)', border: '1px solid #38bdf8', borderRadius: '6px', padding: '8px', width: '100%', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
               >
                 Edit Site & Theme →
               </button>
@@ -554,8 +554,8 @@ export default function SitesPage() {
                 </div>
 
                 {/* Live Theme Preview Box */}
-                <div style={{ background: '#0b1120', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b', marginTop: '6px' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview</span>
+                <div style={{ background: 'var(--bg-0b1120)', padding: '16px', borderRadius: '8px', border: '1px solid var(--bd-1e293b)', marginTop: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--fg-94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview</span>
                   <div style={{ background: formData.headerBg || '#1a1a2e', padding: '10px 14px', borderRadius: '6px', color: '#fff', fontWeight: 800, marginTop: '8px' }}>
                     {formData.name}
                   </div>

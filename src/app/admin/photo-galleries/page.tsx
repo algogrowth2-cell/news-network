@@ -14,26 +14,26 @@ export default function PhotoGalleriesPage() {
   };
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Photo Galleries ({galleries.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Curated visual albums and multi-photo news galleries</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Curated visual albums and multi-photo news galleries</p>
         </div>
         <button onClick={() => setShowModal(true)} className={styles.btnPrimary}>+ New Gallery</button>
       </div>
 
       <div className={styles.formCard}>
         {galleries.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--fg-94a3b8)' }}>
             <p>No photo galleries published yet. Click "+ New Gallery" to get started.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
             {galleries.map(g => (
-              <div key={g.id} style={{ background: '#0b1120', border: '1px solid #1e293b', borderRadius: '8px', padding: '16px' }}>
+              <div key={g.id} style={{ background: 'var(--bg-0b1120)', border: '1px solid var(--bd-1e293b)', borderRadius: '8px', padding: '16px' }}>
                 <p style={{ fontWeight: 600, fontSize: '15px' }}>{g.title}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--fg-94a3b8)' }}>
                   <span>{g.category}</span>
                   <span>{g.date}</span>
                 </div>
@@ -62,7 +62,7 @@ export default function PhotoGalleriesPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button type="submit" className={styles.btnPrimary}>Create Gallery</button>
-              <button type="button" onClick={() => setShowModal(false)} className={styles.btnPrimary} style={{ background: '#334155' }}>Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className={styles.btnPrimary} style={{ background: 'var(--bg-334155)' }}>Cancel</button>
             </div>
           </form>
         </div>

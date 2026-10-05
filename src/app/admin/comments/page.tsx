@@ -40,11 +40,11 @@ export default function AdminCommentsPage() {
   });
 
   return (
-    <div style={{ color: '#fff' }}>
+    <div style={{ color: 'var(--fg-fff)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700 }}>Comments Moderation ({comments.length})</h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>Review, verify, and approve reader comments before publishing live</p>
+          <p style={{ fontSize: '13px', color: 'var(--fg-94a3b8)' }}>Review, verify, and approve reader comments before publishing live</p>
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -56,7 +56,7 @@ export default function AdminCommentsPage() {
                 padding: '6px 14px',
                 borderRadius: '6px',
                 border: 'none',
-                background: filter === tab ? '#ea580c' : '#1e293b',
+                background: filter === tab ? '#ea580c' : 'var(--bg-1e293b)',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '12.5px',
@@ -73,7 +73,7 @@ export default function AdminCommentsPage() {
       <div className={styles.formCard} style={{ overflowX: 'auto', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #1e293b', background: '#0b1120', color: '#94a3b8' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-1e293b)', background: 'var(--bg-0b1120)', color: 'var(--fg-94a3b8)' }}>
               <th style={{ padding: '14px 16px' }}>Article</th>
               <th style={{ padding: '14px 16px' }}>User</th>
               <th style={{ padding: '14px 16px' }}>Comment</th>
@@ -84,20 +84,20 @@ export default function AdminCommentsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Loading comments...</td></tr>
+              <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>Loading comments...</td></tr>
             ) : filteredComments.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#94a3b8' }}>No comments found under this filter.</td></tr>
+              <tr><td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: 'var(--fg-94a3b8)' }}>No comments found under this filter.</td></tr>
             ) : (
               filteredComments.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                <tr key={c.id} style={{ borderBottom: '1px solid var(--bd-1e293b)' }}>
                   <td style={{ padding: '12px 16px', fontWeight: 600, maxWidth: '200px' }}>
                     {c.articleTitle || c.articleId}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ color: '#38bdf8', fontWeight: 600 }}>{c.userName}</div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{c.userEmail}</div>
+                    <div style={{ color: 'var(--fg-38bdf8)', fontWeight: 600 }}>{c.userName}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--fg-94a3b8)' }}>{c.userEmail}</div>
                   </td>
-                  <td style={{ padding: '12px 16px', maxWidth: '300px', color: '#e2e8f0', lineHeight: '1.4' }}>
+                  <td style={{ padding: '12px 16px', maxWidth: '300px', color: 'var(--fg-e2e8f0)', lineHeight: '1.4' }}>
                     {c.text}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
@@ -105,14 +105,14 @@ export default function AdminCommentsPage() {
                       fontSize: '11px',
                       padding: '2px 8px',
                       borderRadius: '12px',
-                      background: c.status === 'approved' ? '#065f46' : c.status === 'rejected' ? '#7f1d1d' : '#854d0e',
-                      color: c.status === 'approved' ? '#34d399' : c.status === 'rejected' ? '#fca5a5' : '#fde047',
+                      background: c.status === 'approved' ? 'var(--bg-065f46)' : c.status === 'rejected' ? 'var(--bg-7f1d1d)' : 'var(--bg-854d0e)',
+                      color: c.status === 'approved' ? 'var(--fg-34d399)' : c.status === 'rejected' ? 'var(--fg-fca5a5)' : 'var(--fg-fde047)',
                       fontWeight: 700
                     }}>
                       {c.status === 'approved' ? 'स्वीकृत (Live)' : c.status === 'pending' ? 'समीक्षा में' : 'अस्वीकृत'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '12px 16px', color: 'var(--fg-94a3b8)', whiteSpace: 'nowrap' }}>
                     {c.createdAt || 'Today'}
                   </td>
                   <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
