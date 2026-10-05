@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { notifyContent, portalsFrom } from '@/lib/notifications';
@@ -112,6 +112,25 @@ export default function EPaperPage() {
     return () => unsub();
   }, []);
 
+  // Page khulte hi: purane editions surakshit (PDF link private, public download token band) — idempotent
+  const secureEditions = () =>
+    fetch('/api/admin/epaper-secure', { method: 'POST', credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => r && (r.moved || r.revoked) && console.info('E-paper secured:', r))
+      .catch(() => {});
+  useEffect(() => {
+    secureEditions();
+  }, []);
+
+  // Admin preview: signed link (admin session cookie)
+  const openPdf = async (ed: EPaperDoc) => {
+    const res = await fetch(`/api/epaper/file?id=${encodeURIComponent(ed.id)}`, { credentials: 'same-origin' });
+    if (res.status === 503 && ed.pdfUrl) return window.open(ed.pdfUrl, '_blank', 'noopener,noreferrer');
+    const data = await res.json().catch(() => ({}));
+    if (data.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+    else alert(data.message || 'PDF नहीं मिली।');
+  };
+
   // Desktop se chuni file ko Firebase Storage (epapers/...) me upload karta hai, progress ke saath
   const startUpload = (
     file: File,
@@ -208,20 +227,27 @@ export default function EPaperPage() {
 
     setSaving(true);
     try {
+      // Public doc me PDF ka link NAHI — wo private epaper_files me (subscriber ko server signed link deta hai)
       const epRef = await addDoc(collection(db, 'epaper'), {
         siteId,
         date,
         cityName: cityName.trim() || 'मुख्य',
         editionName: editionName.trim() || `${siteName(siteId)} ई-पेपर`,
         status,
-        pdfUrl: finalPdf,
+        hasPdf: !!finalPdf,
         thumbnailUrl: finalThumb,
-        // Storage path sirf tab jab final URL isi upload ka ho (delete ke waqt file hatane ke liye)
-        pdfStoragePath: finalPdf === pdfUpload.url ? pdfUpload.storagePath : '',
         thumbStoragePath: finalThumb && finalThumb === thumbUpload.url ? thumbUpload.storagePath : '',
         totalPages: Number(totalPages) || 0,
         createdAt: serverTimestamp()
       });
+      await setDoc(doc(db, 'epaper_files', epRef.id), {
+        pdfUrl: finalPdf,
+        // Storage path sirf tab jab final URL isi upload ka ho (signed link + delete ke liye)
+        pdfStoragePath: finalPdf === pdfUpload.url ? pdfUpload.storagePath : '',
+        createdAt: serverTimestamp()
+      });
+      // Upload ka public download token turant band
+      secureEditions();
       if (status === 'published') {
         notifyContent({
           title: `आज का ई-पेपर: ${editionName.trim() || siteName(siteId)}`,
@@ -254,9 +280,11 @@ export default function EPaperPage() {
   const handleDelete = async (ed: EPaperDoc) => {
     if (!window.confirm(`"${ed.editionName}" (${ed.date}) delete karein?`)) return;
     try {
+      const priv = (await getDoc(doc(db, 'epaper_files', ed.id)).catch(() => null))?.data() || {};
       await deleteDoc(doc(db, 'epaper', ed.id));
+      await deleteDoc(doc(db, 'epaper_files', ed.id)).catch(() => {});
       // Storage se bhi uploaded files hatao (best effort)
-      for (const path of [ed.pdfStoragePath, ed.thumbStoragePath]) {
+      for (const path of [ed.pdfStoragePath || priv.pdfStoragePath, ed.thumbStoragePath]) {
         if (path) await deleteObject(ref(storage, path)).catch((e) => console.warn('Storage delete skipped:', e.code));
       }
     } catch (err: any) {
@@ -458,10 +486,10 @@ export default function EPaperPage() {
                     {isLive ? '● Live' : 'Draft'}
                   </span>
                   <div className="ea-actions">
-                    {ed.pdfUrl && (
-                      <a className="ea-act" href={ed.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    {(ed.pdfUrl || (ed as any).hasPdf) && (
+                      <button className="ea-act" onClick={() => openPdf(ed)}>
                         PDF ↗
-                      </a>
+                      </button>
                     )}
                     <a className="ea-act" href={`/epaper?site=${ed.siteId === 'all' ? 'the-local-leader' : ed.siteId}`} target="_blank" rel="noopener noreferrer">
                       Portal ↗

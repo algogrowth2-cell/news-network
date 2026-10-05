@@ -8,10 +8,14 @@ import {
   query, 
   where, 
   onSnapshot, 
-  addDoc, 
-  serverTimestamp 
+  addDoc,
+  doc,
+  setDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import Link from 'next/link';
+import { confirmPayment } from '@/lib/payments';
+import { SECURE_AUTH } from '@/lib/phoneAuth';
 
 declare global {
   interface Window {
@@ -117,6 +121,8 @@ export default function ShokSandeshPage() {
 
   // Payment & Submit State
   const [hasMembership, setHasMembership] = useState(false);
+  // Server-verified ₹199 payment ka ID (isi ID se shok sandesh banta hai)
+  const [shokCredit, setShokCredit] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -177,10 +183,15 @@ export default function ShokSandeshPage() {
 
   // Check Local Membership Cache
   useEffect(() => {
-    const cached = localStorage.getItem('shok_membership_active');
-    if (cached === 'true') {
+    // Server-verified payment ka credit (ek payment = ek shok sandesh)
+    const credit = localStorage.getItem('shok_payment_id');
+    if (credit) {
+      setShokCredit(credit);
       setHasMembership(true);
+      return;
     }
+    // Purana browser flag sirf tab jab server-verification chalu nahi
+    if (!SECURE_AUTH && localStorage.getItem('shok_membership_active') === 'true') setHasMembership(true);
   }, []);
 
   // Local File to Base64
@@ -226,11 +237,22 @@ export default function ShokSandeshPage() {
         currency: 'INR',
         name: 'द लोकल लीडर डिजिटल मीडिया',
         description: 'शोक संदेश ई-श्रद्धांजलि प्रकाशन शुल्क',
-        handler: function (response: any) {
+        handler: async function (response: any) {
+          // Server Razorpay se jaanch kar ek "credit" deta hai — usi payment ID se shok sandesh banta hai
+          const confirmed = await confirmPayment('shok', response.razorpay_payment_id);
           setPaymentLoading(false);
+          if (!confirmed.ok && !confirmed.fallback) {
+            alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
+            return;
+          }
           alert('भुगतान सफल! अब आप अपना शोक संदेश सबमिट कर सकते हैं।');
           setHasMembership(true);
-          localStorage.setItem('shok_membership_active', 'true');
+          if (confirmed.ok) {
+            setShokCredit(response.razorpay_payment_id);
+            localStorage.setItem('shok_payment_id', response.razorpay_payment_id);
+          } else {
+            localStorage.setItem('shok_membership_active', 'true');
+          }
         },
         prefill: {
           contact: contactNumber || '9876543210'
@@ -276,7 +298,7 @@ export default function ShokSandeshPage() {
     try {
       setSubmitting(true);
 
-      await addDoc(collection(db, 'shok_sandesh'), {
+      const shokData = {
         name: name.trim(),
         relation: relation.trim(),
         passedDate: formatPassedDate(passedDate),
@@ -292,7 +314,16 @@ export default function ShokSandeshPage() {
         templateId: selectedTemplate,
         status: 'pending', // Awaiting Admin verification
         createdAt: serverTimestamp()
-      });
+      };
+      if (shokCredit) {
+        // Payment ID hi document ID — ek payment par ek sandesh (Firestore rules payments/{id} jaanchte hain)
+        await setDoc(doc(db, 'shok_sandesh', shokCredit), { ...shokData, paymentId: shokCredit });
+        localStorage.removeItem('shok_payment_id');
+        setShokCredit('');
+        setHasMembership(false);
+      } else {
+        await addDoc(collection(db, 'shok_sandesh'), shokData);
+      }
 
       alert('शोक संदेश सफलतापूर्वक सबमिट हो गया है! एडमिन द्वारा सत्यापन के बाद यह पोर्टल पर लाइव दिखेगा।');
       setActiveTab('feed');

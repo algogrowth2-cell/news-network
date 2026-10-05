@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { collection, doc, getDocs, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { FieldValue as AdminFieldValue } from 'firebase-admin/firestore';
+import { getAdmin } from '@/lib/firebaseAdmin';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 
 // Groq response me kuch second lag sakte hain
@@ -10,8 +12,7 @@ export const maxDuration = 60;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const GROQ_TIMEOUT_MS = 50_000;
 
-// Ek hi din me duplicate AI calls rokne ke liye lock (kai visitors ek saath site kholein tab)
-const SYNC_LOCK = doc(db, 'settings', 'rashifal_sync');
+// Ek hi din me duplicate AI calls rokne ke liye lock (kai visitors ek saath site kholein tab): settings/rashifal_sync
 const RUNNING_LOCK_MS = 2 * 60 * 1000; // chal rahi sync itni der tak dusri call rokti hai
 const RETRY_AFTER_FAIL_MS = 30 * 60 * 1000; // fail hone par itni der baad hi dobara koshish
 
@@ -94,30 +95,74 @@ export async function POST() {
   return runAutoSync();
 }
 
+/*
+ * Database adapter: Admin SDK (Firestore rules ke baad bhi chalta hai) — configure na ho toh purana client SDK.
+ */
+function syncStore() {
+  const admin = getAdmin();
+  if (admin) {
+    const d = admin.db;
+    const lockRef = d.collection('settings').doc('rashifal_sync');
+    return {
+      readAll: async () => Object.fromEntries((await d.collection('rashifal').get()).docs.map((x) => [x.id, x.data()])),
+      claim: (decide: (lock: any) => boolean, data: any) =>
+        d.runTransaction(async (tx) => {
+          if (!decide((await tx.get(lockRef)).data())) return false;
+          tx.set(lockRef, data);
+          return true;
+        }),
+      setLock: (data: any) => lockRef.set(data).then(() => undefined),
+      writeAll: async (items: [string, any][], lock: any) => {
+        const b = d.batch();
+        items.forEach(([id, data]) => b.set(d.collection('rashifal').doc(id), { ...data, updatedAt: AdminFieldValue.serverTimestamp() }));
+        b.set(lockRef, lock);
+        await b.commit();
+      }
+    };
+  }
+  const lockRef = doc(db, 'settings', 'rashifal_sync');
+  return {
+    readAll: async () => Object.fromEntries((await getDocs(collection(db, 'rashifal'))).docs.map((x) => [x.id, x.data()])),
+    claim: (decide: (lock: any) => boolean, data: any) =>
+      runTransaction(db, async (tx) => {
+        if (!decide((await tx.get(lockRef)).data())) return false;
+        tx.set(lockRef, data);
+        return true;
+      }),
+    setLock: (data: any) => writeBatch(db).set(lockRef, data).commit(),
+    writeAll: async (items: [string, any][], lock: any) => {
+      const b = writeBatch(db);
+      items.forEach(([id, data]) => b.set(doc(db, 'rashifal', id), { ...data, updatedAt: serverTimestamp() }));
+      b.set(lockRef, lock);
+      await b.commit();
+    }
+  };
+}
+
 async function runAutoSync() {
   const today = todayIST();
+  const store = syncStore();
 
   try {
     // 1. Aaj ka data pehle se hai? Toh AI call bilkul nahi
-    const snap = await getDocs(collection(db, 'rashifal'));
-    const docsById: Record<string, any> = {};
-    snap.docs.forEach((d) => (docsById[d.id] = d.data()));
+    const docsById: Record<string, any> = await store.readAll();
     if (isRashifalFresh(docsById, today)) {
       return NextResponse.json({ updated: false, date: today, message: 'Already up-to-date' });
     }
 
     // 2. Lock claim karo, taaki ek hi request AI ko call kare
-    const claimed = await runTransaction(db, async (tx) => {
-      const lock = (await tx.get(SYNC_LOCK)).data();
-      const now = Date.now();
-      if (lock?.date === today) {
-        if (lock.status === 'done') return false;
-        if (lock.status === 'running' && now - (lock.startedAt || 0) < RUNNING_LOCK_MS) return false;
-        if (lock.status === 'failed' && now - (lock.failedAt || 0) < RETRY_AFTER_FAIL_MS) return false;
-      }
-      tx.set(SYNC_LOCK, { date: today, status: 'running', startedAt: now });
-      return true;
-    });
+    const now = Date.now();
+    const claimed = await store.claim(
+      (lock) => {
+        if (lock?.date === today) {
+          if (lock.status === 'done') return false;
+          if (lock.status === 'running' && now - (lock.startedAt || 0) < RUNNING_LOCK_MS) return false;
+          if (lock.status === 'failed' && now - (lock.failedAt || 0) < RETRY_AFTER_FAIL_MS) return false;
+        }
+        return true;
+      },
+      { date: today, status: 'running', startedAt: now }
+    );
     if (!claimed) {
       return NextResponse.json({ updated: false, date: today, message: 'Sync already done, running, or recently failed' });
     }
@@ -128,29 +173,31 @@ async function runAutoSync() {
       generated = await generateWithGroq(today);
     } catch (err: any) {
       const message = err?.name === 'AbortError' ? 'Groq request timed out' : err?.message || 'Groq error';
-      await writeBatch(db).set(SYNC_LOCK, { date: today, status: 'failed', failedAt: Date.now(), error: message }).commit();
+      await store.setLock({ date: today, status: 'failed', failedAt: Date.now(), error: message });
       console.error('Rashifal auto-sync failed:', message);
       return NextResponse.json({ updated: false, date: today, message }, { status: 502 });
     }
 
     // 4. Saare 12 docs ek batch me — homepage ka onSnapshot turant naya data dikhayega
-    const batch = writeBatch(db);
-    generated.forEach((g) => {
-      const rashi = RASHI_LIST.find((r) => r.id === g.rashiId)!;
-      batch.set(doc(db, 'rashifal', g.rashiId), {
-        rashiId: g.rashiId,
-        rashiName: `${rashi.name} (${rashi.nameEn})`,
-        sign: rashi.sign,
-        prediction: g.prediction,
-        luckyNumber: g.luckyNumber,
-        luckyColor: g.luckyColor,
-        date: today,
-        source: 'groq-auto',
-        updatedAt: serverTimestamp()
-      });
-    });
-    batch.set(SYNC_LOCK, { date: today, status: 'done', finishedAt: Date.now(), model: GROQ_MODEL });
-    await batch.commit();
+    await store.writeAll(
+      generated.map((g) => {
+        const rashi = RASHI_LIST.find((r) => r.id === g.rashiId)!;
+        return [
+          g.rashiId,
+          {
+            rashiId: g.rashiId,
+            rashiName: `${rashi.name} (${rashi.nameEn})`,
+            sign: rashi.sign,
+            prediction: g.prediction,
+            luckyNumber: g.luckyNumber,
+            luckyColor: g.luckyColor,
+            date: today,
+            source: 'groq-auto'
+          }
+        ] as [string, any];
+      }),
+      { date: today, status: 'done', finishedAt: Date.now(), model: GROQ_MODEL }
+    );
 
     return NextResponse.json({ updated: true, date: today, model: GROQ_MODEL, message: 'Rashifal updated' });
   } catch (err: any) {

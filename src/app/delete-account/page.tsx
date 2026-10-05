@@ -76,14 +76,7 @@ export default function DeleteAccountPage() {
     if (!confirm) return setError('कृपया पुष्टि करें कि आप अपना खाता स्थायी रूप से हटवाना चाहते हैं।');
     setBusy(true);
     try {
-      // Pehle se khula anurodh ho toh dobara OTP nahi
-      const existing = await getDoc(doc(db, 'account_deletion_requests', phone));
-      if (existing.exists() && existing.data().status === 'pending') {
-        const at = existing.data().createdAt?.toDate?.();
-        setInfo(`इस नंबर का अनुरोध पहले से दर्ज है${at ? ` (${at.toLocaleDateString('hi-IN')})` : ''}। ${DELETION_DAYS} दिनों के भीतर इसे पूरा कर दिया जाएगा।`);
-        setBusy(false);
-        return;
-      }
+      // Pehle se khule anurodh ki jaanch OTP ke baad hoti hai (Firestore rules: sirf usi number ka maalik padh sake)
       const res = await sendOtp(phone);
       if (res.ok && res.sessionId) {
         setSessionId(res.sessionId);
@@ -106,6 +99,13 @@ export default function DeleteAccountPage() {
       const v = await verifyOtp(sessionId, otp);
       if (!v.ok) {
         setError(v.message);
+        setBusy(false);
+        return;
+      }
+      // Pehle se khula anurodh? (ab OTP-verified hain, apna anurodh padh sakte hain)
+      const existing = await getDoc(doc(db, 'account_deletion_requests', phone)).catch(() => null);
+      if (existing?.exists() && existing.data().status === 'pending') {
+        setStep('done');
         setBusy(false);
         return;
       }

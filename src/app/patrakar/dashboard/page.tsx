@@ -18,6 +18,8 @@ import PatrakarIdCardPanel from '@/components/PatrakarIdCardPanel';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
+import { sessionMatchesFirebase } from '@/lib/phoneAuth';
+import { confirmPayment } from '@/lib/payments';
 
 declare global {
   interface Window {
@@ -110,7 +112,12 @@ export default function PatrakarDashboard() {
       window.location.replace('/patrakar/login');
       return;
     }
-    getProfileById('patrakar', session.id)
+    // Firebase pehchaan bhi isi number ki ho (warna rules me kuch nahi chalega) — nahi toh dobara login
+    sessionMatchesFirebase(session.phone)
+      .then((ok) => {
+        if (!ok) throw new Error('relogin');
+        return getProfileById('patrakar', session.id);
+      })
       .then((profile) => {
         // Session ka phone profile se match na kare toh session nakli/purana hai
         if (!profile || (profile.data.phone !== session.phone && profile.data.mobile !== session.phone)) {
@@ -124,14 +131,8 @@ export default function PatrakarDashboard() {
           return;
         }
         const d = profile.data;
-        // Press ID approval ke baad pehli baar dashboard khulne par banti hai (signup par nahi)
-        let pressId = d.pressId || d.idNumber || '';
-        if (!pressId) {
-          pressId = `LL-PRESS-${Date.now().toString().slice(-6)}`;
-          updateDoc(doc(db, 'reporters', profile.id), { pressId, pressIdIssuedAt: serverTimestamp() }).catch((err) =>
-            console.error('Press ID save error:', err)
-          );
-        }
+        // Press ID ab ID card tab me portal ke hisaab se server se banti hai (TLL-2026-001…)
+        const pressId = d.pressId || d.idNumber || '';
         setReporter({
           id: profile.id,
           name: d.name || 'संवाददाता',
@@ -216,8 +217,19 @@ export default function PatrakarDashboard() {
       name: siteName,
       description: 'वार्षिक पत्रकार सदस्यता (Unlimited Articles Publishing)',
       handler: async function (response: any) {
+        // Server Razorpay se jaanch kar membership chalu karta hai
+        const confirmed = await confirmPayment('membership', response.razorpay_payment_id);
+        if (!confirmed.ok && !confirmed.fallback) {
+          alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
+          return;
+        }
         alert('सदस्यता भुगतान सफल! अब आप असीमित खबरें सबमिट कर सकते हैं।');
         setReporter({ ...reporter, membershipActive: true });
+        if (confirmed.ok) {
+          setActiveTab('create-article');
+          return;
+        }
+        // Server abhi tayyar nahi — purana tareeka
         // Membership reporter ke Firestore profile me — localStorage me nahi
         await updateDoc(doc(db, 'reporters', reporter.id), { membershipActive: true, membershipUpdatedAt: serverTimestamp() }).catch((err) =>
           console.error('Membership update error:', err)
@@ -270,7 +282,19 @@ export default function PatrakarDashboard() {
       description: 'प्रेस आईडी कार्ड एवं प्रमाणपत्र होम डिलीवरी शुल्क',
       handler: async function (response: any) {
         setPayingDelivery(false);
+        const confirmed = await confirmPayment('delivery', response.razorpay_payment_id, {
+          delivery: { name: delName || reporter.name, phone: delPhone, address: delAddress, pincode: delPincode }
+        });
+        if (!confirmed.ok && !confirmed.fallback) {
+          alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
+          return;
+        }
         alert('डिलीवरी शुल्क ₹299 का भुगतान सफल! आपकी किट 5-7 कार्यदिवसों में भेज दी जाएगी।');
+        if (confirmed.ok) {
+          setActiveTab('overview');
+          return;
+        }
+        // Server abhi tayyar nahi — purana tareeka
 
         await addDoc(collection(db, 'delivery_requests'), {
           reporterName: delName || reporter.name,

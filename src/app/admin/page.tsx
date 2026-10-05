@@ -84,15 +84,7 @@ export default function AdminDashboardPage() {
   const [reporters, setReporters] = useState<ReporterData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🛡️ 1. AUTH PROTECTION: Check if Admin is logged in
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const adminSession = localStorage.getItem('admin_user');
-      if (!adminSession) {
-        router.push('/admin/login');
-      }
-    }
-  }, [router]);
+  // Auth: server (proxy.ts) aur admin layout session check karte hain
 
   // Realtime Firestore Listeners
   useEffect(() => {

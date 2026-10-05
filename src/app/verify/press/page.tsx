@@ -36,10 +36,30 @@ export default function VerifyPressPage() {
       setResult({ state: 'missing' });
       return;
     }
-    getDocs(query(collection(db, 'reporters'), where('pressIdList', 'array-contains', id), limit(1)))
-      .then((snap) => {
-        if (snap.empty) return setResult({ state: 'missing' });
-        const r = snap.docs[0].data();
+    // Pehle server (sirf card wali public jaankari); server tayyar na ho toh seedha Firestore
+    const loadReporter = async (): Promise<any | null> => {
+      const res = await fetch(`/api/verify-press?id=${encodeURIComponent(id)}`);
+      if (res.status !== 503) {
+        const d = await res.json();
+        if (!d.found) return null;
+        return {
+          name: d.name,
+          photoUrl: d.photo,
+          designation: d.designation,
+          workArea: d.area,
+          cardValidTill: d.cardValidTill,
+          status: d.status,
+          cardStatus: d.cardStatus,
+          pressIds: { [d.slug]: id },
+          pressIdIssuedOn: { [d.slug]: d.issuedOn }
+        };
+      }
+      const snap = await getDocs(query(collection(db, 'reporters'), where('pressIdList', 'array-contains', id), limit(1)));
+      return snap.empty ? null : snap.docs[0].data();
+    };
+    loadReporter()
+      .then((r) => {
+        if (!r) return setResult({ state: 'missing' });
         const slug = Object.keys(r.pressIds || {}).find((k) => r.pressIds[k] === id) || r.cardSiteId || 'the-local-leader';
         const fb = fallbackFor(slug);
         const issuedOn = toDate(r.pressIdIssuedOn?.[slug]) || new Date();

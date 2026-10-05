@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase';
 import { doc, increment, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { fallbackFor } from '@/lib/siteTheme';
 import PressCardViewer from '@/components/PressCardViewer';
-import { BLOOD_GROUPS, buildPressCardData, issuePressId, resizePhoto } from '@/lib/pressCard';
+import { BLOOD_GROUPS, buildPressCardData, issuePressIdForSelf as issuePressId, resizePhoto } from '@/lib/pressCard';
 
 interface Props {
   reporterDocId: string;

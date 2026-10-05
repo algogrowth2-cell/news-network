@@ -530,6 +530,19 @@ export async function issuePressId(reporterDocId: string, siteSlug: string): Pro
   });
 }
 
+/**
+ * Patrakar khud ke liye: server (/api/patrakar/press-id) — Firestore rules me counters sirf server likhta hai.
+ * Server tayyar na ho (503) toh purana browser transaction.
+ */
+export async function issuePressIdForSelf(reporterDocId: string, siteSlug: string): Promise<{ pressId: string; issuedOn: Date }> {
+  const { authFetch, legacyFallback } = await import('@/lib/phoneAuth');
+  const res = await authFetch('/api/patrakar/press-id', { method: 'POST', body: JSON.stringify({ siteSlug }) });
+  if (legacyFallback(res.status)) return issuePressId(reporterDocId, siteSlug);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `press-id ${res.status}`);
+  return { pressId: data.pressId, issuedOn: new Date(data.issuedOn) };
+}
+
 /** Reporter doc + site config se card ka data */
 export function buildPressCardData(
   rep: any,

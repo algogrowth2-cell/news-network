@@ -6,6 +6,9 @@ import { collection, onSnapshot, query, doc, getDoc, setDoc, serverTimestamp } f
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
+import { EPAPER_PLANS } from '@/lib/plans';
+import { confirmPayment } from '@/lib/payments';
+import { authFetch, legacyFallback } from '@/lib/phoneAuth';
 
 interface EPaperEdition {
   id: string;
@@ -14,6 +17,7 @@ interface EPaperEdition {
   date: string;
   thumbnailUrl: string;
   pdfUrl: string;
+  hasPdf: boolean; // PDF hai (link server deta hai)
   pages: string[];
   totalPages: number;
 }
@@ -32,22 +36,7 @@ const sortableDate = (d: string) => {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : d;
 };
 
-const EPAPER_PLANS = [
-  {
-    id: 'epaper_1_month',
-    name: '1 महीना प्लान (1 Month)',
-    price: 21,
-    durationDays: 30,
-    desc: '₹21 में 30 दिनों का सभी संस्करणों का ई-पेपर ऐक्सेस'
-  },
-  {
-    id: 'epaper_1_year',
-    name: '1 साल का वार्षिक प्लान (1 Year)',
-    price: 132,
-    durationDays: 365,
-    desc: '₹132 (मात्र ₹11/माह) में पूरे 365 दिनों का असीमित ऐक्सेस'
-  }
-];
+// Plans lib/plans me — server bhi isi rakam se payment jaanchta hai
 
 const RAZORPAY_KEY = 'rzp_test_TZSA6UoKATong0';
 
@@ -341,6 +330,7 @@ function EPaperComponent() {
               date: String(d.date || ''),
               thumbnailUrl: d.thumbnailUrl || d.coverImage || FALLBACK_COVER,
               pdfUrl: d.pdfUrl || '',
+              hasPdf: !!(d.pdfUrl || d.hasPdf || pages.length),
               pages,
               totalPages: Number(d.totalPages || pages.length || 0)
             });
@@ -373,12 +363,37 @@ function EPaperComponent() {
     setShowPayModal(true);
   };
 
-  const handleOpenReader = (ed: EPaperEdition) => {
+  // PDF ka link server se (subscription jaanch ke baad 10 minute ka signed link); server tayyar na ho toh purana link
+  const loadEditionFile = async (ed: EPaperEdition): Promise<{ url: string; pages: string[] } | null> => {
+    try {
+      const res = await authFetch(`/api/epaper/file?id=${encodeURIComponent(ed.id)}`);
+      if (legacyFallback(res.status)) {
+        // Server abhi tayyar nahi / purana login (rules lagne se pehle) — naye editions ka link epaper_files me hai
+        if (ed.pdfUrl || ed.pages.length) return { url: ed.pdfUrl, pages: ed.pages };
+        const priv = (await getDoc(doc(db, 'epaper_files', ed.id)).catch(() => null))?.data();
+        return { url: priv?.pdfUrl || '', pages: priv?.pages || [] };
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 403) setHasSubscribed(false);
+        alert(data.message || 'ई-पेपर खुल नहीं पाया, कृपया दोबारा लॉगिन करें।');
+        return null;
+      }
+      return { url: data.url || '', pages: Array.isArray(data.pages) ? data.pages : [] };
+    } catch {
+      alert('सर्वर से संपर्क नहीं हो पाया, कृपया पुनः प्रयास करें।');
+      return null;
+    }
+  };
+
+  const handleOpenReader = async (ed: EPaperEdition) => {
     if (!hasSubscribed) {
       handleOpenSubscribe();
       return;
     }
-    setReadingEdition(ed);
+    const file = await loadEditionFile(ed);
+    if (!file) return;
+    setReadingEdition({ ...ed, pdfUrl: file.url, pages: file.pages.length ? file.pages : ed.pages });
     setCurrentPage(0);
   };
 
@@ -388,13 +403,19 @@ function EPaperComponent() {
       handleOpenSubscribe();
       return;
     }
-    if (!ed.pdfUrl) {
+    if (!ed.hasPdf) {
       alert('इस संस्करण की PDF अभी उपलब्ध नहीं है।');
       return;
     }
 
     const fileName = `${siteSlug}-${ed.cityName}-${ed.date}.pdf`;
     setDownloadingId(ed.id);
+    const file = await loadEditionFile(ed);
+    if (!file?.url) {
+      setDownloadingId(null);
+      return;
+    }
+    ed = { ...ed, pdfUrl: file.url };
     try {
       const res = await fetch(ed.pdfUrl);
       if (!res.ok) throw new Error('PDF fetch failed');
@@ -436,6 +457,19 @@ function EPaperComponent() {
       image: siteLogo,
       handler: async function (response: any) {
         try {
+          // Server Razorpay se payment jaanch kar hi subscription chalu karta hai
+          const confirmed = await confirmPayment('epaper', response.razorpay_payment_id, { planId: selectedPlan.id, siteId: siteSlug });
+          if (!confirmed.ok && !confirmed.fallback) {
+            alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
+            return;
+          }
+          if (confirmed.ok) {
+            alert(`🎉 भुगतान सफल! ${selectedPlan.name} सक्रिय हो गया है।`);
+            setHasSubscribed(true);
+            setShowPayModal(false);
+            return;
+          }
+          // Server abhi tayyar nahi — purana tareeka
           const expiresAt = new Date(Date.now() + selectedPlan.durationDays * 24 * 60 * 60 * 1000);
           await setDoc(
             doc(db, 'epaper_subscriptions', currentUser.email),
@@ -603,12 +637,12 @@ function EPaperComponent() {
                 {hasSubscribed && (
                   <button
                     className="ep-btn ep-dl-card"
-                    disabled={!edition.pdfUrl || downloadingId === edition.id}
+                    disabled={!edition.hasPdf || downloadingId === edition.id}
                     onClick={() => handleDownloadPdf(edition)}
                   >
                     {downloadingId === edition.id
                       ? 'डाउनलोड हो रहा है...'
-                      : edition.pdfUrl
+                      : edition.hasPdf
                         ? '⬇ PDF डाउनलोड करें'
                         : 'PDF उपलब्ध नहीं'}
                   </button>

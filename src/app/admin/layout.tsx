@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ADMIN_THEME_CSS, ADMIN_THEME_KEY, type AdminTheme } from './adminTheme';
+import { currentFirebaseUser, firebaseSignOut, signInWithServerToken } from '@/lib/phoneAuth';
 
 /* Layout styles (sirf design): desktop me fixed sidebar, mobile me drawer */
 const AL_STYLES = `
@@ -56,7 +57,7 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [adminEmail, setAdminEmail] = useState('goldenpearlnews@gmail.com');
+  const [adminEmail, setAdminEmail] = useState('');
   // Light default; admin ki pasand (light/dark) browser me yaad rehti hai
   const [theme, setTheme] = useState<AdminTheme>('light');
 
@@ -87,25 +88,37 @@ export default function AdminLayout({
       return;
     }
 
-    const adminUser = localStorage.getItem('admin_user');
-    const adminToken = localStorage.getItem('admin_token');
-
-    // Agar adminUser exist karta hai toh login valid hai
-    if (!adminUser && !adminToken) {
-      setIsAuthenticated(false);
-      router.replace('/admin/login');
-    } else {
-      if (adminUser) {
-        try {
-          const parsed = JSON.parse(adminUser);
-          if (parsed?.email) setAdminEmail(parsed.email);
-        } catch (e) {
-          console.error(e);
+    // Session server par verify (HttpOnly signed cookie) — localStorage par bharosa nahi
+    let cancelled = false;
+    fetch('/api/admin/session', { credentials: 'same-origin', cache: 'no-store' })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          setIsAuthenticated(false);
+          router.replace(`/admin/login?next=${encodeURIComponent(pathname || '/admin')}`);
+          return;
         }
-      }
-      setIsAuthenticated(true);
-    }
-    setIsCheckingAuth(false);
+        const data = await res.json();
+        if (data?.email) setAdminEmail(data.email);
+        // Firebase me admin pehchaan (Firestore rules: token.admin) — pehle se ho toh dobara nahi
+        try {
+          const u = await currentFirebaseUser();
+          const isAdminToken = u ? (await u.getIdTokenResult()).claims.admin === true : false;
+          if (!isAdminToken) {
+            const t = await fetch('/api/admin/firebase-token', { method: 'POST', credentials: 'same-origin', cache: 'no-store' });
+            if (t.ok) await signInWithServerToken((await t.json()).token);
+          }
+        } catch (err) {
+          console.error('Admin Firebase sign-in error:', err);
+        }
+        if (cancelled) return;
+        setIsAuthenticated(true);
+      })
+      .catch(() => !cancelled && router.replace('/admin/login'))
+      .finally(() => !cancelled && setIsCheckingAuth(false));
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router]);
 
   // Route change hone par mobile drawer automatically close ho jaye
@@ -113,11 +126,12 @@ export default function AdminLayout({
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    await firebaseSignOut();
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     sessionStorage.removeItem('admin_user');
-    document.cookie = 'admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     setIsAuthenticated(false);
     router.replace('/admin/login');
   };

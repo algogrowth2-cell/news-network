@@ -69,8 +69,19 @@ export async function getProfileById(role: PortalRole, id: string): Promise<Role
   return snap.exists() ? { id: snap.id, data: snap.data() } : null;
 }
 
-// Phone se registered profile (naye 'phone' field ke saath purane 'mobile' records bhi)
+// Phone se registered profile (naye 'phone' field ke saath purane 'mobile' records bhi).
+// Pehle server (/api/auth/lookup — Firestore rules ke baad bina login yahi chalta hai), server tayyar na ho toh seedha Firestore.
 export async function findProfileByPhone(role: PortalRole, phone: string): Promise<RoleProfile | null> {
+  try {
+    const res = await fetch('/api/auth/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: role, phone }) });
+    if (res.status !== 503) {
+      if (!res.ok) throw new Error('lookup ' + res.status);
+      const d = await res.json();
+      return d.found ? { id: d.id, data: { status: d.status, consent: { version: d.consentVersion } } } : null;
+    }
+  } catch (err) {
+    if (!(err instanceof TypeError)) throw err;
+  }
   const direct = await getProfileById(role, profileDocId(role, phone));
   if (direct) return direct;
   const col = collection(db, ROLE_CONFIG[role].collection);

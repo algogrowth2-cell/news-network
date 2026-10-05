@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { createReaderWithReferral, normalizeReferralInput } from '@/lib/referralService';
-import { isReaderRegistered } from '@/lib/readerLookup';
+import { createReader, normalizeReferralInput } from '@/lib/referralService';
+import { lookupReader } from '@/lib/readerLookup';
+import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
 import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
@@ -79,7 +80,7 @@ function LoginAndSignupContent() {
     setLoading(true);
     try {
       // OTP se pehle hi existence check: signup me duplicate aur login me unregistered number block (SMS kharch nahi)
-      const registered = await isReaderRegistered(phone);
+      const { registered, consentVersion } = await lookupReader(phone);
       if (authMode === 'signup' && registered) {
         setAccountError('registered');
         setLoading(false);
@@ -99,8 +100,7 @@ function LoginAndSignupContent() {
         }
         setRecordOnVerify(true);
       } else {
-        const prof = await getDoc(doc(db, 'users', `u_${phone}`));
-        const has = prof.exists() && prof.data().consent?.version === CONSENT_VERSION;
+        const has = consentVersion === CONSENT_VERSION;
         if (!has) {
           const ce = consentError(consent, 'signup');
           if (ce) {
@@ -120,14 +120,10 @@ function LoginAndSignupContent() {
     }
 
     try {
-      const res = await fetch('/api/auth/otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', phone })
-      });
-      const data = await res.json();
+      // otpClient: server ka ticket yaad rakhta hai (verify par Firebase pehchaan isi number ki)
+      const data = await sendOtp(phone);
 
-      if (data.success) {
+      if (data.ok && data.sessionId) {
         setSessionId(data.sessionId);
         setStep('otp');
         setMsg({ text: `+91 ${phone} पर SMS द्वारा 6 अंकों का OTP भेज दिया गया है।`, type: 'success' });
@@ -152,14 +148,10 @@ function LoginAndSignupContent() {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', sessionId, otp })
-      });
-      const data = await res.json();
+      // OTP sahi → server Firebase token deta hai aur sign-in yahin (Firestore rules isi pehchaan se)
+      const data = await verifyOtp(sessionId, otp);
 
-      if (data.success) {
+      if (data.ok) {
         const userId = 'u_' + phone;
         let finalName = name.trim();
         let finalEmail = email.trim();
@@ -182,9 +174,9 @@ function LoginAndSignupContent() {
               email: finalEmail || `${phone}@news.local`,
               phone
             };
-            // Naya user + referral auto-verify ek hi transaction me (self-referral / duplicate / galat code apne aap block)
+            // Naya user + referral auto-verify (server par; server tayyar na ho toh browser transaction)
             try {
-              const result = await createReaderWithReferral(profile, referralCode);
+              const result = await createReader(profile, referralCode);
               referralRecorded = result.created && result.referral === 'recorded';
               referralRejected = result.created && !!referralCode && result.referral !== 'recorded';
             } catch (txErr) {

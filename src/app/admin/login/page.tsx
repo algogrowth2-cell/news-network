@@ -4,48 +4,39 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('goldenpearlnews@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Password ki jaanch sirf server par (/api/admin/login) — browser code me koi password nahi
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
-
-    // 🛡️ DIRECT MASTER CREDENTIALS CHECK (Bypasses Firebase Auth restrictions)
-    const validEmails = ['goldenpearlnews@gmail.com', 'admin@goldenpearlnews.com', 'admin@thelocalleader.in'];
-    const validPasswords = ['GoldenPearl@2026', 'Admin@123', 'admin123', 'goldenpearl@2026', 'pankaj@123'];
-
-    if (validEmails.includes(cleanEmail) && validPasswords.includes(cleanPassword)) {
-      const adminData = {
-        uid: 'golden-pearl-superadmin',
-        email: cleanEmail,
-        role: 'superadmin',
-        name: 'Golden Pearl Administrator',
-        authenticatedAt: new Date().toISOString()
-      };
-
-      // 1. Save in localStorage
-      localStorage.setItem('admin_user', JSON.stringify(adminData));
-
-      // 2. Save in sessionStorage
-      sessionStorage.setItem('admin_user', JSON.stringify(adminData));
-
-      // 3. Save Cookie for Next.js middleware / layout check
-      document.cookie = `admin_session=true; path=/; max-age=86400`;
-      document.cookie = `admin_user=${encodeURIComponent(JSON.stringify(adminData))}; path=/; max-age=86400`;
-
-      // 4. Direct hard reload to Admin Dashboard
-      window.location.href = '/admin';
-      return;
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+        credentials: 'same-origin'
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        // Purane (asurakshit) browser records saaf
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_token');
+        sessionStorage.removeItem('admin_user');
+        setPassword('');
+        // Sirf apni site ke andar ka path (open redirect nahi)
+        const next = new URLSearchParams(window.location.search).get('next') || '';
+        window.location.href = next.startsWith('/admin') && !next.startsWith('//') ? next : '/admin';
+        return;
+      }
+      setError(data.message || 'लॉगिन नहीं हो पाया, कृपया पुनः प्रयास करें।');
+    } catch {
+      setError('सर्वर से संपर्क नहीं हो पाया, कृपया पुनः प्रयास करें।');
     }
-
-    setError('अमान्य ईमेल या पासवर्ड। कृपया पासवर्ड सही दर्ज करें (GoldenPearl@2026)');
     setLoading(false);
   };
 
@@ -128,7 +119,7 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="goldenpearlnews@gmail.com"
+              placeholder="admin@example.com"
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
@@ -140,7 +131,7 @@ export default function AdminLoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="GoldenPearl@2026 दर्ज करें"
+              placeholder="अपना पासवर्ड दर्ज करें"
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>

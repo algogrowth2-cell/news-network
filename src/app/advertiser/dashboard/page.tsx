@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
+import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 
 interface AdvertiserAd {
   id: string;
@@ -110,7 +111,12 @@ export default function AdvertiserDashboard() {
       window.location.replace('/advertiser/login');
       return;
     }
-    getProfileById('advertiser', session.id)
+    // Firebase pehchaan bhi isi number ki ho (Firestore rules isi par) — nahi toh dobara login
+    sessionMatchesFirebase(session.phone)
+      .then((ok) => {
+        if (!ok) throw new Error('relogin');
+        return getProfileById('advertiser', session.id);
+      })
       .then((profile) => {
         // Profile na mile ya session ka phone match na kare toh session nakli/purana hai
         if (!profile || (profile.data.phone !== session.phone && profile.data.mobile !== session.phone)) {
@@ -268,7 +274,7 @@ export default function AdvertiserDashboard() {
           contactNumber: contactPhone.trim() || currentUser.phone,
           imageUrl: imageUrl.trim() || '',
           siteId: selectedSite,
-          status: 'active', // Direct active for sidebar classifieds
+          status: 'pending', // Admin ki manzoori ke baad hi live (Admin → Classifieds)
           format: 'classified',
           type: 'classified',
           advertiserId: currentUser.id,
@@ -279,7 +285,7 @@ export default function AdvertiserDashboard() {
           timestamp: serverTimestamp()
         });
 
-        alert('✅ आपका क्लासिफाइड विज्ञापन सफलतापूर्वक दर्ज हो गया है aur वेबसाइट के साइडबार विजेट में लाइव हो गया है!');
+        alert('✅ आपका क्लासिफाइड विज्ञापन दर्ज हो गया है। एडमिन की जांच और स्वीकृति के बाद यह वेबसाइट पर लाइव होगा।');
       } else {
         // 👉 2. BANNER ADS: 'ads' collection mein jayega (Header / Sidebar Square Banner)
         await addDoc(collection(db, 'ads'), {
@@ -295,7 +301,7 @@ export default function AdvertiserDashboard() {
           startDate: startDate || 'तत्काल',
           endDate: endDate || 'खुला',
           budget: budget || '5000',
-          status: 'active',
+          status: 'pending', // Admin ki manzoori ke baad hi live (Admin → Ads & Revenue → Requests)
           priority: 1,
           impressions: 0,
           clicks: 0,
@@ -307,7 +313,7 @@ export default function AdvertiserDashboard() {
           createdAt: serverTimestamp()
         });
 
-        alert('✅ आपका बैनर विज्ञापन सफलतापूर्वक लाइव हो गया है!');
+        alert('✅ आपका बैनर विज्ञापन दर्ज हो गया है। एडमिन की जांच और स्वीकृति के बाद यह वेबसाइट पर लाइव होगा।');
       }
 
       setName('');

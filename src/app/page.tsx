@@ -2,6 +2,7 @@
 import { Fragment, Suspense, useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { SECURE_AUTH } from '@/lib/phoneAuth';
 import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -533,18 +534,26 @@ function HomePageContent() {
       }
     }
 
+    // Firebase pehchaan (OTP ke baad server token) se milaan: SECURE mode me pathak session tabhi maana jaata hai
+    // jab Firebase user isi mobile ka ho — warna logout (purana/nakli localStorage session).
+    // Note: Firebase user se reader_user overwrite NAHI karte (admin ya kisi aur role ka token pathak na ban jaaye).
+    if (!SECURE_AUTH) return;
     try {
       const auth = getAuth(app);
-      const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const userData = {
-            uid: user.uid,
-            name: user.displayName || user.phoneNumber || user.email?.split('@')[0] || (isEnglishSite ? 'Reader' : 'पाठक'),
-            email: user.email || '',
-            phone: user.phoneNumber || ''
-          };
-          setReaderUser(userData);
-          localStorage.setItem('reader_user', JSON.stringify(userData));
+      const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+        const raw = localStorage.getItem('reader_user');
+        if (!raw) return;
+        let phone = '';
+        try {
+          phone = JSON.parse(raw).phone || '';
+        } catch {
+          /* kharab session */
+        }
+        const claimPhone = user ? ((await user.getIdTokenResult()).claims.phone as string) || '' : '';
+        if (!phone || claimPhone !== phone) {
+          localStorage.removeItem('reader_user');
+          localStorage.removeItem('shok_user');
+          setReaderUser(null);
         }
       });
       return () => unsubscribeAuth();
