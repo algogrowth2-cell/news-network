@@ -8,6 +8,7 @@ import { NETWORK_SITES, normalizeSiteId } from '@/lib/portals';
 import { fallbackFor } from '@/lib/siteTheme';
 import { isArticleLive, toJsDate } from '@/lib/articles';
 import { articleTime } from '@/lib/articleQueries';
+import { notifyContent, portalsFrom } from '@/lib/notifications';
 
 // Kis portal par: naya siteIds array ya purana siteId
 const portalLabel = (a: any) => {
@@ -45,6 +46,19 @@ export default function ArticlesPage() {
         status: 'published',
         publishAt: Timestamp.now()
       });
+      const a = articles.find((x) => x.id === id);
+      if (a) {
+        notifyContent({
+          title: `${a.isBreaking ? '🔴 ब्रेकिंग: ' : 'नई खबर: '}${a.title || a.titleHi}`,
+          message: String(a.summary || '').slice(0, 160),
+          link: `/article/${encodeURIComponent(a.slug || a.id)}`,
+          image: a.image || '',
+          type: a.isBreaking ? 'breaking' : 'news',
+          priority: a.isBreaking ? 'important' : 'normal',
+          portals: portalsFrom(Array.isArray(a.siteIds) && a.siteIds.length ? a.siteIds : a.siteId),
+          sourceId: a.id
+        });
+      }
       alert('लेख स्वीकृत कर दिया गया है और वेबसाइट पर लाइव हो चुका है!');
     } catch (e: any) {
       alert('Approval error: ' + e.message);

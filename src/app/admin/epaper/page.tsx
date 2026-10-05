@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
+import { notifyContent, portalsFrom } from '@/lib/notifications';
 import { NETWORK_SITES } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
@@ -207,7 +208,7 @@ export default function EPaperPage() {
 
     setSaving(true);
     try {
-      await addDoc(collection(db, 'epaper'), {
+      const epRef = await addDoc(collection(db, 'epaper'), {
         siteId,
         date,
         cityName: cityName.trim() || 'मुख्य',
@@ -221,6 +222,17 @@ export default function EPaperPage() {
         totalPages: Number(totalPages) || 0,
         createdAt: serverTimestamp()
       });
+      if (status === 'published') {
+        notifyContent({
+          title: `आज का ई-पेपर: ${editionName.trim() || siteName(siteId)}`,
+          message: `${cityName.trim() || 'मुख्य'} संस्करण · ${date}`,
+          link: '/epaper',
+          image: finalThumb || '',
+          type: 'epaper',
+          portals: portalsFrom(siteId),
+          sourceId: epRef.id
+        });
+      }
       alert(`E-Paper ${status === 'published' ? 'publish' : 'draft me save'} ho gaya: ${siteName(siteId)}`);
       resetForm();
     } catch (err: any) {

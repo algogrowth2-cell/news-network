@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { NETWORK_SITES } from '@/lib/portals';
 import { fallbackFor } from '@/lib/siteTheme';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import { notifyContent, portalsFrom } from '@/lib/notifications';
 import { isDirectVideo, makeSlug, readTimeMinutes, stripHtml, suggestTags, youtubeEmbedUrl, youtubeId } from '@/lib/articles';
 import { uploadArticleMedia, uploadErrorMessage, validateMedia, type MediaKind } from '@/lib/mediaUpload';
 import { DEFAULT_CATEGORIES, fetchCategories, fetchStatesAndCities, type CategoryItem, type CityItem, type StateItem } from '@/lib/taxonomy';
@@ -336,7 +337,7 @@ export default function NewArticlePage() {
     const status = mode === 'draft' ? 'draft' : scheduled ? 'scheduled' : 'published';
     const finalSites = sites.length ? sites : [];
     try {
-      await addDoc(collection(db, 'articles'), {
+      const savedRef = await addDoc(collection(db, 'articles'), {
         title: title.trim(),
         titleHi: title.trim(),
         titleEn: titleEn.trim(),
@@ -375,6 +376,21 @@ export default function NewArticlePage() {
         createdAt: publishDate.toISOString().split('T')[0],
         timestamp: serverTimestamp()
       });
+      // Pathakon ko 🔔 notification (scheduled khabar ka notification bhi usi samay)
+      if (mode === 'publish') {
+        const finalSlug = slug.trim() || savedRef.id;
+        notifyContent({
+          title: `${isBreaking ? '🔴 ब्रेकिंग: ' : 'नई खबर: '}${title.trim()}`,
+          message: (summary || plainContent).trim().slice(0, 160),
+          link: `/article/${encodeURIComponent(finalSlug)}`,
+          image: thumbnail || firstContentImage,
+          type: isBreaking ? 'breaking' : 'news',
+          priority: isBreaking ? 'important' : 'normal',
+          portals: finalSites.length === NETWORK_SITES.length ? [] : finalSites,
+          publishAt: publishDate,
+          sourceId: savedRef.id
+        });
+      }
       const where = finalSites.length === NETWORK_SITES.length ? 'सभी पोर्टल' : finalSites.map((s) => siteNames[s] || fallbackFor(s).name).join(', ');
       alert(
         mode === 'draft'

@@ -14,6 +14,7 @@ import { rememberPortal } from '@/lib/siteTheme';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
+import NotificationBell from '@/components/NotificationBell';
 import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
 import { categoryMatches, matchesTrendTag, setDynamicCategories } from '@/lib/categories';
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
@@ -967,6 +968,14 @@ function HomePageContent() {
               <SearchIcon size={14} />
               {isEnglishSite ? 'Search' : 'खोजें'}
             </button>
+            <NotificationBell
+              portal={currentSlug}
+              loggedIn={!!readerUser}
+              userKey={readerUser?.phone || readerUser?.uid || 'guest'}
+              primaryColor={primary}
+              isEnglish={isEnglishSite}
+              siteQuery={`site=${currentSlug}`}
+            />
             {readerUser ? (
               <ReaderProfileMenu
                 user={readerUser}
@@ -992,6 +1001,14 @@ function HomePageContent() {
             >
               <SearchIcon size={15} />
             </button>
+            <NotificationBell
+              portal={currentSlug}
+              loggedIn={!!readerUser}
+              userKey={readerUser?.phone || readerUser?.uid || 'guest'}
+              primaryColor={primary}
+              isEnglish={isEnglishSite}
+              siteQuery={`site=${currentSlug}`}
+            />
             {readerUser ? (
               <ReaderProfileMenu
                 user={readerUser}

@@ -11,6 +11,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { notifyContent, portalsFrom } from '@/lib/notifications';
 import { normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
@@ -111,7 +112,7 @@ export default function AdminVideosPage() {
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'videos'), {
+      const vidRef = await addDoc(collection(db, 'videos'), {
         title: title.trim(),
         youtubeUrl: youtubeUrl.trim(),
         youtubeId: yId,
@@ -119,6 +120,16 @@ export default function AdminVideosPage() {
         siteId: siteId.toLowerCase(), // 👉 Specific Selected Portal Save hoga
         description: description.trim() || '',
         createdAt: serverTimestamp()
+      });
+
+      notifyContent({
+        title: `नया वीडियो: ${title.trim()}`,
+        message: description.trim().slice(0, 160),
+        link: '/videos',
+        image: `https://i.ytimg.com/vi/${yId}/hqdefault.jpg`,
+        type: 'video',
+        portals: portalsFrom(siteId.toLowerCase()),
+        sourceId: vidRef.id
       });
 
       setTitle('');

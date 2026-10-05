@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { notifyContent, portalsFrom } from '@/lib/notifications';
 import { NETWORK_SITES, LEGACY_SLUG_MAP, normalizeSiteId } from '@/lib/portals';
 import styles from '../Admin.module.css';
 
@@ -79,7 +80,7 @@ export default function LiveBlogsPage() {
 
     setSaving(true);
     try {
-      await addDoc(collection(db, 'live_blogs'), {
+      const liveRef = await addDoc(collection(db, 'live_blogs'), {
         title: newTitle.trim(),
         siteId: newSiteId,
         youtubeUrl: newYoutubeUrl.trim(),
@@ -87,6 +88,19 @@ export default function LiveBlogsPage() {
         isActive: true,
         updates: [],
         createdAt: serverTimestamp()
+      });
+
+      notifyContent({
+        title: `🔴 अभी लाइव: ${newTitle.trim()}`,
+        message: 'लाइव कवरेज देखने के लिए क्लिक करें',
+        link: '/',
+        image: `https://i.ytimg.com/vi/${yId}/hqdefault.jpg`,
+        type: 'live',
+        priority: 'important',
+        portals: portalsFrom(newSiteId),
+        // 12 ghante baad apne-aap hat jaaye
+        expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000),
+        sourceId: liveRef.id
       });
 
       setNewTitle('');
