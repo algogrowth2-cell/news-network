@@ -159,8 +159,12 @@ body {
 
 .hp-ticker{background:#111;color:#cbd5e1;font-size:12px}
 .hp-ticker-in{max-width:1320px;margin:0 auto;padding:7px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.hp-ticker-items{display:flex;align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-.hp-ticker-items::-webkit-scrollbar{display:none}
+.hp-ticker-items{flex:1;min-width:0;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.hp-ticker-track{display:inline-flex;align-items:center;gap:10px;padding-right:10px;animation:hpMarquee var(--hp-ticker-dur,60s) linear infinite}
+.hp-ticker-items:hover .hp-ticker-track,.hp-ticker-items:focus-within .hp-ticker-track{animation-play-state:paused}
+@keyframes hpMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.hp-ticker-items{overflow-x:auto;scrollbar-width:none;-webkit-mask-image:none;mask-image:none}.hp-ticker-track{animation:none}.hp-ticker-track>.hp-ticker-copy{display:none}}
+.hp-ticker-live{display:inline-block;background:#dc2626;color:#fff;font-size:9.5px;font-weight:800;border-radius:4px;padding:1px 5px;margin-right:5px;letter-spacing:.04em;vertical-align:1px}
 .hp-ticker-sep{color:#444}
 .hp-ticker-label{color:#94a3b8;margin-right:4px}
 .hp-ticker-date{white-space:nowrap;flex-shrink:0;color:#e2e8f0;font-weight:600}
@@ -423,6 +427,49 @@ function HomePageContent() {
     const interval = setInterval(updateDate, 60000);
     return () => clearInterval(interval);
   }, [isEnglishSite]);
+
+  // Ticker: user ki location ka mausam (har 15 min) + live cricket (har 2 min)
+  const [weather, setWeather] = useState<any>(null);
+  const [cricket, setCricket] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    const loadWeather = async () => {
+      try {
+        // Location ki permission pehle se di ho toh sateek jagah (bina pop-up); warna IP se shehar
+        let qs = '';
+        try {
+          const perm = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
+          if (perm?.state === 'granted') {
+            const pos = await new Promise<GeolocationPosition>((ok, fail) => navigator.geolocation.getCurrentPosition(ok, fail, { timeout: 5000, maximumAge: 30 * 60 * 1000 }));
+            qs = `?lat=${pos.coords.latitude.toFixed(3)}&lon=${pos.coords.longitude.toFixed(3)}`;
+          }
+        } catch {
+          /* IP wali location */
+        }
+        const res = await fetch(`/api/weather${qs}`);
+        if (res.ok && !cancelled) setWeather(await res.json());
+      } catch (err) {
+        console.warn('Weather load failed:', err);
+      }
+    };
+    const loadCricket = async () => {
+      try {
+        const res = await fetch('/api/cricket');
+        if (res.ok && !cancelled) setCricket((await res.json()).matches || []);
+      } catch (err) {
+        console.warn('Cricket load failed:', err);
+      }
+    };
+    loadWeather();
+    loadCricket();
+    const w = setInterval(loadWeather, 15 * 60 * 1000);
+    const c = setInterval(loadCricket, 2 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(w);
+      clearInterval(c);
+    };
+  }, []);
 
   // Live ticker: /api/market-rates (server 1 ghante cache karta hai); har 15 min me refresh. Fail par pichhle rates bane rehte hain
   useEffect(() => {
@@ -863,7 +910,28 @@ function HomePageContent() {
       <div className="hp-ticker">
         <div className="hp-ticker-in">
           <div className="hp-ticker-items">
-            {[
+            {(() => {
+              const shortTeam = (t: string) => t.replace(/Under-19s?/i, 'U19').replace(/\bWomen\b/i, 'W').replace(/United States of America/i, 'USA').replace(/United Arab Emirates/i, 'UAE');
+              const items: { key: string; label: string; value: string; color: string; live?: boolean }[] = [];
+              if (weather && !weather.error) {
+                const place = isEnglishSite ? weather.city : weather.cityHi;
+                items.push({
+                  key: 'weather',
+                  label: `${weather.icon} ${place || (isEnglishSite ? 'Weather' : 'मौसम')}`,
+                  value: `${weather.temp}°C ${isEnglishSite ? weather.textEn : weather.textHi} · ${weather.max}°/${weather.min}°${weather.rainChance >= 30 ? ` · 🌧 ${weather.rainChance}%` : ''}`,
+                  color: '#7dd3fc'
+                });
+              }
+              cricket.slice(0, 2).forEach((m: any, i: number) =>
+                items.push({
+                  key: `cric-${i}`,
+                  label: '🏏',
+                  value: `${shortTeam(m.team1)} ${m.score1 || ''} vs ${shortTeam(m.team2)} ${m.score2 || ''}`.replace(/\s+/g, ' ').trim(),
+                  color: m.live ? '#4ade80' : '#e2e8f0',
+                  live: m.live
+                })
+              );
+              const market: { label: string; value: string; color: string }[] = [
               { label: isEnglishSite ? 'Petrol (Indore)' : 'पेट्रोल (इंदौर)', value: marketRates.petrol, color: '#fff' },
               { label: isEnglishSite ? 'Diesel (Indore)' : 'डीज़ल (इंदौर)', value: marketRates.diesel, color: '#fff' },
               {
@@ -878,15 +946,26 @@ function HomePageContent() {
               },
               { label: isEnglishSite ? 'Gold 10g*' : 'सोना 10 ग्रा.*', value: marketRates.gold, color: '#fbbf24' },
               { label: isEnglishSite ? 'Silver 1kg*' : 'चांदी 1 किग्रा*', value: marketRates.silver, color: '#cbd5e1' }
-            ].map((item, i) => (
-              <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                {i > 0 && <span className="hp-ticker-sep">│</span>}
-                <span>
-                  <span className="hp-ticker-label">{item.label}</span>
-                  <span style={{ color: item.color, fontWeight: 600 }}>{item.value}</span>
-                </span>
-              </span>
-            ))}
+              ];
+              market.forEach((m) => items.push({ key: m.label, ...m }));
+              const row = (copy: boolean) =>
+                items.map((item, i) => (
+                  <span key={`${copy ? 'c' : 'o'}-${item.key}`} className={copy ? 'hp-ticker-copy' : undefined} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }} aria-hidden={copy || undefined}>
+                    {(i > 0 || copy) && <span className="hp-ticker-sep">│</span>}
+                    <span>
+                      {item.live && <span className="hp-ticker-live">LIVE</span>}
+                      <span className="hp-ticker-label">{item.label}</span>
+                      <span style={{ color: item.color, fontWeight: 600 }}>{item.value}</span>
+                    </span>
+                  </span>
+                ));
+              return (
+                <div className="hp-ticker-track" style={{ ['--hp-ticker-dur' as any]: `${Math.max(35, items.length * 7)}s` }}>
+                  {row(false)}
+                  {row(true)}
+                </div>
+              );
+            })()}
           </div>
           <div className="hp-ticker-date">
             <span style={{ marginRight: '5px' }}>📅</span>
