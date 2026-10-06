@@ -7,7 +7,7 @@ import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AdSideSlots } from '@/components/SiteAds';
+import { AdSideSlots, useStickySidebar } from '@/components/SiteAds';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
@@ -193,8 +193,6 @@ body {
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
 .hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
-/* Right sidebar me 4 vigyapan + rashifal + classifieds — lamba hai, sticky nahi (warna neeche ke chhup jaate) */
-.hp-side.hp-right{position:static}
 .hp-box{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:14px}
 .hp-box-title{font-size:13.5px;font-weight:800;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid}
 .hp-cat{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;text-align:left;color:#333;transition:background .15s}
@@ -924,6 +922,9 @@ function HomePageContent() {
   const navRef = useRef<HTMLElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
   const fitRef = useRef({ nav: 0, toolsFull: 0, toolsCompact: 0, level: 0 });
+  // Lamba right sidebar: smart sticky (khabron ke saath khaali jagah nahi)
+  const rightSideRef = useRef<HTMLElement>(null);
+  useStickySidebar(rightSideRef, { top: 90, minWidth: 821 });
   const [headerLevel, setHeaderLevel] = useState(0);
   useEffect(() => {
     const check = () => {
@@ -1500,7 +1501,7 @@ function HomePageContent() {
         </main>
 
         {/* ── RIGHT SIDEBAR ── */}
-        <aside className="hp-side hp-right">
+        <aside className="hp-side hp-right" ref={rightSideRef}>
           {/* Sidebar vigyapan (300 × 250) — 4 jagah: 2 upar, 1 rashifal ke baad, 1 classifieds ke baad */}
           <AdSideSlots slug={currentSlug} from={0} to={2} />
 

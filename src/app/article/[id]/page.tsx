@@ -9,7 +9,7 @@ import { isArticleLive, isDirectVideo, looksLikeHtml, sanitizeArticleHtml, youtu
 import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { AdBanner, AdSideSlots, ClassifiedsWidget } from '@/components/SiteAds';
+import { AdBanner, AdSideSlots, ClassifiedsWidget, StickyAside } from '@/components/SiteAds';
 
 interface ArticleDetail {
   id: string;
@@ -445,7 +445,7 @@ export default function ArticleDetailPage() {
           </main>
 
           {/* ──── RIGHT SIDEBAR ──── */}
-          <aside className="ap-aside">
+          <StickyAside className="ap-aside" top={72} minWidth={1025}>
 
             {/* E-Paper */}
             <div className="ap-widget">
@@ -484,7 +484,7 @@ export default function ArticleDetailPage() {
             <ClassifiedsWidget slug={siteSlug} color={primary} />
             <AdSideSlots slug={siteSlug} from={2} to={4} />
 
-          </aside>
+          </StickyAside>
 
         </div>
 

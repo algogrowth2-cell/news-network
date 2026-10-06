@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { collection, doc, getDocs, increment, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -232,6 +232,47 @@ export function ClassifiedsWidget({ slug, color = '#ea580c' }: { slug: string; c
   );
 }
 
+/**
+ * Smart sticky sidebar: chhota ho toh upar chipka; lamba ho toh pehle poora scroll hota hai aur
+ * aakhri vigyapan screen ke neeche aane par wahin ruk jaata hai — lambe content ke saath kabhi khaali jagah nahi,
+ * aur koi vigyapan chhupta nahi. Mobile/tablet (ek column) par normal.
+ */
+export function useStickySidebar(ref: RefObject<HTMLElement | null>, { top = 84, minWidth = 1025 } = {}) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => {
+      if (window.innerWidth < minWidth) {
+        el.style.position = '';
+        el.style.top = '';
+        return;
+      }
+      el.style.position = 'sticky';
+      el.style.alignSelf = 'start';
+      el.style.top = `${Math.min(top, window.innerHeight - el.offsetHeight - 16)}px`;
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    window.addEventListener('resize', apply);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, [ref, top, minWidth]);
+}
+
+/** Smart sticky <aside> (jahan aside baad me render hota hai, jaise article page) */
+export function StickyAside({ className, children, top, minWidth }: { className?: string; children: React.ReactNode; top?: number; minWidth?: number }) {
+  const ref = useRef<HTMLElement>(null);
+  useStickySidebar(ref, { top, minWidth });
+  return (
+    <aside className={className} ref={ref}>
+      {children}
+    </aside>
+  );
+}
+
 /** Portal: diya ho toh wahi, warna ?site= / domain / pichhla portal (browser me) */
 function useResolvedSlug(slug?: string) {
   const [s, setS] = useState(slug || '');
@@ -266,6 +307,8 @@ export function AdInline({ slug, index = 0 }: { slug?: string; index?: number })
  */
 export function AdLayout({ slug, color, children, top = true, maxWidth = 1380 }: { slug?: string; color?: string; children: React.ReactNode; top?: boolean; maxWidth?: number }) {
   const s = useResolvedSlug(slug);
+  const asideRef = useRef<HTMLElement>(null);
+  useStickySidebar(asideRef);
   return (
     <div className="sa-layout" style={{ maxWidth }}>
       <Styles />
@@ -277,7 +320,7 @@ export function AdLayout({ slug, color, children, top = true, maxWidth = 1380 }:
         )}
         {children}
       </div>
-      <aside className="sa-aside">
+      <aside className="sa-aside" ref={asideRef}>
         {s && (
           <>
             <AdSideSlots slug={s} from={0} to={2} />
