@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
+import { AdsStrip } from '@/components/SiteAds';
 
 // English portals (NEWS INFO 24, National Defence Network) par footer English me
 const TEXT = {
@@ -57,6 +58,8 @@ interface FooterProps {
   logoUrl?: string;
   tagline?: string;
   currentSlug?: string;
+  /** Footer ke upar vigyapan (banner + 300×250 + classifieds). Homepage/article ke apne slots hain, wahan false */
+  showAds?: boolean;
 }
 
 const NETWORK_PORTALS = [
@@ -161,14 +164,18 @@ export default function Footer({
   primaryColor = '#ea580c',
   logoUrl = '/logos/the-local-leader.jpeg',
   tagline = '— जनता की आवाज़, सच्चाई के साथ —',
-  currentSlug
+  currentSlug,
+  showAds = true
 }: FooterProps) {
   const [logoErr, setLogoErr] = useState(false);
   // Logo par click → isi portal ka homepage (slug na diya ho toh URL / domain / pichhla portal se)
   const [homeSlug, setHomeSlug] = useState(currentSlug || 'the-local-leader');
+  // Portal pakka hone ke baad hi vigyapan load (warna pehle galat portal ke vigyapan / impression)
+  const [slugReady, setSlugReady] = useState(!!currentSlug);
   useEffect(() => {
-    if (currentSlug) return setHomeSlug(currentSlug);
-    setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
+    if (currentSlug) setHomeSlug(currentSlug);
+    else setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
+    setSlugReady(true);
   }, [currentSlug]);
   const t = isEnglishSlug(homeSlug) ? TEXT.en : TEXT.hi;
 
@@ -177,6 +184,8 @@ export default function Footer({
   };
 
   return (
+    <>
+    {showAds && slugReady && <AdsStrip slug={homeSlug} color={primaryColor} />}
     <footer style={{ background: '#ffffff', color: '#16150f', marginTop: 'auto', fontFamily: '"Mukta", system-ui, sans-serif', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
 
       {/* Dynamic hover styles */}
@@ -500,5 +509,6 @@ export default function Footer({
       </div>
 
     </footer>
+    </>
   );
 }

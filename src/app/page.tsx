@@ -711,6 +711,10 @@ function HomePageContent() {
           const rawData = docSnap.data();
           const adStatus = String(rawData.status || '').trim().toLowerCase();
 
+          // Sirf isi portal ka (ya 'all' / bina portal) vigyapan
+          const adSite = rawData.siteId;
+          if (adSite && adSite !== 'all' && normalizeSiteId(adSite) !== activeSiteSlug) return;
+
           if (adStatus === 'active') {
             const cleanAd: AdItem = {
               id: docSnap.id,
@@ -1606,6 +1610,7 @@ function HomePageContent() {
         logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
         tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
         currentSlug={currentSlug}
+        showAds={false}
       />
     </div>
   );

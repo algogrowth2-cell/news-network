@@ -9,6 +9,7 @@ import { isArticleLive, isDirectVideo, looksLikeHtml, sanitizeArticleHtml, youtu
 import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { AdBanner, AdSide, ClassifiedsWidget } from '@/components/SiteAds';
 
 interface ArticleDetail {
   id: string;
@@ -253,6 +254,10 @@ export default function ArticleDetailPage() {
 
           {/* ──── LEFT: ARTICLE ──── */}
           <main className="ap-left">
+            {/* Header banner vigyapan (728 × 90) */}
+            <div style={{ marginBottom: '18px' }}>
+              <AdBanner slug={siteSlug} />
+            </div>
             <article className="ap-card">
 
               {/* Category + Date */}
@@ -474,19 +479,16 @@ export default function ArticleDetailPage() {
               </div>
             </div>
 
-            {/* Ad Slot */}
-            <div className="ap-ad-slot">
-              <span className="ap-ad-ico">📢</span>
-              <b className="ap-ad-label">विज्ञापन स्थान</b>
-              <span className="ap-ad-size">300 × 250</span>
-            </div>
+            {/* Sidebar vigyapan (300 × 250) + classifieds — homepage jaise */}
+            <AdSide slug={siteSlug} />
+            <ClassifiedsWidget slug={siteSlug} color={primary} />
 
           </aside>
 
         </div>
 
         {/* ════════ FOOTER ════════ */}
-        <Footer siteName={siteName} primaryColor={primary} logoUrl={siteLogo} tagline={siteTagline} />
+        <Footer siteName={siteName} primaryColor={primary} logoUrl={siteLogo} tagline={siteTagline} currentSlug={siteSlug} showAds={false} />
       </div>
     </>
   );
@@ -676,7 +678,7 @@ const allCSS = `
 .ap-rel-title { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 4px 0 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ══════ SIDEBAR ══════ */
-.ap-aside { position: sticky; top: 68px; display: flex; flex-direction: column; gap: 18px; }
+.ap-aside { display: flex; flex-direction: column; gap: 18px; }
 
 /* Widget */
 .ap-widget { background: #fff; border: 1px solid #ebeef3; border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.02); }
