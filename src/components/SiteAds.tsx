@@ -31,7 +31,9 @@ const LIVE = ['active', 'approved'];
 const onPortal = (siteId: unknown, slug: string) => !siteId || siteId === 'all' || normalizeSiteId(siteId) === slug;
 
 // Ek page load par ek hi baar padho (har component alag-alag Firestore na padhe)
-type AdSet = { header: SiteAd | null; sidebar: SiteAd | null; feed: SiteAd[]; classifieds: SiteClassified[] };
+type AdSet = { header: SiteAd | null; sidebars: SiteAd[]; feed: SiteAd[]; classifieds: SiteClassified[] };
+// Sidebar me kitni 300×250 jagah (khaali jagah par 'यहाँ विज्ञापन दें')
+export const SIDEBAR_SLOTS = 4;
 const cache = new Map<string, Promise<AdSet>>();
 
 function loadAds(slug: string) {
@@ -44,7 +46,7 @@ function loadAds(slug: string) {
           getDocs(query(collection(db, 'classifieds'), where('status', 'in', LIVE)))
         ]);
         let header: SiteAd | null = null;
-        let sidebar: SiteAd | null = null;
+        const sidebars: SiteAd[] = [];
         const feed: SiteAd[] = [];
         const classifieds: SiteClassified[] = [];
         adSnap.forEach((d) => {
@@ -67,7 +69,7 @@ function loadAds(slug: string) {
           if (!x.imageUrl) return;
           const ad = { id: d.id, name: x.name || x.title || '', imageUrl: x.imageUrl, targetUrl: x.targetUrl || '' };
           if (!header && (zone.includes('728') || zone.includes('header') || zone.includes('हेडर') || fmt === 'banner')) header = ad;
-          else if (!sidebar && (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar')) sidebar = ad;
+          else if (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar') sidebars.push(ad);
           else if (zone.includes('feed') || zone.includes('in-article') || zone.includes('banner') || zone.includes('728') || zone.includes('header')) feed.push(ad);
         });
         clSnap.forEach((d) => {
@@ -84,12 +86,12 @@ function loadAds(slug: string) {
           });
         });
         // Dikhne wale vigyapanon ki impression (+1) — rules sirf yahi badlaav allow karte hain
-        for (const ad of [header, sidebar] as (SiteAd | null)[]) if (ad) updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
-        return { header, sidebar, feed, classifieds: classifieds.slice(0, 4) };
+        for (const ad of [header, ...sidebars.slice(0, SIDEBAR_SLOTS)] as (SiteAd | null)[]) if (ad) updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
+        return { header, sidebars, feed, classifieds: classifieds.slice(0, 4) };
       })().catch((err) => {
         console.error('Ads load error:', err);
         cache.delete(slug);
-        return { header: null, sidebar: null, feed: [], classifieds: [] };
+        return { header: null, sidebars: [], feed: [], classifieds: [] };
       })
     );
   }
@@ -127,7 +129,9 @@ const CSS = `
 .sa-main{min-width:0}
 .sa-top{padding-top:20px}
 .sa-aside{display:flex;flex-direction:column;gap:16px;padding:24px 0 40px}
-@media(min-height:860px){.sa-aside{position:sticky;top:72px}}
+.sa-cta{flex-direction:column;gap:4px;text-decoration:none;color:#9a968e;transition:border-color .15s,color .15s}
+.sa-cta b{font-size:14px;color:#6b675f}
+.sa-cta:hover{border-color:#b9b4ab;color:#6b675f}
 .sa-inline{margin:18px 0;grid-column:1/-1}
 .sa-label{display:block;font-size:10.5px;letter-spacing:.5px;color:#9a968e;text-transform:uppercase;margin-bottom:4px}
 @media(max-width:1024px){
@@ -157,21 +161,39 @@ export function AdBanner({ slug, height = 110 }: { slug: string; height?: number
   );
 }
 
-/** Sidebar banner (300 × 250) */
-export function AdSide({ slug }: { slug: string }) {
+/** Sidebar banner (300 × 250) — index: kaunsi sidebar jagah; khaali ho toh "यहाँ विज्ञापन दें" */
+export function AdSide({ slug, index = 0 }: { slug: string; index?: number }) {
   const ads = useSiteAds(slug);
   const en = isEnglishSlug(slug);
-  const ad = ads?.sidebar;
+  const ad = ads?.sidebars[index];
   return (
     <>
       <Styles />
       {ad ? (
-        <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" onClick={() => adClick(ad.id)}>
-          <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
-        </a>
+        <div>
+          <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
+          <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" onClick={() => adClick(ad.id)}>
+            <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
+          </a>
+        </div>
       ) : (
-        <div className="sa-slot" style={{ minHeight: 250 }}>{en ? 'Advertisement' : 'विज्ञापन'} · 300 × 250</div>
+        <Link href={`/advertiser/login?site=${slug}`} className="sa-slot sa-cta" style={{ minHeight: 250 }}>
+          <span style={{ fontSize: 26 }}>📢</span>
+          <b>{en ? 'Advertise here' : 'यहाँ विज्ञापन दें'}</b>
+          <span>300 × 250</span>
+        </Link>
       )}
+    </>
+  );
+}
+
+/** Sidebar ki saari 300×250 jagah ek saath (from..to) */
+export function AdSideSlots({ slug, from = 0, to = SIDEBAR_SLOTS }: { slug: string; from?: number; to?: number }) {
+  return (
+    <>
+      {Array.from({ length: Math.max(0, to - from) }, (_, k) => (
+        <AdSide key={from + k} slug={slug} index={from + k} />
+      ))}
     </>
   );
 }
@@ -258,8 +280,9 @@ export function AdLayout({ slug, color, children, top = true, maxWidth = 1380 }:
       <aside className="sa-aside">
         {s && (
           <>
-            <AdSide slug={s} />
+            <AdSideSlots slug={s} from={0} to={2} />
             <ClassifiedsWidget slug={s} color={color || fallbackFor(s).primaryColor} />
+            <AdSideSlots slug={s} from={2} to={SIDEBAR_SLOTS} />
           </>
         )}
       </aside>

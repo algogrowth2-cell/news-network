@@ -7,6 +7,7 @@ import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
+import { AdSideSlots } from '@/components/SiteAds';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
@@ -192,6 +193,8 @@ body {
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
 .hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
+/* Right sidebar me 4 vigyapan + rashifal + classifieds — lamba hai, sticky nahi (warna neeche ke chhup jaate) */
+.hp-side.hp-right{position:static}
 .hp-box{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:14px}
 .hp-box-title{font-size:13.5px;font-weight:800;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid}
 .hp-cat{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;text-align:left;color:#333;transition:background .15s}
@@ -734,8 +737,9 @@ function HomePageContent() {
               return;
             }
 
-            const adRef = doc(db, 'ads', docSnap.id);
-            updateDoc(adRef, { impressions: increment(1) }).catch(() => {});
+            // Sidebar (300×250) ki impression SiteAds ginta hai — yahan dobara nahi
+            const isSidebarZone = zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार');
+            if (!isSidebarZone) updateDoc(doc(db, 'ads', docSnap.id), { impressions: increment(1) }).catch(() => {});
 
             if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) {
               setHeaderAd(cleanAd);
@@ -1497,14 +1501,8 @@ function HomePageContent() {
 
         {/* ── RIGHT SIDEBAR ── */}
         <aside className="hp-side hp-right">
-          {/* Sidebar Ad (300) */}
-          {sidebarAd ? (
-            <a href={sidebarAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(sidebarAd)}>
-              <img src={sidebarAd.imageUrl} alt={sidebarAd.name || 'विज्ञापन'} className="hp-ad-img hp-ad-side" />
-            </a>
-          ) : (
-            <div className="hp-ad-slot" style={{ minHeight: '250px' }}>विज्ञापन · 300 × 250</div>
-          )}
+          {/* Sidebar vigyapan (300 × 250) — 4 jagah: 2 upar, 1 rashifal ke baad, 1 classifieds ke baad */}
+          <AdSideSlots slug={currentSlug} from={0} to={2} />
 
           {/* 🔮 RASHIFAL WIDGET */}
           <div className="hp-box" id="rashifal" style={{ scrollMarginTop: '90px' }}>
@@ -1562,6 +1560,8 @@ function HomePageContent() {
             </div>
           </div>
 
+          <AdSideSlots slug={currentSlug} from={2} to={3} />
+
           {/* 📋 CLASSIFIED ADS WIDGET */}
           <div className="hp-box">
             <h3 className="hp-box-title" style={{ borderColor: primary }}>📋 {isEnglishSite ? 'Classified Ads' : 'क्लासिफाइड विज्ञापन'}</h3>
@@ -1601,6 +1601,8 @@ function HomePageContent() {
               {isEnglishSite ? 'View All Classifieds →' : 'सभी क्लासिफाइड देखें →'}
             </Link>
           </div>
+
+          <AdSideSlots slug={currentSlug} from={3} to={4} />
         </aside>
       </div>
 

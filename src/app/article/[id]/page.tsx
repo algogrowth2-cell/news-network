@@ -9,7 +9,7 @@ import { isArticleLive, isDirectVideo, looksLikeHtml, sanitizeArticleHtml, youtu
 import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsApp, twitterShareUrl, whatsappShareUrl } from '@/lib/share';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { AdBanner, AdSide, ClassifiedsWidget } from '@/components/SiteAds';
+import { AdBanner, AdSideSlots, ClassifiedsWidget } from '@/components/SiteAds';
 
 interface ArticleDetail {
   id: string;
@@ -480,8 +480,9 @@ export default function ArticleDetailPage() {
             </div>
 
             {/* Sidebar vigyapan (300 × 250) + classifieds — homepage jaise */}
-            <AdSide slug={siteSlug} />
+            <AdSideSlots slug={siteSlug} from={0} to={2} />
             <ClassifiedsWidget slug={siteSlug} color={primary} />
+            <AdSideSlots slug={siteSlug} from={2} to={4} />
 
           </aside>
 
