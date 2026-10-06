@@ -186,6 +186,9 @@ body {
 .hp-tool-link:hover{background:#f5f4f1}
 .hp-login{color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap}
 .hp-mobile-tools{display:none;align-items:center;gap:8px}
+/* Mobile/tablet header (≤820px): portal switcher sirf 🌐 gol icon — naam header me dikhta hai */
+.hp-mobile-tools .ss-name,.hp-mobile-tools .ss-caret{display:none}
+.hp-mobile-tools .ss-btn{padding:0 !important;width:34px;height:34px;justify-content:center;border-radius:50% !important}
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
 .hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
@@ -302,8 +305,12 @@ body {
   .hp-ticker-date{display:none}
   .hp-header-in{padding:8px 12px;gap:10px}
   .hp-logo{height:38px;max-width:100px}
-  .hp-brand-wrap{flex-shrink:1}
-  .hp-site-name{font-size:15px;white-space:normal;line-height:1.25}
+  /* Mobile: naam logo ke saath 2 line tak, kabhi switcher par na chadhe; switcher sirf 🌐 icon */
+  .hp-brand-wrap{flex:1 1 auto;min-width:0}
+  .hp-brand{min-width:0;gap:8px}
+  .hp-logo{height:32px;max-width:64px}
+  .hp-site-name{font-size:13.5px;white-space:normal;line-height:1.15;margin:0;padding:0;word-break:keep-all;overflow-wrap:normal}
+  .hp-mobile-tools{gap:6px;flex-shrink:0}
   .hp-tagline{display:none}
   .hp-shell{padding:14px 12px 32px;gap:16px}
   .hp-hero-body{padding:14px}

@@ -86,6 +86,9 @@ export default function SiteSwitcher({
       <style dangerouslySetInnerHTML={{ __html: SS_STYLES }} />
       <button
         ref={buttonRef}
+        className="ss-btn"
+        aria-label={currentSiteObj.name}
+        title={currentSiteObj.name}
         onClick={toggleDropdown}
         style={{
           display: 'flex',
@@ -105,7 +108,7 @@ export default function SiteSwitcher({
       >
         <span>🌐</span>
         <span className="ss-name">{currentSiteObj.name}</span>
-        <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
+        <span className="ss-caret" style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
 
       {mounted && dropdownOpen && createPortal(
