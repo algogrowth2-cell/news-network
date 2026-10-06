@@ -6,6 +6,7 @@ import { collection, onSnapshot, query, doc, getDoc, setDoc, serverTimestamp } f
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
+import { AdLayout } from '@/components/SiteAds';
 import { EPAPER_PLANS } from '@/lib/plans';
 import { fallbackFor } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
@@ -77,7 +78,7 @@ const EP_STYLES = `
 .ep-home:hover{color:var(--ink);background:#f0ebe3}
 
 /* Main */
-.ep-main{max-width:1200px;margin:0 auto;padding:22px 16px 56px}
+.ep-main{padding:20px 0 56px}
 
 /* Hero */
 .ep-hero{position:relative;overflow:hidden;background:var(--ink);color:#fff;border-radius:22px;padding:32px;display:grid;grid-template-columns:1.35fr 1fr;gap:28px;align-items:center;margin-bottom:32px}
@@ -203,7 +204,7 @@ const EP_STYLES = `
   .ep-cta{padding:9px 13px;font-size:12.5px}
   .ep-vip{padding:6px 10px;font-size:11.5px}
   .ep-home{padding:8px;font-size:16px}
-  .ep-main{padding:16px 12px 40px}
+  .ep-main{padding:14px 0 40px}
   .ep-hero{padding:22px 18px;border-radius:18px;margin-bottom:26px}
   .ep-hero h2{font-size:21px}
   .ep-hero p{font-size:14px;margin-bottom:18px}
@@ -533,6 +534,7 @@ function EPaperComponent() {
       </header>
 
       {/* Main Container */}
+      <AdLayout color={themeColor}>
       <main className="ep-main">
         {/* Banner */}
         {!hasSubscribed && (
@@ -646,6 +648,7 @@ function EPaperComponent() {
           </div>
         )}
       </main>
+      </AdLayout>
 
       <Footer
         siteName={siteName || 'द लोकल लीडर'}

@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { collection, query, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
 
 interface VideoItem {
@@ -168,7 +169,8 @@ function VideosContent() {
       </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '24px 16px 48px', flex: 1 }}>
+      <AdLayout color={primary}>
+      <main style={{ width: '100%', padding: '20px 0 48px' }}>
         
         {/* Banner Section */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '22px 24px', marginBottom: '22px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
@@ -266,9 +268,9 @@ function VideosContent() {
           )
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
-            {filteredVideos.map((vid) => (
+            {filteredVideos.map((vid, vi) => (
+              <Fragment key={vid.id}>
               <div
-                key={vid.id}
                 style={{
                   backgroundColor: '#ffffff',
                   borderRadius: '14px',
@@ -323,11 +325,15 @@ function VideosContent() {
                   )}
                 </div>
               </div>
+              {/* Har 6 video ke baad ek banner vigyapan */}
+              {(vi + 1) % 6 === 0 && vi < filteredVideos.length - 1 && <AdInline index={(vi + 1) / 6 - 1} />}
+              </Fragment>
             ))}
           </div>
         )}
 
       </main>
+      </AdLayout>
 
       <Footer siteName={siteName} primaryColor={primary} logoUrl={siteLogo} tagline={siteTagline} />
     </div>

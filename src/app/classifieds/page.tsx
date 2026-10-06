@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { collection, query, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
 
 interface ClassifiedItem {
@@ -237,7 +238,8 @@ function ClassifiedsContent() {
       </header>
 
       {/* ── MAIN CONTENT CONTAINER ── */}
-      <main style={{ maxWidth: '1380px', width: '100%', margin: '0 auto', padding: '24px 16px 48px', flex: 1 }}>
+      <AdLayout color={primary}>
+      <main style={{ width: '100%', padding: '20px 0 48px' }}>
         
         {/* Banner Card */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px 20px', marginBottom: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
@@ -343,9 +345,9 @@ function ClassifiedsContent() {
           )
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {filteredAds.map((ad) => (
+            {filteredAds.map((ad, ai) => (
+              <Fragment key={ad.id}>
               <div
-                key={ad.id}
                 onClick={() => setSelectedAd(ad)}
                 style={{
                   backgroundColor: '#ffffff',
@@ -424,11 +426,15 @@ function ClassifiedsContent() {
                   </div>
                 </div>
               </div>
+              {/* Har 6 ke baad ek banner vigyapan */}
+              {(ai + 1) % 6 === 0 && ai < filteredAds.length - 1 && <AdInline index={(ai + 1) / 6 - 1} />}
+              </Fragment>
             ))}
           </div>
         )}
 
       </main>
+      </AdLayout>
 
       {/* ── DETAIL MODAL ── */}
       {selectedAd && (

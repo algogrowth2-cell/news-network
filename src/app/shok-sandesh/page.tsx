@@ -14,6 +14,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import Link from 'next/link';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 import { confirmPayment } from '@/lib/payments';
 import { SECURE_AUTH } from '@/lib/phoneAuth';
 
@@ -657,7 +658,8 @@ export default function ShokSandeshPage() {
       </header>
 
       {/* Main Container */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px' }}>
+      <AdLayout>
+      <div style={{ padding: '20px 0 40px' }}>
 
         {/* Tab Navigation */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
@@ -706,10 +708,12 @@ export default function ShokSandeshPage() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
-                {posts.map((item) => (
-                  <div key={item.id}>
-                    {renderCard(item)}
-                  </div>
+                {posts.map((item, pi) => (
+                  <React.Fragment key={item.id}>
+                    <div>{renderCard(item)}</div>
+                    {/* Har 4 sandesh ke baad ek banner vigyapan */}
+                    {(pi + 1) % 4 === 0 && pi < posts.length - 1 && <AdInline index={(pi + 1) / 4 - 1} />}
+                  </React.Fragment>
                 ))}
               </div>
             )}
@@ -1061,6 +1065,7 @@ export default function ShokSandeshPage() {
         )}
 
       </div>
+      </AdLayout>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { AdLayout } from '@/components/SiteAds';
 
 const primary = '#ea580c';
 
@@ -202,7 +203,8 @@ export default function GrievancePage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div style={{ maxWidth: '860px', margin: '0 auto', padding: '28px 24px 60px' }}>
+      <AdLayout maxWidth={1240}>
+      <div style={{ padding: '24px 0 60px' }}>
         <div className="gv-main-card" style={{
           background: '#ffffff', border: '1px solid #eae8e4',
           borderRadius: '14px', padding: '32px 36px',
@@ -414,6 +416,7 @@ export default function GrievancePage() {
           </div>
         </div>
       </div>
+      </AdLayout>
     </div>
   );
 }

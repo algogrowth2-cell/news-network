@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { AdLayout } from '@/components/SiteAds';
 
 const primary = '#ea580c';
 
@@ -115,9 +116,14 @@ export default function EditorialGuidelinesPage() {
         }
 
         .eg-shell {
-          max-width: 1120px; margin: 0 auto; display: grid;
-          grid-template-columns: 230px minmax(0, 1fr);
-          gap: 32px; padding: 28px 24px 60px;
+          display: grid;
+          grid-template-columns: 220px minmax(0, 1fr);
+          gap: 28px; padding: 24px 0 60px;
+        }
+        /* Vigyapan sidebar ke saath jagah kam ho toh vishay-suchi (TOC) chhupao */
+        @media (max-width: 1200px) {
+          .eg-shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+          .eg-sidebar { display: none; }
         }
         .eg-sidebar {
           position: sticky; top: 100px; align-self: start;
@@ -127,7 +133,7 @@ export default function EditorialGuidelinesPage() {
         @media (max-width: 860px) {
           .eg-shell {
             grid-template-columns: 1fr;
-            padding: 16px 14px 40px; gap: 0;
+            padding: 16px 0 40px; gap: 0;
           }
           .eg-sidebar { display: none; }
           .eg-section-title { font-size: 18px; }
@@ -272,6 +278,7 @@ export default function EditorialGuidelinesPage() {
       </div>
 
       {/* ── TWO-COLUMN: SIDEBAR + CONTENT ── */}
+      <AdLayout maxWidth={1440}>
       <div className="eg-shell">
 
         {/* ── SIDEBAR TOC ── */}
@@ -535,6 +542,7 @@ export default function EditorialGuidelinesPage() {
           </div>
         </main>
       </div>
+      </AdLayout>
     </div>
   );
 }

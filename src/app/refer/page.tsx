@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { activatePendingReward, ensureReferralCode, REFERRAL_REWARD_MONTHS } from '@/lib/referralService';
 import { fallbackFor, isEnglishSlug, resolveSiteSlug } from '@/lib/siteTheme';
+import { AdLayout } from '@/components/SiteAds';
 
 interface ReaderSession {
   uid?: string;
@@ -165,6 +166,7 @@ const RF_CSS = `
 .rf-top a{color:#57534e;text-decoration:none;font-size:14px;font-weight:600}
 .rf-top b{font-size:15px;color:var(--brand)}
 .rf-wrap{max-width:960px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:18px}
+.sa-main .rf-wrap{max-width:none;padding:20px 0 48px}
 .rf-hero{position:relative;overflow:hidden;border-radius:20px;padding:28px 24px;color:#fff;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-deep) 100%)}
 .rf-hero::after{content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08)}
 .rf-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border-radius:99px;padding:5px 12px;font-size:12.5px;font-weight:700}
@@ -423,6 +425,7 @@ export default function ReferPage() {
               </div>
             </div>
           ) : (
+            <AdLayout color={brand || undefined}>
             <main className="rf-wrap">
               <section className="rf-hero">
                 <span className="rf-hero-badge">🎁 Refer &amp; Earn · {siteName}</span>
@@ -603,6 +606,7 @@ export default function ReferPage() {
                 </ul>
               </section>
             </main>
+            </AdLayout>
           )}
         </>
       )}

@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
-import { AdsStrip } from '@/components/SiteAds';
 
 // English portals (NEWS INFO 24, National Defence Network) par footer English me
 const TEXT = {
@@ -58,7 +57,7 @@ interface FooterProps {
   logoUrl?: string;
   tagline?: string;
   currentSlug?: string;
-  /** Footer ke upar vigyapan (banner + 300×250 + classifieds). Homepage/article ke apne slots hain, wahan false */
+  /** Purana prop (vigyapan ab har page ke sidebar me — AdLayout) */
   showAds?: boolean;
 }
 
@@ -164,18 +163,14 @@ export default function Footer({
   primaryColor = '#ea580c',
   logoUrl = '/logos/the-local-leader.jpeg',
   tagline = '— जनता की आवाज़, सच्चाई के साथ —',
-  currentSlug,
-  showAds = true
+  currentSlug
 }: FooterProps) {
   const [logoErr, setLogoErr] = useState(false);
   // Logo par click → isi portal ka homepage (slug na diya ho toh URL / domain / pichhla portal se)
   const [homeSlug, setHomeSlug] = useState(currentSlug || 'the-local-leader');
-  // Portal pakka hone ke baad hi vigyapan load (warna pehle galat portal ke vigyapan / impression)
-  const [slugReady, setSlugReady] = useState(!!currentSlug);
   useEffect(() => {
     if (currentSlug) setHomeSlug(currentSlug);
     else setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
-    setSlugReady(true);
   }, [currentSlug]);
   const t = isEnglishSlug(homeSlug) ? TEXT.en : TEXT.hi;
 
@@ -185,7 +180,6 @@ export default function Footer({
 
   return (
     <>
-    {showAds && slugReady && <AdsStrip slug={homeSlug} color={primaryColor} />}
     <footer style={{ background: '#ffffff', color: '#16150f', marginTop: 'auto', fontFamily: '"Mukta", system-ui, sans-serif', width: '100%', boxSizing: 'border-box', position: 'relative' }}>
 
       {/* Dynamic hover styles */}
@@ -348,7 +342,7 @@ export default function Footer({
                 />
               ) : (
                 <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '23px', fontWeight: 600, color: '#16150f' }}>
-                  {siteName}
+                  <span className="notranslate" translate="no">{siteName}</span>
                 </span>
               )}
             </Link>
@@ -472,7 +466,8 @@ export default function Footer({
             {NETWORK_PORTALS.filter(p => p.slug !== homeSlug && p.name !== siteName).map(portal => (
               <Link key={portal.slug} href={`/?site=${portal.slug}`} className="gp-ft-portal-chip">
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: portal.color, flexShrink: 0, boxShadow: `0 0 0 2px ${portal.color}33` }} />
-                <span>{t === TEXT.en ? portal.nameEn || portal.name : portal.name}</span>
+                {/* Portal ka naam brand hai — Google Translate iska anuvaad na kare (Bazar Karobar ≠ "Market Business") */}
+                <span className="notranslate" translate="no">{t === TEXT.en ? portal.nameEn || portal.name : portal.name}</span>
               </Link>
             ))}
           </div>
@@ -484,7 +479,7 @@ export default function Footer({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', padding: '18px 0 22px', fontSize: '12px', color: '#8d897f' }}>
 
           <div style={{ fontWeight: 500 }}>
-            © 2026 {siteName} {t.rights}
+            © 2026 <span className="notranslate" translate="no">{siteName}</span> {t.rights}
           </div>
 
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>

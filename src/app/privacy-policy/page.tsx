@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { AdLayout } from '@/components/SiteAds';
 
 const SECTIONS = [
   { id: 'collection', num: '1', title: 'सूचना का संग्रह' },
@@ -106,9 +107,14 @@ export default function PrivacyPolicyPage() {
         }
 
         .pp-shell {
-          max-width: 1120px; margin: 0 auto; display: grid;
-          grid-template-columns: 230px minmax(0, 1fr);
-          gap: 32px; padding: 28px 24px 60px;
+          display: grid;
+          grid-template-columns: 220px minmax(0, 1fr);
+          gap: 28px; padding: 24px 0 60px;
+        }
+        /* Vigyapan sidebar ke saath jagah kam ho toh vishay-suchi (TOC) chhupao */
+        @media (max-width: 1200px) {
+          .pp-shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+          .pp-sidebar { display: none; }
         }
         .pp-sidebar {
           position: sticky; top: 100px; align-self: start;
@@ -118,7 +124,7 @@ export default function PrivacyPolicyPage() {
         @media (max-width: 860px) {
           .pp-shell {
             grid-template-columns: 1fr;
-            padding: 16px 14px 40px;
+            padding: 16px 0 40px;
             gap: 0;
           }
           .pp-sidebar { display: none; }
@@ -242,6 +248,7 @@ export default function PrivacyPolicyPage() {
       </div>
 
       {/* ── TWO-COLUMN: SIDEBAR TOC + CONTENT ── */}
+      <AdLayout maxWidth={1440}>
       <div className="pp-shell">
 
         {/* ── SIDEBAR TABLE OF CONTENTS ── */}
@@ -633,6 +640,7 @@ export default function PrivacyPolicyPage() {
           </div>
         </main>
       </div>
+      </AdLayout>
     </div>
   );
 }
