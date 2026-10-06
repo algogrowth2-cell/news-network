@@ -1,7 +1,55 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getActivePortal } from '@/lib/siteTheme';
+import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
+
+// English portals (NEWS INFO 24, National Defence Network) par footer English me
+const TEXT = {
+  hi: {
+    news: 'खबरें',
+    cats: ['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'],
+    services: 'सेवाएं',
+    epaper: 'ई-पेपर',
+    shok: 'शोक संदेश',
+    classifieds: 'क्लासिफाइड',
+    rashifal: 'राशिफल',
+    contact: 'संपर्क',
+    hours: 'सोम–शनि · सुबह 9 से रात 8',
+    sendNews: 'हमें खबर भेजें',
+    whatsapp: 'WhatsApp पर चैट करें',
+    network: 'नेटवर्क',
+    rights: 'न्यूज़ मीडिया · सर्वाधिकार सुरक्षित',
+    privacy: 'गोपनीयता नीति',
+    terms: 'उपयोग की शर्तें',
+    editorial: 'संपादकीय दिशानिर्देश',
+    grievance: 'शिकायत निवारण',
+    deleteAccount: 'खाता हटाएं',
+    top: 'ऊपर जाएँ',
+    home: 'होम'
+  },
+  en: {
+    news: 'News',
+    cats: ['Defence', 'Strategic', 'Army & Airforce', 'Naval Operations', 'National Security', 'Special Reports'],
+    services: 'Services',
+    epaper: 'E-Paper',
+    shok: 'Condolence Messages',
+    classifieds: 'Classifieds',
+    rashifal: 'Horoscope',
+    contact: 'Contact',
+    hours: 'Mon–Sat · 9 AM to 8 PM',
+    sendNews: 'Send Us News',
+    whatsapp: 'Chat on WhatsApp',
+    network: 'Network',
+    rights: 'News Media · All rights reserved',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Use',
+    editorial: 'Editorial Guidelines',
+    grievance: 'Grievance Redressal',
+    deleteAccount: 'Delete Account',
+    top: 'Back to top',
+    home: 'Home'
+  }
+};
 
 interface FooterProps {
   siteName?: string;
@@ -12,12 +60,12 @@ interface FooterProps {
 }
 
 const NETWORK_PORTALS = [
-  { name: 'द लोकल लीडर', slug: 'the-local-leader', color: '#f26522' },
-  { name: 'बाज़ार कारोबार', slug: 'bazar-karobar', color: '#e8541f' },
-  { name: 'गोल्डन पर्ल क्रॉनिकल्स', slug: 'golden-pearl-chronicles', color: '#b08b1e' },
-  { name: 'द प्रोव्यू टाइम्स', slug: 'the-provue-times', color: '#8a3b8f' },
-  { name: 'देश की आवाज़', slug: 'desh-ki-aawaz', color: '#c0392b' },
-  { name: 'जन भारत न्यूज़', slug: 'jan-bharat-news', color: '#1d6fa5' },
+  { name: 'द लोकल लीडर', nameEn: 'The Local Leader', slug: 'the-local-leader', color: '#f26522' },
+  { name: 'बाज़ार कारोबार', nameEn: 'Bazar Karobar', slug: 'bazar-karobar', color: '#e8541f' },
+  { name: 'गोल्डन पर्ल क्रॉनिकल्स', nameEn: 'Golden Pearl Chronicles', slug: 'golden-pearl-chronicles', color: '#b08b1e' },
+  { name: 'द प्रोव्यू टाइम्स', nameEn: 'The Provue Times', slug: 'the-provue-times', color: '#8a3b8f' },
+  { name: 'देश की आवाज़', nameEn: 'Desh Ki Aawaz', slug: 'desh-ki-aawaz', color: '#c0392b' },
+  { name: 'जन भारत न्यूज़', nameEn: 'Jan Bharat News', slug: 'jan-bharat-news', color: '#1d6fa5' },
   { name: 'NEWS INFO 24', slug: 'news-info-24', color: '#d12b2b' },
   { name: 'National Defence Network', slug: 'ndn-defence', color: '#4a6741' }
 ];
@@ -122,6 +170,7 @@ export default function Footer({
     if (currentSlug) return setHomeSlug(currentSlug);
     setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
   }, [currentSlug]);
+  const t = isEnglishSlug(homeSlug) ? TEXT.en : TEXT.hi;
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -279,7 +328,7 @@ export default function Footer({
 
           {/* Column 1 — Brand, Social, App Badges */}
           <div>
-            <Link href={`/?site=${homeSlug}`} aria-label={`${siteName} होम`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', textDecoration: 'none', width: 'fit-content' }}>
+            <Link href={`/?site=${homeSlug}`} aria-label={`${siteName} ${t.home}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', textDecoration: 'none', width: 'fit-content' }}>
               {logoUrl && !logoErr ? (
                 <img
                   key={logoUrl}
@@ -321,19 +370,19 @@ export default function Footer({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="gp-ft-wa-chat"
-                aria-label="WhatsApp पर चैट करें (+91 8103333381)"
+                aria-label={`${t.whatsapp} (+91 8103333381)`}
               >
                 <WhatsAppIcon />
-                <span>WhatsApp पर चैट करें</span>
+                <span>{t.whatsapp}</span>
               </a>
             </div>
           </div>
 
           {/* Column 2 — खबरें */}
           <div>
-            <span className="gp-ft-section-title">खबरें</span>
+            <span className="gp-ft-section-title">{t.news}</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'].map(cat => (
+              {t.cats.map(cat => (
                 <li key={cat}>
                   <Link href={`/?site=${homeSlug}&category=${encodeURIComponent(cat)}`} className="gp-ft-cat-link">
                     {cat}
@@ -345,26 +394,26 @@ export default function Footer({
 
           {/* Column 3 — सेवाएं */}
           <div>
-            <span className="gp-ft-section-title">सेवाएं</span>
+            <span className="gp-ft-section-title">{t.services}</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <li>
                 <Link href={`/epaper?site=${homeSlug}`} className="gp-ft-cat-link">
-                  ई-पेपर
+                  {t.epaper}
                 </Link>
               </li>
               <li>
                 <Link href={`/shok-sandesh?site=${homeSlug}`} className="gp-ft-cat-link">
-                  शोक संदेश
+                  {t.shok}
                 </Link>
               </li>
               <li>
                 <Link href={`/classifieds?site=${homeSlug}`} className="gp-ft-cat-link">
-                  क्लासिफाइड
+                  {t.classifieds}
                 </Link>
               </li>
               <li>
                 <Link href={`/?site=${homeSlug}#rashifal`} className="gp-ft-cat-link">
-                  राशिफल
+                  {t.rashifal}
                 </Link>
               </li>
             </ul>
@@ -372,7 +421,7 @@ export default function Footer({
 
           {/* Column 4 — संपर्क */}
           <div>
-            <span className="gp-ft-section-title">संपर्क</span>
+            <span className="gp-ft-section-title">{t.contact}</span>
 
             <div style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '18px' }}>
               <div className="gp-ft-contact-row">
@@ -389,7 +438,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.clock(primaryColor)}</span>
-                <span>सोम–शनि · सुबह 9 से रात 8</span>
+                <span>{t.hours}</span>
               </div>
             </div>
 
@@ -398,7 +447,7 @@ export default function Footer({
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
-              <span>हमें खबर भेजें</span>
+              <span>{t.sendNews}</span>
             </Link>
           </div>
         </div>
@@ -408,13 +457,13 @@ export default function Footer({
       <div style={{ background: '#f9f8f6', borderTop: '1px solid #eae8e3', borderBottom: '1px solid #eae8e3', padding: '14px 0', width: '100%' }}>
         <div style={{ maxWidth: '1560px', margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', gap: '18px', boxSizing: 'border-box', width: '100%' }}>
           <span style={{ fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: '#9e9a91', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
-            नेटवर्क
+            {t.network}
           </span>
           <div className="gp-ft-hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1, paddingBottom: '2px', WebkitOverflowScrolling: 'touch' as any }}>
-            {NETWORK_PORTALS.filter(p => p.name !== siteName).map(portal => (
+            {NETWORK_PORTALS.filter(p => p.slug !== homeSlug && p.name !== siteName).map(portal => (
               <Link key={portal.slug} href={`/?site=${portal.slug}`} className="gp-ft-portal-chip">
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: portal.color, flexShrink: 0, boxShadow: `0 0 0 2px ${portal.color}33` }} />
-                <span>{portal.name}</span>
+                <span>{t === TEXT.en ? portal.nameEn || portal.name : portal.name}</span>
               </Link>
             ))}
           </div>
@@ -426,22 +475,22 @@ export default function Footer({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', padding: '18px 0 22px', fontSize: '12px', color: '#8d897f' }}>
 
           <div style={{ fontWeight: 500 }}>
-            © 2026 {siteName} न्यूज़ मीडिया · सर्वाधिकार सुरक्षित
+            © 2026 {siteName} {t.rights}
           </div>
 
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link href="/privacy-policy" className="gp-ft-policy-link">गोपनीयता नीति</Link>
+            <Link href="/privacy-policy" className="gp-ft-policy-link">{t.privacy}</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/terms" className="gp-ft-policy-link">उपयोग की शर्तें</Link>
+            <Link href="/terms" className="gp-ft-policy-link">{t.terms}</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/editorial-guidelines" className="gp-ft-policy-link">संपादकीय दिशानिर्देश</Link>
+            <Link href="/editorial-guidelines" className="gp-ft-policy-link">{t.editorial}</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/grievance" className="gp-ft-policy-link">शिकायत निवारण</Link>
+            <Link href="/grievance" className="gp-ft-policy-link">{t.grievance}</Link>
             <span style={{ color: '#e3e0da' }}>·</span>
-            <Link href="/delete-account" className="gp-ft-policy-link">खाता हटाएं</Link>
+            <Link href="/delete-account" className="gp-ft-policy-link">{t.deleteAccount}</Link>
           </div>
 
-          <button onClick={scrollToTop} className="gp-ft-scroll-top" aria-label="ऊपर जाएँ" title="ऊपर जाएँ">
+          <button onClick={scrollToTop} className="gp-ft-scroll-top" aria-label={t.top} title={t.top}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 19V5"/>
               <path d="M5 12l7-7 7 7"/>

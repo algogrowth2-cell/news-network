@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { resolveSiteSlug } from '@/lib/siteTheme';
 
 const LANGUAGES = [
   { code: 'hi', native: 'हिंदी', english: 'Hindi' },
@@ -70,12 +71,19 @@ function LanguageTranslatorInner() {
   const [selectedLang, setSelectedLang] = useState('hi');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const rawSite = searchParams.get('site') || 'the-local-leader';
-  const siteSlug = decodeURIComponent(rawSite).trim().toLowerCase().replace(/\s+/g, '-');
-  const langPrefKey = `lang_pref_${siteSlug}`;
+  // Portal: ?site= ya portal ka apna domain (newsinfo24.in → news-info-24). Browser me hi pata chalta hai,
+  // isliye pehchaan hone tak bhasha nahi badalte (warna galat portal ki bhasha lag kar reload ho jaata).
+  const siteParam = searchParams.get('site');
+  const [siteSlug, setSiteSlug] = useState<string | null>(null);
+  useEffect(() => {
+    setSiteSlug(resolveSiteSlug(siteParam));
+  }, [siteParam]);
+  // v2: pehle ki galat default (English portal par Hindi) wali yaad ek baar saaf — ab portal ka default
+  const langPrefKey = `lang_pref_v2_${siteSlug || 'the-local-leader'}`;
 
   // 1. Detect site & set default language (news-info-24 & national-defence-network -> en, others -> hi)
   useEffect(() => {
+    if (!siteSlug) return;
     const isEnglishPortal = ENGLISH_PORTALS.includes(siteSlug);
     const portalDefault = isEnglishPortal ? 'en' : 'hi';
 

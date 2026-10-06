@@ -70,7 +70,9 @@ export default function ReaderProfileMenu({
   const [savingMk, setSavingMk] = useState(false);
   // Naam/email database (users/u_{phone}) se — browser me rakha purana session alag naam na dikhaye
   const [fresh, setFresh] = useState<{ name?: string; email?: string } | null>(null);
-  const name = fresh?.name || user.name;
+  const rawName = fresh?.name || user.name;
+  // Bina naam wale pathak ka default 'पाठक' — English portal par 'Reader'
+  const name = isEnglish && rawName === 'पाठक' ? 'Reader' : rawName;
   const email = fresh?.email || user.email;
 
   const initial = (name || 'प').trim().charAt(0).toUpperCase();
