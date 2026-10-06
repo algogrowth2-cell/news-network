@@ -39,18 +39,6 @@ function credentials(): Map<string, string> {
   return map;
 }
 
-/**
- * Jaanch ke liye (password/hash nahi): har admin ka chhupaya email + hash ka fingerprint.
- * scripts/check-admin-login.mjs bhi wahi fingerprint dikhati hai — milaan se pata chalta hai live value sahi pahunchi ya nahi.
- */
-export function credentialFingerprints() {
-  return [...credentials().entries()].map(([email, hash]) => ({
-    email: email.replace(/^(.{2}).*(@.*)$/, '$1***$2'),
-    fingerprint: createHmac('sha256', 'gpn-fp').update(`${email}:${hash}`).digest('hex').slice(0, 10),
-    hashLooksValid: /^scrypt\$\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/.test(hash)
-  }));
-}
-
 export const adminAuthConfigured = () => credentials().size > 0 && cleanEnv(process.env.ADMIN_SESSION_SECRET).length >= 32;
 
 export function hashPassword(password: string, N = 16384) {

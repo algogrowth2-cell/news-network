@@ -29,9 +29,6 @@ if (!map.size) {
   process.exit(1);
 }
 console.log('Value me ye admin email mile:', [...map.keys()].join(', '));
-// Live site ke /api/admin/config-check se milane ke liye
-const { createHmac } = await import('node:crypto');
-for (const [e, h] of map) console.log(`  fingerprint (${e.replace(/^(.{2}).*(@.*)$/, '$1***$2')}): ${createHmac('sha256', 'gpn-fp').update(`${e}:${h}`).digest('hex').slice(0, 10)}`);
 const stored = map.get(email);
 if (!stored) {
   console.log(`❌ "${email}" is value me nahi hai. Login par upar wala email hi daalein, ya is email se script dobara chalayein.`);
