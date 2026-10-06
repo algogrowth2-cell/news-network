@@ -10,7 +10,7 @@ export const NETWORK_SITES: SiteItem[] = [
   { slug: 'the-provue-times', name: 'द प्रोव्यू टाइम्स', domain: 'theproviewtimes.com' },
   { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़', domain: 'janbharatnews.com' },
   { slug: 'news-info-24', name: 'NEWS INFO 24', domain: 'newsinfo24.in' },
-  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़', domain: 'nationaldefencenetwork.com' },
+  { slug: 'ndn-defence', name: 'National Defence Network', domain: 'nationaldefencenetwork.com' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', domain: 'bazarkarobar.com' },
   { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', domain: 'goldenpearlcorporation.com' },
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', domain: 'deshkiawaz.com' }

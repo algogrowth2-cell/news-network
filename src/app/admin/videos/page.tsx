@@ -35,7 +35,7 @@ const NETWORK_PORTALS = [
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़' },
   { slug: 'jan-bharat-news', name: 'जन भारत न्यूज़' },
   { slug: 'news-info-24', name: 'NEWS INFO 24' },
-  { slug: 'ndn-defence', name: 'डिफेंस न्यूज़' }
+  { slug: 'ndn-defence', name: 'National Defence Network' }
 ];
 
 const VIDEO_CATEGORIES = [

@@ -46,7 +46,7 @@ const NETWORK_WEBSITES = [
   { name: 'देश की आवाज़', slug: 'desh-ki-aawaz' },
   { name: 'जन भारत न्यूज़', slug: 'jan-bharat-news' },
   { name: 'NEWS INFO 24', slug: 'news-info-24' },
-  { name: 'डिफेंस न्यूज़', slug: 'ndn-defence' }
+  { name: 'National Defence Network', slug: 'ndn-defence' }
 ];
 
 export default function PatrakarDashboard() {
@@ -383,7 +383,9 @@ export default function PatrakarDashboard() {
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
-            <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+            <Link href="/" aria-label="मुख्य वेबसाइट" style={{ display: 'inline-flex' }}>
+              <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+            </Link>
           )}
           <div>
             <b style={{ fontSize: '18px', color: '#0f172a' }}>पत्रकार संवाददाता पोर्टल</b>

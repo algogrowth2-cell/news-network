@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getActivePortal } from '@/lib/siteTheme';
 
 interface FooterProps {
   siteName?: string;
@@ -18,7 +19,7 @@ const NETWORK_PORTALS = [
   { name: 'देश की आवाज़', slug: 'desh-ki-aawaz', color: '#c0392b' },
   { name: 'जन भारत न्यूज़', slug: 'jan-bharat-news', color: '#1d6fa5' },
   { name: 'NEWS INFO 24', slug: 'news-info-24', color: '#d12b2b' },
-  { name: 'डिफेंस न्यूज़', slug: 'ndn-defence', color: '#4a6741' }
+  { name: 'National Defence Network', slug: 'ndn-defence', color: '#4a6741' }
 ];
 
 // Social profiles — abhi platform ke default links hain; apne official page/channel ka URL yahan daal dein
@@ -112,9 +113,15 @@ export default function Footer({
   primaryColor = '#ea580c',
   logoUrl = '/logos/the-local-leader.jpeg',
   tagline = '— जनता की आवाज़, सच्चाई के साथ —',
-  currentSlug = 'the-local-leader'
+  currentSlug
 }: FooterProps) {
   const [logoErr, setLogoErr] = useState(false);
+  // Logo par click → isi portal ka homepage (slug na diya ho toh URL / domain / pichhla portal se)
+  const [homeSlug, setHomeSlug] = useState(currentSlug || 'the-local-leader');
+  useEffect(() => {
+    if (currentSlug) return setHomeSlug(currentSlug);
+    setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
+  }, [currentSlug]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -272,7 +279,7 @@ export default function Footer({
 
           {/* Column 1 — Brand, Social, App Badges */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <Link href={`/?site=${homeSlug}`} aria-label={`${siteName} होम`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', textDecoration: 'none', width: 'fit-content' }}>
               {logoUrl && !logoErr ? (
                 <img
                   key={logoUrl}
@@ -286,7 +293,7 @@ export default function Footer({
                   {siteName}
                 </span>
               )}
-            </div>
+            </Link>
 
             <p style={{ fontSize: '13.5px', color: '#6b6860', lineHeight: 1.7, margin: '0 0 20px 0', maxWidth: '340px' }}>
               {tagline || 'भरूच और आसपास के ज़िलों की निष्पक्ष, सटीक और जनसरोकार की खबरें। 2014 से लगातार।'}
@@ -328,7 +335,7 @@ export default function Footer({
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
               {['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'].map(cat => (
                 <li key={cat}>
-                  <Link href={`/?site=${currentSlug}&category=${encodeURIComponent(cat)}`} className="gp-ft-cat-link">
+                  <Link href={`/?site=${homeSlug}&category=${encodeURIComponent(cat)}`} className="gp-ft-cat-link">
                     {cat}
                   </Link>
                 </li>
@@ -341,22 +348,22 @@ export default function Footer({
             <span className="gp-ft-section-title">सेवाएं</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <li>
-                <Link href={`/epaper?site=${currentSlug}`} className="gp-ft-cat-link">
+                <Link href={`/epaper?site=${homeSlug}`} className="gp-ft-cat-link">
                   ई-पेपर
                 </Link>
               </li>
               <li>
-                <Link href={`/shok-sandesh?site=${currentSlug}`} className="gp-ft-cat-link">
+                <Link href={`/shok-sandesh?site=${homeSlug}`} className="gp-ft-cat-link">
                   शोक संदेश
                 </Link>
               </li>
               <li>
-                <Link href={`/classifieds?site=${currentSlug}`} className="gp-ft-cat-link">
+                <Link href={`/classifieds?site=${homeSlug}`} className="gp-ft-cat-link">
                   क्लासिफाइड
                 </Link>
               </li>
               <li>
-                <Link href={`/?site=${currentSlug}#rashifal`} className="gp-ft-cat-link">
+                <Link href={`/?site=${homeSlug}#rashifal`} className="gp-ft-cat-link">
                   राशिफल
                 </Link>
               </li>

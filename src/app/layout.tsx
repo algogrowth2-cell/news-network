@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import AutoFooter from '@/components/AutoFooter';
 
 export const metadata: Metadata = {
   title: 'Golden Pearl News',
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <AutoFooter />
         </AuthProvider>
       </body>
     </html>

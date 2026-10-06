@@ -172,13 +172,14 @@ body {
 
 .hp-header{position:sticky;top:0;z-index:300;border-bottom:1px solid #eae8e4;box-shadow:0 1px 8px rgba(0,0,0,.04)}
 .hp-header-in{max-width:1320px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.hp-brand-wrap{display:flex;align-items:center;gap:8px;min-width:0}
+.hp-brand-wrap{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0}
 .hp-menu-btn{display:none;background:none;border:0;padding:6px;cursor:pointer;color:#333;flex-shrink:0}
 .hp-brand{display:flex;align-items:center;gap:10px;min-width:0;text-decoration:none;color:inherit}
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
-.hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hp-nav{display:flex;gap:2px}
+.hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap}
+.hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
+.hp-nav{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.hp-nav::-webkit-scrollbar{display:none}
 .hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
 .hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .hp-tool-link{font-size:12px;font-weight:600;color:#555;text-decoration:none;padding:5px 9px;border-radius:8px;border:1px solid #e5e3df;background:#fff;white-space:nowrap}
@@ -272,6 +273,17 @@ body {
 @keyframes hpPulse{0%,100%{opacity:1}50%{opacity:.6}}
 @keyframes hpSlide{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 
+/* Lamba portal naam (National Defence Network) ho toh menu thoda compact — naam/tagline poore dikhein */
+@media(max-width:1500px){
+  .hp-header-in{gap:10px}
+  .hp-nav-btn{padding:6px 7px;font-size:12px;gap:4px}
+  .hp-tools{gap:5px}
+  .hp-tool-link{padding:5px 7px}
+}
+@media(max-width:1400px){
+  .hp-nav{display:none}
+  .hp-menu-btn{display:block}
+}
 @media(max-width:1100px){
   .hp-shell{grid-template-columns:minmax(0,1fr) 300px}
   .hp-left{display:none}
@@ -289,7 +301,8 @@ body {
   .hp-ticker-date{display:none}
   .hp-header-in{padding:8px 12px;gap:10px}
   .hp-logo{height:38px;max-width:100px}
-  .hp-site-name{font-size:15px}
+  .hp-brand-wrap{flex-shrink:1}
+  .hp-site-name{font-size:15px;white-space:normal;line-height:1.25}
   .hp-tagline{display:none}
   .hp-shell{padding:14px 12px 32px;gap:16px}
   .hp-hero-body{padding:14px}

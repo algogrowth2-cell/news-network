@@ -133,7 +133,9 @@ function VideosContent() {
             <span style={{ color: '#cbd5e1' }}>|</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {siteLogo && (
-                <img src={siteLogo} alt={siteName} style={{ height: '28px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+                <Link href={`/?site=${siteSlug}`} aria-label={`${siteName} होम`} style={{ display: 'inline-flex' }}>
+                  <img src={siteLogo} alt={siteName} style={{ height: '28px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+                </Link>
               )}
               <h1 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#0f172a' }}>
                 वीडियो बुलेटिन (Video Gallery)
