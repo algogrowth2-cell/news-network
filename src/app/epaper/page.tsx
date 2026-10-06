@@ -6,7 +6,7 @@ import { collection, onSnapshot, query, doc, getDoc, setDoc, serverTimestamp } f
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AdLayout } from '@/components/SiteAds';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 import { EPAPER_PLANS } from '@/lib/plans';
 import { fallbackFor } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
@@ -595,8 +595,9 @@ function EPaperComponent() {
           </div>
         ) : (
           <div className="ep-grid">
-            {filteredEditions.map((edition) => (
-              <article key={edition.id} className="ep-card">
+            {filteredEditions.map((edition, ei) => (
+              <React.Fragment key={edition.id}>
+              <article className="ep-card">
                 <div className="ep-card-head">
                   <span className="ep-city ep-serif">{edition.cityName}</span>
                   <span className="ep-edname">{edition.editionName}</span>
@@ -644,6 +645,9 @@ function EPaperComponent() {
                   </button>
                 )}
               </article>
+              {/* Har 3 sanskaran ke baad ek banner vigyapan */}
+              {(ei + 1) % 3 === 0 && ei < filteredEditions.length - 1 && <AdInline index={(ei + 1) / 3 - 1} />}
+              </React.Fragment>
             ))}
           </div>
         )}

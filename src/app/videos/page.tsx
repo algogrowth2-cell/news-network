@@ -325,8 +325,8 @@ function VideosContent() {
                   )}
                 </div>
               </div>
-              {/* Har 6 video ke baad ek banner vigyapan */}
-              {(vi + 1) % 6 === 0 && vi < filteredVideos.length - 1 && <AdInline index={(vi + 1) / 6 - 1} />}
+              {/* Har 3 video ke baad ek banner vigyapan (homepage jaisa) */}
+              {(vi + 1) % 3 === 0 && vi < filteredVideos.length - 1 && <AdInline index={(vi + 1) / 3 - 1} />}
               </Fragment>
             ))}
           </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AdLayout } from '@/components/SiteAds';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 
 const primary = '#ea580c';
 
@@ -345,6 +345,9 @@ export default function TermsPage() {
             </section>
 
             {/* 4 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={0} />
+
             <section id="accounts" className="tos-section">
               <div className="tos-section-head">
                 <span className="tos-section-num">4</span>
@@ -405,6 +408,9 @@ export default function TermsPage() {
             </section>
 
             {/* 7 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={1} />
+
             <section id="liability" className="tos-section">
               <div className="tos-section-head">
                 <span className="tos-section-num">7</span>
@@ -468,6 +474,9 @@ export default function TermsPage() {
             </section>
 
             {/* 10 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={2} />
+
             <section id="changes" className="tos-section">
               <div className="tos-section-head">
                 <span className="tos-section-num">10</span>

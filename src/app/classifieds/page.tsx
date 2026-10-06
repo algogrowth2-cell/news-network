@@ -426,8 +426,8 @@ function ClassifiedsContent() {
                   </div>
                 </div>
               </div>
-              {/* Har 6 ke baad ek banner vigyapan */}
-              {(ai + 1) % 6 === 0 && ai < filteredAds.length - 1 && <AdInline index={(ai + 1) / 6 - 1} />}
+              {/* Har 3 ke baad ek banner vigyapan (homepage jaisa) */}
+              {(ai + 1) % 3 === 0 && ai < filteredAds.length - 1 && <AdInline index={(ai + 1) / 3 - 1} />}
               </Fragment>
             ))}
           </div>

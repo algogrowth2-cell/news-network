@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AdLayout } from '@/components/SiteAds';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 
 const SECTIONS = [
   { id: 'collection', num: '1', title: 'सूचना का संग्रह' },
@@ -355,6 +355,9 @@ export default function PrivacyPolicyPage() {
             </section>
 
             {/* Section 4 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={0} />
+
             <section id="security" className="pp-section">
               <div className="pp-section-head">
                 <span className="pp-section-num">4</span>
@@ -421,6 +424,9 @@ export default function PrivacyPolicyPage() {
             </section>
 
             {/* Section 7 — Google Play "Data safety" ke liye */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={1} />
+
             <section id="deletion" className="pp-section">
               <div className="pp-section-head">
                 <span className="pp-section-num">7</span>
@@ -546,6 +552,9 @@ export default function PrivacyPolicyPage() {
             </section>
 
             {/* Section 10 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={2} />
+
             <section id="changes" className="pp-section">
               <div className="pp-section-head">
                 <span className="pp-section-num">10</span>

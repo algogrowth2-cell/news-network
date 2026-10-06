@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AdLayout } from '@/components/SiteAds';
+import { AdInline, AdLayout } from '@/components/SiteAds';
 
 const primary = '#ea580c';
 
@@ -382,6 +382,9 @@ export default function EditorialGuidelinesPage() {
             </section>
 
             {/* 4 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={0} />
+
             <section id="corrections" className="eg-section">
               <div className="eg-section-head">
                 <span className="eg-section-num">4</span>
@@ -444,6 +447,9 @@ export default function EditorialGuidelinesPage() {
             </section>
 
             {/* 7 */}
+            {/* Har 3 vishay ke baad ek banner vigyapan */}
+            <AdInline index={1} />
+
             <section id="digital" className="eg-section">
               <div className="eg-section-head">
                 <span className="eg-section-num">7</span>
