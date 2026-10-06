@@ -23,16 +23,40 @@ export interface AdminCtx {
 
 let cached: Promise<AdminCtx | null> | null = null;
 
+/** Text me pehla poora {...} object (do baar paste / peeche kuch extra juda ho toh bhi) */
+function firstJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0;
+  let inStr = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (ch === '\\') i++;
+      else if (ch === '"') inStr = false;
+    } else if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return text.slice(start, i + 1);
+  }
+  return null;
+}
+
 function readServiceAccount() {
-  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim().replace(/^['"]+|['"]+$/g, '');
   if (!raw) return null;
   try {
-    const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
+    // Seedha JSON ya base64 (ek line) — base64 me beech ke space/line-break hata kar
+    const text = raw.includes('{') ? raw : Buffer.from(raw.replace(/\s+/g, ''), 'base64').toString('utf8');
+    const json = firstJsonObject(text);
+    if (!json) throw new Error('JSON object nahi mila');
     const sa = JSON.parse(json);
-    if (sa.private_key) sa.private_key = String(sa.private_key).replace(/\\n/g, '\n');
+    if (!sa.private_key || !sa.client_email) throw new Error('private_key / client_email nahi');
+    sa.private_key = String(sa.private_key).replace(/\\n/g, '\n');
+    if (json.length < text.trim().length) console.warn('FIREBASE_SERVICE_ACCOUNT ke baad extra text tha — pehli key use ki');
     return sa;
   } catch (err) {
-    console.error('FIREBASE_SERVICE_ACCOUNT padha nahi ja saka:', (err as Error).message);
+    // Sirf lambai/aakaar — key ka koi hissa log me nahi
+    console.error('FIREBASE_SERVICE_ACCOUNT padha nahi ja saka:', (err as Error).message, `(lambai ${raw.length}, shuru "${raw.slice(0, 3)}")`);
     return null;
   }
 }
