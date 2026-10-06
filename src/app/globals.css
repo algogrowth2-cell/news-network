@@ -46,3 +46,23 @@ a {
     grid-template-columns: 1fr;
   }
 }
+/* Google Translate ki upar wali patti ("Translated into English · Show original") na dikhe —
+   translation chalta rahe, bas banner/tooltip/highlight chhupe aur page neeche na khiske */
+iframe.skiptranslate,
+.goog-te-banner-frame,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+}
+body {
+  top: 0 !important;
+  position: static !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}

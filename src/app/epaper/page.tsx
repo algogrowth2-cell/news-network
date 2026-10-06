@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { EPAPER_PLANS } from '@/lib/plans';
+import { fallbackFor } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
 import { authFetch, legacyFallback } from '@/lib/phoneAuth';
 
@@ -247,8 +248,8 @@ function EPaperComponent() {
   const [editions, setEditions] = useState<EPaperEdition[]>([]);
   const [editionsLoading, setEditionsLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState('सभी');
-  const [themeColor, setThemeColor] = useState('#ea580c');
-  const [siteName, setSiteName] = useState('द लोकल लीडर');
+  const [themeColor, setThemeColor] = useState(fallbackFor(siteSlug).primaryColor);
+  const [siteName, setSiteName] = useState(fallbackFor(siteSlug).name);
   const [siteLogo, setSiteLogo] = useState(`/logos/${siteSlug}.jpeg`);
   const [readingEdition, setReadingEdition] = useState<EPaperEdition | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -262,19 +263,12 @@ function EPaperComponent() {
   // 1. Dynamic Site Fetching from Firestore
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'sites', siteSlug), (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (d.primaryColor) setThemeColor(d.primaryColor);
-        if (d.name) setSiteName(d.name);
-        if (d.logoUrl) setSiteLogo(d.logoUrl);
-      } else {
-        if (siteSlug === 'the-local-leader') {
-          setSiteName('द लोकल लीडर');
-        } else {
-          setSiteName(siteSlug.replace(/-/g, ' ').toUpperCase());
-        }
-        setSiteLogo(`/logos/${siteSlug}.jpeg`);
-      }
+      // Portal ka apna naam/logo (Firestore doc me na ho toh har portal ka fallback — kabhi doosre portal ka naam nahi)
+      const fb = fallbackFor(siteSlug);
+      const d = snap.exists() ? snap.data() : {};
+      setThemeColor(d.primaryColor || fb.primaryColor);
+      setSiteName(d.name || fb.name);
+      setSiteLogo(d.logoUrl || fb.logoUrl);
     });
     return () => unsub();
   }, [siteSlug]);

@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useRef, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { SECURE_AUTH } from '@/lib/phoneAuth';
@@ -171,14 +171,14 @@ body {
 .hp-ticker-date{white-space:nowrap;flex-shrink:0;color:#e2e8f0;font-weight:600}
 
 .hp-header{position:sticky;top:0;z-index:300;border-bottom:1px solid #eae8e4;box-shadow:0 1px 8px rgba(0,0,0,.04)}
-.hp-header-in{max-width:1320px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hp-header-in{max-width:1560px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .hp-brand-wrap{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0}
 .hp-menu-btn{display:none;background:none;border:0;padding:6px;cursor:pointer;color:#333;flex-shrink:0}
 .hp-brand{display:flex;align-items:center;gap:10px;min-width:0;text-decoration:none;color:inherit}
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
 .hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap}
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
-.hp-nav{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.hp-nav{display:flex;gap:2px;flex-shrink:0}
 .hp-nav::-webkit-scrollbar{display:none}
 .hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
 .hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -280,10 +280,11 @@ body {
   .hp-tools{gap:5px}
   .hp-tool-link{padding:5px 7px}
 }
-@media(max-width:1400px){
-  .hp-nav{display:none}
-  .hp-menu-btn{display:block}
-}
+/* Jagah kam ho (lamba naam, login chip, zoom) toh poora menu ☰ me — aadhe buttons kabhi nahi chhupte (JS naapta hai) */
+.hp-header.hp-nav-collapsed .hp-nav{display:none}
+.hp-header.hp-tools-compact .hp-tool-text{display:none}
+.hp-header.hp-tools-compact .ss-name{display:inline-block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.hp-header.hp-nav-collapsed .hp-menu-btn{display:block}
 @media(max-width:1100px){
   .hp-shell{grid-template-columns:minmax(0,1fr) 300px}
   .hp-left{display:none}
@@ -901,6 +902,51 @@ function HomePageContent() {
     </div>
   );
 
+  // Header: jagah naapo — (0) sab poora, (1) Journalist/Advertise sirf icon + switcher naam chhota,
+  // (2) tab bhi na aaye toh menu ☰ me. Aadha menu / kata hua button kabhi nahi.
+  const headerInRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const fitRef = useRef({ nav: 0, toolsFull: 0, toolsCompact: 0, level: 0 });
+  const [headerLevel, setHeaderLevel] = useState(0);
+  useEffect(() => {
+    const check = () => {
+      const h = headerInRef.current, b = brandRef.current, n = navRef.current, t = toolsRef.current;
+      if (!h || !b || !t || t.offsetWidth === 0) return; // mobile: CSS sambhalta hai
+      const m = fitRef.current;
+      if (n && n.offsetWidth > 0) m.nav = n.scrollWidth;
+      if (m.level === 0) {
+        m.toolsFull = t.offsetWidth;
+        let save = 0;
+        t.querySelectorAll<HTMLElement>('.hp-tool-text').forEach((el) => (save += el.offsetWidth + 4));
+        const ss = t.querySelector<HTMLElement>('.ss-name');
+        if (ss && ss.offsetWidth > 120) save += ss.offsetWidth - 120;
+        m.toolsCompact = m.toolsFull - save;
+      } else {
+        m.toolsCompact = t.offsetWidth;
+      }
+      if (!m.nav) return;
+      const cs = getComputedStyle(h);
+      const gap = parseFloat(cs.columnGap || '0') || 0;
+      const brand = (b.querySelector<HTMLElement>('.hp-brand')?.offsetWidth || b.offsetWidth) + 2;
+      const inner = h.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - brand - gap * 2;
+      const level = m.nav + m.toolsFull <= inner ? 0 : m.nav + m.toolsCompact <= inner ? 1 : 2;
+      if (level !== m.level) {
+        m.level = level;
+        setHeaderLevel(level);
+      }
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    [headerInRef.current, brandRef.current, toolsRef.current].forEach((el) => el && ro.observe(el));
+    window.addEventListener('resize', check);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', check);
+    };
+  }, []);
+
   const categoryButtons = (
     <>
       {categories.map(({ key, icon }) => {
@@ -997,10 +1043,10 @@ function HomePageContent() {
       </div>
 
       {/* ═══ 2. HEADER ═══ */}
-      <header className="hp-header" style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
-        <div className="hp-header-in">
+      <header className={`hp-header${headerLevel >= 1 ? ' hp-tools-compact' : ''}${headerLevel === 2 ? ' hp-nav-collapsed' : ''}`} style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
+        <div className="hp-header-in" ref={headerInRef}>
           {/* Left: Brand Logo & Title */}
-          <div className="hp-brand-wrap">
+          <div className="hp-brand-wrap" ref={brandRef}>
             <button className="hp-menu-btn" onClick={() => setDrawerOpen(true)} aria-label="मेनू">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
@@ -1022,7 +1068,7 @@ function HomePageContent() {
           </div>
 
           {/* Desktop Nav Pills */}
-          <nav className="hp-nav">
+          <nav className="hp-nav" ref={navRef}>
             {[
               { key: isEnglishSite ? 'Home' : 'होम', emoji: '🏠' },
               { key: isEnglishSite ? 'Live' : 'लाइव', emoji: '🔴' },
@@ -1051,12 +1097,12 @@ function HomePageContent() {
           </nav>
 
           {/* Desktop Tools */}
-          <div className="hp-tools hp-desktop-tools">
-            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
+          <div className="hp-tools hp-desktop-tools" ref={toolsRef}>
+            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Journalist' : 'पत्रकार'}>
+              ✍️<span className="hp-tool-text"> {isEnglishSite ? 'Journalist' : 'पत्रकार'}</span>
             </Link>
-            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link">
-              📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
+            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Advertise' : 'विज्ञापन'}>
+              📢<span className="hp-tool-text"> {isEnglishSite ? 'Advertise' : 'विज्ञापन'}</span>
             </Link>
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             <Suspense fallback={null}>
@@ -1067,7 +1113,7 @@ function HomePageContent() {
               style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '22px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#777', fontSize: '12px', flexShrink: 0 }}
             >
               <SearchIcon size={14} />
-              {isEnglishSite ? 'Search' : 'खोजें'}
+              <span className="hp-tool-text">{isEnglishSite ? 'Search' : 'खोजें'}</span>
             </button>
             <NotificationBell
               portal={currentSlug}
