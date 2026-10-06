@@ -30,24 +30,38 @@ export interface SiteClassified {
 const LIVE = ['active', 'approved'];
 const onPortal = (siteId: unknown, slug: string) => !siteId || siteId === 'all' || normalizeSiteId(siteId) === slug;
 
-// Ek page load par ek hi baar padho (har component alag-alag Firestore na padhe)
-type AdSet = { header: SiteAd | null; sidebars: SiteAd[]; feed: SiteAd[]; classifieds: SiteClassified[] };
+/*
+ * Ek page view par ek hi baar padho (har component alag-alag Firestore na padhe).
+ * Koi vigyapan ek page par do baar nahi: banners[0] upar, banners[1..] beech-beech me; sidebars[0..3] sidebar me.
+ * Jagah se zyada vigyapan hon toh har page view par kram badalta hai (shuffle) — sab advertisers ko barabar mauka.
+ */
+type AdSet = { banners: SiteAd[]; sidebars: SiteAd[]; classifieds: SiteClassified[]; seen: Set<string> };
 // Sidebar me kitni 300×250 jagah (khaali jagah par 'यहाँ विज्ञापन दें')
 export const SIDEBAR_SLOTS = 4;
 const cache = new Map<string, Promise<AdSet>>();
 
+const shuffle = <T,>(a: T[]) => {
+  for (let i = a.length - 1; i > 0; i--) {
+    const k = Math.floor(Math.random() * (i + 1));
+    [a[i], a[k]] = [a[k], a[i]];
+  }
+  return a;
+};
+
 function loadAds(slug: string) {
-  if (!cache.has(slug)) {
+  // Har naye page (URL) par naya kram aur nayi impression ginti
+  const key = `${slug}|${typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''}`;
+  if (!cache.has(key)) {
     cache.set(
-      slug,
+      key,
       (async () => {
         const [adSnap, clSnap] = await Promise.all([
           getDocs(query(collection(db, 'ads'), where('status', 'in', LIVE))),
           getDocs(query(collection(db, 'classifieds'), where('status', 'in', LIVE)))
         ]);
-        let header: SiteAd | null = null;
+        const headers: SiteAd[] = [];
+        const feeds: SiteAd[] = [];
         const sidebars: SiteAd[] = [];
-        const feed: SiteAd[] = [];
         const classifieds: SiteClassified[] = [];
         adSnap.forEach((d) => {
           const x = d.data();
@@ -68,9 +82,9 @@ function loadAds(slug: string) {
           }
           if (!x.imageUrl) return;
           const ad = { id: d.id, name: x.name || x.title || '', imageUrl: x.imageUrl, targetUrl: x.targetUrl || '' };
-          if (!header && (zone.includes('728') || zone.includes('header') || zone.includes('हेडर') || fmt === 'banner')) header = ad;
-          else if (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar') sidebars.push(ad);
-          else if (zone.includes('feed') || zone.includes('in-article') || zone.includes('banner') || zone.includes('728') || zone.includes('header')) feed.push(ad);
+          if (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar') sidebars.push(ad);
+          else if (zone.includes('728') || zone.includes('header') || zone.includes('हेडर') || fmt === 'banner') headers.push(ad);
+          else if (zone.includes('feed') || zone.includes('in-article') || zone.includes('banner')) feeds.push(ad);
         });
         clSnap.forEach((d) => {
           const x = d.data();
@@ -85,17 +99,19 @@ function loadAds(slug: string) {
             imageUrl: x.imageUrl || ''
           });
         });
-        // Dikhne wale vigyapanon ki impression (+1) — rules sirf yahi badlaav allow karte hain
-        for (const ad of [header, ...sidebars.slice(0, SIDEBAR_SLOTS)] as (SiteAd | null)[]) if (ad) updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
-        return { header, sidebars, feed, classifieds: classifieds.slice(0, 4) };
+        // Upar wali jagah header-banner wale (unhone wahi kharida), phir in-feed; baaki header beech me
+        shuffle(headers);
+        shuffle(feeds);
+        const banners = headers.length ? [headers[0], ...feeds, ...headers.slice(1)] : feeds;
+        return { banners, sidebars: shuffle(sidebars), classifieds: classifieds.slice(0, 4), seen: new Set<string>() };
       })().catch((err) => {
         console.error('Ads load error:', err);
-        cache.delete(slug);
-        return { header: null, sidebars: [], feed: [], classifieds: [] };
+        cache.delete(key);
+        return { banners: [], sidebars: [], classifieds: [], seen: new Set<string>() };
       })
     );
   }
-  return cache.get(slug)!;
+  return cache.get(key)!;
 }
 
 export function useSiteAds(slug: string) {
@@ -109,6 +125,15 @@ export function useSiteAds(slug: string) {
     };
   }, [slug]);
   return data;
+}
+
+/** Jo vigyapan sach me dikha, uski impression ek page view me ek hi baar (+1 — rules sirf yahi allow karte hain) */
+function useImpression(ads: AdSet | null, ad: SiteAd | null | undefined) {
+  useEffect(() => {
+    if (!ads || !ad || ads.seen.has(ad.id)) return;
+    ads.seen.add(ad.id);
+    updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
+  }, [ads, ad]);
 }
 
 const adClick = (id: string) => updateDoc(doc(db, 'ads', id), { clicks: increment(1) }).catch(() => {});
@@ -146,16 +171,20 @@ const Styles = () => <style dangerouslySetInnerHTML={{ __html: CSS }} />;
 export function AdBanner({ slug, height = 110 }: { slug: string; height?: number }) {
   const ads = useSiteAds(slug);
   const en = isEnglishSlug(slug);
-  const ad = ads?.header;
+  const ad = ads?.banners[0];
+  useImpression(ads, ad);
   return (
     <>
       <Styles />
       {ad ? (
-        <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" onClick={() => adClick(ad.id)}>
+        <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
           <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height }} />
         </a>
       ) : (
-        <div className="sa-slot" style={{ minHeight: 90 }}>{en ? 'Advertisement' : 'विज्ञापन'} · 728 × 90</div>
+        <Link href={`/advertiser/login?site=${slug}`} className="sa-slot sa-cta" style={{ minHeight: 90 }}>
+          <b>📢 {en ? 'Advertise here' : 'यहाँ विज्ञापन दें'}</b>
+          <span>728 × 90</span>
+        </Link>
       )}
     </>
   );
@@ -166,13 +195,14 @@ export function AdSide({ slug, index = 0 }: { slug: string; index?: number }) {
   const ads = useSiteAds(slug);
   const en = isEnglishSlug(slug);
   const ad = ads?.sidebars[index];
+  useImpression(ads, ad);
   return (
     <>
       <Styles />
       {ad ? (
         <div>
           <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
-          <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" onClick={() => adClick(ad.id)}>
+          <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
             <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
           </a>
         </div>
@@ -287,14 +317,28 @@ export function AdInline({ slug, index = 0 }: { slug?: string; index?: number })
   const s = useResolvedSlug(slug);
   const ads = useSiteAds(s);
   const en = isEnglishSlug(s);
-  const pool = ads ? (ads.feed.length ? ads.feed : ads.header ? [ads.header] : []) : [];
-  const ad = pool.length ? pool[index % pool.length] : null;
-  if (!ad) return null;
+  // Upar wala banner [0] hai; beech ki har jagah alag vigyapan (repeat nahi)
+  const ad = ads?.banners[index + 1];
+  useImpression(ads, ad);
+  if (!ads) return null;
+  if (!ad) {
+    // Sirf pehli khaali jagah par "यहाँ विज्ञापन दें" — baaki khaali jagah chhup jaati hain
+    if (!ads.banners.length || index + 1 !== ads.banners.length) return null;
+    return (
+      <div className="sa-inline">
+        <Styles />
+        <Link href={`/advertiser/login?site=${s}`} className="sa-slot sa-cta" style={{ minHeight: 90 }}>
+          <b>📢 {en ? 'Advertise here' : 'यहाँ विज्ञापन दें'}</b>
+          <span>728 × 90</span>
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="sa-inline">
       <Styles />
       <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
-      <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" onClick={() => adClick(ad.id)}>
+      <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
         <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 110 }} />
       </a>
     </div>

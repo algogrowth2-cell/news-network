@@ -7,7 +7,7 @@ import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AdSideSlots, useStickySidebar } from '@/components/SiteAds';
+import { AdBanner, AdInline, AdSideSlots, useStickySidebar } from '@/components/SiteAds';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
@@ -735,9 +735,7 @@ function HomePageContent() {
               return;
             }
 
-            // Sidebar (300×250) ki impression SiteAds ginta hai — yahan dobara nahi
-            const isSidebarZone = zoneStr.includes('300') || zoneStr.includes('sidebar') || zoneStr.includes('साइडबार');
-            if (!isSidebarZone) updateDoc(doc(db, 'ads', docSnap.id), { impressions: increment(1) }).catch(() => {});
+            // Impression ab SiteAds ginta hai — sirf jo vigyapan sach me dikha (yahan dobara nahi)
 
             if (zoneStr.includes('728') || zoneStr.includes('header') || zoneStr.includes('हेडर')) {
               setHeaderAd(cleanAd);
@@ -1271,13 +1269,8 @@ function HomePageContent() {
 
         {/* ── CENTER COLUMN (MAIN NEWS FEED & LIVE FEED) ── */}
         <main className="hp-main">
-          {headerAd ? (
-            <a href={headerAd.targetUrl || '#'} target="_blank" rel="noopener noreferrer" onClick={() => handleAdClick(headerAd)}>
-              <img src={headerAd.imageUrl} alt={headerAd.name || 'विज्ञापन'} className="hp-ad-img hp-ad-header" />
-            </a>
-          ) : (
-            <div className="hp-ad-slot">विज्ञापन · 728 × 90</div>
-          )}
+          {/* Header banner — SiteAds (har page jaisa: rotation, repeat nahi) */}
+          <AdBanner slug={currentSlug} height={130} />
 
           {/* ── TRENDING TAGS — banner ad ke neeche, khabron ke upar ── */}
           {activeCategory !== 'लाइव' && activeCategory !== 'Live' && (
@@ -1405,8 +1398,7 @@ function HomePageContent() {
 
               {filteredArticles.slice(1).map((item, index) => {
                 const showAd = (index + 1) % 3 === 0;
-                const adIndex = Math.floor(index / 3) % (inFeedAds.length || 1);
-                const currentInFeedAd = inFeedAds[adIndex];
+                const adIndex = Math.floor(index / 3);
 
                 return (
                   <Fragment key={item.id}>
@@ -1424,30 +1416,8 @@ function HomePageContent() {
                       {item.image && <img src={item.image} alt={item.title} className="hp-item-img" loading="lazy" />}
                     </Link>
 
-                    {showAd && (
-                      <div className="hp-feed-ad">
-                        <div className="hp-feed-ad-label">{isEnglishSite ? 'SPONSORED / ADVERTISEMENT' : 'प्रायोजित / विज्ञापन'}</div>
-                        {currentInFeedAd ? (
-                          <a
-                            href={currentInFeedAd.targetUrl || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => handleAdClick(currentInFeedAd)}
-                            style={{ display: 'block', width: '100%', maxHeight: '110px', overflow: 'hidden', borderRadius: '8px' }}
-                          >
-                            <img
-                              src={currentInFeedAd.imageUrl}
-                              alt={currentInFeedAd.name || 'विज्ञापन'}
-                              style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }}
-                            />
-                          </a>
-                        ) : (
-                          <div className="hp-ad-slot" style={{ minHeight: '80px' }}>
-                            📢 {isEnglishSite ? 'Sponsored In-Feed Ad' : 'विज्ञापन स्थान (In-Feed Sponsored Ad)'}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {/* Har 3 khabar ke baad banner — har jagah alag vigyapan, khaali ho toh sirf ek baar "यहाँ विज्ञापन दें" */}
+                    {showAd && <AdInline slug={currentSlug} index={adIndex} />}
                   </Fragment>
                 );
               })}
