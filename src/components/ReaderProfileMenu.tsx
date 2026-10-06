@@ -68,9 +68,42 @@ export default function ReaderProfileMenu({
   // DPDP: marketing sahmati — yahin se chalu/band (wapas lena dene jitna aasaan)
   const [marketing, setMarketing] = useState<boolean | null>(null);
   const [savingMk, setSavingMk] = useState(false);
+  // Naam/email database (users/u_{phone}) se — browser me rakha purana session alag naam na dikhaye
+  const [fresh, setFresh] = useState<{ name?: string; email?: string } | null>(null);
+  const name = fresh?.name || user.name;
+  const email = fresh?.email || user.email;
 
-  const initial = (user.name || 'प').trim().charAt(0).toUpperCase();
-  const shortName = user.name ? (user.name.length > 10 ? `${user.name.slice(0, 10)}…` : user.name) : isEnglish ? 'User' : 'यूज़र';
+  const initial = (name || 'प').trim().charAt(0).toUpperCase();
+  const shortName = name ? (name.length > 10 ? `${name.slice(0, 10)}…` : name) : isEnglish ? 'User' : 'यूज़र';
+
+  useEffect(() => {
+    if (!user.phone) return;
+    let cancelled = false;
+    getDoc(doc(db, 'users', user.uid || `u_${user.phone}`))
+      .then((snap) => {
+        const d = snap.data();
+        if (cancelled || !d) return;
+        setFresh({ name: d.name || undefined, email: d.email || undefined });
+        // Saved session bhi sahi kar do (agli baar seedha sahi naam)
+        for (const key of ['reader_user', 'shok_user']) {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const s = JSON.parse(raw);
+            if (s.phone !== user.phone) continue;
+            if ((d.name && s.name !== d.name) || (d.email && s.email !== d.email)) {
+              localStorage.setItem(key, JSON.stringify({ ...s, name: d.name || s.name, email: d.email || s.email }));
+            }
+          } catch {
+            /* kharab session — chhod do */
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user.phone, user.uid]);
 
   useEffect(() => setMounted(true), []);
 
@@ -138,7 +171,7 @@ export default function ReaderProfileMenu({
                   <span className="rp-av-lg" style={{ background: primaryColor }}>{initial}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>{t.title}</div>
-                    <p className="rp-name">{user.name || '—'}</p>
+                    <p className="rp-name">{name || '—'}</p>
                   </div>
                   <button type="button" className="rp-close" onClick={() => setOpen(false)} aria-label="बंद करें">✕</button>
                 </div>
@@ -149,7 +182,7 @@ export default function ReaderProfileMenu({
                 </div>
                 <div className="rp-row">
                   <span className="rp-label">{t.email}</span>
-                  <span className="rp-value">{displayEmail(user.email)}</span>
+                  <span className="rp-value">{displayEmail(email)}</span>
                 </div>
                 {user.phone && (
                   <div className="rp-row">

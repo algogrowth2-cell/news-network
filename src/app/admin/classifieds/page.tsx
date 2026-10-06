@@ -19,6 +19,9 @@ interface Classified {
   status: string;
   advertiserName: string;
   advertiserPhone: string;
+  paymentId: string;
+  amountPaid: number;
+  testMode: boolean;
   createdAt: Date | null;
 }
 
@@ -70,6 +73,9 @@ export default function ClassifiedsPage() {
                 status: String(x.status || 'active').toLowerCase(),
                 advertiserName: x.advertiserName || '',
                 advertiserPhone: x.advertiserPhone || '',
+                paymentId: x.paymentId || '',
+                amountPaid: Number(x.amountPaid || 0),
+                testMode: !!x.testMode,
                 createdAt: toDate(x.timestamp) || toDate(x.createdAt)
               };
             })
@@ -170,6 +176,13 @@ export default function ClassifiedsPage() {
                     <td>
                       {r.advertiserName || '—'}
                       <span className="cl-sub">{r.advertiserPhone ? `+91 ${r.advertiserPhone}` : ''}</span>
+                      {r.paymentId ? (
+                        <span className="cl-sub" style={{ color: '#10b981', fontWeight: 600 }} title={r.paymentId}>
+                          💳 ₹{r.amountPaid || '—'} भुगतान ✓{r.testMode ? ' (टेस्ट)' : ''}
+                        </span>
+                      ) : (
+                        <span className="cl-sub" style={{ color: '#f59e0b' }}>भुगतान नहीं (पुराना/एडमिन)</span>
+                      )}
                     </td>
                     <td>{r.siteId === 'all' ? 'सभी पोर्टल' : r.siteId ? fallbackFor(r.siteId).name : '—'}</td>
                     <td>

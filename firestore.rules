@@ -70,11 +70,9 @@ service cloud.firestore {
     }
 
     // ---------- Vigyapan ----------
+    // Advertiser ka vigyapan sirf server banata hai (/api/payments/confirm — Razorpay bhugtan jaanch ke baad, status pending)
     match /ads/{id} {
       allow read: if true;
-      allow create: if isAdvertiser()
-        && request.resource.data.advertiserPhone == phone()
-        && request.resource.data.status == 'pending'; // admin ki manzoori ke baad hi live
       allow update: if incOnly('impressions') || incOnly('clicks');
     }
     match /advertisements/{id} {
@@ -83,9 +81,6 @@ service cloud.firestore {
     }
     match /classifieds/{id} {
       allow read: if true;
-      allow create: if isAdvertiser()
-        && request.resource.data.advertiserPhone == phone()
-        && request.resource.data.status == 'pending'; // admin ki manzoori ke baad hi live
     }
 
     // ---------- Pathakon ki tippaniyan ----------

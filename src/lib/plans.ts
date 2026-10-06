@@ -21,4 +21,19 @@ export const PATRAKAR_MEMBERSHIP_PRICE = 499;
 export const PRESS_KIT_DELIVERY_PRICE = 299;
 export const SHOK_SANDESH_PRICE = 199;
 
-export type PaymentKind = 'epaper' | 'membership' | 'delivery' | 'shok';
+// Advertiser vigyapan — har request ka shulk (payment ke baad hi admin ke paas manzoori ke liye)
+export const AD_PRICES = {
+  classified: 199,
+  sidebar: 999,
+  banner: 1999,
+  popup: 2999
+} as const;
+export type AdFormat = keyof typeof AD_PRICES;
+export const AD_FORMAT_LABEL: Record<AdFormat, string> = {
+  classified: 'क्लासिफाइड विज्ञापन',
+  sidebar: 'साइडबार बैनर (300 × 250)',
+  banner: 'हेडर बैनर (728 × 90)',
+  popup: 'पॉप-अप विज्ञापन'
+};
+
+export type PaymentKind = 'epaper' | 'membership' | 'delivery' | 'shok' | 'ad';

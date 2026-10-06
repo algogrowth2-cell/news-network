@@ -29,6 +29,9 @@ interface AdItem {
   imageUrl?: string;
   startDate?: string;
   endDate?: string;
+  paymentId?: string;
+  amountPaid?: number;
+  testMode?: boolean;
 }
 
 export default function AdsRevenuePage() {
@@ -71,7 +74,10 @@ export default function AdsRevenuePage() {
           targetUrl: data.targetUrl || '',
           imageUrl: data.imageUrl || '',
           startDate: data.startDate || '',
-          endDate: data.endDate || ''
+          endDate: data.endDate || '',
+          paymentId: data.paymentId || '',
+          amountPaid: Number(data.amountPaid || 0),
+          testMode: !!data.testMode
         };
       });
       setAds(list);
@@ -424,6 +430,9 @@ export default function AdsRevenuePage() {
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                         अवधि: {req.startDate} से {req.endDate} · लिंक: {req.targetUrl}
+                      </div>
+                      <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: 600, color: req.paymentId ? '#10b981' : '#f59e0b' }} title={req.paymentId || ''}>
+                        {req.paymentId ? `💳 ₹${req.amountPaid || '—'} भुगतान ✓${req.testMode ? ' (टेस्ट)' : ''} · ID: ${req.paymentId}` : 'भुगतान नहीं (पुराना अनुरोध)'}
                       </div>
                     </div>
                   </div>

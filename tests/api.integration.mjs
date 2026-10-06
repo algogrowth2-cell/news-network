@@ -42,11 +42,13 @@ const post = (path, body, token) =>
 const REF = '9811111111';
 const NEWU = '9822222222';
 const REP = '9833333333';
+const ADV = '9844444444';
 
 // Seed
 await db.doc(`users/u_${REF}`).set({ name: 'Referrer', email: 'ref@x.com', phone: REF, referralCode: 'GPTESTAA' });
 await db.doc('referral_codes/GPTESTAA').set({ userId: `u_${REF}`, phone: REF });
 await db.doc(`reporters/rp_${REP}`).set({ name: 'Rep', phone: REP, status: 'approved' });
+await db.doc('advertisers/oldAdvRecord1').set({ businessName: 'Test Shop', email: 'Shop@X.com', mobile: ADV, status: 'active' });
 
 // Server
 const server = spawn('npx', ['next', 'start', '-p', String(PORT)], {
@@ -124,6 +126,27 @@ try {
   check('pathak press ID nahi le sakta', res.status === 403);
   res = await post('/api/payments/confirm', { kind: 'membership', paymentId: 'pay_TESTMEMBER01' }, tRep);
   check('membership payment', res.ok && (await db.doc(`reporters/rp_${REP}`).get()).data()?.membershipActive === true);
+
+  // 5b. Advertiser: bhugtan ke baad hi request (server banata hai, status pending)
+  const tAdv = await idToken(`ph_${ADV}`, { phone: ADV });
+  const adBase = { title: '2 BHK बिकाऊ', category: 'प्रॉपर्टी / ज़मीन', city: 'महू', siteId: 'the-local-leader' };
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD001', ad: { ...adBase, format: 'classified' } }, tAdv);
+  r = await res.json();
+  const cl = (await db.doc('classifieds/pay_TESTAD001').get()).data();
+  check('classified bhugtan → pending request', res.ok && cl?.status === 'pending' && cl?.amountPaid === 199 && cl?.advertiserPhone === ADV && cl?.advertiserName === 'Test Shop', JSON.stringify(r));
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD001', ad: { ...adBase, format: 'classified' } }, tAdv);
+  check('wahi payment dobara → naya ad nahi', (await res.json()).already === true);
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD002', ad: { ...adBase, format: 'banner' } }, tAdv);
+  check('banner bina image band', res.status === 400);
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD003', ad: { ...adBase, format: 'banner', imageUrl: 'https://x.com/b.jpg', targetUrl: 'javascript:alert(1)' } }, tAdv);
+  const bn = (await db.doc('ads/pay_TESTAD003').get()).data();
+  check('banner bhugtan → pending, ₹1999, nakli link saaf', res.ok && bn?.status === 'pending' && bn?.amountPaid === 1999 && bn?.targetUrl === '#');
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD004', ad: { ...adBase, format: 'free' } }, tAdv);
+  check('nakli format band', res.status === 400);
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD005', ad: { ...adBase, format: 'classified' } }, tNew);
+  check('pathak vigyapan nahi bhej sakta', res.status === 403 && !(await db.doc('classifieds/pay_TESTAD005').get()).exists);
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD006', ad: { ...adBase, format: 'classified' } });
+  check('bina login vigyapan band', res.status === 401);
 
   // 6. Verify page API (sirf public jaankari)
   r = await (await fetch(`${B}/api/verify-press?id=NI24-${new Date().getFullYear()}-001`)).json();

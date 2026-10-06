@@ -138,8 +138,8 @@ describe('Patrakar', () => {
 });
 
 describe('Advertiser', () => {
-  test('advertiser apna ad, doosre ke naam se nahi', async () => {
-    await assertSucceeds(addDoc(collection(asPhone(ADVERTISER), 'ads'), { name: 'a', status: 'pending', advertiserPhone: ADVERTISER }));
+  test('advertiser browser se seedha ad nahi bana sakta (sirf server, bhugtan ke baad)', async () => {
+    await assertFails(addDoc(collection(asPhone(ADVERTISER), 'ads'), { name: 'a', status: 'pending', advertiserPhone: ADVERTISER }));
     await assertFails(addDoc(collection(asPhone(ADVERTISER), 'ads'), { name: 'a', status: 'pending', advertiserPhone: OTHER }));
     await assertFails(addDoc(collection(asPhone(READER), 'ads'), { name: 'a', status: 'pending', advertiserPhone: READER }));
   });
@@ -180,10 +180,10 @@ describe('Naye suraksha niyam', () => {
     // Kisi aur ka rid (record kisi aur number ka) — band
     await assertFails(addDoc(collection(asPhone(READER, { rid: 'oldRecord123' }), 'articles'), { title: 'x', status: 'pending', authorIdentifier: READER }));
   });
-  test('advertiser active ad / classified seedha nahi (sirf pending)', async () => {
+  test('advertiser active/pending ad ya classified seedha nahi', async () => {
     await assertFails(addDoc(collection(asPhone(ADVERTISER), 'ads'), { name: 'a', status: 'active', advertiserPhone: ADVERTISER }));
     await assertFails(addDoc(collection(asPhone(ADVERTISER), 'classifieds'), { title: 'a', status: 'active', advertiserPhone: ADVERTISER }));
-    await assertSucceeds(addDoc(collection(asPhone(ADVERTISER), 'classifieds'), { title: 'a', status: 'pending', advertiserPhone: ADVERTISER }));
+    await assertFails(addDoc(collection(asPhone(ADVERTISER), 'classifieds'), { title: 'a', status: 'pending', advertiserPhone: ADVERTISER }));
   });
   test('e-paper PDF link (epaper_files) koi nahi padh sakta, admin ke alawa', async () => {
     await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'epaper_files', 'ed1'), { pdfUrl: 'https://secret.pdf' }));

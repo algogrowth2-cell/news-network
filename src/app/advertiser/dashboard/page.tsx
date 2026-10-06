@@ -14,6 +14,11 @@ import {
 import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
+import { confirmPayment } from '@/lib/payments';
+import { AD_FORMAT_LABEL, AD_PRICES } from '@/lib/plans';
+import { loadRazorpayScript } from '@/lib/razorpay';
+
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
 interface AdvertiserAd {
   id: string;
@@ -84,7 +89,6 @@ export default function AdvertiserDashboard() {
   const [targetUrl, setTargetUrl] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [budget, setBudget] = useState('5000');
   
   // Image Upload State
   const [imageUploadType, setImageUploadType] = useState<'url' | 'file'>('url');
@@ -261,75 +265,137 @@ export default function AdvertiserDashboard() {
       return;
     }
 
-    try {
-      setSubmitting(true);
-
-      // 👉 1. CLASSIFIED ADS: Seede 'classifieds' collection mein jayega taaki Sidebar Widget mein display ho!
-      if (format === 'classified') {
-        await addDoc(collection(db, 'classifieds'), {
-          title: name.trim(),
-          category: classifiedCategory,
-          city: city.trim() || 'इंदौर/महू',
-          price: price.trim() || '',
-          contactNumber: contactPhone.trim() || currentUser.phone,
-          imageUrl: imageUrl.trim() || '',
-          siteId: selectedSite,
-          status: 'pending', // Admin ki manzoori ke baad hi live (Admin → Classifieds)
-          format: 'classified',
-          type: 'classified',
-          advertiserId: currentUser.id,
-          advertiserPhone: currentUser.phone,
-          advertiserEmail: currentUser.email,
-          advertiserName: currentUser.name,
-          createdAt: new Date().toISOString(),
-          timestamp: serverTimestamp()
-        });
-
-        alert('✅ आपका क्लासिफाइड विज्ञापन दर्ज हो गया है। एडमिन की जांच और स्वीकृति के बाद यह वेबसाइट पर लाइव होगा।');
-      } else {
-        // 👉 2. BANNER ADS: 'ads' collection mein jayega (Header / Sidebar Square Banner)
-        await addDoc(collection(db, 'ads'), {
-          name: name.trim(),
-          title: name.trim(),
-          format,
-          zone,
-          siteId: selectedSite,
-          type: 'image',
-          device: 'all',
-          imageUrl,
-          targetUrl: targetUrl.trim() || '#',
-          startDate: startDate || 'तत्काल',
-          endDate: endDate || 'खुला',
-          budget: budget || '5000',
-          status: 'pending', // Admin ki manzoori ke baad hi live (Admin → Ads & Revenue → Requests)
-          priority: 1,
-          impressions: 0,
-          clicks: 0,
-          contactNumber: contactPhone.trim(),
-          advertiserId: currentUser.id,
-          advertiserPhone: currentUser.phone,
-          advertiserEmail: currentUser.email,
-          advertiserName: currentUser.name,
-          createdAt: serverTimestamp()
-        });
-
-        alert('✅ आपका बैनर विज्ञापन दर्ज हो गया है। एडमिन की जांच और स्वीकृति के बाद यह वेबसाइट पर लाइव होगा।');
-      }
-
-      setName('');
-      setImageUrl('');
-      setSelectedFilePreview('');
-      setTargetUrl('');
-      setCity('');
-      setPrice('');
-      setStartDate('');
-      setEndDate('');
-      setSubmitting(false);
-      setActiveTab('my-ads');
-    } catch (err: any) {
-      setSubmitting(false);
-      alert('Error: ' + err.message);
+    // Payment se PEHLE saari jaanch (paise katne ke baad request na ruke)
+    const img = imageUrl.trim();
+    if (format !== 'classified' && !img) {
+      alert('बैनर विज्ञापन के लिए इमेज (लिंक या फोटो) आवश्यक है।');
+      return;
     }
+    if (img.startsWith('data:') && img.length > 700_000) {
+      alert('फोटो बहुत बड़ी है (500KB तक की फोटो चुनें) या इमेज लिंक डालें।');
+      return;
+    }
+
+    const amount = AD_PRICES[format];
+    const adData = {
+      format,
+      title: name.trim(),
+      category: classifiedCategory,
+      city: city.trim(),
+      price: price.trim(),
+      contactNumber: contactPhone.trim() || currentUser.phone,
+      imageUrl: img,
+      siteId: selectedSite,
+      zone,
+      targetUrl: targetUrl.trim(),
+      startDate,
+      endDate
+    };
+
+    setSubmitting(true);
+    const loaded = await loadRazorpayScript();
+    if (!loaded || !(window as any).Razorpay) {
+      setSubmitting(false);
+      alert('भुगतान सिस्टम लोड नहीं हो पाया। कृपया इंटरनेट जांच कर दोबारा प्रयास करें।');
+      return;
+    }
+
+    const rzp = new (window as any).Razorpay({
+      key: RAZORPAY_KEY,
+      amount: amount * 100,
+      currency: 'INR',
+      name: siteName,
+      description: `${AD_FORMAT_LABEL[format]} — विज्ञापन शुल्क`,
+      prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone },
+      theme: { color: themeColor },
+      modal: { ondismiss: () => setSubmitting(false) },
+      handler: async (response: any) => {
+        const pid = response.razorpay_payment_id;
+        try {
+          // Server payment jaanch kar khud request banata hai (status: pending → admin manzoori)
+          const confirmed = await confirmPayment('ad', pid, { ad: adData });
+          if (!confirmed.ok && !confirmed.fallback) {
+            alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${pid}`);
+            setSubmitting(false);
+            return;
+          }
+          if (!confirmed.ok) {
+            // Server abhi tayyar nahi — purana tareeka (payment ID ke saath)
+            const paid = { paymentId: pid, amountPaid: amount, paymentStatus: 'paid' };
+            const who = {
+              advertiserId: currentUser.id,
+              advertiserPhone: currentUser.phone,
+              advertiserEmail: currentUser.email,
+              advertiserName: currentUser.name
+            };
+            if (format === 'classified') {
+              await addDoc(collection(db, 'classifieds'), {
+                title: adData.title,
+                category: adData.category,
+                city: adData.city || 'इंदौर/महू',
+                price: adData.price,
+                contactNumber: adData.contactNumber,
+                imageUrl: img,
+                siteId: selectedSite,
+                status: 'pending',
+                format: 'classified',
+                type: 'classified',
+                ...who,
+                ...paid,
+                createdAt: new Date().toISOString(),
+                timestamp: serverTimestamp()
+              });
+            } else {
+              await addDoc(collection(db, 'ads'), {
+                name: adData.title,
+                title: adData.title,
+                format,
+                zone,
+                siteId: selectedSite,
+                type: 'image',
+                device: 'all',
+                imageUrl: img,
+                targetUrl: adData.targetUrl || '#',
+                startDate: startDate || 'तत्काल',
+                endDate: endDate || 'खुला',
+                budget: amount,
+                status: 'pending',
+                priority: 1,
+                impressions: 0,
+                clicks: 0,
+                contactNumber: adData.contactNumber,
+                ...who,
+                ...paid,
+                createdAt: serverTimestamp()
+              });
+            }
+          }
+          alert(`✅ ₹${amount} का भुगतान सफल! आपका विज्ञापन अनुरोध एडमिन को भेज दिया गया है। स्वीकृति के बाद यह वेबसाइट पर लाइव होगा।\nभुगतान ID: ${pid}`);
+          resetForm();
+        } catch (err: any) {
+          setSubmitting(false);
+          alert(`⚠️ भुगतान हो गया पर अनुरोध दर्ज नहीं हो पाया। भुगतान ID के साथ सहायता से संपर्क करें।\nभुगतान ID: ${pid}\n${err?.message || ''}`);
+        }
+      }
+    });
+    rzp.on('payment.failed', (resp: any) => {
+      setSubmitting(false);
+      alert(`❌ भुगतान असफल: ${resp?.error?.description || 'कृपया दोबारा प्रयास करें।'}`);
+    });
+    rzp.open();
+  };
+
+  const resetForm = () => {
+    setName('');
+    setImageUrl('');
+    setSelectedFilePreview('');
+    setTargetUrl('');
+    setCity('');
+    setPrice('');
+    setStartDate('');
+    setEndDate('');
+    setSubmitting(false);
+    setActiveTab('my-ads');
   };
 
   const handleLogout = () => {
@@ -588,11 +654,14 @@ export default function AdvertiserDashboard() {
                   onChange={(e) => handleFormatChange(e.target.value as any)}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `2px solid ${themeColor}`, borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
-                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज)</option>
-                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90)</option>
-                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250)</option>
-                  <option value="popup">🛑 पॉप-अप विज्ञापन</option>
+                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज) — ₹{AD_PRICES.classified}</option>
+                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90) — ₹{AD_PRICES.banner}</option>
+                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250) — ₹{AD_PRICES.sidebar}</option>
+                  <option value="popup">🛑 पॉप-अप विज्ञापन — ₹{AD_PRICES.popup}</option>
                 </select>
+                <p style={{ margin: '8px 0 0', fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
+                  💳 विज्ञापन शुल्क: <b style={{ color: themeColor }}>₹{AD_PRICES[format]}</b> — भुगतान के बाद अनुरोध एडमिन के पास जाएगा और स्वीकृति के बाद ही वेबसाइट पर लाइव होगा।
+                </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -827,7 +896,7 @@ export default function AdvertiserDashboard() {
                     opacity: submitting ? 0.6 : 1
                   }}
                 >
-                  {submitting ? 'दर्ज हो रहा है...' : '🚀 विज्ञापन तुरंत प्रकाशित करें'}
+                  {submitting ? 'भुगतान / दर्ज हो रहा है...' : `💳 ₹${AD_PRICES[format]} भुगतान करें व अनुरोध भेजें`}
                 </button>
               </div>
 
