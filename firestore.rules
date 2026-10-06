@@ -1,0 +1,182 @@
+rules_version = '2';
+
+// Golden Pearl News Network — Firestore Security Rules
+// Pehchaan: OTP ke baad server ka custom token (token.phone) / admin login ka token (token.admin).
+// Bharose wale kaam (referral reward, payment activation, press ID kram, rashifal) server Admin SDK se — rules ke bahar.
+// Jo yahan allow nahi, wo band (default deny).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.get('admin', false) == true; }
+    function phone() { return signedIn() ? request.auth.token.get('phone', '') : ''; }
+    function hasPhone() { return phone() is string && phone().size() == 10; }
+    function docPath(col, id) { return /databases/$(database)/documents/$(col)/$(id); }
+
+    // Sirf yahi fields badle (baaki jaise ke taise)
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    // Sirf ek counter, aur sirf +1 (views / clicks / impressions)
+    function incOnly(field) {
+      return changedOnly([field]) && request.resource.data[field] == resource.data.get(field, 0) + 1;
+    }
+    // Profile ka maalik: naya id (prefix_phone) ya purane records me phone/mobile field
+    function ownsProfile(prefix, id) {
+      return hasPhone() && (id == prefix + phone()
+        || (resource != null && (resource.data.get('phone', '') == phone() || resource.data.get('mobile', '') == phone())));
+    }
+    // Patrakar / advertiser ka record: server token me asli ID (rid/aid) deta hai — purane records bhi; warna naya naam
+    function repId() { return request.auth.token.get('rid', 'rp_' + phone()); }
+    function advId() { return request.auth.token.get('aid', 'adv_' + phone()); }
+    function recordIsMine(data) { return data.get('phone', '') == phone() || data.get('mobile', '') == phone(); }
+    function approvedReporter() {
+      return hasPhone() && exists(docPath('reporters', repId()))
+        && recordIsMine(get(docPath('reporters', repId())).data)
+        && get(docPath('reporters', repId())).data.get('status', '').lower() in ['approved', 'active'];
+    }
+    function isAdvertiser() {
+      return hasPhone() && exists(docPath('advertisers', advId()))
+        && recordIsMine(get(docPath('advertisers', advId())).data);
+    }
+
+    // ---------- Admin: sab kuch ----------
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- Public content: sab padhein, likhe sirf admin ----------
+    match /sites/{id} { allow read: if true; }
+    match /categories/{id} { allow read: if true; }
+    match /states/{id} { allow read: if true; }
+    match /cities/{id} { allow read: if true; }
+    match /rashifal/{id} { allow read: if true; }
+    match /live_blogs/{id} { allow read: if true; }
+    match /videos/{id} { allow read: if true; }
+    match /galleries/{id} { allow read: if true; }
+    match /epaper/{id} { allow read: if true; }
+    match /notifications/{id} { allow read: if true; }
+    match /settings/{id} { allow read: if true; }
+
+    // ---------- Khabrein ----------
+    match /articles/{id} {
+      allow read: if true;
+      // Approved patrakar apni khabar review ke liye (publish sirf admin)
+      allow create: if approvedReporter()
+        && request.resource.data.authorIdentifier == phone()
+        && request.resource.data.status in ['pending', 'pending_review', 'draft', 'Draft'];
+      // Koi bhi visitor: sirf views +1
+      allow update: if incOnly('views');
+    }
+
+    // ---------- Vigyapan ----------
+    match /ads/{id} {
+      allow read: if true;
+      allow create: if isAdvertiser()
+        && request.resource.data.advertiserPhone == phone()
+        && request.resource.data.status == 'pending'; // admin ki manzoori ke baad hi live
+      allow update: if incOnly('impressions') || incOnly('clicks');
+    }
+    match /advertisements/{id} {
+      allow read: if true;
+      allow update: if incOnly('clicks') || incOnly('impressions');
+    }
+    match /classifieds/{id} {
+      allow read: if true;
+      allow create: if isAdvertiser()
+        && request.resource.data.advertiserPhone == phone()
+        && request.resource.data.status == 'pending'; // admin ki manzoori ke baad hi live
+    }
+
+    // ---------- Pathakon ki tippaniyan ----------
+    match /comments/{id} {
+      allow read: if resource.data.status == 'approved';
+      allow create: if hasPhone() && request.resource.data.status == 'pending';
+    }
+
+    // ---------- Shok sandesh: server-verified ₹199 payment ki ID hi document ID ----------
+    match /shok_sandesh/{id} {
+      allow read: if resource.data.status == 'approved';
+      allow create: if exists(docPath('payments', id))
+        && get(docPath('payments', id)).data.kind == 'shok'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.paymentId == id;
+    }
+
+    // ---------- Pathak ----------
+    match /users/{uid} {
+      allow get: if hasPhone() && uid == 'u_' + phone();
+      // Server tayyar na ho tab ka fallback signup — reward/counter fields khud nahi
+      allow create: if hasPhone() && uid == 'u_' + phone()
+        && request.resource.data.phone == phone()
+        && request.resource.data.keys().hasOnly(['name', 'email', 'phone', 'role', 'verified', 'referredBy', 'createdAt', 'consent'])
+        && request.resource.data.get('referredBy', null) == null;
+      allow update: if hasPhone() && uid == 'u_' + phone() && changedOnly(['name', 'email', 'consent']);
+    }
+
+    // ---------- Patrakar ----------
+    match /reporters/{rid} {
+      allow get: if ownsProfile('rp_', rid);
+      allow list: if hasPhone() && (resource.data.get('phone', '') == phone() || resource.data.get('mobile', '') == phone());
+      allow create: if hasPhone() && rid == 'rp_' + phone()
+        && request.resource.data.phone == phone()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'city', 'appliedFromSite', 'status', 'role', 'phoneVerified', 'consent', 'createdAt']);
+      // Apni photo / blood group / kshetra / download ginti / sahmati — naam, padnaam, status, ID admin ke haath
+      allow update: if ownsProfile('rp_', rid) && changedOnly([
+        'photoUrl', 'photoUpdatedAt', 'bloodGroup', 'workArea', 'cardUpdatedAt',
+        'idCardDownloads', 'certificateDownloads', 'lastCardDownloadAt', 'consent'
+      ]);
+    }
+
+    // ---------- Vigyapandata ----------
+    match /advertisers/{aid} {
+      allow get: if ownsProfile('adv_', aid);
+      allow list: if hasPhone() && (resource.data.get('phone', '') == phone() || resource.data.get('mobile', '') == phone());
+      allow create: if hasPhone() && aid == 'adv_' + phone()
+        && request.resource.data.phone == phone()
+        && request.resource.data.keys().hasOnly(['businessName', 'contactName', 'phone', 'email', 'role', 'phoneVerified', 'consent', 'createdAt']);
+      allow update: if ownsProfile('adv_', aid) && changedOnly(['consent']);
+    }
+
+    // ---------- Referral (likhna sirf server) ----------
+    match /referrals/{id} {
+      allow read: if hasPhone() && resource.data.referrerPhone == phone();
+    }
+    match /referral_rewards/{id} {
+      allow read: if hasPhone() && resource.data.referrerPhone == phone();
+    }
+
+    // ---------- E-paper subscription (likhna sirf server: payment / referral) ----------
+    match /epaper_subscriptions/{email} {
+      allow read: if hasPhone() && (resource == null
+        || resource.data.get('userPhone', '') == phone()
+        || resource.data.get('userEmail', '') == request.auth.token.get('email', '-')
+        || resource.data.get('userEmail', '') == phone() + '@news.local');
+    }
+
+    // ---------- Patrakar ke bhugtan (likhna sirf server) ----------
+    match /membership_transactions/{id} {
+      allow read: if hasPhone() && resource.data.reporterPhone == phone();
+    }
+    match /delivery_requests/{id} {
+      allow read: if hasPhone() && resource.data.get('reporterPhone', '') == phone();
+    }
+
+    // ---------- DPDP sahmati ka record (sirf jodna) ----------
+    match /consents/{id} {
+      allow create: if hasPhone() && request.resource.data.phone == phone();
+    }
+
+    // ---------- Khata hatane ka anurodh (OTP-verified maalik) ----------
+    match /account_deletion_requests/{p} {
+      allow get: if hasPhone() && p == phone();
+      allow create, update: if hasPhone() && p == phone()
+        && request.resource.data.phone == p
+        && request.resource.data.status == 'pending';
+    }
+
+    // readers (purana), referral_codes, counters, payments, vip_all_access, subscriptions:
+    // sirf admin / server — upar wale admin niyam ke alawa koi allow nahi.
+  }
+}

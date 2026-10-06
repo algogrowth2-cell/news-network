@@ -18,23 +18,40 @@ export const SESSION_HOURS = 8;
 const b64url = (buf: Buffer | string) => Buffer.from(buf).toString('base64url');
 
 function sessionSecret() {
-  const s = process.env.ADMIN_SESSION_SECRET || '';
+  const s = cleanEnv(process.env.ADMIN_SESSION_SECRET);
   if (s.length < 32) throw new Error('ADMIN_SESSION_SECRET set nahi hai (kam se kam 32 akshar)');
   return s;
 }
 
 /** "email:hash,email:hash" → Map */
+// Copy-paste ki aam galtiyan khud saaf: aage-peeche quotes, space, beech me line-break / space (lambi line wrap hone par)
+const cleanEnv = (v: string | undefined) => String(v || '').trim().replace(/^['"]+|['"]+$/g, '');
+
 function credentials(): Map<string, string> {
   const map = new Map<string, string>();
-  for (const part of (process.env.ADMIN_CREDENTIALS || '').split(',')) {
+  // Kai admin: comma ya semicolon se alag (line-break / space copy ki galti maan kar hata diye jaate hain)
+  for (const raw of cleanEnv(process.env.ADMIN_CREDENTIALS).split(/[,;]+/)) {
+    const part = raw.replace(/\s+/g, '').replace(/^['"]+|['"]+$/g, '');
     const i = part.indexOf(':');
     if (i <= 0) continue;
-    map.set(part.slice(0, i).trim().toLowerCase(), part.slice(i + 1).trim());
+    map.set(part.slice(0, i).toLowerCase(), part.slice(i + 1));
   }
   return map;
 }
 
-export const adminAuthConfigured = () => credentials().size > 0 && (process.env.ADMIN_SESSION_SECRET || '').length >= 32;
+/**
+ * Jaanch ke liye (password/hash nahi): har admin ka chhupaya email + hash ka fingerprint.
+ * scripts/check-admin-login.mjs bhi wahi fingerprint dikhati hai — milaan se pata chalta hai live value sahi pahunchi ya nahi.
+ */
+export function credentialFingerprints() {
+  return [...credentials().entries()].map(([email, hash]) => ({
+    email: email.replace(/^(.{2}).*(@.*)$/, '$1***$2'),
+    fingerprint: createHmac('sha256', 'gpn-fp').update(`${email}:${hash}`).digest('hex').slice(0, 10),
+    hashLooksValid: /^scrypt\$\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$/.test(hash)
+  }));
+}
+
+export const adminAuthConfigured = () => credentials().size > 0 && cleanEnv(process.env.ADMIN_SESSION_SECRET).length >= 32;
 
 export function hashPassword(password: string, N = 16384) {
   const salt = randomBytes(16);

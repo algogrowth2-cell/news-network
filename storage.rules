@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Golden Pearl News Network — Firebase Storage Rules
+// E-paper PDF: koi seedha nahi padh sakta — subscriber ko server (Admin SDK) 10 minute ka signed link deta hai.
+// Upload sirf admin (admin panel ka Firebase token: token.admin == true).
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() { return request.auth != null && request.auth.token.get('admin', false) == true; }
+
+    // E-paper: PDF private; cover photo (thumbs) public
+    match /epapers/{site}/{date}/{folder}/{file} {
+      allow read: if folder.matches('thumb.*') || folder.matches('cover.*') || isAdmin();
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 60 * 1024 * 1024
+        && request.resource.contentType.matches('application/pdf|image/.*');
+    }
+
+    // Khabron ki photo / video — website par sabko dikhti hain
+    match /articles/{month}/{file} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.size < 210 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|video/.*');
+    }
+
+    // Baaki sab band (admin sirf padh sake; upload sirf upar ke folders me, sahi file-type ke saath)
+    match /{allPaths=**} {
+      allow read: if isAdmin();
+    }
+  }
+}
