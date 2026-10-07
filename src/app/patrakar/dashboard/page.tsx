@@ -384,7 +384,7 @@ export default function PatrakarDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {siteLogo && (
             <Link href="/" aria-label="मुख्य वेबसाइट" style={{ display: 'inline-flex' }}>
-              <img src={siteLogo} alt={siteName} style={{ height: '36px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+              <img src={siteLogo} alt={siteName} style={{ height: '54px', width: 'auto', maxWidth: '140px', borderRadius: '6px', objectFit: 'contain' }} />
             </Link>
           )}
           <div>

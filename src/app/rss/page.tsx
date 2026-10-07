@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { AdLayout } from '@/components/SiteAds';
+import PortalLogo from '@/components/PortalLogo';
 
 const primary = '#ea580c';
 
@@ -135,25 +136,28 @@ export default function RssPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 24px', height: '62px'
         }}>
-          <Link href="/" style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            textDecoration: 'none', color: '#1a1a1a'
-          }}>
-            <div style={{
-              width: '34px', height: '34px', borderRadius: '8px',
-              background: `${primary}0d`, display: 'grid', placeItems: 'center'
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <PortalLogo />
+            <Link href="/" style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              textDecoration: 'none', color: '#1a1a1a'
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
-            </div>
-            <span style={{
-              fontFamily: '"Tiro Devanagari Hindi", Georgia, serif',
-              fontSize: '17px', fontWeight: 600
-            }}>
-              द लोकल लीडर
-            </span>
-          </Link>
+              <div style={{
+                width: '34px', height: '34px', borderRadius: '8px',
+                background: `${primary}0d`, display: 'grid', placeItems: 'center'
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </div>
+              <span style={{
+                fontFamily: '"Tiro Devanagari Hindi", Georgia, serif',
+                fontSize: '17px', fontWeight: 600
+              }}>
+                द लोकल लीडर
+              </span>
+            </Link>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill={primary} stroke="none">

@@ -10,6 +10,7 @@ import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@/components/ConsentNotice';
 import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
+import PortalLogo from '@/components/PortalLogo';
 
 const fieldErrorStyle: React.CSSProperties = { display: 'block', marginTop: '5px', fontSize: '12px', color: '#dc2626', fontWeight: 500 };
 
@@ -313,22 +314,9 @@ function LoginAndSignupContent() {
       >
         {/* Portal Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '14px',
-              backgroundColor: '#ea580c',
-              color: '#fff',
-              fontSize: '26px',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px'
-            }}
-          >
-            द
+          {/* Portal ka logo — click par homepage */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+            <PortalLogo height={84} />
           </div>
           <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
             {authMode === 'login' ? 'पाठक लॉगिन (Sign In)' : 'नया खाता बनाएं (Sign Up)'}

@@ -633,7 +633,7 @@ export default function ShokSandeshPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Portal ka logo — click karne par isi portal ka homepage */}
             <Link href={`/?site=${portalSlug}`} aria-label={`${fallbackFor(portalSlug).name} होम`} title={fallbackFor(portalSlug).name} style={{ display: 'inline-flex', flexShrink: 0 }}>
-              <img src={fallbackFor(portalSlug).logoUrl} alt={fallbackFor(portalSlug).name} style={{ height: '44px', width: 'auto', maxWidth: '120px', objectFit: 'contain', borderRadius: '6px' }} />
+              <img src={fallbackFor(portalSlug).logoUrl} alt={fallbackFor(portalSlug).name} style={{ height: '54px', width: 'auto', maxWidth: '140px', objectFit: 'contain', borderRadius: '6px' }} />
             </Link>
             <span style={{ width: '1px', height: '34px', background: '#e2e8f0' }} />
             <span style={{ fontSize: '24px' }}>🕯️</span>

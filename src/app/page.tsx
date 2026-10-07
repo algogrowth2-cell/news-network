@@ -182,11 +182,15 @@ body {
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
 .hp-nav{display:flex;gap:2px;flex-shrink:0}
 .hp-nav::-webkit-scrollbar{display:none}
-.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s}
+.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s;line-height:1.2}
+/* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
+.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;flex-shrink:0}
+.hp-ico-cat{width:22px;height:22px;font-size:16px}
+.hp-txt{display:inline-block;line-height:1.25;padding-top:1px}
 .hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.hp-tool-link{font-size:12px;font-weight:600;color:#555;text-decoration:none;padding:5px 9px;border-radius:8px;border:1px solid #e5e3df;background:#fff;white-space:nowrap}
+.hp-tool-link{font-size:12px;font-weight:600;color:#555;text-decoration:none;padding:5px 9px;border-radius:8px;border:1px solid #e5e3df;background:#fff;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;line-height:1.25}
 .hp-tool-link:hover{background:#f5f4f1}
-.hp-login{color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap}
+.hp-login{color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:0 16px;height:32px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .hp-mobile-tools{display:none;align-items:center;gap:8px}
 /* Mobile/tablet header (≤820px): portal switcher sirf 🌐 gol icon — naam header me dikhta hai */
 .hp-mobile-tools .ss-name,.hp-mobile-tools .ss-caret{display:none}
@@ -978,8 +982,8 @@ function HomePageContent() {
               fontWeight: isActive ? 700 : 500
             }}
           >
-            <span style={{ fontSize: '16px', width: '22px', textAlign: 'center' }}>{icon}</span>
-            {key}
+            <span className="hp-ico hp-ico-cat">{icon}</span>
+            <span className="hp-txt">{key}</span>
           </button>
         );
       })}
@@ -1105,8 +1109,8 @@ function HomePageContent() {
                     fontWeight: isActive ? 700 : 500
                   }}
                 >
-                  <span>{emoji}</span>
-                  {key}
+                  <span className="hp-ico">{emoji}</span>
+                  <span className="hp-txt">{key}</span>
                 </button>
               );
             })}

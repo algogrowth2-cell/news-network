@@ -8,6 +8,7 @@ import { sendOtp, verifyOtp } from '@/lib/otpClient';
 import { isValidIndianMobile, VALIDATION_MSG } from '@/lib/validation';
 import { ACCOUNT_TYPE_LABEL, DELETION_DAYS, DELETION_EMAIL, type DeletionAccountType } from '@/lib/accountDeletion';
 import { getActivePortal, fallbackFor } from '@/lib/siteTheme';
+import PortalLogo from '@/components/PortalLogo';
 
 /*
  * Public page — app install kiye bina bhi account/data delete ki request (Google Play "Data safety" ke liye web link).
@@ -132,6 +133,7 @@ export default function DeleteAccountPage() {
     <div className="da" style={{ ['--da-brand' as any]: brand }}>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <header className="da-top">
+        <PortalLogo height={50} />
         <Link href={`/?site=${portal}`}>← {siteName}</Link>
       </header>
 

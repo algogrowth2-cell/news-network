@@ -10,6 +10,7 @@ import { type ShareContent, copyShareLink, facebookShareUrl, shareNativeOrWhatsA
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AdBanner, AdSideSlots, ClassifiedsWidget, StickyAside } from '@/components/SiteAds';
+import PortalLogo from '@/components/PortalLogo';
 
 interface ArticleDetail {
   id: string;
@@ -235,6 +236,7 @@ export default function ArticleDetailPage() {
         <header className="ap-hdr">
           <div className="ap-hdr-in">
             <div className="ap-hdr-left">
+              <PortalLogo height={50} />
               <Link href={`/?site=${siteSlug}`} className="ap-hdr-back">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                 <span>{siteName}</span>

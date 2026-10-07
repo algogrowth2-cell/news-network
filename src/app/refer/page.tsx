@@ -7,6 +7,7 @@ import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/fire
 import { activatePendingReward, ensureReferralCode, REFERRAL_REWARD_MONTHS } from '@/lib/referralService';
 import { fallbackFor, isEnglishSlug, resolveSiteSlug } from '@/lib/siteTheme';
 import { AdLayout } from '@/components/SiteAds';
+import PortalLogo from '@/components/PortalLogo';
 
 interface ReaderSession {
   uid?: string;
@@ -409,6 +410,7 @@ export default function ReferPage() {
       {!ready ? null : (
         <>
           <header className="rf-top">
+            <PortalLogo height={50} />
             <Link href={withSite('/')}>{t.home}</Link>
             <b>{t.pageTitle}</b>
           </header>

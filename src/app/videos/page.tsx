@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
+import PortalLogo from '@/components/PortalLogo';
 
 interface VideoItem {
   id: string;
@@ -127,17 +128,14 @@ function VideosContent() {
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <PortalLogo />
             <Link href={`/?site=${siteSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: primary, textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
               <span style={{ fontSize: '18px' }}>←</span>
               <span>{siteName}</span>
             </Link>
             <span style={{ color: '#cbd5e1' }}>|</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {siteLogo && (
-                <Link href={`/?site=${siteSlug}`} aria-label={`${siteName} होम`} style={{ display: 'inline-flex' }}>
-                  <img src={siteLogo} alt={siteName} style={{ height: '28px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
-                </Link>
-              )}
+              <span style={{ fontSize: '18px' }}>🎬</span>
               <h1 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#0f172a' }}>
                 वीडियो बुलेटिन (Video Gallery)
               </h1>

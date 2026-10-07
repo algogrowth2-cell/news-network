@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AdInline, AdLayout, AdMedia } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
+import PortalLogo from '@/components/PortalLogo';
 
 interface ClassifiedItem {
   id: string;
@@ -206,6 +207,7 @@ function ClassifiedsContent() {
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <PortalLogo />
             <Link href={`/?site=${siteSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: primary, textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
               <span style={{ fontSize: '18px' }}>←</span>
               <span>{siteName}</span>

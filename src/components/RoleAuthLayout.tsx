@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import PortalLogo from '@/components/PortalLogo';
 
 // Patrakar / Advertiser login-signup pages ka common card layout
 export const authLabel: React.CSSProperties = { display: 'block', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' };
@@ -96,6 +97,10 @@ export default function RoleAuthLayout({
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef2f6', padding: '20px 16px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div style={{ width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '16px', padding: '32px 26px', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+          {/* Portal ka logo — click par homepage */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <PortalLogo height={84} />
+          </div>
           <div style={{ width: '48px', height: '48px', margin: '0 auto 12px', background: '#fff7ed', borderRadius: '12px', display: 'grid', placeItems: 'center', fontSize: '24px' }}>
             {icon}
           </div>
