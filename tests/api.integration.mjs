@@ -178,17 +178,20 @@ try {
   res = await fetch(`${B}/api/epaper/file?id=edExt`, { headers: { Authorization: `Bearer ${tNew}` } });
   r = await res.json();
   check('subscriber ko PDF link', res.ok && r.url === 'https://cdn.example.com/paper.pdf');
-  // Har portal ka alag subscription: Local Leader wala NEWS INFO 24 par nahi chalega
-  await db.doc('epaper/edNI24').set({ siteId: 'news-info-24', date: '2026-10-05', status: 'published', pdfUrl: 'https://cdn.example.com/ni24.pdf', totalPages: 8 });
-  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=news-info-24`, { headers: { Authorization: `Bearer ${tNew}` } });
-  check('Local Leader ka subscription NEWS INFO 24 par nahi', res.status === 403);
+  // Har portal ka alag subscription: Local Leader wala Bazar Karobar par nahi chalega
+  await db.doc('epaper/edNI24').set({ siteId: 'bazar-karobar', date: '2026-10-05', status: 'published', pdfUrl: 'https://cdn.example.com/ni24.pdf', totalPages: 8 });
+  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=bazar-karobar`, { headers: { Authorization: `Bearer ${tNew}` } });
+  check('Local Leader ka subscription Bazar Karobar par nahi', res.status === 403);
   res = await fetch(`${B}/api/epaper/file?id=edNI24&site=the-local-leader`, { headers: { Authorization: `Bearer ${tNew}` } });
   check('site badal kar bhi doosre portal ka e-paper nahi', res.status === 403);
-  res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER03', planId: 'epaper_1_year', siteId: 'news-info-24' }, tNew);
-  const niSub = (await db.doc('epaper_subscriptions/naya@x.com__news-info-24').get()).data();
-  check('NEWS INFO 24 ka alag subscription (₹111)', res.ok && niSub?.status === 'active' && niSub?.amount === 111 && niSub?.siteId === 'news-info-24');
-  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=news-info-24`, { headers: { Authorization: `Bearer ${tNew}` } });
-  check('NEWS INFO 24 subscription ke baad PDF', res.ok);
+  res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER03', planId: 'epaper_1_year', siteId: 'bazar-karobar' }, tNew);
+  const niSub = (await db.doc('epaper_subscriptions/naya@x.com__bazar-karobar').get()).data();
+  check('Bazar Karobar ka alag subscription (₹111)', res.ok && niSub?.status === 'active' && niSub?.amount === 111 && niSub?.siteId === 'bazar-karobar');
+  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=bazar-karobar`, { headers: { Authorization: `Bearer ${tNew}` } });
+  check('Bazar Karobar subscription ke baad PDF', res.ok);
+  // Bina e-paper wale portal (NEWS INFO 24) ka subscription alag nahi banta — The Local Leader ka hi
+  res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER04', planId: 'epaper_1_month', siteId: 'news-info-24' }, tNew);
+  check('NEWS INFO 24 (e-paper nahi) ka record nahi banta', res.ok && !(await db.doc('epaper_subscriptions/naya@x.com__news-info-24').get()).exists);
   // Admin login → purane editions surakshit
   res = await post('/api/admin/login', { email: 'tester@example.com', password: 'TestPass12345' });
   const cookie = (res.headers.get('set-cookie') || '').split(';')[0];

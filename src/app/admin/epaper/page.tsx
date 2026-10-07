@@ -5,6 +5,7 @@ import { ref, uploadBytesResumable, getDownloadURL, deleteObject, UploadTask } f
 import { db, storage } from '@/lib/firebase';
 import { notifyContent, portalsFrom } from '@/lib/notifications';
 import { NETWORK_SITES } from '@/lib/portals';
+import { hasEpaper } from '@/lib/epaperSub';
 import styles from '../Admin.module.css';
 
 interface EPaperDoc {
@@ -35,7 +36,8 @@ interface UploadState {
 
 const EMPTY_UPLOAD: UploadState = { progress: 0, uploading: false, fileName: '', storagePath: '', error: '', url: '' };
 
-const SITE_OPTIONS = [{ slug: 'all', name: 'सभी नेटवर्क (All Portals)' }, ...NETWORK_SITES];
+// E-paper sirf in 4 portals par (Jan Bharat / NDN / Desh Ki Aawaz / NEWS INFO 24 par nahi)
+const SITE_OPTIONS = [{ slug: 'all', name: 'सभी ई-पेपर पोर्टल (All E-Paper Portals)' }, ...NETWORK_SITES.filter((x) => hasEpaper(x.slug))];
 
 const siteName = (slug: string) => SITE_OPTIONS.find((s) => s.slug === slug)?.name || slug;
 

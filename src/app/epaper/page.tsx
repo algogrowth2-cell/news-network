@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import { EPAPER_PLANS } from '@/lib/plans';
 import { fallbackFor, logoFor } from '@/lib/siteTheme';
-import { epaperSite, epaperSubId, isActiveForSite } from '@/lib/epaperSub';
+import { epaperSite, epaperSubId, hasEpaper, isActiveForSite } from '@/lib/epaperSub';
 import { confirmPayment } from '@/lib/payments';
 import { authFetch, legacyFallback } from '@/lib/phoneAuth';
 
@@ -247,6 +247,11 @@ function EPaperComponent() {
 
   // Dynamic Site Slug from URL
   const siteSlug = (searchParams.get('site') || 'the-local-leader').toLowerCase();
+  // Jan Bharat / NDN / Desh Ki Aawaz / NEWS INFO 24 par e-paper nahi — seedha us portal ke homepage par
+  const noEpaperHere = !hasEpaper(siteSlug);
+  useEffect(() => {
+    if (noEpaperHere) router.replace(`/?site=${siteSlug}`);
+  }, [noEpaperHere, router, siteSlug]);
 
   const [editions, setEditions] = useState<EPaperEdition[]>([]);
   const [editionsLoading, setEditionsLoading] = useState(true);

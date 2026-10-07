@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import { AdBanner, AdSideSlots, ClassifiedsWidget, StickyAside } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
 import { fallbackFor, logoFor } from '@/lib/siteTheme';
+import { hasEpaper } from '@/lib/epaperSub';
 
 interface ArticleDetail {
   id: string;
@@ -450,15 +451,17 @@ export default function ArticleDetailPage() {
           {/* ──── RIGHT SIDEBAR ──── */}
           <StickyAside className="ap-aside" top={72} minWidth={1025}>
 
-            {/* E-Paper */}
-            <div className="ap-widget">
-              <div className="ap-widget-head">
-                <span className="ap-widget-ico">📰</span>
-                <b className="ap-widget-title">आज का डिजिटल ई-पेपर</b>
+            {/* E-Paper (sirf jin portals par e-paper hai) */}
+            {hasEpaper(siteSlug) && (
+              <div className="ap-widget">
+                <div className="ap-widget-head">
+                  <span className="ap-widget-ico">📰</span>
+                  <b className="ap-widget-title">आज का डिजिटल ई-पेपर</b>
+                </div>
+                <p className="ap-widget-desc">अपने शहर का आज का संपूर्ण अखबार मोबाइल पर पढ़ें या डाउनलोड करें।</p>
+                <Link href={`/epaper?site=${siteSlug}`} className="ap-widget-cta" style={{ background: primary }}>ई-पेपर पढ़ें →</Link>
               </div>
-              <p className="ap-widget-desc">अपने शहर का आज का संपूर्ण अखबार मोबाइल पर पढ़ें या डाउनलोड करें।</p>
-              <Link href={`/epaper?site=${siteSlug}`} className="ap-widget-cta" style={{ background: primary }}>ई-पेपर पढ़ें →</Link>
-            </div>
+            )}
 
             {/* Trending */}
             <div className="ap-widget">

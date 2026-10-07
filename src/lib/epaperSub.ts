@@ -9,10 +9,20 @@ import { NETWORK_SITES, normalizeSiteId } from '@/lib/portals';
 
 export const DEFAULT_EPAPER_SITE = 'the-local-leader';
 
-/** Portal slug sahi network portal ho, warna The Local Leader */
+/**
+ * Jin portals par e-paper hai. Jan Bharat News, National Defence Network, Desh Ki Aawaz, NEWS INFO 24 par
+ * e-paper section nahi (menu, footer, widget, /epaper page sab band).
+ */
+export const EPAPER_PORTALS = ['the-local-leader', 'bazar-karobar', 'golden-pearl-chronicles', 'the-provue-times'];
+export const hasEpaper = (site: unknown) => EPAPER_PORTALS.includes(normalizeSiteId(site));
+
+/**
+ * E-paper kis portal ka: sahi network portal jahan e-paper hai — warna The Local Leader
+ * (jaise bina e-paper wale portal se juda referral inaam The Local Leader ke e-paper par).
+ */
 export function epaperSite(site: unknown): string {
   const s = normalizeSiteId(site);
-  return NETWORK_SITES.some((x) => x.slug === s) ? s : DEFAULT_EPAPER_SITE;
+  return NETWORK_SITES.some((x) => x.slug === s) && EPAPER_PORTALS.includes(s) ? s : DEFAULT_EPAPER_SITE;
 }
 
 export const epaperSubId = (email: string, site: string) => `${email}__${epaperSite(site)}`;

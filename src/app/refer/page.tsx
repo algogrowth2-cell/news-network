@@ -468,7 +468,7 @@ export default function ReferPage() {
                     {epaperTill ? t.activeTill(fmtDate(epaperTill)) : t.notActive}
                   </div>
                   {epaperTill && (
-                    <Link href={withSite('/epaper')} style={{ fontSize: '12.5px', color: 'var(--brand)', fontWeight: 700, textDecoration: 'none' }}>
+                    <Link href={`/epaper?site=${epaperSite(siteSlug)}`} style={{ fontSize: '12.5px', color: 'var(--brand)', fontWeight: 700, textDecoration: 'none' }}>
                       {t.readEpaper}
                     </Link>
                   )}

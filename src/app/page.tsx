@@ -20,6 +20,7 @@ import NotificationBell from '@/components/NotificationBell';
 import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
 import { categoryMatches, matchesTrendTag, setDynamicCategories } from '@/lib/categories';
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
+import { hasEpaper } from '@/lib/epaperSub';
 
 interface ArticleItem {
   id: string;
@@ -402,7 +403,7 @@ function HomePageContent() {
       return;
     }
     if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
-    if (cat === 'ई-पेपर' || cat === 'E-Paper') { router.push(`/epaper?site=${currentSlug}`); return; }
+    if ((cat === 'ई-पेपर' || cat === 'E-Paper') && hasEpaper(currentSlug)) { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
     if (cat === 'सर्च' || cat === 'Search') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
@@ -837,7 +838,10 @@ function HomePageContent() {
   const portalCats = taxonomy
     .filter((c) => c.showInMenu && categoryOnPortal(c, currentSlug))
     .map((c) => ({ key: isEnglishSite ? c.name : c.nameHi, icon: c.icon }));
-  const categories = isEnglishSite ? [...MENU_HEAD_EN, ...portalCats, ...MENU_TAIL_EN] : [...MENU_HEAD_HI, ...portalCats, ...MENU_TAIL_HI];
+  // Jan Bharat / NDN / Desh Ki Aawaz / NEWS INFO 24 par e-paper nahi
+  const portalHasEpaper = hasEpaper(currentSlug);
+  const noEpaper = (m: { key: string }) => portalHasEpaper || (m.key !== 'ई-पेपर' && m.key !== 'E-Paper');
+  const categories = (isEnglishSite ? [...MENU_HEAD_EN, ...portalCats, ...MENU_TAIL_EN] : [...MENU_HEAD_HI, ...portalCats, ...MENU_TAIL_HI]).filter(noEpaper);
   const trendingTags = isEnglishSite ? TRENDING_TAGS_EN : TRENDING_TAGS_HI;
 
   // Ye tabs saari khabrein dikhate hain; baaki koi bhi tab category filter hai
@@ -894,8 +898,8 @@ function HomePageContent() {
       <p className="hp-app-title">📱 {isEnglishSite ? 'Download App' : 'ऐप डाउनलोड करें'}</p>
       <p className="hp-app-sub">
         {isEnglishSite
-          ? 'Latest news, live updates, and e-paper on your mobile.'
-          : 'ताज़ा खबरें, लाइव अपडेट और ई-पेपर अब आपके फ़ोन पर।'}
+          ? `Latest news, live updates${portalHasEpaper ? ', and e-paper' : ''} on your mobile.`
+          : `ताज़ा खबरें, लाइव अपडेट${portalHasEpaper ? ' और ई-पेपर' : ''} अब आपके फ़ोन पर।`}
       </p>
       <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
         <svg width="20" height="20" viewBox="0 0 24 24" fill={primary} aria-hidden="true">
@@ -1096,7 +1100,7 @@ function HomePageContent() {
               { key: isEnglishSite ? 'Latest News' : 'ताज़ा खबरें', emoji: '⚡' },
               ...(isEnglishSite ? [] : [{ key: 'शोक संदेश', emoji: '🕯️' }]),
               { key: isEnglishSite ? 'E-Paper' : 'ई-पेपर', emoji: '📄' }
-            ].map(({ key, emoji }) => {
+            ].filter(noEpaper).map(({ key, emoji }) => {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button

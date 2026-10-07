@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
+import { hasEpaper } from '@/lib/epaperSub';
 
 // English portals (NEWS INFO 24, National Defence Network) par footer English me
 const TEXT = {
@@ -435,11 +436,14 @@ export default function Footer({
           <div>
             <span className="gp-ft-section-title">{t.services}</span>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <li>
-                <Link href={`/epaper?site=${homeSlug}`} className="gp-ft-cat-link">
-                  {t.epaper}
-                </Link>
-              </li>
+              {/* E-paper sirf jin portals par hai */}
+              {hasEpaper(homeSlug) && (
+                <li>
+                  <Link href={`/epaper?site=${homeSlug}`} className="gp-ft-cat-link">
+                    {t.epaper}
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href={`/shok-sandesh?site=${homeSlug}`} className="gp-ft-cat-link">
                   {t.shok}
