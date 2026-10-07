@@ -189,6 +189,7 @@ export default function Footer({
     else setHomeSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
   }, [currentSlug]);
   const t = isEnglishSlug(homeSlug) ? TEXT.en : TEXT.hi;
+  const isTightLogo = homeSlug === 'jan-bharat-news' || logoUrl.includes('jan-bharat-news');
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -365,7 +366,8 @@ export default function Footer({
                   src={logoUrl}
                   alt={siteName}
                   onError={() => setLogoErr(true)}
-                  style={{ height: '96px', width: 'auto', maxWidth: '240px', objectFit: 'contain', display: 'block' }}
+                  // Jan Bharat ka PNG kaata hua (bina khaali jagah) hai — 96px par bahut bada lagta, isliye chhota
+                  style={{ height: isTightLogo ? '58px' : '96px', width: 'auto', maxWidth: '240px', objectFit: 'contain', display: 'block' }}
                 />
               ) : (
                 <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '23px', fontWeight: 600, color: '#16150f' }}>
