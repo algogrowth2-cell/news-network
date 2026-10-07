@@ -14,9 +14,10 @@ const TEXT = {
     classifieds: 'क्लासिफाइड',
     rashifal: 'राशिफल',
     contact: 'संपर्क',
-    hours: 'सोम–शनि · सुबह 9 से रात 8',
+    hours: 'सोम–शनि · सुबह 10 से शाम 6',
     sendNews: 'हमें खबर भेजें',
     whatsapp: 'WhatsApp पर चैट करें',
+    gmail: 'Gmail पर मेल करें',
     network: 'नेटवर्क',
     rights: 'न्यूज़ मीडिया · सर्वाधिकार सुरक्षित',
     privacy: 'गोपनीयता नीति',
@@ -36,9 +37,10 @@ const TEXT = {
     classifieds: 'Classifieds',
     rashifal: 'Horoscope',
     contact: 'Contact',
-    hours: 'Mon–Sat · 9 AM to 8 PM',
+    hours: 'Mon–Sat · 10 AM to 6 PM',
     sendNews: 'Send Us News',
     whatsapp: 'Chat on WhatsApp',
+    gmail: 'Email on Gmail',
     network: 'Network',
     rights: 'News Media · All rights reserved',
     privacy: 'Privacy Policy',
@@ -125,6 +127,20 @@ const SOCIAL_LINKS = [
 // Official WhatsApp par seedhi chat (pehle se likhe sandesh ke saath)
 const WHATSAPP_NUMBER = '918103333381';
 const WHATSAPP_CHAT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('नमस्ते, मुझे विज्ञापन/समाचार के संबंध में जानकारी चाहिए।')}`;
+
+const CONTACT_EMAIL = 'goldenpearlnews@gmail.com';
+const GMAIL_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('विज्ञापन / समाचार के संबंध में')}`;
+
+// Gmail ka "M" logo (rangon wala)
+const GmailIcon = () => (
+  <svg width="18" height="14" viewBox="52 42 88 66" aria-hidden="true">
+    <path fill="#4285f4" d="M58 108h14V74L52 59v43c0 3.32 2.69 6 6 6" />
+    <path fill="#34a853" d="M120 108h14c3.32 0 6-2.69 6-6V59l-20 15" />
+    <path fill="#fbbc04" d="M120 48v26l20-15v-8c0-7.42-8.47-11.65-14.4-7.2" />
+    <path fill="#ea4335" d="M72 74V48l24 18 24-18v26L96 92" />
+    <path fill="#c5221f" d="M52 51v8l20 15V48l-5.6-4.2c-5.94-4.45-14.4-.22-14.4 7.2" />
+  </svg>
+);
 
 const WhatsAppIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -230,6 +246,17 @@ export default function Footer({
         }
         .gp-ft-wa-chat:hover { background: #1ebe5b; box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
         .gp-ft-wa-chat:focus-visible { outline: 2px solid #128C7E; outline-offset: 2px; }
+        /* WhatsApp ke saath Gmail button (ek row, jagah kam ho toh neeche) */
+        .gp-ft-contact-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .gp-ft-contact-btns .gp-ft-wa-chat { margin-top: 0; }
+        .gp-ft-gmail {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          padding: 10px 16px; border-radius: 8px; background: #ffffff; color: #1f1f1f;
+          border: 1.5px solid #e3e0da; font-size: 14px; font-weight: 500; line-height: 1.25;
+          text-decoration: none; white-space: nowrap; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gp-ft-gmail:hover { border-color: #EA4335; box-shadow: 0 4px 12px rgba(234,67,53,0.18); }
+        .gp-ft-gmail:focus-visible { outline: 2px solid #EA4335; outline-offset: 2px; }
 
         .gp-ft-app-badge {
           border: 1.5px solid #e3e0da; border-radius: 10px; padding: 8px 14px;
@@ -338,7 +365,7 @@ export default function Footer({
                   src={logoUrl}
                   alt={siteName}
                   onError={() => setLogoErr(true)}
-                  style={{ height: '46px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                  style={{ height: '96px', width: 'auto', maxWidth: '240px', objectFit: 'contain', display: 'block' }}
                 />
               ) : (
                 <span style={{ fontFamily: '"Tiro Devanagari Hindi", Georgia, serif', fontSize: '23px', fontWeight: 600, color: '#16150f' }}>
@@ -368,16 +395,23 @@ export default function Footer({
                   </a>
                 ))}
               </div>
-              <a
-                href={WHATSAPP_CHAT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gp-ft-wa-chat"
-                aria-label={`${t.whatsapp} (+91 8103333381)`}
-              >
-                <WhatsAppIcon />
-                <span>{t.whatsapp}</span>
-              </a>
+              <div className="gp-ft-contact-btns">
+                <a
+                  href={WHATSAPP_CHAT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gp-ft-wa-chat"
+                  aria-label={`${t.whatsapp} (+91 8103333381)`}
+                >
+                  <WhatsAppIcon />
+                  <span>{t.whatsapp}</span>
+                </a>
+                {/* Footer wali email (goldenpearlnews@gmail.com) par seedha mail */}
+                <a href={GMAIL_URL} className="gp-ft-gmail" aria-label={`${t.gmail} (${CONTACT_EMAIL})`} title={CONTACT_EMAIL}>
+                  <GmailIcon />
+                  <span>{t.gmail}</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -433,7 +467,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.email(primaryColor)}</span>
-                <span style={{ wordBreak: 'break-all' }}>goldenpearlnews@gmail.com</span>
+                <a href={GMAIL_URL} style={{ wordBreak: 'break-all', color: 'inherit', textDecoration: 'none' }}>{CONTACT_EMAIL}</a>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.phone(primaryColor)}</span>

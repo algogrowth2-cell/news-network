@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import { AdInline, AdLayout } from '@/components/SiteAds';
+import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
 import { SECURE_AUTH } from '@/lib/phoneAuth';
 
@@ -83,6 +84,11 @@ const MAX_PHOTO_BYTES = 700 * 1024;
 
 export default function ShokSandeshPage() {
   const [activeTab, setActiveTab] = useState<'feed' | 'create'>('feed');
+  // Kaunsa portal (?site= / domain / pichhla khola) — header ka logo aur home link isi ka
+  const [portalSlug, setPortalSlug] = useState('the-local-leader');
+  useEffect(() => {
+    setPortalSlug(getActivePortal(new URLSearchParams(window.location.search).get('site')));
+  }, []);
   const [posts, setPosts] = useState<ShokSandeshItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -624,7 +630,12 @@ export default function ShokSandeshPage() {
       {/* Top Banner Header */}
       <header style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Portal ka logo — click karne par isi portal ka homepage */}
+            <Link href={`/?site=${portalSlug}`} aria-label={`${fallbackFor(portalSlug).name} होम`} title={fallbackFor(portalSlug).name} style={{ display: 'inline-flex', flexShrink: 0 }}>
+              <img src={fallbackFor(portalSlug).logoUrl} alt={fallbackFor(portalSlug).name} style={{ height: '44px', width: 'auto', maxWidth: '120px', objectFit: 'contain', borderRadius: '6px' }} />
+            </Link>
+            <span style={{ width: '1px', height: '34px', background: '#e2e8f0' }} />
             <span style={{ fontSize: '24px' }}>🕯️</span>
             <div>
               <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>श्रद्धांजलि एवं शोक संदेश पोर्टल</h1>
@@ -633,7 +644,7 @@ export default function ShokSandeshPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <Link href="/" style={{ fontSize: '13px', color: '#ea580c', textDecoration: 'none', fontWeight: 600, padding: '8px 12px' }}>
+            <Link href={`/?site=${portalSlug}`} style={{ fontSize: '13px', color: '#ea580c', textDecoration: 'none', fontWeight: 600, padding: '8px 12px' }}>
               ← होम पेज पर लौटें
             </Link>
 
