@@ -36,20 +36,15 @@ const onPortal = (siteId: unknown, slug: string) => !siteId || siteId === 'all' 
 /*
  * Ek page view par ek hi baar padho (har component alag-alag Firestore na padhe).
  * Koi vigyapan ek page par do baar nahi: banners[0] upar, banners[1..] beech-beech me; sidebars[0..3] sidebar me.
- * Jagah se zyada vigyapan hon toh har page view par kram badalta hai (shuffle) — sab advertisers ko barabar mauka.
+ * Kram tay hai (har mobile / computer par ek jaisa): jo pehle daala, wo pehle — admin ki priority zyada ho toh usse bhi pehle.
  */
 type AdSet = { banners: SiteAd[]; sidebars: SiteAd[]; classifieds: SiteClassified[]; seen: Set<string> };
 // Sidebar me kitni 300×250 jagah (khaali jagah par 'यहाँ विज्ञापन दें')
 export const SIDEBAR_SLOTS = 4;
 const cache = new Map<string, Promise<AdSet>>();
 
-const shuffle = <T,>(a: T[]) => {
-  for (let i = a.length - 1; i > 0; i--) {
-    const k = Math.floor(Math.random() * (i + 1));
-    [a[i], a[k]] = [a[k], a[i]];
-  }
-  return a;
-};
+// Firestore Timestamp / ISO string → ms (na ho toh 0 = sabse pehle)
+const tsMs = (v: any) => (v?.toDate ? v.toDate().getTime() : v?.seconds ? v.seconds * 1000 : v ? new Date(v).getTime() || 0 : 0);
 
 function loadAds(slug: string) {
   // Har naye page (URL) par naya kram aur nayi impression ginti
@@ -62,6 +57,7 @@ function loadAds(slug: string) {
           getDocs(query(collection(db, 'ads'), where('status', 'in', LIVE))),
           getDocs(query(collection(db, 'classifieds'), where('status', 'in', LIVE)))
         ]);
+        const order = new Map<string, { priority: number; created: number }>();
         const headers: SiteAd[] = [];
         const feeds: SiteAd[] = [];
         const sidebars: SiteAd[] = [];
@@ -86,6 +82,7 @@ function loadAds(slug: string) {
           }
           if (!x.imageUrl && !x.videoUrl) return;
           const ad = { id: d.id, name: x.name || x.title || '', imageUrl: x.imageUrl || '', videoUrl: x.videoUrl || '', targetUrl: x.targetUrl || '' };
+          order.set(d.id, { priority: Number(x.priority) || 1, created: tsMs(x.createdAt) || tsMs(x.paidAt) });
           if (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar') sidebars.push(ad);
           else if (zone.includes('728') || zone.includes('header') || zone.includes('हेडर') || fmt === 'banner') headers.push(ad);
           else if (zone.includes('feed') || zone.includes('in-article') || zone.includes('banner')) feeds.push(ad);
@@ -104,11 +101,17 @@ function loadAds(slug: string) {
             videoUrl: x.videoUrl || ''
           });
         });
-        // Upar wali jagah header-banner wale (unhone wahi kharida), phir in-feed; baaki header beech me
-        shuffle(headers);
-        shuffle(feeds);
-        const banners = headers.length ? [headers[0], ...feeds, ...headers.slice(1)] : feeds;
-        return { banners, sidebars: shuffle(sidebars), classifieds: classifieds.slice(0, 4), seen: new Set<string>() };
+        // Pehle daala → pehle (priority zyada ho toh aage). Upar wali jagah sabse pehla header-banner,
+        // baaki banner usi kram me beech-beech me.
+        const byOrder = (a: SiteAd, b: SiteAd) => {
+          const x = order.get(a.id)!;
+          const y = order.get(b.id)!;
+          return y.priority - x.priority || x.created - y.created || a.id.localeCompare(b.id);
+        };
+        headers.sort(byOrder);
+        sidebars.sort(byOrder);
+        const banners = headers.length ? [headers[0], ...[...headers.slice(1), ...feeds].sort(byOrder)] : feeds.sort(byOrder);
+        return { banners, sidebars, classifieds: classifieds.slice(0, 4), seen: new Set<string>() };
       })().catch((err) => {
         console.error('Ads load error:', err);
         cache.delete(key);
