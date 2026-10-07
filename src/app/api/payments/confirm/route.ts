@@ -4,7 +4,7 @@ import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
 import { MEMBERSHIP_DAYS, membershipSite, membershipTillMs } from '@/lib/membership';
-import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
+import { AD_DAYS, AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
 
 /*
  * Razorpay payment ke baad: server payment jaanchta hai, phir hi subscription / membership / delivery / shok-credit likhta hai.
@@ -193,7 +193,8 @@ export async function POST(req: Request) {
           advertiserEmail: String(adv.email || '').toLowerCase(),
           advertiserName: adv.businessName || adv.contactName || adv.contactPerson || 'विज्ञापनदाता'
         };
-        const paid = { paymentId, amountPaid: amount, paymentStatus: 'paid', testMode: v.testMode, paidAt: admin.FieldValue.serverTimestamp() };
+        // days: kitne din chalega (banner / sidebar 365, classified 30) — admin manzoori ke din se
+        const paid = { paymentId, amountPaid: amount, paymentStatus: 'paid', testMode: v.testMode, paidAt: admin.FieldValue.serverTimestamp(), days: AD_DAYS[adFormat] };
         const siteId = clean(ad.siteId, 60) || 'the-local-leader';
         const title = clean(ad.title, 150);
         // Payment ID hi document ID — ek payment se ek hi vigyapan

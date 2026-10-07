@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import { fallbackFor, getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
 import { directMediaUrl } from '@/lib/mediaUrl';
+import { adNotExpired } from '@/lib/plans';
 
 /*
  * Homepage jaise vigyapan har page par: header banner (728×90), sidebar banner (300×250), classified widget.
@@ -65,6 +66,7 @@ function loadAds(slug: string) {
         adSnap.forEach((d) => {
           const x = d.data();
           if (!onPortal(x.siteId, slug)) return;
+          if (!adNotExpired(x)) return; // muddat poori (1 saal / 30 din) — purane bina muddat wale chalte rahenge
           const zone = String(x.zone || '').toLowerCase();
           const fmt = String(x.format || x.type || '').toLowerCase();
           if (zone.includes('classified') || fmt.includes('classified')) {
@@ -90,6 +92,7 @@ function loadAds(slug: string) {
         clSnap.forEach((d) => {
           const x = d.data();
           if (!onPortal(x.siteId, slug)) return;
+          if (!adNotExpired(x)) return; // muddat poori (1 saal / 30 din) — purane bina muddat wale chalte rahenge
           classifieds.unshift({
             id: d.id,
             title: x.title || x.name || '',

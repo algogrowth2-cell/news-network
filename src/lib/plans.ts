@@ -29,19 +29,33 @@ export const SHOK_PLANS = [
 export type ShokPlanId = (typeof SHOK_PLANS)[number]['id'];
 export const SHOK_LEGACY_DAYS = 30;
 
-// Advertiser vigyapan — har request ka shulk (payment ke baad hi admin ke paas manzoori ke liye)
+// Advertiser vigyapan — shulk aur muddat (admin manzoori ke din se). Muddat poori → website se apne aap hat jaata.
+// Purane (bina muddat wale) vigyapan jaise chal rahe hain waise hi chalte rahenge.
 export const AD_PRICES = {
-  classified: 199,
+  classified: 51,
   sidebar: 999,
-  banner: 1999,
+  banner: 999,
   popup: 2999
 } as const;
 export type AdFormat = keyof typeof AD_PRICES;
+/** Kitne din chalega (0 = koi seema nahi) */
+export const AD_DAYS: Record<AdFormat, number> = { classified: 30, sidebar: 365, banner: 365, popup: 0 };
+export const AD_DURATION_LABEL: Record<AdFormat, string> = { classified: '1 महीना (30 दिन)', sidebar: '1 वर्ष', banner: '1 वर्ष', popup: '' };
 export const AD_FORMAT_LABEL: Record<AdFormat, string> = {
   classified: 'क्लासिफाइड विज्ञापन',
   sidebar: 'साइडबार बैनर (300 × 250)',
   banner: 'हेडर बैनर (728 × 90)',
   popup: 'पॉप-अप विज्ञापन'
 };
+
+const _ms = (v: any) => (v?.toDate ? v.toDate().getTime() : v?.seconds ? v.seconds * 1000 : v ? new Date(v).getTime() || 0 : 0);
+/** Vigyapan kab tak (ms); Infinity = koi seema nahi (purane vigyapan / pop-up) */
+export function adExpiryMs(x: any): number {
+  const days = Number(x?.days) || 0;
+  if (!days) return Infinity;
+  const start = _ms(x?.approvedAt) || _ms(x?.paidAt) || _ms(x?.createdAt) || Date.now();
+  return start + days * 864e5;
+}
+export const adNotExpired = (x: any, now = Date.now()) => adExpiryMs(x) > now;
 
 export type PaymentKind = 'epaper' | 'membership' | 'delivery' | 'shok' | 'ad';

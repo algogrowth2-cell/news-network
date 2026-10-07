@@ -80,6 +80,8 @@ export default function AdsRevenuePage() {
           videoUrl: data.videoUrl || '',
           startDate: data.startDate || '',
           endDate: data.endDate || '',
+          days: Number(data.days) || 0,
+          approvedAt: data.approvedAt || null,
           paymentId: data.paymentId || '',
           amountPaid: Number(data.amountPaid || 0),
           testMode: !!data.testMode
@@ -98,9 +100,12 @@ export default function AdsRevenuePage() {
   // 2. Approve Ad Request (Make it Live)
   const handleApproveAd = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'ads', id), { 
+      // Muddat (1 saal) pehli manzoori ke din se — dobara chalu karne par aage nahi badhti
+      const cur = ads.find((x) => x.id === id) as any;
+      await updateDoc(doc(db, 'ads', id), {
         status: 'active',
-        priority: 1 
+        priority: 1,
+        ...(cur?.approvedAt ? {} : { approvedAt: serverTimestamp() })
       });
       alert('विज्ञापन सफलतापूर्वक लाइव कर दिया गया है!');
     } catch (err: any) {
@@ -439,7 +444,7 @@ export default function AdsRevenuePage() {
                         अवधि: {req.startDate} से {req.endDate} · लिंक: {req.targetUrl}
                       </div>
                       <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: 600, color: req.paymentId ? '#10b981' : '#f59e0b' }} title={req.paymentId || ''}>
-                        {req.paymentId ? `💳 ₹${req.amountPaid || '—'} भुगतान ✓${req.testMode ? ' (टेस्ट)' : ''} · ID: ${req.paymentId}` : 'भुगतान नहीं (पुराना अनुरोध)'}
+                        {req.paymentId ? `💳 ₹${req.amountPaid || '—'} भुगतान ✓${req.testMode ? ' (टेस्ट)' : ''}${(req as any).days ? ` · ${(req as any).days === 365 ? '1 वर्ष' : `${(req as any).days} दिन`}` : ''} · ID: ${req.paymentId}` : 'भुगतान नहीं (पुराना अनुरोध)'}
                       </div>
                     </div>
                   </div>

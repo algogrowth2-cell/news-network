@@ -21,6 +21,7 @@ import EmptyState, { FeedSkeleton } from '@/components/EmptyState';
 import { categoryMatches, matchesTrendTag, setDynamicCategories } from '@/lib/categories';
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 import { hasEpaper } from '@/lib/epaperSub';
+import { adNotExpired } from '@/lib/plans';
 
 interface ArticleItem {
   id: string;
@@ -775,7 +776,7 @@ function HomePageContent() {
         const data = d.data();
         const st = String(data.status || 'active').toLowerCase();
         const cSite = normalizeSiteId(data.siteId);
-        if (st === 'active' || st === 'approved') {
+        if ((st === 'active' || st === 'approved') && adNotExpired(data)) {
           if (!data.siteId || cSite === activeSiteSlug || data.siteId === 'all') {
             directClassifieds.push({ id: d.id, ...data } as ClassifiedItem);
           }
@@ -793,7 +794,7 @@ function HomePageContent() {
         const zn = String(data.zone || '').toLowerCase();
         const aSite = normalizeSiteId(data.siteId);
 
-        if ((st === 'active' || st === 'approved') && (fmt === 'classified' || zn.includes('classified'))) {
+        if ((st === 'active' || st === 'approved') && adNotExpired(data) && (fmt === 'classified' || zn.includes('classified'))) {
           if (!data.siteId || aSite === activeSiteSlug || data.siteId === 'all') {
             adsClassifieds.push({
               id: d.id,

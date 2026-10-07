@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
-import { AD_FORMAT_LABEL, AD_PRICES } from '@/lib/plans';
+import { AD_DAYS, AD_DURATION_LABEL, AD_FORMAT_LABEL, AD_PRICES, adExpiryMs, adNotExpired } from '@/lib/plans';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
 import { adUploadErrorMessage, isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
@@ -189,6 +189,9 @@ export default function AdvertiserDashboard() {
           startDate: data.startDate || 'तत्काल',
           endDate: data.endDate || 'खुला',
           status: data.status || 'pending',
+          days: Number(data.days) || 0,
+          approvedAt: data.approvedAt || null,
+          paidAt: data.paidAt || null,
           impressions: Number(data.impressions || data.views || 0),
           clicks: Number(data.clicks || 0),
           budget: data.budget || 5000,
@@ -215,6 +218,9 @@ export default function AdvertiserDashboard() {
           startDate: data.startDate || 'तत्काल',
           endDate: data.endDate || 'खुला',
           status: (data.status === 'active' || data.status === 'approved' ? 'active' : data.status || 'pending') as any,
+          days: Number(data.days) || 0,
+          approvedAt: data.approvedAt || null,
+          paidAt: data.paidAt || null,
           impressions: Number(data.impressions || data.views || 0),
           clicks: Number(data.clicks || 0),
           budget: data.price ? `₹${data.price}` : 0,
@@ -629,6 +635,12 @@ export default function AdvertiserDashboard() {
                             <div>
                               <div style={{ fontWeight: 600, color: '#0f172a' }}>{ad.name}</div>
                               {ad.city && <span style={{ fontSize: '11px', color: '#64748b' }}>📍 {ad.city} {ad.price ? `· ₹${ad.price}` : ''}</span>}
+                              {/* Muddat: kab tak chalega / samay poora */}
+                              {(ad as any).days > 0 && (ad as any).approvedAt && (
+                                <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: adNotExpired(ad) ? '#16a34a' : '#dc2626' }}>
+                                  {adNotExpired(ad) ? `✓ ${new Date(adExpiryMs(ad)).toLocaleDateString('hi-IN')} तक` : '⏱ समय पूरा — नया विज्ञापन दें'}
+                                </span>
+                              )}
                               {ad.targetUrl && ad.targetUrl !== '#' && (
                                 <a href={ad.targetUrl} target="_blank" rel="noreferrer" style={{ fontSize: '11.5px', color: '#0284c7', textDecoration: 'none', display: 'block' }}>
                                   {ad.targetUrl.slice(0, 30)}...
@@ -718,13 +730,13 @@ export default function AdvertiserDashboard() {
                   onChange={(e) => handleFormatChange(e.target.value as any)}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `2px solid ${themeColor}`, borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
-                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज) — ₹{AD_PRICES.classified}</option>
-                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90) — ₹{AD_PRICES.banner}</option>
-                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250) — ₹{AD_PRICES.sidebar}</option>
+                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज) — ₹{AD_PRICES.classified} / {AD_DURATION_LABEL.classified}</option>
+                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90) — ₹{AD_PRICES.banner} / {AD_DURATION_LABEL.banner}</option>
+                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250) — ₹{AD_PRICES.sidebar} / {AD_DURATION_LABEL.sidebar}</option>
                   <option value="popup">🛑 पॉप-अप विज्ञापन — ₹{AD_PRICES.popup}</option>
                 </select>
                 <p style={{ margin: '8px 0 0', fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
-                  💳 विज्ञापन शुल्क: <b style={{ color: themeColor }}>₹{AD_PRICES[format]}</b> — भुगतान के बाद अनुरोध एडमिन के पास जाएगा और स्वीकृति के बाद ही वेबसाइट पर लाइव होगा।
+                  💳 विज्ञापन शुल्क: <b style={{ color: themeColor }}>₹{AD_PRICES[format]}{AD_DURATION_LABEL[format] ? ` / ${AD_DURATION_LABEL[format]}` : ''}</b> — भुगतान के बाद अनुरोध एडमिन के पास जाएगा और स्वीकृति के बाद ही वेबसाइट पर लाइव होगा।{AD_DAYS[format] ? ` विज्ञापन स्वीकृति के दिन से ${AD_DURATION_LABEL[format]} तक चलेगा।` : ''}
                 </p>
               </div>
 

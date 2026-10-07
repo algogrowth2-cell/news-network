@@ -22,6 +22,8 @@ interface Classified {
   advertiserName: string;
   advertiserPhone: string;
   paymentId: string;
+  days: number;
+  approvedAt: any;
   amountPaid: number;
   testMode: boolean;
   createdAt: Date | null;
@@ -77,6 +79,8 @@ export default function ClassifiedsPage() {
                 advertiserName: x.advertiserName || '',
                 advertiserPhone: x.advertiserPhone || '',
                 paymentId: x.paymentId || '',
+                days: Number(x.days) || 0,
+                approvedAt: x.approvedAt || null,
                 amountPaid: Number(x.amountPaid || 0),
                 testMode: !!x.testMode,
                 createdAt: toDate(x.timestamp) || toDate(x.createdAt)
@@ -101,7 +105,8 @@ export default function ClassifiedsPage() {
   const count = (t: typeof tab) => rows.filter((r) => (t === 'pending' ? r.status === 'pending' : t === 'live' ? isLive(r.status) : !isLive(r.status) && r.status !== 'pending')).length;
 
   const setStatus = (r: Classified, status: string) =>
-    updateDoc(doc(db, 'classifieds', r.id), { status, reviewedAt: serverTimestamp() }).catch((e) => setError(e.message));
+    // Muddat (30 din) pehli manzoori ke din se
+    updateDoc(doc(db, 'classifieds', r.id), { status, reviewedAt: serverTimestamp(), ...(status === 'active' && !r.approvedAt ? { approvedAt: serverTimestamp() } : {}) }).catch((e) => setError(e.message));
   const remove = async (r: Classified) => {
     if (!window.confirm(`"${r.title}" हमेशा के लिए हटाएं?`)) return;
     await deleteDoc(doc(db, 'classifieds', r.id)).catch((e) => setError(e.message));
@@ -181,7 +186,7 @@ export default function ClassifiedsPage() {
                       <span className="cl-sub">{r.advertiserPhone ? `+91 ${r.advertiserPhone}` : ''}</span>
                       {r.paymentId ? (
                         <span className="cl-sub" style={{ color: '#10b981', fontWeight: 600 }} title={r.paymentId}>
-                          💳 ₹{r.amountPaid || '—'} भुगतान ✓{r.testMode ? ' (टेस्ट)' : ''}
+                          💳 ₹{r.amountPaid || '—'} भुगतान ✓{r.testMode ? ' (टेस्ट)' : ''}{r.days ? ` · ${r.days} दिन` : ''}
                         </span>
                       ) : (
                         <span className="cl-sub" style={{ color: '#f59e0b' }}>भुगतान नहीं (पुराना/एडमिन)</span>

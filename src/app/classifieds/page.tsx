@@ -11,6 +11,7 @@ import { AdInline, AdLayout, AdMedia } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
 import PortalLogo from '@/components/PortalLogo';
 import { fallbackFor, logoFor } from '@/lib/siteTheme';
+import { adNotExpired } from '@/lib/plans';
 
 interface ClassifiedItem {
   id: string;
@@ -99,7 +100,7 @@ function ClassifiedsContent() {
         snap.forEach((d) => {
           const data = d.data();
           const st = String(data.status || 'active').toLowerCase();
-          if (st === 'active' || st === 'approved') {
+          if ((st === 'active' || st === 'approved') && adNotExpired(data)) {
             const itemSite = normalizeSiteId(data.siteId || 'all');
             if (!data.siteId || itemSite === siteSlug || itemSite === 'all') {
               directClassifieds.push({
@@ -143,6 +144,7 @@ function ClassifiedsContent() {
           // If ad is marked as classified
           if (
             (st === 'active' || st === 'approved') &&
+            adNotExpired(data) &&
             (fmt === 'classified' || zn.includes('classified') || typ === 'classified')
           ) {
             const itemSite = normalizeSiteId(data.siteId || 'all');
