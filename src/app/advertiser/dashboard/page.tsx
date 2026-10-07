@@ -21,6 +21,7 @@ import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
 import { adUploadErrorMessage, isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
 import { AdMedia } from '@/components/SiteAds';
 import { logoFor } from '@/lib/siteTheme';
+import { directMediaUrl } from '@/lib/mediaUrl';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
@@ -905,8 +906,8 @@ export default function AdvertiserDashboard() {
                     placeholder="https://example.com/banner.jpg (या .gif / .mp4)"
                     value={videoUrl || imageUrl}
                     onChange={(e) => {
-                      // MP4/WebM link = video vigyapan, baaki photo / GIF
-                      const v = e.target.value;
+                      // MP4/WebM link = video vigyapan, baaki photo / GIF (Drive / Dropbox share link seedhe link me)
+                      const v = directMediaUrl(e.target.value);
                       if (isVideoUrl(v)) {
                         setVideoUrl(v);
                         setImageUrl('');

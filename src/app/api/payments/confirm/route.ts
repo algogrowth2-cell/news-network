@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
+import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
 import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
 
@@ -16,14 +17,14 @@ const clean = (s: any, max: number) => String(s || '').replace(/[<>{}[\]`]/g, ''
 
 // Vigyapan ki photo: https link ya chhoti upload (data:image, Firestore 1MB seema ke andar)
 const cleanImage = (v: any) => {
-  const s = String(v || '').trim();
+  const s = directMediaUrl(String(v || '').trim()); // Drive / Dropbox share link → seedha link
   if (/^https?:\/\/[^\s"'<>]{4,2000}$/i.test(s)) return s;
   if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) && s.length <= 700_000) return s;
   return '';
 };
 // Animated vigyapan ka video (MP4/WebM, https — aam taur par hamara Storage link)
 const cleanVideo = (v: any) => {
-  const s = String(v || '').trim();
+  const s = directMediaUrl(String(v || '').trim());
   return /^https:\/\/[^\s"'<>]{4,2000}$/i.test(s) && /\.(mp4|webm)$/i.test(s.split(/[?#]/)[0]) ? s : '';
 };
 const cleanUrl = (v: any) => (/^https?:\/\/[^\s"'<>]{4,1000}$/i.test(String(v || '').trim()) ? String(v).trim() : '');

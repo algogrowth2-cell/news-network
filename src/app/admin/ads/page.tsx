@@ -12,6 +12,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { AdMedia } from '@/components/SiteAds';
+import { directMediaUrl } from '@/lib/mediaUrl';
 
 interface AdItem {
   id: string;
@@ -156,8 +157,8 @@ export default function AdsRevenuePage() {
         priority: Number(formData.priority) || 1,
         impressions: 0,
         clicks: 0,
-        imageUrl: formData.imageUrl,
-        videoUrl: formData.videoUrl.trim(),
+        imageUrl: directMediaUrl(formData.imageUrl), // Drive / Dropbox share link → seedha link
+        videoUrl: directMediaUrl(formData.videoUrl),
         targetUrl: formData.targetUrl,
         advertiserName: formData.advertiserName || 'Admin Created',
         budget: formData.budget,

@@ -5,6 +5,7 @@ import { collection, doc, getDocs, increment, query, updateDoc, where } from 'fi
 import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import { fallbackFor, getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
+import { directMediaUrl } from '@/lib/mediaUrl';
 
 /*
  * Homepage jaise vigyapan har page par: header banner (728×90), sidebar banner (300×250), classified widget.
@@ -148,8 +149,8 @@ export function AdMedia({ ad, alt, className, style }: { ad: { imageUrl?: string
   if (ad.videoUrl) {
     return (
       <video
-        src={ad.videoUrl}
-        poster={ad.imageUrl || undefined}
+        src={directMediaUrl(ad.videoUrl)}
+        poster={directMediaUrl(ad.imageUrl) || undefined}
         className={className}
         style={{ objectFit: 'cover', ...style }}
         autoPlay
@@ -161,7 +162,8 @@ export function AdMedia({ ad, alt, className, style }: { ad: { imageUrl?: string
       />
     );
   }
-  return <img src={ad.imageUrl} alt={alt} className={className} style={style} loading="lazy" />;
+  // Google Drive / Dropbox share link bhi chale (seedhe link me badal kar)
+  return <img src={directMediaUrl(ad.imageUrl)} alt={alt} className={className} style={style} loading="lazy" referrerPolicy="no-referrer" />;
 }
 
 const adClick = (id: string) => updateDoc(doc(db, 'ads', id), { clicks: increment(1) }).catch(() => {});
