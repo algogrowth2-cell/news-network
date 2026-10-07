@@ -35,6 +35,12 @@ service cloud.firestore {
         && recordIsMine(get(docPath('reporters', repId())).data)
         && get(docPath('reporters', repId())).data.get('status', '').lower() in ['approved', 'active'];
     }
+    // Patrakar seva sadasyata: is portal (siteId) ki chalu ho — ya purani (₹499) sadasyata
+    function reporterMemberOn(site) {
+      let r = get(docPath('reporters', repId())).data;
+      return r.get('memberships', {}).get(site, {}).get('expiresAt', timestamp.value(0)) > request.time
+        || r.get('membershipActive', false) == true;
+    }
     function isAdvertiser() {
       return hasPhone() && exists(docPath('advertisers', advId()))
         && recordIsMine(get(docPath('advertisers', advId())).data);
@@ -64,7 +70,8 @@ service cloud.firestore {
       // Approved patrakar apni khabar review ke liye (publish sirf admin)
       allow create: if approvedReporter()
         && request.resource.data.authorIdentifier == phone()
-        && request.resource.data.status in ['pending', 'pending_review', 'draft', 'Draft'];
+        && request.resource.data.status in ['pending', 'pending_review', 'draft', 'Draft']
+        && reporterMemberOn(request.resource.data.get('siteId', ''));
       // Koi bhi visitor: sirf views +1
       allow update: if incOnly('views');
     }

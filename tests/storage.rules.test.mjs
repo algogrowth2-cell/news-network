@@ -59,3 +59,11 @@ test('vigyapan GIF/video: sirf apne mobile ke folder me, sirf GIF/MP4/WebM, sabk
   await assertSucceeds(uploadBytes(ref(admin(), 'ad-media/admin/7-a.webm'), VID, { contentType: 'video/webm' }));
   await assertSucceeds(getBytes(ref(anon(), `ad-media/${me}/1-a.mp4`)));
 });
+
+test('patrakar ki khabar ki photo: sirf apne mobile ke folder me, sirf photo', async () => {
+  const me = '9876543210';
+  await assertSucceeds(uploadBytes(ref(reader(), `reporter-media/${me}/1.jpg`), IMG, { contentType: 'image/jpeg' }));
+  await assertFails(uploadBytes(ref(reader(), `reporter-media/9999999999/2.jpg`), IMG, { contentType: 'image/jpeg' }));
+  await assertFails(uploadBytes(ref(reader(), `reporter-media/${me}/3.mp4`), IMG, { contentType: 'video/mp4' }));
+  await assertSucceeds(getBytes(ref(anon(), `reporter-media/${me}/1.jpg`)));
+});

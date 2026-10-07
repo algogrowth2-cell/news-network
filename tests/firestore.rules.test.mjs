@@ -31,7 +31,7 @@ beforeEach(async () => {
     const db = ctx.firestore();
     await setDoc(doc(db, 'users', `u_${READER}`), { name: 'Ram', email: 'ram@x.com', phone: READER, successfulReferralsCount: 0 });
     await setDoc(doc(db, 'users', `u_${OTHER}`), { name: 'Shyam', email: 's@x.com', phone: OTHER });
-    await setDoc(doc(db, 'reporters', `rp_${REPORTER}`), { name: 'Rep', phone: REPORTER, status: 'approved', designation: 'Reporter' });
+    await setDoc(doc(db, 'reporters', `rp_${REPORTER}`), { name: 'Rep', phone: REPORTER, status: 'approved', designation: 'Reporter', memberships: { 'the-local-leader': { expiresAt: new Date(Date.now() + 30 * 864e5) } } });
     await setDoc(doc(db, 'reporters', `rp_${PENDING_REP}`), { name: 'Pend', phone: PENDING_REP, status: 'pending' });
     await setDoc(doc(db, 'advertisers', `adv_${ADVERTISER}`), { businessName: 'Biz', phone: ADVERTISER });
     await setDoc(doc(db, 'articles', 'a1'), { title: 'T', status: 'published', views: 5 });
@@ -112,9 +112,11 @@ describe('Private data', () => {
 
 describe('Patrakar', () => {
   test('approved patrakar pending khabar bhej sake, published nahi', async () => {
-    await assertSucceeds(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'pending', authorIdentifier: REPORTER }));
-    await assertFails(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'published', authorIdentifier: REPORTER }));
-    await assertFails(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'pending', authorIdentifier: OTHER }));
+    await assertSucceeds(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'pending', authorIdentifier: REPORTER, siteId: 'the-local-leader' }));
+    await assertFails(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'published', authorIdentifier: REPORTER, siteId: 'the-local-leader' }));
+    await assertFails(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'pending', authorIdentifier: OTHER, siteId: 'the-local-leader' }));
+    // Jis portal ki sadasyata nahi, wahan khabar nahi
+    await assertFails(addDoc(collection(asPhone(REPORTER), 'articles'), { title: 'x', status: 'pending', authorIdentifier: REPORTER, siteId: 'bazar-karobar' }));
   });
   test('pending patrakar / pathak khabar nahi bhej sakta', async () => {
     await assertFails(addDoc(collection(asPhone(PENDING_REP), 'articles'), { title: 'x', status: 'pending', authorIdentifier: PENDING_REP }));
@@ -184,7 +186,7 @@ describe('Comments, shok sandesh, consent, deletion', () => {
 describe('Naye suraksha niyam', () => {
   test('purana patrakar (rp_ naam nahi) token ke rid se khabar bhej sake', async () => {
     const LEG = '9777777777';
-    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'reporters', 'oldRecord123'), { name: 'Old', mobile: LEG, status: 'approved' }));
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'reporters', 'oldRecord123'), { name: 'Old', mobile: LEG, status: 'approved', membershipActive: true }));
     await assertSucceeds(addDoc(collection(asPhone(LEG, { rid: 'oldRecord123' }), 'articles'), { title: 'x', status: 'pending', authorIdentifier: LEG }));
     await assertFails(addDoc(collection(asPhone(LEG), 'articles'), { title: 'x', status: 'pending', authorIdentifier: LEG }));
     // Kisi aur ka rid (record kisi aur number ka) — band

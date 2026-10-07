@@ -22,6 +22,7 @@ import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
 import { activeMembershipSites, hasMembership, MEMBERSHIP_DAYS, membershipTillMs } from '@/lib/membership';
 import { PATRAKAR_MEMBERSHIP_PRICE } from '@/lib/plans';
+import { uploadNewsPhoto, validateNewsPhoto } from '@/lib/reporterMedia';
 
 declare global {
   interface Window {
@@ -76,6 +77,14 @@ export default function PatrakarDashboard() {
   const [artSummary, setArtSummary] = useState('');
   const [artContent, setArtContent] = useState('');
   const [artImage, setArtImage] = useState('');
+  // Khabar ke aur zaroori field + device se photo
+  const [artImageCaption, setArtImageCaption] = useState('');
+  const [artCity, setArtCity] = useState('');
+  const [artState, setArtState] = useState('');
+  const [artTags, setArtTags] = useState('');
+  const [artVideoUrl, setArtVideoUrl] = useState('');
+  const [artPhotoPct, setArtPhotoPct] = useState<number | null>(null);
+  const [artPhotoNote, setArtPhotoNote] = useState('');
   const [submittingArticle, setSubmittingArticle] = useState(false);
 
   // Delivery Form State
@@ -209,6 +218,32 @@ export default function PatrakarDashboard() {
   // Sadasyata: is portal par chalu? + kin portals par chalu
   const memberHere = !!reporter && !!portalSlug && hasMembership(reporter, portalSlug);
   const activeSites = reporter ? activeMembershipSites(reporter) : [];
+  // Khabar ka portal hamesha sadasyata wala ho (pehle is portal ka, warna pehla chalu)
+  const activeKey = activeSites.join(',');
+  useEffect(() => {
+    if (!activeSites.length || activeSites.includes(artSiteId)) return;
+    setArtSiteId(portalSlug && activeSites.includes(portalSlug) ? portalSlug : activeSites[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, portalSlug]);
+
+  // Device se khabar ki photo
+  const handleNewsPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !reporter) return;
+    const bad = validateNewsPhoto(file);
+    if (bad) return alert(bad);
+    setArtPhotoPct(0);
+    setArtPhotoNote('');
+    try {
+      const { url, inline } = await uploadNewsPhoto(file, reporter.phone || 'unknown', setArtPhotoPct);
+      setArtImage(url);
+      if (inline) setArtPhotoNote('फ़ोटो छोटी करके खबर के साथ जोड़ दी गई है।');
+    } catch {
+      alert('यह फ़ोटो पढ़ी नहीं जा सकी, कृपया दूसरी फ़ोटो चुनें।');
+    }
+    setArtPhotoPct(null);
+  };
 
   const handleLogout = () => {
     clearRoleSession('patrakar');
@@ -345,25 +380,44 @@ export default function PatrakarDashboard() {
   // 6. Submit Article to Admin for Approval
   const handleSubmitArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!artTitle.trim()) {
-      alert('कृपया खबर का शीर्षक दर्ज करें।');
+    // Khabar sirf us portal par jiski seva sadasyata chalu hai
+    if (!hasMembership(reporter, artSiteId)) {
+      alert('इस पोर्टल पर खबर भेजने के लिए उसकी पत्रकार सेवा सदस्यता आवश्यक है।');
+      setActiveTab('membership');
       return;
     }
+    if (artTitle.trim().length < 10) return alert('कृपया खबर का पूरा शीर्षक लिखें (कम से कम 10 अक्षर)।');
+    if (artContent.trim().length < 80) return alert('कृपया पूरी खबर विस्तार से लिखें (कम से कम 80 अक्षर)।');
+    if (!artImage.trim()) return alert('कृपया खबर की फ़ोटो जोड़ें (डिवाइस से अपलोड करें या लिंक डालें)।');
+    if (artPhotoPct !== null) return alert('फ़ोटो अपलोड हो रही है, कृपया पूरा होने दें।');
+    if (artVideoUrl.trim() && !/^https?:\/\//i.test(artVideoUrl.trim())) return alert('वीडियो लिंक सही नहीं है।');
 
     try {
       setSubmittingArticle(true);
+      const tags = Array.from(new Set(artTags.split(/[,#\n]/).map((t) => t.trim()).filter(Boolean))).slice(0, 10);
+      const location = [artCity.trim(), artState.trim()].filter(Boolean).join(', ');
 
       await addDoc(collection(db, 'articles'), {
         title: artTitle.trim(),
         titleHi: artTitle.trim(),
         category: artCategory,
         siteId: artSiteId,
+        siteIds: [artSiteId],
         summary: artSummary.trim(),
         content: artContent.trim(),
-        image: artImage.trim() || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200',
+        contentText: artContent.trim().slice(0, 5000),
+        image: artImage.trim(),
+        imageCaption: artImageCaption.trim(),
+        videoUrl: artVideoUrl.trim(),
+        tags,
+        city: artCity.trim(),
+        state: artState.trim(),
+        location,
         authorName: reporter.name,
         authorIdentifier: reporter.phone || reporter.email,
-        status: 'pending',
+        authorPressId: reporter.idNumber || '',
+        source: 'reporter',
+        status: 'pending', // Admin → Articles me "स्वीकृत करें" ke baad hi live
         views: 0,
         createdAt: serverTimestamp()
       });
@@ -373,6 +427,10 @@ export default function PatrakarDashboard() {
       setArtSummary('');
       setArtContent('');
       setArtImage('');
+      setArtImageCaption('');
+      setArtTags('');
+      setArtVideoUrl('');
+      setArtPhotoNote('');
       setSubmittingArticle(false);
       setActiveTab('overview');
     } catch (err: any) {
@@ -625,7 +683,17 @@ export default function PatrakarDashboard() {
         )}
 
         {/* TAB 2: CREATE & SUBMIT ARTICLE (Sirf Hindi Names Dropdown me) */}
-        {activeTab === 'create-article' && (
+        {activeTab === 'create-article' && !activeSites.length && (
+          <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '32px', maxWidth: '640px', margin: '0 auto', textAlign: 'center', color: '#78350f' }}>
+            <div style={{ fontSize: '30px' }}>🔒</div>
+            <h3 style={{ fontSize: '19px', margin: '8px 0 6px', color: '#0f172a' }}>खबर भेजने के लिए सदस्यता आवश्यक है</h3>
+            <p style={{ fontSize: '13.5px', margin: '0 0 16px' }}>इस पोर्टल पर खबर भेजने के लिए पत्रकार सेवा सदस्यता (₹{PATRAKAR_MEMBERSHIP_PRICE} / वर्ष) लें। सदस्यता के बिना खबर सबमिट नहीं होगी।</p>
+            <button type="button" onClick={() => setActiveTab('membership')} style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '11px 22px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
+              सदस्यता लें
+            </button>
+          </div>
+        )}
+        {activeTab === 'create-article' && activeSites.length > 0 && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '820px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>नई खबर सबमिट करें (सत्यापन हेतु)</h2>
             <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0' }}>
@@ -706,14 +774,60 @@ export default function PatrakarDashboard() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>फ़ोटो इमेज लिंक (Image URL)</label>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>खबर की फ़ोटो *</label>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: themeColor, color: '#fff', padding: '10px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: artPhotoPct !== null ? 'wait' : 'pointer' }}>
+                    📷 {artPhotoPct !== null ? `अपलोड हो रहा है… ${artPhotoPct}%` : 'डिवाइस से फ़ोटो चुनें'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleNewsPhoto} disabled={artPhotoPct !== null} style={{ display: 'none' }} />
+                  </label>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>JPG / PNG / WebP · 15 MB तक · या नीचे लिंक डालें</span>
+                </div>
                 <input
                   type="url"
-                  placeholder="https://example.com/news-photo.jpg"
-                  value={artImage}
+                  placeholder="या फ़ोटो का लिंक: https://example.com/news-photo.jpg"
+                  value={artImage.startsWith('data:') ? '' : artImage}
                   onChange={(e) => setArtImage(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
+                  style={{ ...{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }, marginTop: '10px' }}
                 />
+                {artImage && (
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <img src={artImage} alt="खबर की फ़ोटो" style={{ width: '160px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      {artPhotoNote || 'फ़ोटो जुड़ गई।'}
+                      <button type="button" onClick={() => setArtImage('')} style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 0, fontSize: '12px' }}>✕ फ़ोटो हटाएं</button>
+                    </div>
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="फ़ोटो कैप्शन (वैकल्पिक) — जैसे: कलेक्टर बैठक लेते हुए"
+                  value={artImageCaption}
+                  maxLength={140}
+                  onChange={(e) => setArtImageCaption(e.target.value)}
+                  style={{ ...{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }, marginTop: '10px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>शहर / ज़िला</label>
+                  <input type="text" placeholder="उदा. महू / इंदौर" value={artCity} maxLength={60} onChange={(e) => setArtCity(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>राज्य</label>
+                  <input type="text" placeholder="उदा. मध्य प्रदेश" value={artState} maxLength={60} onChange={(e) => setArtState(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>टैग (कीवर्ड)</label>
+                  <input type="text" placeholder="उदा. किसान, मंडी, बारिश (कॉमा से अलग)" value={artTags} maxLength={200} onChange={(e) => setArtTags(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>वीडियो लिंक (वैकल्पिक)</label>
+                  <input type="url" placeholder="YouTube / वीडियो लिंक" value={artVideoUrl} onChange={(e) => setArtVideoUrl(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }} />
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>

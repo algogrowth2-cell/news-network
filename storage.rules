@@ -35,6 +35,15 @@ service firebase.storage {
         && request.resource.contentType.matches('image/gif|video/mp4|video/webm');
     }
 
+    // Patrakar ki khabar ki photo — sirf apne mobile number ke folder me, JPG/PNG/WebP, 10 MB tak; sabko dikhe
+    match /reporter-media/{owner}/{file} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if (isAdmin() || (request.auth != null && request.auth.token.get('phone', '') == owner))
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
     // Baaki sab band (admin sirf padh sake; upload sirf upar ke folders me, sahi file-type ke saath)
     match /{allPaths=**} {
       allow read: if isAdmin();
