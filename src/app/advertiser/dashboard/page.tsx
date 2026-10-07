@@ -20,6 +20,7 @@ import { loadRazorpayScript } from '@/lib/razorpay';
 import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
 import { isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
 import { AdMedia } from '@/components/SiteAds';
+import { logoFor } from '@/lib/siteTheme';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
@@ -109,7 +110,7 @@ export default function AdvertiserDashboard() {
         const data = snap.data();
         if (data.primaryColor) setThemeColor(data.primaryColor);
         if (data.name) setSiteName(data.name);
-        if (data.logoUrl) setSiteLogo(data.logoUrl);
+        if (data.logoUrl) setSiteLogo(logoFor('the-local-leader', data.logoUrl));
       }
     });
     return () => unsubSite();

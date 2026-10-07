@@ -4,7 +4,7 @@ import { NETWORK_SITES, normalizeSiteId } from '@/lib/portals';
 export const SITE_FALLBACKS: Record<string, { name: string; primaryColor: string; logoUrl: string; tagline: string }> = {
   'the-local-leader': { name: 'द लोकल लीडर', primaryColor: '#ea580c', logoUrl: '/logos/the-local-leader.jpeg', tagline: 'जनता की आवाज़, सच्चाई के साथ' },
   'the-provue-times': { name: 'द प्रोव्यू टाइम्स', primaryColor: '#b91c1c', logoUrl: '/logos/the-provue-times.jpeg', tagline: 'पेशेवर नज़र, सच्ची खबर' },
-  'jan-bharat-news': { name: 'जन भारत न्यूज़', primaryColor: '#1d4ed8', logoUrl: '/logos/jan-bharat-news.jpeg', tagline: 'भारत की आवाज़' },
+  'jan-bharat-news': { name: 'जन भारत न्यूज़', primaryColor: '#1d4ed8', logoUrl: '/logos/jan-bharat-news.png', tagline: 'भारत की आवाज़' },
   'news-info-24': { name: 'NEWS INFO 24', primaryColor: '#dc2626', logoUrl: '/logos/news-info-24.jpeg', tagline: 'Stay Informed, Stay Ahead' },
   'ndn-defence': { name: 'National Defence Network', primaryColor: '#15803d', logoUrl: '/logos/ndn-defence.jpeg', tagline: 'Defence Beyond Headlines' },
   'bazar-karobar': { name: 'बाजार कारोबार', primaryColor: '#059669', logoUrl: '/logos/bazar-karobar.jpeg', tagline: 'व्यापार और अर्थव्यवस्था' },
@@ -68,3 +68,12 @@ export function getActivePortal(siteParam?: string | null): string {
 }
 
 export const fallbackFor =(slug: string) => SITE_FALLBACKS[slug] || SITE_FALLBACKS[DEFAULT_SITE_SLUG];
+
+/**
+ * Portal ka logo: Firestore me admin ka apna (custom) logo ho toh wahi; khaali ho ya purana default
+ * '/logos/<portal>.jpeg' path ho toh code wala naya logo (jaise Jan Bharat News ka transparent PNG).
+ */
+export function logoFor(slug: string, url?: string | null) {
+  if (!url || /^\/logos\/[a-z0-9-]+\.jpe?g$/i.test(url)) return fallbackFor(slug).logoUrl;
+  return url;
+}

@@ -1,7 +1,7 @@
 import QRCode from 'qrcode';
 import { db } from '@/lib/firebase';
 import { arrayUnion, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { fallbackFor } from '@/lib/siteTheme';
+import { fallbackFor, logoFor } from '@/lib/siteTheme';
 
 /*
  * Patrakar ka Media ID Card + Pradhikaran Patra (authorization letter).
@@ -72,7 +72,7 @@ export const fmtLetterDate = (d: Date) => `${String(d.getDate()).padStart(2, '0'
 export const letterNumberFor = (pressId: string) => pressId.replace(/^([A-Z0-9]+)-(\d{4})-(\d+)$/, '$1/AUTH/$2/$3');
 
 /** Sirf same-origin logo (canvas export ke liye); bahar ka URL ho toh portal ka local logo */
-export const safeLogoSrc = (slug: string, logoUrl?: string) => (logoUrl && logoUrl.startsWith('/') ? logoUrl : fallbackFor(slug).logoUrl);
+export const safeLogoSrc = (slug: string, logoUrl?: string) => (logoUrl && logoUrl.startsWith('/') ? logoFor(slug, logoUrl) : fallbackFor(slug).logoUrl);
 
 const loadImg = (src: string) =>
   new Promise<HTMLImageElement | null>((resolve) => {

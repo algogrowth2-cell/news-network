@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import PatrakarIdCardPanel from '@/components/PatrakarIdCardPanel';
-import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
+import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
@@ -99,7 +99,7 @@ export default function PatrakarDashboard() {
         const data = snap.data();
         if (data.primaryColor) setThemeColor(data.primaryColor);
         if (data.name) setSiteName(data.name);
-        if (data.logoUrl) setSiteLogo(data.logoUrl);
+        if (data.logoUrl) setSiteLogo(logoFor(slug, data.logoUrl));
       }
     });
     return () => unsubSite();

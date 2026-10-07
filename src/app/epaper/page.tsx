@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import { EPAPER_PLANS } from '@/lib/plans';
-import { fallbackFor } from '@/lib/siteTheme';
+import { fallbackFor, logoFor } from '@/lib/siteTheme';
 import { epaperSite, epaperSubId, isActiveForSite } from '@/lib/epaperSub';
 import { confirmPayment } from '@/lib/payments';
 import { authFetch, legacyFallback } from '@/lib/phoneAuth';
@@ -253,7 +253,7 @@ function EPaperComponent() {
   const [selectedCity, setSelectedCity] = useState('सभी');
   const [themeColor, setThemeColor] = useState(fallbackFor(siteSlug).primaryColor);
   const [siteName, setSiteName] = useState(fallbackFor(siteSlug).name);
-  const [siteLogo, setSiteLogo] = useState(`/logos/${siteSlug}.jpeg`);
+  const [siteLogo, setSiteLogo] = useState(fallbackFor(siteSlug).logoUrl);
   const [readingEdition, setReadingEdition] = useState<EPaperEdition | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [currentUser, setCurrentUser] = useState<{ email: string; name?: string } | null>(null);
@@ -271,7 +271,7 @@ function EPaperComponent() {
       const d = snap.exists() ? snap.data() : {};
       setThemeColor(d.primaryColor || fb.primaryColor);
       setSiteName(d.name || fb.name);
-      setSiteLogo(d.logoUrl || fb.logoUrl);
+      setSiteLogo(logoFor(siteSlug, d.logoUrl));
     });
     return () => unsub();
   }, [siteSlug]);
@@ -659,7 +659,7 @@ function EPaperComponent() {
       <Footer
         siteName={siteName || 'द लोकल लीडर'}
         primaryColor={themeColor}
-        logoUrl={siteLogo || `/logos/${siteSlug}.jpeg`}
+        logoUrl={siteLogo || fallbackFor(siteSlug).logoUrl}
         tagline="— जनता की आवाज़, सच्चाई के साथ —"
         currentSlug={siteSlug}
       />

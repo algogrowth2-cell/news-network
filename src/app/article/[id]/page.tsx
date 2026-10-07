@@ -11,6 +11,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AdBanner, AdSideSlots, ClassifiedsWidget, StickyAside } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
+import { fallbackFor, logoFor } from '@/lib/siteTheme';
 
 interface ArticleDetail {
   id: string;
@@ -135,7 +136,7 @@ export default function ArticleDetailPage() {
       if (snap.exists()) { setSiteConfig({ slug: siteSlug, ...snap.data() }); }
       else {
         const fallback = DEFAULT_SITES_CONFIG[siteSlug] || DEFAULT_SITES_CONFIG['the-local-leader'];
-        setSiteConfig({ slug: siteSlug, name: fallback.name, primaryColor: fallback.primaryColor, logoUrl: `/logos/${siteSlug}.jpeg`, description: fallback.description });
+        setSiteConfig({ slug: siteSlug, name: fallback.name, primaryColor: fallback.primaryColor, logoUrl: fallbackFor(siteSlug).logoUrl, description: fallback.description });
       }
     });
     return () => unsubSite();
@@ -194,7 +195,7 @@ export default function ArticleDetailPage() {
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const siteName = siteConfig?.name || 'द लोकल लीडर';
-  const siteLogo = siteConfig?.logoUrl || `/logos/${siteSlug}.jpeg`;
+  const siteLogo = logoFor(siteSlug, siteConfig?.logoUrl);
   const siteTagline = siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —';
   const cssVars = { '--p': primary } as React.CSSProperties;
 

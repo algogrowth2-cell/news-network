@@ -12,7 +12,7 @@ import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
 import { isArticleLive } from '@/lib/articles';
-import { rememberPortal } from '@/lib/siteTheme';
+import { logoFor, rememberPortal } from '@/lib/siteTheme';
 import { RASHI_LIST, todayIST, isRashifalFresh } from '@/lib/rashifal';
 import LanguageTranslator from '@/components/LanguageTranslator';
 import ReaderProfileMenu from '@/components/ReaderProfileMenu';
@@ -648,7 +648,7 @@ function HomePageContent() {
         } else if (activeSiteSlug.includes('jan-bharat') || activeSiteSlug.includes('jan-chetna')) {
           fallbackName = 'जन भारत न्यूज़';
           fallbackDesc = '— भारत की आवाज़ —';
-          fallbackLogo = '/logos/jan-bharat-news.jpeg';
+          fallbackLogo = '/logos/jan-bharat-news.png';
           fallbackColor = '#1d4ed8';
         } else if (activeSiteSlug.includes('news-info') || activeSiteSlug.includes('city-bulletin')) {
           fallbackName = 'NEWS INFO 24';
@@ -1075,8 +1075,8 @@ function HomePageContent() {
               </svg>
             </button>
             <Link href={`/?site=${currentSlug}`} className="hp-brand">
-              {siteConfig?.logoUrl && (
-                <img src={siteConfig.logoUrl} alt={siteConfig?.name || 'लोगो'} className="hp-logo" />
+              {siteConfig && (
+                <img src={logoFor(currentSlug, siteConfig.logoUrl)} alt={siteConfig?.name || 'लोगो'} className="hp-logo" />
               )}
               <div style={{ minWidth: 0 }}>
                 <h1 className="hp-site-name notranslate" translate="no" style={{ color: primary }}>
@@ -1586,7 +1586,7 @@ function HomePageContent() {
       <Footer
         siteName={siteConfig?.name || 'द लोकल लीडर'}
         primaryColor={primary}
-        logoUrl={siteConfig?.logoUrl || `/logos/${currentSlug}.jpeg`}
+        logoUrl={logoFor(currentSlug, siteConfig?.logoUrl)}
         tagline={siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —'}
         currentSlug={currentSlug}
         showAds={false}

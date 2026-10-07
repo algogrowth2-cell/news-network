@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import { AdInline, AdLayout, AdMedia } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
 import PortalLogo from '@/components/PortalLogo';
+import { fallbackFor, logoFor } from '@/lib/siteTheme';
 
 interface ClassifiedItem {
   id: string;
@@ -66,7 +67,7 @@ function ClassifiedsContent() {
           slug: siteSlug,
           name: 'द लोकल लीडर',
           primaryColor: '#ea580c',
-          logoUrl: `/logos/${siteSlug}.jpeg`,
+          logoUrl: fallbackFor(siteSlug).logoUrl,
           description: '— जनता की आवाज़, सच्चाई के साथ —'
         });
       }
@@ -179,7 +180,7 @@ function ClassifiedsContent() {
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const siteName = siteConfig?.name || 'द लोकल लीडर';
-  const siteLogo = siteConfig?.logoUrl || `/logos/${siteSlug}.jpeg`;
+  const siteLogo = logoFor(siteSlug, siteConfig?.logoUrl);
   const siteTagline = siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —';
 
   const filteredAds = classifieds.filter((item) => {

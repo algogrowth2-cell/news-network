@@ -73,7 +73,7 @@ const NETWORK_SITES = [
     primaryColor: '#1e3a8a',
     secondaryColor: '#ea580c',
     headerBg: '#ffffff',
-    logoUrl: '/logos/jan-bharat-news.jpeg',
+    logoUrl: '/logos/jan-bharat-news.png',
     language: 'Hindi',
     region: 'India'
   },
