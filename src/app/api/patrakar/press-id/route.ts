@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { PRESS_ID_PREFIX } from '@/lib/pressCard';
-import { hasMembership } from '@/lib/membership';
 
 /*
  * Login patrakar ki apni Press ID (portal ke hisaab se, kram se TLL-2026-001…).
@@ -35,8 +34,6 @@ export async function POST(req: Request) {
       const rep = (await tx.get(repRef)).data() || {};
       if (!['approved', 'active'].includes(String(rep.status || '').toLowerCase())) throw new Error('not-approved');
       if (rep.cardStatus === 'revoked') throw new Error('revoked');
-      // Press ID card us portal ki seva sadasyata ka hissa hai — sadasyata chalu ho tabhi
-      if (!hasMembership(rep, siteSlug)) throw new Error('no-membership');
       const existing = rep.pressIds?.[siteSlug];
       if (existing) {
         tx.update(repRef, { cardSiteId: siteSlug, pressId: existing, cardUpdatedAt: admin.FieldValue.serverTimestamp() });
@@ -58,7 +55,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(out);
   } catch (err: any) {
-    if (err.message === 'not-approved' || err.message === 'revoked' || err.message === 'no-membership') return NextResponse.json({ error: err.message }, { status: 403 });
+    if (err.message === 'not-approved' || err.message === 'revoked') return NextResponse.json({ error: err.message }, { status: 403 });
     console.error('press-id error:', err);
     return NextResponse.json({ error: 'failed' }, { status: 500 });
   }

@@ -53,8 +53,7 @@ const NETWORK_WEBSITES = [
 
 export default function PatrakarDashboard() {
   const [reporter, setReporter] = useState<any>(null);
-  // Sadasyata form: kis portal ke liye + shartein maani
-  const [memberSite, setMemberSite] = useState('');
+  // Sadasyata form: shartein maani (portal = jis portal se aaye)
   const [termsOk, setTermsOk] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'create-article' | 'id-card' | 'membership' | 'delivery'>('create-article');
   const [articles, setArticles] = useState<ReporterArticle[]>([]);
@@ -218,7 +217,7 @@ export default function PatrakarDashboard() {
 
   // 4. Patrakar seva sadasyata (₹999 / saal) — chune gaye portal ke liye
   const handleBuyMembership = () => {
-    const site = memberSite || portalSlug || 'the-local-leader';
+    const site = portalSlug || 'the-local-leader'; // jis portal se aaye / jiska URL khola — sirf usi ki
     if (!termsOk) {
       alert('कृपया पहले सदस्यता की शर्तें पढ़कर स्वीकार करें।');
       return;
@@ -546,10 +545,7 @@ export default function PatrakarDashboard() {
 
           {reporter && (
             <button
-              onClick={() => {
-                setMemberSite(memberSite || portalSlug);
-                setActiveTab('membership');
-              }}
+              onClick={() => setActiveTab('membership')}
               style={{
                 backgroundColor: activeTab === 'membership' ? '#16a34a' : '#ecfdf5',
                 color: activeTab === 'membership' ? '#ffffff' : '#15803d',
@@ -561,7 +557,7 @@ export default function PatrakarDashboard() {
                 cursor: 'pointer'
               }}
             >
-              ★ {memberHere ? 'सदस्यता (अन्य पोर्टल)' : 'सदस्यता लें'}
+              ★ {memberHere ? 'सदस्यता बढ़ाएँ' : 'सदस्यता लें'}
             </button>
           )}
         </div>
@@ -751,16 +747,7 @@ export default function PatrakarDashboard() {
               </p>
             </div>
 
-            {portalSlug && memberHere && <PatrakarIdCardPanel reporterDocId={reporter.id} siteSlug={portalSlug} />}
-            {portalSlug && !memberHere && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '22px', textAlign: 'center', color: '#78350f' }}>
-                <b style={{ fontSize: '15px' }}>इस पोर्टल का प्रेस आईडी कार्ड एवं प्रमाणपत्र सेवा सदस्यता का हिस्सा है।</b>
-                <p style={{ fontSize: '13px', margin: '6px 0 12px' }}>कार्ड पाने के लिए इस पोर्टल की पत्रकार सेवा सदस्यता (₹{PATRAKAR_MEMBERSHIP_PRICE} / वर्ष) लें।</p>
-                <button type="button" onClick={() => { setMemberSite(portalSlug); setActiveTab('membership'); }} style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
-                  सदस्यता देखें
-                </button>
-              </div>
-            )}
+            {portalSlug && <PatrakarIdCardPanel reporterDocId={reporter.id} siteSlug={portalSlug} />}
 
             {/* Delivery CTA */}
             <div style={{ marginTop: '24px', backgroundColor: '#ffffff', border: `1.5px solid ${themeColor}`, borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
@@ -853,7 +840,7 @@ export default function PatrakarDashboard() {
 
         {/* TAB 5: MEMBERSHIP PURCHASE (₹499) */}
         {activeTab === 'membership' && (() => {
-          const site = memberSite || portalSlug || 'the-local-leader';
+          const site = portalSlug || 'the-local-leader';
           const siteLabel = NETWORK_WEBSITES.find((w) => w.slug === site)?.name || site;
           const till = membershipTillMs(reporter, site);
           const active = till > Date.now();
@@ -864,22 +851,8 @@ export default function PatrakarDashboard() {
             </span>
             <h2 style={{ fontSize: '23px', fontWeight: 800, color: '#0f172a', margin: '14px 0 6px 0' }}>डिजिटल प्रेस सेवा पैकेज</h2>
 
-            <div style={{ margin: '12px auto 4px', maxWidth: '360px', textAlign: 'left' }}>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>किस पोर्टल के लिए सदस्यता लेनी है?</label>
-              <select
-                value={site}
-                onChange={(e) => {
-                  setMemberSite(e.target.value);
-                  setTermsOk(false);
-                }}
-                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px', fontSize: '14px' }}
-              >
-                {NETWORK_WEBSITES.map((w) => (
-                  <option key={w.slug} value={w.slug}>
-                    {w.name}{hasMembership(reporter, w.slug) ? ' — ✓ सक्रिय' : ''}
-                  </option>
-                ))}
-              </select>
+            <div style={{ margin: '10px 0 2px', fontSize: '15px', fontWeight: 700, color: '#334155' }}>
+              पोर्टल: <span style={{ color: themeColor }}>{siteLabel}</span>
             </div>
 
             <div style={{ fontSize: '38px', fontWeight: 800, color: themeColor, margin: '12px 0 2px' }}>₹{PATRAKAR_MEMBERSHIP_PRICE} <small style={{ fontSize: '14px', color: '#64748b' }}>/ वर्ष · केवल {siteLabel}</small></div>
@@ -890,7 +863,6 @@ export default function PatrakarDashboard() {
             <div style={{ textAlign: 'left', margin: '18px 0', borderTop: '1px solid #e2e8f0', paddingTop: '16px', fontSize: '14px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '9px' }}>
               <b style={{ color: '#0f172a' }}>इस शुल्क में मिलने वाली सेवाएं:</b>
               <div>✓ {siteLabel} पर समाचार भेजने का ऑनलाइन प्लेटफ़ॉर्म (समाचार संपादकीय जांच के बाद ही प्रकाशित)</div>
-              <div>✓ {siteLabel} का डिजिटल प्रेस आईडी कार्ड एवं संवाददाता प्रमाणपत्र (1 वर्ष के लिए)</div>
               <div>✓ प्रकाशित समाचार पर आपके नाम से बायलाइन (Byline)</div>
               <div>✓ संपादकीय डेस्क से मार्गदर्शन एवं तकनीकी सहायता</div>
             </div>
@@ -898,11 +870,11 @@ export default function PatrakarDashboard() {
             <div style={{ textAlign: 'left', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '14px 16px', fontSize: '12.5px', color: '#78350f', lineHeight: 1.65 }}>
               <b style={{ display: 'block', fontSize: '13.5px', marginBottom: '6px' }}>⚖️ महत्वपूर्ण जानकारी — भुगतान से पहले अवश्य पढ़ें</b>
               <ul style={{ margin: 0, paddingLeft: '18px' }}>
-                <li>यह शुल्क ऊपर लिखी <b>डिजिटल सेवाओं</b> (प्लेटफ़ॉर्म, प्रेस आईडी कार्ड, प्रमाणपत्र, सहायता) के लिए है। यह कोई <b>नौकरी, नियुक्ति, भर्ती, पंजीकरण या जमानत (security deposit) शुल्क नहीं</b> है।</li>
+                <li>यह शुल्क ऊपर लिखी <b>डिजिटल सेवाओं</b> (समाचार प्लेटफ़ॉर्म, बायलाइन, संपादकीय सहायता) के लिए है। प्रेस आईडी कार्ड / प्रमाणपत्र इसमें शामिल नहीं हैं। यह कोई <b>नौकरी, नियुक्ति, भर्ती, पंजीकरण या जमानत (security deposit) शुल्क नहीं</b> है।</li>
                 <li>सदस्यता से संस्था में <b>रोज़गार, वेतन, मानदेय या किसी पद की गारंटी नहीं</b> मिलती। आप एक स्वतंत्र (फ्रीलांस) समाचार योगदानकर्ता रहते हैं।</li>
                 <li>हर समाचार संपादकीय नीति के अनुसार जांच के बाद ही प्रकाशित होता है; <b>प्रकाशन की गारंटी नहीं</b> है।</li>
-                <li>प्रेस आईडी कार्ड केवल {siteLabel} के लिए समाचार संकलन हेतु है। इसका दुरुपयोग, किसी से दबाव / वसूली या अन्य लाभ के लिए उपयोग वर्जित है; नियम उल्लंघन पर सदस्यता और कार्ड बिना रिफ़ंड रद्द किए जा सकते हैं।</li>
-                <li>हर पोर्टल की सदस्यता अलग है — किसी अन्य पोर्टल के लिए अलग से सदस्यता लेनी होगी।</li>
+                <li>पत्रकारिता के नाम पर किसी से दबाव / वसूली या अन्य अनुचित लाभ लेना वर्जित है; नियम उल्लंघन पर सदस्यता बिना रिफ़ंड रद्द की जा सकती है।</li>
+                <li>यह सदस्यता केवल {siteLabel} के लिए है। हर पोर्टल की सदस्यता अलग है — किसी अन्य पोर्टल के लिए उसी पोर्टल की वेबसाइट से अलग सदस्यता लेनी होगी।</li>
                 <li>
                   विस्तृत नियम: <Link href="/terms" target="_blank" style={{ color: '#b45309', fontWeight: 700 }}>उपयोग की शर्तें</Link> ·{' '}
                   <Link href="/editorial-guidelines" target="_blank" style={{ color: '#b45309', fontWeight: 700 }}>संपादकीय दिशानिर्देश</Link>

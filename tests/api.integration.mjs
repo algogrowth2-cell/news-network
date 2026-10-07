@@ -129,8 +129,6 @@ try {
   check('press ID kram se', r.pressId === `NI24-${new Date().getFullYear()}-001`, r.pressId);
   r = await (await post('/api/patrakar/press-id', { siteSlug: 'news-info-24' }, tRep)).json();
   check('wahi portal par wahi ID', r.pressId === `NI24-${new Date().getFullYear()}-001`);
-  res = await post('/api/patrakar/press-id', { siteSlug: 'bazar-karobar' }, tRep);
-  check('bina sadasyata wale portal ka press ID nahi', res.status === 403);
   res = await post('/api/patrakar/press-id', { siteSlug: 'news-info-24' }, tNew);
   check('pathak press ID nahi le sakta', res.status === 403);
   res = await post('/api/payments/confirm', { kind: 'membership', paymentId: 'pay_TESTMEMBER00', siteId: 'the-provue-times' }, tRep);
