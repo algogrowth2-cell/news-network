@@ -47,7 +47,7 @@ const ADV = '9844444444';
 // Seed
 await db.doc(`users/u_${REF}`).set({ name: 'Referrer', email: 'ref@x.com', phone: REF, referralCode: 'GPTESTAA' });
 await db.doc('referral_codes/GPTESTAA').set({ userId: `u_${REF}`, phone: REF });
-await db.doc(`reporters/rp_${REP}`).set({ name: 'Rep', phone: REP, status: 'approved' });
+await db.doc(`reporters/rp_${REP}`).set({ name: 'Rep', phone: REP, status: 'approved', memberships: { 'news-info-24': { expiresAt: new Date(Date.now() + 30 * 864e5) } } });
 await db.doc('advertisers/oldAdvRecord1').set({ businessName: 'Test Shop', email: 'Shop@X.com', mobile: ADV, status: 'active' });
 
 // Server
@@ -129,10 +129,16 @@ try {
   check('press ID kram se', r.pressId === `NI24-${new Date().getFullYear()}-001`, r.pressId);
   r = await (await post('/api/patrakar/press-id', { siteSlug: 'news-info-24' }, tRep)).json();
   check('wahi portal par wahi ID', r.pressId === `NI24-${new Date().getFullYear()}-001`);
+  res = await post('/api/patrakar/press-id', { siteSlug: 'bazar-karobar' }, tRep);
+  check('bina sadasyata wale portal ka press ID nahi', res.status === 403);
   res = await post('/api/patrakar/press-id', { siteSlug: 'news-info-24' }, tNew);
   check('pathak press ID nahi le sakta', res.status === 403);
-  res = await post('/api/payments/confirm', { kind: 'membership', paymentId: 'pay_TESTMEMBER01' }, tRep);
-  check('membership payment', res.ok && (await db.doc(`reporters/rp_${REP}`).get()).data()?.membershipActive === true);
+  res = await post('/api/payments/confirm', { kind: 'membership', paymentId: 'pay_TESTMEMBER00', siteId: 'the-provue-times' }, tRep);
+  check('membership bina shartein maane band', res.status === 400);
+  res = await post('/api/payments/confirm', { kind: 'membership', paymentId: 'pay_TESTMEMBER01', siteId: 'the-provue-times', termsAccepted: true }, tRep);
+  const repDoc = (await db.doc(`reporters/rp_${REP}`).get()).data();
+  const tx1 = (await db.doc('membership_transactions/pay_TESTMEMBER01').get()).data();
+  check('membership ₹999 sirf The Provue Times ke liye, 1 saal', res.ok && !!repDoc?.memberships?.['the-provue-times']?.expiresAt && !repDoc?.memberships?.['the-local-leader'] && tx1?.amount === 999 && tx1?.siteId === 'the-provue-times' && tx1?.termsAccepted === true);
 
   // 5b. Advertiser: bhugtan ke baad hi request (server banata hai, status pending)
   const tAdv = await idToken(`ph_${ADV}`, { phone: ADV });

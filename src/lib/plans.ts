@@ -18,7 +18,8 @@ export const EPAPER_PLANS = [
   }
 ];
 
-export const PATRAKAR_MEMBERSHIP_PRICE = 499;
+// Patrakar seva sadasyata — har portal ki alag, 1 saal (lib/membership.ts)
+export const PATRAKAR_MEMBERSHIP_PRICE = 999;
 export const PRESS_KIT_DELIVERY_PRICE = 299;
 // Shok sandesh: jitne din ka plan, utne din website par (admin manzoori ke din se). Purane (₹199) sandesh 30 din.
 export const SHOK_PLANS = [

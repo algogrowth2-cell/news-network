@@ -3,6 +3,7 @@ import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
+import { MEMBERSHIP_DAYS, membershipSite, membershipTillMs } from '@/lib/membership';
 import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
 
 /*
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
 
   const plan = kind === 'epaper' ? EPAPER_PLANS.find((p) => p.id === body.planId) : null;
   if (kind === 'epaper' && !plan) return NextResponse.json({ error: 'bad-plan' }, { status: 400 });
+  // Sadasyata: shulk sevaon ka hai (naukri / niyukti nahi) — shartein maanna zaroori, record rehta hai
+  if (kind === 'membership' && body.termsAccepted !== true)
+    return NextResponse.json({ error: 'terms', message: 'कृपया सदस्यता की शर्तें पढ़कर स्वीकार करें।' }, { status: 400 });
   const shokPlan = kind === 'shok' ? SHOK_PLANS.find((p) => p.id === body.planId) : null;
   if (kind === 'shok' && !shokPlan) return NextResponse.json({ error: 'bad-plan', message: 'कृपया शोक संदेश का प्लान चुनें।' }, { status: 400 });
   const ad = body.ad || {};
@@ -123,17 +127,29 @@ export async function POST(req: Request) {
           rep = q.docs[0].data();
         }
         if (kind === 'membership') {
-          tx.update(repRef, { membershipActive: true, membershipUpdatedAt: admin.FieldValue.serverTimestamp() });
+          // Har portal ki alag sadasyata: chalu ho toh uski expiry se aage 1 saal, warna aaj se
+          const portal = membershipSite(body.siteId);
+          const cur = membershipTillMs(rep, portal);
+          const expiresAt = new Date(Math.max(cur, Date.now()) + MEMBERSHIP_DAYS * 864e5);
+          tx.update(repRef, {
+            [`memberships.${portal}`]: { expiresAt: admin.Timestamp.fromDate(expiresAt), paymentId, since: admin.FieldValue.serverTimestamp() },
+            membershipUpdatedAt: admin.FieldValue.serverTimestamp()
+          });
           tx.set(db.collection('membership_transactions').doc(paymentId), {
             reporterId: repRef.id,
             reporterPhone: phone,
             reporterName: rep.name || '',
+            siteId: portal,
             paymentId,
             amount,
+            validTill: admin.Timestamp.fromDate(expiresAt),
+            termsAccepted: true, // seva shulk — naukri / niyukti nahi (shartein maani gayi)
             status: 'success',
             testMode: v.testMode,
             createdAt: admin.FieldValue.serverTimestamp()
           });
+          tx.set(payRef, { ...base, reporterId: repRef.id, siteId: portal });
+          return { siteId: portal, validTill: expiresAt.toISOString() };
         } else {
           const d = body.delivery || {};
           tx.set(db.collection('delivery_requests').doc(paymentId), {
