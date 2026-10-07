@@ -66,7 +66,8 @@ const EP_STYLES = `
 .ep-header{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.92);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
 .ep-header-in{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ep-brand{display:flex;align-items:center;gap:11px;min-width:0;text-decoration:none;color:inherit}
-.ep-logo{width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#fff;flex-shrink:0}
+/* Baaki sab pages jaisa logo (PortalLogo): bina dabbe ke, 54px, poora logo dikhe */
+.ep-logo{height:54px;width:auto;max-width:140px;object-fit:contain;border-radius:6px;flex-shrink:0;display:block;mix-blend-mode:multiply}
 .ep-title{font-weight:800;font-size:19px;line-height:1.3;padding:2px 0;margin:-2px 0}
 .ep-sub{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .ep-live{width:7px;height:7px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.18)}
@@ -198,7 +199,7 @@ const EP_STYLES = `
 @media (max-width:640px){
   .ep-hide-sm{display:none !important}
   .ep-header-in{padding:9px 12px}
-  .ep-logo{width:38px;height:38px;border-radius:10px}
+  .ep-logo{height:46px;max-width:110px}
   .ep-title{font-size:16px}
   .ep-sub{font-size:11px}
   .ep-cta{padding:9px 13px;font-size:12.5px}
