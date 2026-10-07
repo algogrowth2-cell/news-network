@@ -166,6 +166,11 @@ export function AdMedia({ ad, alt, className, style }: { ad: { imageUrl?: string
   return <img src={directMediaUrl(ad.imageUrl)} alt={alt} className={className} style={style} loading="lazy" referrerPolicy="no-referrer" />;
 }
 
+// Vigyapan apne asli anupaat (ratio) me POORA dikhe — fix oonchai + crop se kinare kat jaate the
+// (jaise 970×250 GIF 728×90 ki jagah me). Bahut lamba ho toh max oonchai tak, bina kate (contain).
+const FULL_BANNER: React.CSSProperties = { width: '100%', height: 'auto', maxHeight: 320, objectFit: 'contain' };
+const FULL_SIDE: React.CSSProperties = { width: '100%', height: 'auto', maxHeight: 600, objectFit: 'contain' };
+
 const adClick = (id: string) => updateDoc(doc(db, 'ads', id), { clicks: increment(1) }).catch(() => {});
 
 const CSS = `
@@ -208,7 +213,7 @@ export function AdBanner({ slug, height = 110 }: { slug: string; height?: number
       <Styles />
       {ad ? (
         <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-          <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height }} />
+          <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={FULL_BANNER} />
         </a>
       ) : (
         <Link href={`/advertiser/login?site=${slug}`} className="sa-slot sa-cta" style={{ minHeight: 90 }}>
@@ -233,7 +238,7 @@ export function AdSide({ slug, index = 0 }: { slug: string; index?: number }) {
         <div>
           <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
           <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-            <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
+            <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={FULL_SIDE} />
           </a>
         </div>
       ) : (
@@ -369,7 +374,7 @@ export function AdInline({ slug, index = 0 }: { slug?: string; index?: number })
       <Styles />
       <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
       <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-        <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 110 }} />
+        <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={FULL_BANNER} />
       </a>
     </div>
   );

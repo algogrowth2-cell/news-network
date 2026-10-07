@@ -940,11 +940,11 @@ export default function AdvertiserDashboard() {
                 {selectedFilePreview && (
                   <div style={{ marginTop: '14px', padding: '12px', border: '1px dashed #cbd5e1', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
                     <span style={{ fontSize: '11.5px', color: '#64748b', display: 'block', marginBottom: '8px', fontWeight: 600 }}>{videoUrl ? 'वीडियो पूर्वावलोकन' : 'पूर्वावलोकन'}</span>
-                    {/* Website par isi ratio me dikhega (link wali photo / video bhi isi tarah crop hoti hai) */}
+                    {/* Website par bilkul aisa hi — poora, bina kate (apne asli anupaat me) */}
                     <AdMedia
                       ad={{ imageUrl: videoUrl ? '' : selectedFilePreview, videoUrl }}
                       alt="Banner Preview"
-                      style={{ width: '100%', maxWidth: `${AD_IMAGE_SIZE[format].w}px`, aspectRatio: `${AD_IMAGE_SIZE[format].w} / ${AD_IMAGE_SIZE[format].h}`, objectFit: 'cover', borderRadius: '6px', display: 'block', margin: '0 auto' }}
+                      style={{ width: '100%', height: 'auto', maxHeight: '320px', objectFit: 'contain', borderRadius: '6px', display: 'block', margin: '0 auto' }}
                     />
                   </div>
                 )}
