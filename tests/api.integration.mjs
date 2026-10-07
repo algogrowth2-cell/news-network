@@ -87,8 +87,8 @@ try {
   check('reader/create: referral recorded', res.ok && r.created === true && r.referral === 'recorded', JSON.stringify(r));
   const refUser = (await db.doc(`users/u_${REF}`).get()).data();
   check('referrer ko +1 referral aur +3 mahine', refUser.successfulReferralsCount === 1 && refUser.referralRewardMonths === 3);
-  const sub = (await db.doc('epaper_subscriptions/ref@x.com').get()).data();
-  check('referrer ka free e-paper chalu', sub?.status === 'active' && sub?.userPhone === REF);
+  const sub = (await db.doc('epaper_subscriptions/ref@x.com__the-local-leader').get()).data();
+  check('referrer ka free e-paper chalu (us portal ka)', sub?.status === 'active' && sub?.userPhone === REF && sub?.siteId === 'the-local-leader');
   res = await post('/api/reader/create', { name: 'Naya', referralCode: 'GPTESTAA' }, tNew);
   r = await res.json();
   check('dobara signup par reward dobara nahi', r.created === false);
@@ -105,7 +105,7 @@ try {
   res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER01', planId: 'epaper_1_month' }, tNew);
   r = await res.json();
   check('epaper payment → subscription', res.ok && !!r.expiresAt, JSON.stringify(r));
-  const nsub = (await db.doc('epaper_subscriptions/naya@x.com').get()).data();
+  const nsub = (await db.doc('epaper_subscriptions/naya@x.com__the-local-leader').get()).data();
   check('subscription doc server ne likha', nsub?.status === 'active' && nsub?.amount === 21);
   res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER01', planId: 'epaper_1_month' }, await idToken(`ph_${REF}`, { phone: REF }));
   check('ek payment doosre user ke liye dobara nahi', res.status === 409);
@@ -171,6 +171,17 @@ try {
   res = await fetch(`${B}/api/epaper/file?id=edExt`, { headers: { Authorization: `Bearer ${tNew}` } });
   r = await res.json();
   check('subscriber ko PDF link', res.ok && r.url === 'https://cdn.example.com/paper.pdf');
+  // Har portal ka alag subscription: Local Leader wala NEWS INFO 24 par nahi chalega
+  await db.doc('epaper/edNI24').set({ siteId: 'news-info-24', date: '2026-10-05', status: 'published', pdfUrl: 'https://cdn.example.com/ni24.pdf', totalPages: 8 });
+  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=news-info-24`, { headers: { Authorization: `Bearer ${tNew}` } });
+  check('Local Leader ka subscription NEWS INFO 24 par nahi', res.status === 403);
+  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=the-local-leader`, { headers: { Authorization: `Bearer ${tNew}` } });
+  check('site badal kar bhi doosre portal ka e-paper nahi', res.status === 403);
+  res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER03', planId: 'epaper_1_year', siteId: 'news-info-24' }, tNew);
+  const niSub = (await db.doc('epaper_subscriptions/naya@x.com__news-info-24').get()).data();
+  check('NEWS INFO 24 ka alag subscription (₹111)', res.ok && niSub?.status === 'active' && niSub?.amount === 111 && niSub?.siteId === 'news-info-24');
+  res = await fetch(`${B}/api/epaper/file?id=edNI24&site=news-info-24`, { headers: { Authorization: `Bearer ${tNew}` } });
+  check('NEWS INFO 24 subscription ke baad PDF', res.ok);
   // Admin login → purane editions surakshit
   res = await post('/api/admin/login', { email: 'tester@example.com', password: 'TestPass12345' });
   const cookie = (res.headers.get('set-cookie') || '').split(';')[0];

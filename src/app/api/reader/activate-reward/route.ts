@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!store || !admin) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  const { rewardId } = await req.json().catch(() => ({}));
+  const { rewardId, siteId } = await req.json().catch(() => ({}));
   if (!rewardId || typeof rewardId !== 'string') return NextResponse.json({ error: 'bad-request' }, { status: 400 });
   try {
     const user = (await admin.db.collection('users').doc(`u_${phone}`).get()).data() || {};
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       phone,
       email: user.email || `${phone}@news.local`,
       name: user.name || 'पाठक'
-    });
+    }, String(siteId || ''));
     return NextResponse.json({ validTill: validTill ? validTill.toISOString() : null });
   } catch (err) {
     console.error('reader/activate-reward error:', err);

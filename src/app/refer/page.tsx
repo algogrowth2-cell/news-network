@@ -8,6 +8,7 @@ import { activatePendingReward, ensureReferralCode, REFERRAL_REWARD_MONTHS } fro
 import { fallbackFor, isEnglishSlug, resolveSiteSlug } from '@/lib/siteTheme';
 import { AdLayout } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
+import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
 
 interface ReaderSession {
   uid?: string;
@@ -339,16 +340,31 @@ export default function ReferPage() {
   }, [phone]);
 
   // E-paper kab tak free/active hai
+  // Sirf isi portal ka e-paper ({email}__{portal}; purana {email} record sirf usi portal ka jiska siteId)
   useEffect(() => {
-    if (!profile?.email) return;
-    return onSnapshot(doc(db, 'epaper_subscriptions', profile.email), (snap) => {
-      const d = snap.data();
-      const exp = d?.status === 'active' ? toDate(d.expiresAt) : null;
-      setEpaperTill(exp && exp.getTime() > Date.now() ? exp : null);
-    });
-  }, [profile?.email]);
+    if (!profile?.email || !siteSlug) return;
+    const portal = epaperSite(siteSlug);
+    const till = { cur: 0, legacy: 0 };
+    const show = () => {
+      const ms = Math.max(till.cur, till.legacy);
+      setEpaperTill(ms > Date.now() ? new Date(ms) : null);
+    };
+    const u1 = onSnapshot(doc(db, 'epaper_subscriptions', epaperSubId(profile.email, portal)), (snap) => {
+      till.cur = isActiveForSite(snap.data(), portal) ? subExpiryMs(snap.data()) : 0;
+      show();
+    }, () => {});
+    const u2 = onSnapshot(doc(db, 'epaper_subscriptions', profile.email), (snap) => {
+      till.legacy = isActiveForSite(snap.data(), portal) ? subExpiryMs(snap.data()) : 0;
+      show();
+    }, () => {});
+    return () => {
+      u1();
+      u2();
+    };
+  }, [profile?.email, siteSlug]);
 
-  const referralLink = code && origin ? `${origin}/login?ref=${code}` : '';
+  // Link me portal bhi — naya pathak isi portal par jude (aur e-paper inaam isi portal ka)
+  const referralLink = code && origin ? `${origin}/login?ref=${code}${siteSlug ? `&site=${siteSlug}` : ''}` : '';
   const shareText = code ? t.shareMsg(siteName, code, referralLink) : '';
   const displayName = profile?.name || session?.name || t.defaultName;
 
@@ -391,7 +407,7 @@ export default function ReferPage() {
     setActivating(rewardId);
     setNotice(null);
     try {
-      const till = await activatePendingReward(rewardId, { userId, phone, email: profile.email, name: displayName });
+      const till = await activatePendingReward(rewardId, { userId, phone, email: profile.email, name: displayName }, siteSlug);
       setNotice({ text: till ? t.activatedOk(fmtDate(till)) : t.alreadyActive, ok: true });
     } catch (err) {
       console.error(err);

@@ -1,6 +1,7 @@
 import { db } from '@/lib/firebase';
 import { doc, increment, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { authFetch, legacyFallback } from '@/lib/phoneAuth';
+import { epaperSite, epaperSubId } from '@/lib/epaperSub';
 
 export interface NewReaderProfile {
   userId: string; // 'u_' + phone
@@ -65,7 +66,7 @@ const extendedExpiry = (currentExpiry: Date | null) => {
 };
 
 /** Transaction ke andar e-paper reward likhta hai (reads caller pehle kar chuka hota hai) */
-function writeEpaperReward(s: RefStore, tx: any, subRef: any, subData: any | undefined, referrer: { userId: string; phone: string; email: string; name: string }) {
+function writeEpaperReward(s: RefStore, tx: any, subRef: any, subData: any | undefined, referrer: { userId: string; phone: string; email: string; name: string }, site: string) {
   const currentExpiry = subData?.status === 'active' ? toDate(subData.expiresAt) : null;
   const validTill = extendedExpiry(currentExpiry);
   const alreadyActive = !!currentExpiry && currentExpiry.getTime() > Date.now();
@@ -75,6 +76,7 @@ function writeEpaperReward(s: RefStore, tx: any, subRef: any, subData: any | und
       userEmail: referrer.email,
       userPhone: referrer.phone,
       userName: referrer.name,
+      siteId: epaperSite(site), // inaam isi portal ka e-paper
       status: 'active',
       expiresAt: validTill,
       // Paid plan chal raha ho toh uska naam rehne do, bas din badhao
@@ -91,9 +93,10 @@ function writeEpaperReward(s: RefStore, tx: any, subRef: any, subData: any | und
 /*
  * OTP verify ke baad naya user + referral AUTOMATIC verify + reward — ek hi transaction me:
  *  users/{newUserId}, referrals/{referrerPhone}_{newPhone}, referrer ke users counters,
- *  epaper_subscriptions/{referrerEmail} (3 mahine), referral_rewards (granted)
+ *  epaper_subscriptions/{referrerEmail}__{portal} (3 mahine — jis portal par naya pathak juda), referral_rewards (granted)
  */
-export async function createReaderWithReferralCore(s: RefStore, user: NewReaderProfile, referralCode?: string | null): Promise<SignupResult> {
+export async function createReaderWithReferralCore(s: RefStore, user: NewReaderProfile, referralCode?: string | null, site?: string | null): Promise<SignupResult> {
+  const portal = epaperSite(site);
   const newUserRef = s.ref('users', user.userId);
   const code = referralCode ? normalizeReferralInput(referralCode) : '';
   const legacyPhone = code ? phoneFromLegacyCode(code) : null;
@@ -137,7 +140,7 @@ export async function createReaderWithReferralCore(s: RefStore, user: NewReaderP
             name: r.name || 'पाठक',
             email: r.email || `${referrerPhone}@news.local`
           };
-          subRef = s.ref('epaper_subscriptions', recorded.email);
+          subRef = s.ref('epaper_subscriptions', epaperSubId(recorded.email, portal));
           const subSnap = await tx.get(subRef);
           subData = exists(subSnap) ? subSnap.data() : undefined;
         }
@@ -160,7 +163,7 @@ export async function createReaderWithReferralCore(s: RefStore, user: NewReaderP
     if (ownCodeFree) tx.set(s.ref('referral_codes', newOwnCode), { userId: user.userId, phone: user.phone, createdAt: s.now() });
 
     if (recorded && subRef) {
-      const validTill = writeEpaperReward(s, tx, subRef, subData, recorded);
+      const validTill = writeEpaperReward(s, tx, subRef, subData, recorded, portal);
       tx.set(s.ref('referrals', referralId), {
         referrerId: recorded.userId,
         referrerName: recorded.name,
@@ -221,14 +224,15 @@ export async function ensureReferralCodeCore(s: RefStore, userId: string, phone:
 }
 
 /** Purane 'pending_selection' rewards — ab seedha 3 maah e-paper. Reward usi referrer ka hona chahiye. */
-export async function activatePendingRewardCore(s: RefStore, rewardId: string, referrer: { userId: string; phone: string; email: string; name: string }) {
+export async function activatePendingRewardCore(s: RefStore, rewardId: string, referrer: { userId: string; phone: string; email: string; name: string }, site?: string | null) {
+  const portal = epaperSite(site);
   const rewardRef = s.ref('referral_rewards', rewardId);
-  const subRef = s.ref('epaper_subscriptions', referrer.email);
+  const subRef = s.ref('epaper_subscriptions', epaperSubId(referrer.email, portal));
   return s.run(async (tx) => {
     const rewardSnap = await tx.get(rewardRef);
     if (!exists(rewardSnap) || rewardSnap.data().status !== 'pending_selection' || rewardSnap.data().referrerPhone !== referrer.phone) return null;
     const subSnap = await tx.get(subRef);
-    const validTill = writeEpaperReward(s, tx, subRef, exists(subSnap) ? subSnap.data() : undefined, referrer);
+    const validTill = writeEpaperReward(s, tx, subRef, exists(subSnap) ? subSnap.data() : undefined, referrer, portal);
     tx.update(rewardRef, { status: 'granted', rewardType: 'epaper_3_months', chosenReward: 'epaper_3_months', days: REFERRAL_REWARD_DAYS, validTill, grantedAt: s.now() });
     tx.set(s.ref('users', referrer.userId), { referralRewardMonths: s.inc(REFERRAL_REWARD_MONTHS) }, { merge: true });
     return validTill;
@@ -244,9 +248,10 @@ async function viaServer<T>(url: string, body: any): Promise<{ ok: true; data: T
   return { ok: true, data };
 }
 
-export async function createReader(user: NewReaderProfile, referralCode?: string | null): Promise<SignupResult> {
-  const r = await viaServer<SignupResult>('/api/reader/create', { name: user.name, email: user.email, referralCode: referralCode || '' });
-  return r.ok ? r.data : createReaderWithReferralCore(clientStore, user, referralCode);
+/** site: jis portal par naya pathak juda — referral inaam (e-paper) usi portal ka */
+export async function createReader(user: NewReaderProfile, referralCode?: string | null, site?: string | null): Promise<SignupResult> {
+  const r = await viaServer<SignupResult>('/api/reader/create', { name: user.name, email: user.email, referralCode: referralCode || '', siteId: site || '' });
+  return r.ok ? r.data : createReaderWithReferralCore(clientStore, user, referralCode, site);
 }
 
 export async function ensureReferralCode(userId: string, phone: string): Promise<string> {
@@ -254,8 +259,8 @@ export async function ensureReferralCode(userId: string, phone: string): Promise
   return r.ok ? r.data.code : ensureReferralCodeCore(clientStore, userId, phone);
 }
 
-export async function activatePendingReward(rewardId: string, referrer: { userId: string; phone: string; email: string; name: string }) {
-  const r = await viaServer<{ validTill: string | null }>('/api/reader/activate-reward', { rewardId });
+export async function activatePendingReward(rewardId: string, referrer: { userId: string; phone: string; email: string; name: string }, site?: string | null) {
+  const r = await viaServer<{ validTill: string | null }>('/api/reader/activate-reward', { rewardId, siteId: site || '' });
   if (r.ok) return r.data.validTill ? new Date(r.data.validTill) : null;
-  return activatePendingRewardCore(clientStore, rewardId, referrer);
+  return activatePendingRewardCore(clientStore, rewardId, referrer, site);
 }

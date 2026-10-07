@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
+import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
 import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_SANDESH_PRICE, type AdFormat, type PaymentKind } from '@/lib/plans';
 
 /*
@@ -77,10 +78,15 @@ export async function POST(req: Request) {
       if (kind === 'epaper') {
         const user = (await tx.get(db.collection('users').doc(`u_${phone}`))).data() || {};
         const email = user.email || `${phone}@news.local`;
-        const subRef = db.collection('epaper_subscriptions').doc(email);
+        // Har portal ka alag subscription: {email}__{portal}
+        const portal = epaperSite(body.siteId);
+        const subRef = db.collection('epaper_subscriptions').doc(epaperSubId(email, portal));
         const cur = (await tx.get(subRef)).data();
-        const curExp = cur?.status === 'active' ? toDate(cur.expiresAt) : null;
-        const start = curExp && curExp.getTime() > Date.now() ? curExp.getTime() : Date.now();
+        // Isi portal ka purana record ({email}) chalu ho toh uski expiry se aage badhao
+        const legacy = (await tx.get(db.collection('epaper_subscriptions').doc(email))).data();
+        const legacyExp = isActiveForSite(legacy, portal) ? subExpiryMs(legacy) : 0;
+        const curExpMs = Math.max(subExpiryMs(cur), legacyExp);
+        const start = curExpMs > Date.now() ? curExpMs : Date.now();
         const expiresAt = new Date(start + plan!.durationDays * 864e5);
         tx.set(
           subRef,
@@ -95,7 +101,7 @@ export async function POST(req: Request) {
             status: 'active',
             startedAt: admin.FieldValue.serverTimestamp(),
             expiresAt: admin.Timestamp.fromDate(expiresAt),
-            siteId: clean(body.siteId, 60)
+            siteId: portal
           },
           { merge: true }
         );

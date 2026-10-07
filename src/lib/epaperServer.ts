@@ -3,21 +3,25 @@
 //  - private `epaper_files/{id}`: pdfUrl, pdfStoragePath, pages — sirf admin / server
 //  - subscriber ko 10 minute ka signed link; Storage ke public "download token" hata diye jaate hain
 import { adminBucket, getAdmin } from '@/lib/firebaseAdmin';
+import { epaperSite, epaperSubId, isActiveForSite } from '@/lib/epaperSub';
 
 const toDate = (v: any): Date | null => (v?.toDate ? v.toDate() : v ? new Date(v) : null);
 
-/** Is mobile ka e-paper subscription abhi chalu hai? */
-export async function hasActiveEpaper(phone: string): Promise<boolean> {
+/** Is mobile ka IS PORTAL ka e-paper subscription abhi chalu hai? (har portal ka alag) */
+export async function hasActiveEpaper(phone: string, site: string): Promise<boolean> {
   const admin = (await getAdmin());
   if (!admin) return false;
   const { db } = admin;
-  const now = Date.now();
-  const active = (d: any) => d?.status === 'active' && (toDate(d.expiresAt)?.getTime() || 0) > now;
+  const portal = epaperSite(site);
   const user = (await db.collection('users').doc(`u_${phone}`).get()).data();
   const emails = [user?.email, `${phone}@news.local`].filter(Boolean) as string[];
-  for (const e of emails) if (active((await db.collection('epaper_subscriptions').doc(e).get()).data())) return true;
-  const byPhone = await db.collection('epaper_subscriptions').where('userPhone', '==', phone).limit(3).get();
-  return byPhone.docs.some((d) => active(d.data()));
+  for (const e of emails) {
+    // Naya record: {email}__{portal}; purana: {email} (sirf usi portal par jiska siteId hai)
+    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(epaperSubId(e, portal)).get()).data(), portal)) return true;
+    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(e).get()).data(), portal)) return true;
+  }
+  const byPhone = await db.collection('epaper_subscriptions').where('userPhone', '==', phone).limit(20).get();
+  return byPhone.docs.some((d) => isActiveForSite(d.data(), portal));
 }
 
 /** Firebase Storage download URL se path (…/o/<encoded path>?alt=media&token=…) */

@@ -67,6 +67,8 @@ export async function deleteAccountData(phone: string): Promise<Record<string, n
   // Email se jude: e-paper subscription, comments
   for (const email of emails) {
     await byId('epaper_subscriptions', email, 'ई-पेपर सब्सक्रिप्शन');
+    // Har portal ka alag record ({email}__{portal})
+    await byField('epaper_subscriptions', 'userEmail', email, 'ई-पेपर सब्सक्रिप्शन');
     await byField('comments', 'userEmail', email, 'टिप्पणियां');
   }
 

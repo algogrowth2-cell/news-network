@@ -15,7 +15,8 @@ export async function POST(req: Request) {
   const emailRaw = String(body.email || '').trim().toLowerCase().slice(0, 254);
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailRaw) ? emailRaw : `${phone}@news.local`;
   try {
-    const result = await createReaderWithReferralCore(store, { userId: `u_${phone}`, name, email, phone }, String(body.referralCode || ''));
+    // siteId: jis portal par juda — referrer ka e-paper inaam usi portal ka
+    const result = await createReaderWithReferralCore(store, { userId: `u_${phone}`, name, email, phone }, String(body.referralCode || ''), String(body.siteId || ''));
     return NextResponse.json(result);
   } catch (err) {
     console.error('reader/create error:', err);

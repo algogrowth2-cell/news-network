@@ -11,6 +11,7 @@ import ConsentNotice, { consentError, EMPTY_CONSENT, type ConsentValue } from '@
 import { CONSENT_VERSION, recordConsent } from '@/lib/consent';
 import { isValidEmail, isValidIndianMobile, isValidName, sanitizeName, VALIDATION_MSG } from '@/lib/validation';
 import PortalLogo from '@/components/PortalLogo';
+import { getActivePortal } from '@/lib/siteTheme';
 
 const fieldErrorStyle: React.CSSProperties = { display: 'block', marginTop: '5px', fontSize: '12px', color: '#dc2626', fontWeight: 500 };
 
@@ -177,7 +178,8 @@ function LoginAndSignupContent() {
             };
             // Naya user + referral auto-verify (server par; server tayyar na ho toh browser transaction)
             try {
-              const result = await createReader(profile, referralCode);
+              // Jis portal par juda — referrer ka e-paper inaam usi portal ka
+              const result = await createReader(profile, referralCode, getActivePortal(searchParams.get('site')));
               referralRecorded = result.created && result.referral === 'recorded';
               referralRejected = result.created && !!referralCode && result.referral !== 'recorded';
             } catch (txErr) {

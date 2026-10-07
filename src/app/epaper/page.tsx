@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import { EPAPER_PLANS } from '@/lib/plans';
 import { fallbackFor } from '@/lib/siteTheme';
+import { epaperSite, epaperSubId, isActiveForSite } from '@/lib/epaperSub';
 import { confirmPayment } from '@/lib/payments';
 import { authFetch, legacyFallback } from '@/lib/phoneAuth';
 
@@ -291,14 +292,14 @@ function EPaperComponent() {
       try {
         const u = JSON.parse(cached);
         setCurrentUser(u);
-        getDoc(doc(db, 'epaper_subscriptions', u.email))
-          .then((snap) => {
-            if (snap.exists() && snap.data().status === 'active') {
-              const exp = snap.data().expiresAt?.toDate
-                ? snap.data().expiresAt.toDate()
-                : new Date(snap.data().expiresAt);
-              if (new Date() < exp) setHasSubscribed(true);
-            }
+        // Sirf ISI portal ka subscription ({email}__{portal}); purana {email} record sirf usi portal ka jiska siteId
+        const portal = epaperSite(siteSlug);
+        Promise.all([
+          getDoc(doc(db, 'epaper_subscriptions', epaperSubId(u.email, portal))).catch(() => null),
+          getDoc(doc(db, 'epaper_subscriptions', u.email)).catch(() => null)
+        ])
+          .then(([cur, legacy]) => {
+            if (isActiveForSite(cur?.data(), portal) || isActiveForSite(legacy?.data(), portal)) setHasSubscribed(true);
           })
           .catch(console.error);
       } catch (e) {
@@ -362,7 +363,7 @@ function EPaperComponent() {
   // PDF ka link server se (subscription jaanch ke baad 10 minute ka signed link); server tayyar na ho toh purana link
   const loadEditionFile = async (ed: EPaperEdition): Promise<{ url: string; pages: string[] } | null> => {
     try {
-      const res = await authFetch(`/api/epaper/file?id=${encodeURIComponent(ed.id)}`);
+      const res = await authFetch(`/api/epaper/file?id=${encodeURIComponent(ed.id)}&site=${encodeURIComponent(siteSlug)}`);
       if (legacyFallback(res.status)) {
         // Server abhi tayyar nahi / purana login (rules lagne se pehle) — naye editions ka link epaper_files me hai
         if (ed.pdfUrl || ed.pages.length) return { url: ed.pdfUrl, pages: ed.pages };
@@ -468,7 +469,7 @@ function EPaperComponent() {
           // Server abhi tayyar nahi — purana tareeka
           const expiresAt = new Date(Date.now() + selectedPlan.durationDays * 24 * 60 * 60 * 1000);
           await setDoc(
-            doc(db, 'epaper_subscriptions', currentUser.email),
+            doc(db, 'epaper_subscriptions', epaperSubId(currentUser.email, siteSlug)),
             {
               userEmail: currentUser.email,
               userName: currentUser.name || 'Reader',
@@ -479,7 +480,7 @@ function EPaperComponent() {
               status: 'active',
               startedAt: serverTimestamp(),
               expiresAt,
-              siteId: siteSlug
+              siteId: epaperSite(siteSlug)
             },
             { merge: true }
           );
@@ -543,7 +544,7 @@ function EPaperComponent() {
             <div>
               <span className="ep-kicker">📰 डिजिटल सदस्यता</span>
               <h2 className="ep-serif">दैनिक डिजिटल ई-पेपर संपूर्ण ऐक्सेस</h2>
-              <p>₹21 (1 माह) या ₹132 (1 वर्ष - ₹11/माह) में सभी संस्करण अनलॉक करें।</p>
+              <p>₹21 (1 माह) या ₹111 (1 वर्ष — सिर्फ़ ₹9.25/माह) में इस पोर्टल के सभी संस्करण अनलॉक करें।</p>
               <button className="ep-btn ep-hero-cta" onClick={handleOpenSubscribe}>
                 सब्सक्रिप्शन लें →
               </button>
