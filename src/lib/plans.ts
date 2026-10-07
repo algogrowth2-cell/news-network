@@ -20,7 +20,13 @@ export const EPAPER_PLANS = [
 
 export const PATRAKAR_MEMBERSHIP_PRICE = 499;
 export const PRESS_KIT_DELIVERY_PRICE = 299;
-export const SHOK_SANDESH_PRICE = 199;
+// Shok sandesh: jitne din ka plan, utne din website par (admin manzoori ke din se). Purane (₹199) sandesh 30 din.
+export const SHOK_PLANS = [
+  { id: 'shok_7_days', name: '7 दिन', price: 11, days: 7, desc: '₹11 में 7 दिन तक शोक संदेश वेबसाइट पर' },
+  { id: 'shok_30_days', name: '1 महीना (30 दिन)', price: 51, days: 30, desc: '₹51 में पूरे 30 दिन तक शोक संदेश वेबसाइट पर' }
+] as const;
+export type ShokPlanId = (typeof SHOK_PLANS)[number]['id'];
+export const SHOK_LEGACY_DAYS = 30;
 
 // Advertiser vigyapan — har request ka shulk (payment ke baad hi admin ke paas manzoori ke liye)
 export const AD_PRICES = {

@@ -41,7 +41,8 @@ beforeEach(async () => {
     await setDoc(doc(db, 'epaper_subscriptions', 'ram@x.com'), { userEmail: 'ram@x.com', status: 'active' });
     await setDoc(doc(db, 'epaper_subscriptions', 's@x.com'), { userEmail: 's@x.com', userPhone: OTHER, status: 'active' });
     await setDoc(doc(db, 'referrals', `${READER}_${OTHER}`), { referrerPhone: READER, referredUserPhone: OTHER });
-    await setDoc(doc(db, 'payments', 'pay_SHOK123456'), { kind: 'shok', amount: 199 });
+    await setDoc(doc(db, 'payments', 'pay_SHOK123456'), { kind: 'shok', amount: 11, days: 7, phone: READER });
+    await setDoc(doc(db, 'shok_sandesh', 'pay_SHOKOTHER01'), { name: 'y', status: 'pending', ownerPhone: OTHER });
     await setDoc(doc(db, 'payments', 'pay_EPAP123456'), { kind: 'epaper', amount: 21 });
     await setDoc(doc(db, 'readers', 'legacy1'), { mobile: READER, name: 'Old' });
     await setDoc(doc(db, 'referral_codes', 'GPABCDEF'), { userId: `u_${READER}`, phone: READER });
@@ -154,10 +155,19 @@ describe('Comments, shok sandesh, consent, deletion', () => {
     await assertFails(addDoc(collection(anon(), 'comments'), { articleId: 'a1', comment: 'hi', status: 'pending' }));
   });
   test('shok sandesh sirf verified shok payment ID se', async () => {
-    await assertSucceeds(setDoc(doc(anon(), 'shok_sandesh', 'pay_SHOK123456'), { name: 'x', status: 'pending', paymentId: 'pay_SHOK123456' }));
-    await assertFails(setDoc(doc(anon(), 'shok_sandesh', 'pay_FAKE000000'), { name: 'x', status: 'pending', paymentId: 'pay_FAKE000000' }));
-    await assertFails(setDoc(doc(anon(), 'shok_sandesh', 'pay_EPAP123456'), { name: 'x', status: 'pending', paymentId: 'pay_EPAP123456' }));
-    await assertFails(setDoc(doc(anon(), 'shok_sandesh', 'pay_SHOK123456'), { name: 'x', status: 'approved', paymentId: 'pay_SHOK123456' }));
+    const ok = { name: 'x', status: 'pending', paymentId: 'pay_SHOK123456', ownerPhone: READER, days: 7 };
+    // Bina login nahi; doosre ke naam se nahi; din badhakar nahi; seedha approved nahi
+    await assertFails(setDoc(doc(anon(), 'shok_sandesh', 'pay_SHOK123456'), ok));
+    await assertFails(setDoc(doc(asPhone(OTHER), 'shok_sandesh', 'pay_SHOK123456'), { ...ok, ownerPhone: OTHER }));
+    await assertFails(setDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_SHOK123456'), { ...ok, days: 365 }));
+    await assertFails(setDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_SHOK123456'), { ...ok, status: 'approved' }));
+    await assertFails(setDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_FAKE000000'), { ...ok, paymentId: 'pay_FAKE000000' }));
+    await assertFails(setDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_EPAP123456'), { ...ok, paymentId: 'pay_EPAP123456' }));
+    await assertSucceeds(setDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_SHOK123456'), ok));
+    // Apna pending sandesh dikhe (download ke liye), doosre ka nahi
+    await assertSucceeds(getDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_SHOK123456')));
+    await assertFails(getDoc(doc(asPhone(READER), 'shok_sandesh', 'pay_SHOKOTHER01')));
+    await assertSucceeds(getDocs(query(collection(asPhone(READER), 'shok_sandesh'), where('ownerPhone', '==', READER))));
   });
   test('consent sirf apne number ka', async () => {
     await assertSucceeds(addDoc(collection(asPhone(READER), 'consents'), { phone: READER, version: 'v1' }));

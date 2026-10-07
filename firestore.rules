@@ -89,11 +89,17 @@ service cloud.firestore {
       allow create: if hasPhone() && request.resource.data.status == 'pending';
     }
 
-    // ---------- Shok sandesh: server-verified ₹199 payment ki ID hi document ID ----------
+    // ---------- Shok sandesh: server-verified payment (₹11 = 7 din / ₹51 = 30 din) ki ID hi document ID ----------
+    // Sabko sirf approved; banane wala (ownerPhone) apne sab sandesh dekh sake (download ke liye).
     match /shok_sandesh/{id} {
-      allow read: if resource.data.status == 'approved';
-      allow create: if exists(docPath('payments', id))
+      allow read: if resource.data.status == 'approved'
+        || (hasPhone() && resource.data.get('ownerPhone', '') == phone());
+      allow create: if hasPhone()
+        && exists(docPath('payments', id))
         && get(docPath('payments', id)).data.kind == 'shok'
+        && get(docPath('payments', id)).data.get('phone', '') == phone()
+        && request.resource.data.ownerPhone == phone()
+        && request.resource.data.days == get(docPath('payments', id)).data.days
         && request.resource.data.status == 'pending'
         && request.resource.data.paymentId == id;
     }

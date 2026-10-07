@@ -17,7 +17,8 @@ import Link from 'next/link';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
-import { SECURE_AUTH } from '@/lib/phoneAuth';
+import { firebasePhone, SECURE_AUTH } from '@/lib/phoneAuth';
+import { SHOK_LEGACY_DAYS, SHOK_PLANS } from '@/lib/plans';
 
 declare global {
   interface Window {
@@ -38,9 +39,20 @@ interface ShokSandeshItem {
   contactNumber: string;
   photoUrl: string;
   templateId: 'floral-white' | 'golden-frame' | 'divine-blue' | 'rose-border' | 'classic-silver';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'rejected';
   createdAt?: any;
+  approvedAt?: any;
+  days?: number;
+  ownerPhone?: string;
 }
+
+// Kitne din website par: plan ke din (purane ₹199 wale 30 din), admin manzoori ke din se (na ho toh banne ke din se)
+const toMs = (v: any) => (v?.toDate ? v.toDate().getTime() : v ? new Date(v).getTime() : 0);
+const shokExpiryMs = (it: Partial<ShokSandeshItem>) => {
+  const start = toMs(it.approvedAt) || toMs(it.createdAt);
+  return start ? start + (Number(it.days) || SHOK_LEGACY_DAYS) * 864e5 : 0;
+};
+const fmtDay = (ms: number) => (ms ? new Date(ms).toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 
 // ---- Form validation helpers ----
 const HINDI_DAYS = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'बृहस्पतिवार', 'शुक्रवार', 'शनिवार'];
@@ -83,7 +95,13 @@ const NO_PHOTO =
 const MAX_PHOTO_BYTES = 700 * 1024;
 
 export default function ShokSandeshPage() {
-  const [activeTab, setActiveTab] = useState<'feed' | 'create'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'create' | 'mine'>('feed');
+  // Login pathak ka mobile (Firebase pehchaan) — apne sandesh + download isi se
+  const [myPhone, setMyPhone] = useState<string | null>(null);
+  const [myPosts, setMyPosts] = useState<ShokSandeshItem[]>([]);
+  const [downloading, setDownloading] = useState('');
+  const [shokPlanId, setShokPlanId] = useState<string>(SHOK_PLANS[0].id);
+  const shokPlan = SHOK_PLANS.find((x) => x.id === shokPlanId) || SHOK_PLANS[0];
   // Kaunsa portal (?site= / domain / pichhla khola) — header ka logo aur home link isi ka
   const [portalSlug, setPortalSlug] = useState('the-local-leader');
   useEffect(() => {
@@ -128,8 +146,9 @@ export default function ShokSandeshPage() {
 
   // Payment & Submit State
   const [hasMembership, setHasMembership] = useState(false);
-  // Server-verified ₹199 payment ka ID (isi ID se shok sandesh banta hai)
+  // Server-verified payment ka ID (isi ID se shok sandesh banta hai) + us plan ke din
   const [shokCredit, setShokCredit] = useState('');
+  const [creditDays, setCreditDays] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -177,8 +196,9 @@ export default function ShokSandeshPage() {
         ...d.data()
       } as ShokSandeshItem));
 
-      // Sirf asli (admin-approved) Firestore shok sandesh
-      setPosts(liveList);
+      // Sirf admin-approved aur plan ke din abhi baaki (7 / 30 din; purane 30 din) — nayi pehle
+      const now = Date.now();
+      setPosts(liveList.filter((it) => shokExpiryMs(it) > now).sort((a, b) => toMs(b.approvedAt || b.createdAt) - toMs(a.approvedAt || a.createdAt)));
       setLoading(false);
     }, (err) => {
       console.error(err);
@@ -194,12 +214,58 @@ export default function ShokSandeshPage() {
     const credit = localStorage.getItem('shok_payment_id');
     if (credit) {
       setShokCredit(credit);
+      setCreditDays(Number(localStorage.getItem('shok_plan_days')) || 0);
       setHasMembership(true);
       return;
     }
     // Purana browser flag sirf tab jab server-verification chalu nahi
     if (!SECURE_AUTH && localStorage.getItem('shok_membership_active') === 'true') setHasMembership(true);
   }, []);
+
+  // Mere shok sandesh (login mobile se) — pending / live / samay khatam, sab; download sirf yahin se
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    firebasePhone().then((ph) => {
+      setMyPhone(ph);
+      if (!ph) return;
+      unsub = onSnapshot(
+        query(collection(db, 'shok_sandesh'), where('ownerPhone', '==', ph)),
+        (snap) => setMyPosts(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ShokSandeshItem).sort((a, b) => toMs(b.createdAt) - toMs(a.createdAt))),
+        (err) => console.error('Mere shok sandesh:', err)
+      );
+    });
+    return () => unsub?.();
+  }, []);
+
+  // Apna card PNG ya PDF me (card jaisa dikhta hai waisa hi)
+  const downloadMyCard = async (item: ShokSandeshItem, kind: 'png' | 'pdf') => {
+    if (!myPhone || item.ownerPhone !== myPhone) return; // sirf apna
+    const node = document.getElementById(`my-shok-${item.id}`);
+    if (!node) return;
+    setDownloading(item.id + kind);
+    try {
+      const { toPng } = await import('html-to-image');
+      const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: '#ffffff', cacheBust: true });
+      const fname = `shok-sandesh-${String(item.name || 'card').replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 40)}`;
+      if (kind === 'png') {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `${fname}.png`;
+        a.click();
+      } else {
+        const { jsPDF } = await import('jspdf');
+        const w = node.offsetWidth;
+        const h = node.offsetHeight;
+        const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
+        pdf.addImage(dataUrl, 'PNG', 0, 0, w, h);
+        pdf.save(`${fname}.pdf`);
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('डाउनलोड नहीं हो पाया, कृपया दोबारा प्रयास करें।');
+    }
+    setDownloading('');
+  };
 
   // Local File to Base64
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,6 +294,13 @@ export default function ShokSandeshPage() {
 
   // Razorpay Payment Handler (Fixed Instant Popup)
   const handleBuyPlan = async () => {
+    // Sandesh kiska hai — isliye login zaroori (sirf wahi apna sandesh download kar sake)
+    const ph = await firebasePhone();
+    if (!ph) {
+      alert('शोक संदेश प्रकाशित करने के लिए पहले मोबाइल नंबर से लॉगिन करें।');
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      return;
+    }
     setPaymentLoading(true);
     const isLoaded = await loadRazorpayScript();
 
@@ -240,29 +313,31 @@ export default function ShokSandeshPage() {
     try {
       const options = {
         key: RAZORPAY_KEY,
-        amount: 199 * 100, // ₹199 in paise
+        amount: shokPlan.price * 100, // चुने गए प्लान की राशि (पैसे में)
         currency: 'INR',
         name: 'द लोकल लीडर डिजिटल मीडिया',
-        description: 'शोक संदेश ई-श्रद्धांजलि प्रकाशन शुल्क',
+        description: `शोक संदेश प्रकाशन — ${shokPlan.name} (₹${shokPlan.price})`,
         handler: async function (response: any) {
           // Server Razorpay se jaanch kar ek "credit" deta hai — usi payment ID se shok sandesh banta hai
-          const confirmed = await confirmPayment('shok', response.razorpay_payment_id);
+          const confirmed = await confirmPayment('shok', response.razorpay_payment_id, { planId: shokPlan.id });
           setPaymentLoading(false);
           if (!confirmed.ok && !confirmed.fallback) {
             alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
             return;
           }
-          alert('भुगतान सफल! अब आप अपना शोक संदेश सबमिट कर सकते हैं।');
+          alert(`भुगतान सफल! (${shokPlan.name}) अब आप अपना शोक संदेश सबमिट कर सकते हैं।`);
           setHasMembership(true);
           if (confirmed.ok) {
             setShokCredit(response.razorpay_payment_id);
+            setCreditDays(shokPlan.days);
             localStorage.setItem('shok_payment_id', response.razorpay_payment_id);
+            localStorage.setItem('shok_plan_days', String(shokPlan.days));
           } else {
             localStorage.setItem('shok_membership_active', 'true');
           }
         },
         prefill: {
-          contact: contactNumber || '9876543210'
+          contact: contactNumber || ph
         },
         theme: {
           color: '#b45309'
@@ -297,8 +372,15 @@ export default function ShokSandeshPage() {
     }
 
     if (!hasMembership) {
-      alert('शोक संदेश प्रकाशित करने हेतु पहले प्रकाशन प्लान (₹199) का भुगतान करें।');
+      alert('शोक संदेश प्रकाशित करने हेतु पहले प्लान (₹11 में 7 दिन / ₹51 में 30 दिन) चुनकर भुगतान करें।');
       handleBuyPlan();
+      return;
+    }
+
+    const ph = await firebasePhone();
+    if (!ph) {
+      alert('कृपया पहले लॉगिन करें।');
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
       return;
     }
 
@@ -320,20 +402,24 @@ export default function ShokSandeshPage() {
         photoUrl: photoUrl || imagePreview,
         templateId: selectedTemplate,
         status: 'pending', // Awaiting Admin verification
+        ownerPhone: ph, // sirf yahi download kar sake
+        days: creditDays || SHOK_PLANS[0].days, // website par kitne din (server payment se milan)
         createdAt: serverTimestamp()
       };
       if (shokCredit) {
         // Payment ID hi document ID — ek payment par ek sandesh (Firestore rules payments/{id} jaanchte hain)
         await setDoc(doc(db, 'shok_sandesh', shokCredit), { ...shokData, paymentId: shokCredit });
         localStorage.removeItem('shok_payment_id');
+        localStorage.removeItem('shok_plan_days');
         setShokCredit('');
+        setCreditDays(0);
         setHasMembership(false);
       } else {
         await addDoc(collection(db, 'shok_sandesh'), shokData);
       }
 
-      alert('शोक संदेश सफलतापूर्वक सबमिट हो गया है! एडमिन द्वारा सत्यापन के बाद यह पोर्टल पर लाइव दिखेगा।');
-      setActiveTab('feed');
+      alert('शोक संदेश सफलतापूर्वक सबमिट हो गया है! एडमिन द्वारा सत्यापन के बाद यह पोर्टल पर लाइव दिखेगा। "मेरे शोक संदेश" में आप इसे PNG / PDF में डाउनलोड कर सकते हैं।');
+      setActiveTab('mine');
       setSubmitting(false);
     } catch (err: any) {
       setSubmitting(false);
@@ -705,6 +791,22 @@ export default function ShokSandeshPage() {
           >
             नया कार्ड बनाएँ
           </button>
+
+          <button
+            onClick={() => setActiveTab('mine')}
+            style={{
+              backgroundColor: activeTab === 'mine' ? '#0f172a' : '#ffffff',
+              color: activeTab === 'mine' ? '#ffffff' : '#64748b',
+              border: '1px solid #cbd5e1',
+              borderRadius: '8px',
+              padding: '8px 18px',
+              fontSize: '13.5px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            मेरे शोक संदेश{myPhone ? ` (${myPosts.length})` : ''}
+          </button>
         </div>
 
         {/* ── 1. PUBLIC FEED TAB ── */}
@@ -726,6 +828,64 @@ export default function ShokSandeshPage() {
                     {(pi + 1) % 2 === 0 && pi < posts.length - 1 && <AdInline index={(pi + 1) / 2 - 1} />}
                   </React.Fragment>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── MERE SHOK SANDESH: sirf apne daale hue, PNG / PDF download ── */}
+        {activeTab === 'mine' && (
+          <div>
+            {!myPhone ? (
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '40px 20px', textAlign: 'center' }}>
+                <span style={{ fontSize: '30px' }}>🔐</span>
+                <h3 style={{ fontSize: '17px', color: '#0f172a', margin: '10px 0 6px' }}>अपने शोक संदेश देखने के लिए लॉगिन करें</h3>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 14px' }}>आप सिर्फ़ अपने डाले हुए शोक संदेश ही देख और डाउनलोड कर सकते हैं।</p>
+                <Link href={`/login?redirect=${encodeURIComponent(`/shok-sandesh?site=${portalSlug}`)}`} style={{ display: 'inline-block', backgroundColor: '#b45309', color: '#fff', padding: '9px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', textDecoration: 'none' }}>
+                  लॉगिन करें
+                </Link>
+              </div>
+            ) : myPosts.length === 0 ? (
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '40px 20px', textAlign: 'center' }}>
+                <span style={{ fontSize: '30px' }}>🕊️</span>
+                <h3 style={{ fontSize: '17px', color: '#0f172a', margin: '10px 0 6px' }}>आपने अभी कोई शोक संदेश नहीं डाला है</h3>
+                <button type="button" onClick={() => setActiveTab('create')} style={{ backgroundColor: '#b45309', color: '#fff', border: 'none', padding: '9px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', marginTop: '6px' }}>
+                  + नया शोक संदेश बनाएँ
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
+                {myPosts.map((item) => {
+                  const exp = shokExpiryMs(item);
+                  const live = item.status === 'approved' && exp > Date.now();
+                  const [label, bg, fg] =
+                    item.status === 'rejected' ? ['अस्वीकृत', '#fee2e2', '#b91c1c']
+                    : item.status !== 'approved' ? ['एडमिन जांच में', '#fef3c7', '#92400e']
+                    : live ? ['वेबसाइट पर लाइव', '#dcfce7', '#166534']
+                    : ['समय पूरा', '#f1f5f9', '#475569'];
+                  return (
+                    <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12.5px' }}>
+                        <span style={{ background: bg, color: fg, padding: '3px 10px', borderRadius: '20px', fontWeight: 700 }}>{label}</span>
+                        <span style={{ color: '#64748b' }}>
+                          {item.days || SHOK_LEGACY_DAYS} दिन का प्लान{item.status === 'approved' ? ` · ${live ? 'तक' : 'समाप्त'}: ${fmtDay(exp)}` : ''}
+                        </span>
+                      </div>
+                      {/* Yahi hissa PNG / PDF banta hai */}
+                      <div id={`my-shok-${item.id}`} style={{ background: '#ffffff' }}>
+                        {renderCard(item)}
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button type="button" disabled={!!downloading} onClick={() => downloadMyCard(item, 'png')} style={{ flex: 1, backgroundColor: '#0f172a', color: '#fff', border: 'none', padding: '9px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: downloading ? 'wait' : 'pointer' }}>
+                          {downloading === item.id + 'png' ? 'बन रहा है…' : '⬇ PNG डाउनलोड'}
+                        </button>
+                        <button type="button" disabled={!!downloading} onClick={() => downloadMyCard(item, 'pdf')} style={{ flex: 1, backgroundColor: '#b45309', color: '#fff', border: 'none', padding: '9px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', cursor: downloading ? 'wait' : 'pointer' }}>
+                          {downloading === item.id + 'pdf' ? 'बन रहा है…' : '⬇ PDF डाउनलोड'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -999,10 +1159,19 @@ export default function ShokSandeshPage() {
                 {/* Membership Payment Status Bar */}
                 <div style={{ backgroundColor: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                   <div>
-                    <b style={{ fontSize: '13px', color: '#92400e' }}>प्रकाशन शुल्क स्थिति:</b>
-                    <div style={{ fontSize: '11.5px', color: '#b45309' }}>
-                      {hasMembership ? '✓ ₹199 शुल्क भुगतान सत्यापित' : 'कार्ड सबमिट करने हेतु ₹199 प्रकाशन शुल्क लगेगा'}
-                    </div>
+                    <b style={{ fontSize: '13px', color: '#92400e' }}>प्रकाशन प्लान:</b>
+                    {hasMembership ? (
+                      <div style={{ fontSize: '11.5px', color: '#b45309' }}>✓ भुगतान सत्यापित — {creditDays || shokPlan.days} दिन तक वेबसाइट पर रहेगा</div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                        {SHOK_PLANS.map((pl) => (
+                          <label key={pl.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: shokPlanId === pl.id ? '#fff7ed' : '#fffdf7', border: `1.5px solid ${shokPlanId === pl.id ? '#b45309' : '#fde68a'}`, borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12.5px', color: '#78350f' }}>
+                            <input type="radio" name="shok-plan" checked={shokPlanId === pl.id} onChange={() => setShokPlanId(pl.id)} />
+                            <span><b>₹{pl.price}</b> · {pl.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {!hasMembership && (
                     <button
@@ -1021,7 +1190,7 @@ export default function ShokSandeshPage() {
                         opacity: paymentLoading ? 0.7 : 1
                       }}
                     >
-                      {paymentLoading ? 'लोड हो रहा है...' : 'भुगतान करें (₹199)'}
+                      {paymentLoading ? 'लोड हो रहा है...' : `भुगतान करें (₹${shokPlan.price})`}
                     </button>
                   )}
                 </div>

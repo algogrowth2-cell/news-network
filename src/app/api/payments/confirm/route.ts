@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
-import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_SANDESH_PRICE, type AdFormat, type PaymentKind } from '@/lib/plans';
+import { AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
 
 /*
  * Razorpay payment ke baad: server payment jaanchta hai, phir hi subscription / membership / delivery / shok-credit likhta hai.
@@ -38,11 +38,14 @@ export async function POST(req: Request) {
   const paymentId = String(body.paymentId || '');
   if (!['epaper', 'membership', 'delivery', 'shok', 'ad'].includes(kind)) return NextResponse.json({ error: 'bad-kind' }, { status: 400 });
 
-  const phone = kind === 'shok' ? null : await phoneFromRequest(req);
-  if (kind !== 'shok' && !phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया दोबारा लॉगिन करें।' }, { status: 401 });
+  // Shok sandesh bhi ab login ke saath (sandesh kiska hai — sirf wahi download kar sake)
+  const phone = await phoneFromRequest(req);
+  if (!phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया दोबारा लॉगिन करें।' }, { status: 401 });
 
   const plan = kind === 'epaper' ? EPAPER_PLANS.find((p) => p.id === body.planId) : null;
   if (kind === 'epaper' && !plan) return NextResponse.json({ error: 'bad-plan' }, { status: 400 });
+  const shokPlan = kind === 'shok' ? SHOK_PLANS.find((p) => p.id === body.planId) : null;
+  if (kind === 'shok' && !shokPlan) return NextResponse.json({ error: 'bad-plan', message: 'कृपया शोक संदेश का प्लान चुनें।' }, { status: 400 });
   const ad = body.ad || {};
   const adFormat = String(ad.format || '') as AdFormat;
   if (kind === 'ad') {
@@ -56,7 +59,7 @@ export async function POST(req: Request) {
     : kind === 'membership' ? PATRAKAR_MEMBERSHIP_PRICE
     : kind === 'delivery' ? PRESS_KIT_DELIVERY_PRICE
     : kind === 'ad' ? AD_PRICES[adFormat]
-    : SHOK_SANDESH_PRICE;
+    : shokPlan!.price;
 
   // Pehle hi use ho chuka? (do baar activation nahi)
   const payRef = db.collection('payments').doc(paymentId || 'invalid');
@@ -225,8 +228,9 @@ export async function POST(req: Request) {
       }
 
       // shok: sirf credit — shok_sandesh/{paymentId} browser banata hai (rules payments/{id} dekhte hain)
-      tx.set(payRef, { ...base, kind: 'shok' });
-      return { shokCredit: paymentId };
+      // Rules: shok_sandesh/{paymentId} me ownerPhone aur days isi record se milne chahiye
+      tx.set(payRef, { ...base, kind: 'shok', planId: shokPlan!.id, days: shokPlan!.days });
+      return { shokCredit: paymentId, days: shokPlan!.days };
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err: any) {

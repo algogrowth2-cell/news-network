@@ -96,8 +96,10 @@ export default function AdminShokSandeshPage() {
   // 2. Approve Handler (Makes card visible live on public page)
   const handleApprove = async (id: string) => {
     try {
+      // Plan ke din (7 / 30) isi din se gine jaate hain
       await updateDoc(doc(db, 'shok_sandesh', id), {
-        status: 'approved'
+        status: 'approved',
+        approvedAt: serverTimestamp()
       });
       alert('शोक संदेश स्वीकृत कर दिया गया है और अब मुख्य वेबसाइट पर लाइव है!');
     } catch (err: any) {
@@ -150,6 +152,8 @@ export default function AdminShokSandeshPage() {
         photoUrl: formData.photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
         templateId: 'floral-white',
         status: 'approved',
+        days: 30, // admin ka daala sandesh 30 din
+        approvedAt: serverTimestamp(),
         createdAt: serverTimestamp()
       });
 

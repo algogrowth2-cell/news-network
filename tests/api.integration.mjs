@@ -111,10 +111,17 @@ try {
   check('ek payment doosre user ke liye dobara nahi', res.status === 409);
   res = await post('/api/payments/confirm', { kind: 'epaper', paymentId: 'pay_TESTEPAPER02', planId: 'free_forever' }, tNew);
   check('nakli plan band', res.status === 400);
-  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTSHOK001' });
+  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTSHOK001', planId: 'shok_7_days' });
+  check('shok bina login band', res.status === 401);
+  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTSHOK001', planId: 'shok_forever' }, tNew);
+  check('shok nakli plan band', res.status === 400);
+  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTSHOK001', planId: 'shok_7_days' }, tNew);
   r = await res.json();
-  check('shok payment → credit', res.ok && r.shokCredit === 'pay_TESTSHOK001');
-  check('payments/{id} kind shok', (await db.doc('payments/pay_TESTSHOK001').get()).data()?.kind === 'shok');
+  check('shok payment → credit (7 din)', res.ok && r.shokCredit === 'pay_TESTSHOK001' && r.days === 7);
+  const shokPay = (await db.doc('payments/pay_TESTSHOK001').get()).data();
+  check('payments/{id}: kind shok, ₹11, 7 din, mobile', shokPay?.kind === 'shok' && shokPay?.amount === 11 && shokPay?.days === 7 && shokPay?.phone === NEWU);
+  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTSHOK002', planId: 'shok_30_days' }, tNew);
+  check('shok 30 din ₹51', res.ok && (await db.doc('payments/pay_TESTSHOK002').get()).data()?.amount === 51);
 
   // 5. Patrakar press ID + membership
   const tRep = await idToken(`ph_${REP}`, { phone: REP });
