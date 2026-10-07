@@ -19,6 +19,7 @@ import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
 import { firebasePhone, SECURE_AUTH } from '@/lib/phoneAuth';
 import { SHOK_LEGACY_DAYS, SHOK_PLANS } from '@/lib/plans';
+import ShokCard, { SHOK_TEMPLATES, type ShokTemplateId } from '@/components/shok/ShokCard';
 
 declare global {
   interface Window {
@@ -105,11 +106,11 @@ const sanitizeFreeText = (v: string, max: number) => v.replace(/[<>{}[\]~^`\\|]/
 const hasLetters = (v: string, min = 2) => (v.match(/\p{L}/gu) || []).length >= min;
 const MAX_PAST_DAYS = 730; // dehavsan tithi 2 saal se purani nahi
 
-// Photo na ho toh kisi anjaan vyakti ki stock photo nahi — saada diya placeholder
+// Photo na ho toh kisi anjaan vyakti ki stock photo nahi — saada vyakti ka khaaka (silhouette), emoji nahi
 const NO_PHOTO =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="#f1f5f9"/><text x="60" y="76" font-size="46" text-anchor="middle">🕯️</text></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="1" stop-color="#d7dde3"/></linearGradient></defs><rect width="120" height="150" fill="url(#b)"/><circle cx="60" cy="58" r="24" fill="#a9b4bf"/><path d="M14 150 C 18 108, 40 92, 60 92 C 80 92, 102 108, 106 150 Z" fill="#a9b4bf"/></svg>'
   );
 
 // Firestore document 1 MB tak — base64 photo ~33% badhti hai, isliye 700 KB tak
@@ -132,7 +133,7 @@ export default function ShokSandeshPage() {
   const [loading, setLoading] = useState(true);
 
   // 5 Canva Design Templates
-  const [selectedTemplate, setSelectedTemplate] = useState<'floral-white' | 'golden-frame' | 'divine-blue' | 'rose-border' | 'classic-silver'>('floral-white');
+  const [selectedTemplate, setSelectedTemplate] = useState<ShokTemplateId>('golden-frame');
 
   // Form Fields
   const [name, setName] = useState('');
@@ -459,287 +460,10 @@ export default function ShokSandeshPage() {
   };
 
   // RENDER 5 UNIQUE CANVA TEMPLATE DESIGNS
-  const renderCard = (data: Partial<ShokSandeshItem>, isPreview: boolean = false) => {
-    const tId = data.templateId || 'floral-white';
-
-    // 1. TEMPLATE: FLORAL WHITE
-    if (tId === 'floral-white') {
-      return (
-        <div style={{
-          width: '100%',
-          maxWidth: isPreview ? '100%' : '480px',
-          margin: '0 auto',
-          background: '#ffffff',
-          borderRadius: '16px',
-          border: '1.5px solid #e2e8f0',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
-          padding: '28px 24px',
-          boxSizing: 'border-box',
-          textAlign: 'center',
-          position: 'relative',
-          fontFamily: '"Mukta", system-ui, sans-serif'
-        }}>
-          <div style={{ position: 'absolute', top: '10px', left: '12px', fontSize: '20px', opacity: 0.8 }}>🌸</div>
-          <div style={{ position: 'absolute', top: '10px', right: '12px', fontSize: '20px', opacity: 0.8 }}>🌸</div>
-          <div style={{ position: 'absolute', bottom: '10px', left: '12px', fontSize: '20px', opacity: 0.8 }}>🌿</div>
-          <div style={{ position: 'absolute', bottom: '10px', right: '12px', fontSize: '20px', opacity: 0.8 }}>🌿</div>
-
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '1px', marginBottom: '14px' }}>
-            ॥ ॐ शान्तिः शान्तिः शान्तिः ॥
-          </div>
-
-          <div style={{ width: '130px', height: '130px', margin: '0 auto 16px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3.5px solid #d97706', boxShadow: '0 4px 14px rgba(217,119,6,0.2)', overflow: 'hidden' }}>
-            <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 0 10px' }}>
-            <span style={{ fontSize: '18px' }}>🙏</span>
-            <h3 style={{ fontSize: '21px', fontWeight: 800, color: '#0f172a', margin: 0, fontFamily: 'Georgia, serif' }}>
-              ॥ भावपूर्ण श्रद्धांजलि ॥
-            </h3>
-            <span style={{ fontSize: '18px' }}>🙏</span>
-          </div>
-
-          <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, margin: '0 0 16px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे श्रद्धेय {data.relation || 'स्वजन'}, <br />
-            <b style={{ fontSize: '18px', color: '#92400e', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
-            का स्वर्गवास {data.passedDate || '—'} को हो गया है। <br />
-            <span style={{ fontSize: '12.5px', color: '#64748b' }}>
-              उनकी दिवंगत आत्मा की शांति हेतु आयोजित कार्यक्रम में सम्मिलित होकर हमें कृतार्थ करें।
-            </span>
-          </p>
-
-          <div style={{ background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px' }}>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#92400e', marginBottom: '4px' }}>॥ तेरहवीं / पगड़ी कार्यक्रम ॥</div>
-            <div style={{ fontSize: '13px', color: '#78350f' }}><b>दिनांक:</b> {data.eventDate || '—'} | <b>समय:</b> {data.eventTime || '—'}</div>
-            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '4px' }}><b>स्थान:</b> {data.address || 'निवास स्थल'}</div>
-          </div>
-
-          <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '8px 0 14px' }}>🪔 🪔 🪔</div>
-
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
-            <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#475569' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
-            {data.contactNumber && <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px' }}>मो. {data.contactNumber}</div>}
-          </div>
-        </div>
-      );
-    }
-
-    // 2. TEMPLATE: GOLDEN FRAME
-    if (tId === 'golden-frame') {
-      return (
-        <div style={{
-          width: '100%',
-          maxWidth: isPreview ? '100%' : '480px',
-          margin: '0 auto',
-          background: '#fffdfa',
-          borderRadius: '16px',
-          border: '4px double #b45309',
-          boxShadow: '0 8px 30px rgba(180,83,9,0.08)',
-          padding: '24px 20px',
-          boxSizing: 'border-box',
-          textAlign: 'center',
-          fontFamily: '"Mukta", system-ui, sans-serif'
-        }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#78350f', letterSpacing: '1px', marginBottom: '14px' }}>
-            ॥ ॐ शांति ॐ ॥
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '22px' }}>🕯️</span>
-            <div style={{ width: '120px', height: '145px', border: '3px solid #b45309', padding: '3px', background: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
-              <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <span style={{ fontSize: '22px' }}>🕯️</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '0 0 10px' }}>
-            <span style={{ fontSize: '16px' }}>🕊️</span>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#78350f', margin: 0, fontFamily: 'Georgia, serif' }}>
-              ॥ विनम्र श्रद्धांजलि ॥
-            </h3>
-            <span style={{ fontSize: '16px' }}>🕊️</span>
-          </div>
-
-          <p style={{ fontSize: '13.5px', color: '#451a03', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी पूजनीय {data.relation || 'स्वजन'}, <br />
-            <b style={{ fontSize: '18px', color: '#9a3412', fontWeight: 800 }}>स्व० {data.name || 'दिवंगत का नाम'}</b> <br />
-            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
-          </p>
-
-          <div style={{ background: '#fef3c7', borderRadius: '8px', padding: '12px', marginBottom: '14px', border: '1px solid #fde68a' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#78350f' }}>ब्राह्मण भोज एवं प्रसाद</div>
-            <div style={{ fontSize: '12.5px', color: '#92400e', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
-            <div style={{ fontSize: '12px', color: '#78350f', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
-          </div>
-
-          <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
-
-          <div style={{ borderTop: '1px dashed #d97706', paddingTop: '10px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#78350f' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12px', color: '#451a03', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
-            {data.contactNumber && <div style={{ fontSize: '11px', color: '#78350f', marginTop: '2px' }}>संपर्क: {data.contactNumber}</div>}
-          </div>
-        </div>
-      );
-    }
-
-    // 3. TEMPLATE: DIVINE BLUE
-    if (tId === 'divine-blue') {
-      return (
-        <div style={{
-          width: '100%',
-          maxWidth: isPreview ? '100%' : '480px',
-          margin: '0 auto',
-          background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #f8fafc 100%)',
-          borderRadius: '16px',
-          border: '2px solid #93c5fd',
-          boxShadow: '0 8px 30px rgba(59,130,246,0.08)',
-          padding: '26px 20px',
-          boxSizing: 'border-box',
-          textAlign: 'center',
-          fontFamily: '"Mukta", system-ui, sans-serif'
-        }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e40af', letterSpacing: '1px', marginBottom: '14px' }}>
-            ॥ शोक संदेश ॥
-          </div>
-
-          <div style={{ width: '130px', height: '130px', margin: '0 auto 14px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3px solid #3b82f6', overflow: 'hidden' }}>
-            <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-          </div>
-
-          <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1e3a8a', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>
-            ॥ अश्रुपूरित श्रद्धांजलि ॥
-          </h3>
-
-          <p style={{ fontSize: '13.5px', color: '#1e293b', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारी {data.relation || 'स्वजन'}, <br />
-            <b style={{ fontSize: '18px', color: '#1d4ed8', fontWeight: 800 }}>स्व० श्रीमती {data.name || 'दिवंगत का नाम'}</b> <br />
-            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
-          </p>
-
-          <div style={{ background: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid #bfdbfe', marginBottom: '14px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>॥ श्राद्ध एवं पगड़ी कार्यक्रम ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#334155', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
-          </div>
-
-          <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
-
-          <div style={{ borderTop: '1px solid #bfdbfe', paddingTop: '10px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e3a8a' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12px', color: '#334155', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
-            {data.contactNumber && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>मो. {data.contactNumber}</div>}
-          </div>
-        </div>
-      );
-    }
-
-    // 4. TEMPLATE: ROSE FLORAL BORDER
-    if (tId === 'rose-border') {
-      return (
-        <div style={{
-          width: '100%',
-          maxWidth: isPreview ? '100%' : '480px',
-          margin: '0 auto',
-          background: '#ffffff',
-          borderRadius: '16px',
-          border: '6px solid #fecdd3',
-          boxShadow: '0 8px 30px rgba(244,63,94,0.08)',
-          padding: '24px 20px',
-          boxSizing: 'border-box',
-          textAlign: 'center',
-          fontFamily: '"Mukta", system-ui, sans-serif'
-        }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#be123c', letterSpacing: '1px', marginBottom: '14px' }}>
-            ॥ ॐ शान्तिः शान्तिः शान्तिः ॥
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '14px' }}>
-            <span>🌸</span>
-            <div style={{ width: '120px', height: '145px', border: '3px solid #e11d48', padding: '3px', borderRadius: '6px', overflow: 'hidden' }}>
-              <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-            <span>🌸</span>
-          </div>
-
-          <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#9f1239', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>
-            ॥ भावभीनी श्रद्धांजलि ॥
-          </h3>
-
-          <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.65, margin: '0 0 14px' }}>
-            अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे पूजनीय {data.relation || 'स्वजन'}, <br />
-            <b style={{ fontSize: '18px', color: '#be123c', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
-            का स्वर्गवास {data.passedDate || '—'} को हो गया है।
-          </p>
-
-          <div style={{ background: '#fff1f2', borderRadius: '10px', padding: '12px', border: '1px solid #fecdd3', marginBottom: '14px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#9f1239' }}>॥ ब्राह्मण भोज एवं पगड़ी ॥</div>
-            <div style={{ fontSize: '12.5px', color: '#4c0519', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
-            <div style={{ fontSize: '12px', color: '#881337', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
-          </div>
-
-          <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
-
-          <div style={{ borderTop: '1px solid #fecdd3', paddingTop: '10px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#9f1239' }}>॥ शोकाकुल परिवार ॥</div>
-            <div style={{ fontSize: '12px', color: '#334155', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
-            {data.contactNumber && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>मो. {data.contactNumber}</div>}
-          </div>
-        </div>
-      );
-    }
-
-    // 5. TEMPLATE: CLASSIC SILVER
-    return (
-      <div style={{
-        width: '100%',
-        maxWidth: isPreview ? '100%' : '480px',
-        margin: '0 auto',
-        background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-        borderRadius: '16px',
-        border: '2px solid #cbd5e1',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
-        padding: '24px 20px',
-        boxSizing: 'border-box',
-        textAlign: 'center',
-        fontFamily: '"Mukta", system-ui, sans-serif'
-      }}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '1px', marginBottom: '14px' }}>
-          ॥ ॐ शान्तिः शान्तिः शान्तिः ॥
-        </div>
-
-        <div style={{ width: '130px', height: '130px', margin: '0 auto 14px', borderRadius: '50%', padding: '4px', background: '#fff', border: '3px solid #64748b', overflow: 'hidden' }}>
-          <img src={data.photoUrl || imagePreview || NO_PHOTO} alt={data.name || 'स्वर्गीय'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-        </div>
-
-        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 10px', fontFamily: 'Georgia, serif' }}>
-          ॥ भावपूर्ण श्रद्धांजलि ॥
-        </h3>
-
-        <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.65, margin: '0 0 14px' }}>
-          अत्यंत दुःख के साथ सूचित करना पड़ रहा है कि हमारे श्रद्धेय {data.relation || 'स्वजन'}, <br />
-          <b style={{ fontSize: '18px', color: '#0f172a', fontWeight: 800 }}>स्व० श्री {data.name || 'दिवंगत का नाम'}</b> <br />
-          का स्वर्गवास {data.passedDate || '—'} को हो गया है।
-        </p>
-
-        <div style={{ background: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>॥ तेरहवीं कार्यक्रम ॥</div>
-          <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>दिनांक: {data.eventDate || '—'} | {data.eventTime || '—'}</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>स्थान: {data.address || 'निवास स्थल'}</div>
-        </div>
-
-        <div style={{ fontSize: '20px', letterSpacing: '6px', margin: '6px 0 12px' }}>🪔 🪔 🪔</div>
-
-        <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>॥ शोकाकुल परिवार ॥</div>
-          <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{data.familyMembers || 'समस्त शोक संतप्त परिवार'}</div>
-          {data.contactNumber && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>मो. {data.contactNumber}</div>}
-        </div>
-      </div>
-    );
-  };
+  // Card: 5 asli jaise design (components/shok/ShokCard) — sunehri frame, latakte diye, genda / gulab
+  const renderCard = (data: Partial<ShokSandeshItem>, isPreview: boolean = false) => (
+    <ShokCard data={data} photo={data.photoUrl || imagePreview || NO_PHOTO} isPreview={isPreview} />
+  );
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#1e293b', fontFamily: '"Mukta", system-ui, sans-serif' }}>
@@ -936,90 +660,32 @@ export default function ShokSandeshPage() {
               {/* 5 Canva Template Chooser */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
-                  कार्ड डिज़ाइन टेम्पलेट चुनें (5 Canva Styles):
+                  कार्ड डिज़ाइन चुनें (5 पारंपरिक डिज़ाइन):
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-                  
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTemplate('floral-white')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: selectedTemplate === 'floral-white' ? '2px solid #b45309' : '1px solid #cbd5e1',
-                      background: selectedTemplate === 'floral-white' ? '#fef3c7' : '#f8fafc',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🌸 पारंपरिक पुष्प
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTemplate('golden-frame')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: selectedTemplate === 'golden-frame' ? '2px solid #b45309' : '1px solid #cbd5e1',
-                      background: selectedTemplate === 'golden-frame' ? '#fef3c7' : '#f8fafc',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ✨ स्वर्ण फ्रेम
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTemplate('divine-blue')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: selectedTemplate === 'divine-blue' ? '2px solid #b45309' : '1px solid #cbd5e1',
-                      background: selectedTemplate === 'divine-blue' ? '#fef3c7' : '#f8fafc',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🕊️ आकाशीय किरणें
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTemplate('rose-border')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: selectedTemplate === 'rose-border' ? '2px solid #b45309' : '1px solid #cbd5e1',
-                      background: selectedTemplate === 'rose-border' ? '#fef3c7' : '#f8fafc',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🌹 पुष्प माला फ्रेम
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTemplate('classic-silver')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: '8px',
-                      border: selectedTemplate === 'classic-silver' ? '2px solid #b45309' : '1px solid #cbd5e1',
-                      background: selectedTemplate === 'classic-silver' ? '#fef3c7' : '#f8fafc',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ⚪ सिल्वर सादा
-                  </button>
-
+                  {SHOK_TEMPLATES.map((tp) => (
+                    <button
+                      key={tp.id}
+                      type="button"
+                      onClick={() => setSelectedTemplate(tp.id)}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '10px',
+                        border: selectedTemplate === tp.id ? '2px solid #b45309' : '1px solid #cbd5e1',
+                        background: selectedTemplate === tp.id ? '#fef3c7' : '#f8fafc',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <span style={{ width: '26px', height: '34px', borderRadius: '4px', background: tp.swatch, border: '1px solid #d6c7a1', flexShrink: 0 }} />
+                      {tp.name}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1254,7 +920,7 @@ export default function ShokSandeshPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b' }}>लाइव कार्ड प्रीव्यू (Card Preview)</span>
                 <span style={{ fontSize: '11px', backgroundColor: '#e2e8f0', padding: '3px 8px', borderRadius: '12px', color: '#475569' }}>
-                  टेम्पलेट: {selectedTemplate}
+                  डिज़ाइन: {SHOK_TEMPLATES.find((x) => x.id === selectedTemplate)?.name}
                 </span>
               </div>
 
