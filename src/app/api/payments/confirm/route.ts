@@ -202,6 +202,7 @@ export async function POST(req: Request) {
           tx.set(db.collection('classifieds').doc(paymentId), {
             title,
             category: clean(ad.category, 60),
+            description: clean(ad.description, 1000),
             city: clean(ad.city, 60) || 'इंदौर/महू',
             price: clean(ad.price, 30),
             contactNumber: clean(ad.contactNumber, 15) || phone,
@@ -222,6 +223,7 @@ export async function POST(req: Request) {
             title,
             format: adFormat,
             zone: clean(ad.zone, 60),
+            description: clean(ad.description, 1000),
             siteId,
             type: 'image',
             device: 'all',

@@ -96,8 +96,10 @@ export default function AdminObituariesPage() {
   // 2. Approve Handler (Makes card live on public page)
   const handleApprove = async (id: string) => {
     try {
+      // Plan ke din (7 / 30) manzoori ke din se gine jaate hain
       await updateDoc(doc(db, 'shok_sandesh', id), {
-        status: 'approved'
+        status: 'approved',
+        approvedAt: serverTimestamp()
       });
       alert('शोक संदेश स्वीकृत कर दिया गया है और अब मुख्य वेबसाइट पर लाइव है!');
     } catch (err: any) {
