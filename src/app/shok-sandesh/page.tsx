@@ -46,6 +46,27 @@ interface ShokSandeshItem {
   ownerPhone?: string;
 }
 
+/**
+ * Website ka wahi pathak login (header wala) — shok sandesh ka koi alag login nahi.
+ * Pehle Firebase pehchaan (OTP ke baad); purane login (Firebase se pehle ke) me browser me save pathak session ka mobile.
+ * SECURE_AUTH chalu ho toh sirf Firebase pehchaan maani jaati hai.
+ */
+async function readerPhone(): Promise<string | null> {
+  const fb = await firebasePhone();
+  if (fb) return fb;
+  if (SECURE_AUTH) return null;
+  for (const key of ['reader_user', 'shok_user']) {
+    try {
+      const u = JSON.parse(localStorage.getItem(key) || 'null');
+      const ph = String(u?.phone || '').replace(/\D/g, '').slice(-10);
+      if (/^[6-9]\d{9}$/.test(ph)) return ph;
+    } catch {
+      /* kharab session */
+    }
+  }
+  return null;
+}
+
 // Kitne din website par: plan ke din (purane ₹199 wale 30 din), admin manzoori ke din se (na ho toh banne ke din se)
 const toMs = (v: any) => (v?.toDate ? v.toDate().getTime() : v ? new Date(v).getTime() : 0);
 const shokExpiryMs = (it: Partial<ShokSandeshItem>) => {
@@ -219,13 +240,16 @@ export default function ShokSandeshPage() {
       return;
     }
     // Purana browser flag sirf tab jab server-verification chalu nahi
-    if (!SECURE_AUTH && localStorage.getItem('shok_membership_active') === 'true') setHasMembership(true);
+    if (!SECURE_AUTH && localStorage.getItem('shok_membership_active') === 'true') {
+      setHasMembership(true);
+      setCreditDays(Number(localStorage.getItem('shok_plan_days')) || 0);
+    }
   }, []);
 
   // Mere shok sandesh (login mobile se) — pending / live / samay khatam, sab; download sirf yahin se
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    firebasePhone().then((ph) => {
+    readerPhone().then((ph) => {
       setMyPhone(ph);
       if (!ph) return;
       unsub = onSnapshot(
@@ -295,7 +319,7 @@ export default function ShokSandeshPage() {
   // Razorpay Payment Handler (Fixed Instant Popup)
   const handleBuyPlan = async () => {
     // Sandesh kiska hai — isliye login zaroori (sirf wahi apna sandesh download kar sake)
-    const ph = await firebasePhone();
+    const ph = await readerPhone();
     if (!ph) {
       alert('शोक संदेश प्रकाशित करने के लिए पहले मोबाइल नंबर से लॉगिन करें।');
       window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
@@ -333,6 +357,9 @@ export default function ShokSandeshPage() {
             localStorage.setItem('shok_payment_id', response.razorpay_payment_id);
             localStorage.setItem('shok_plan_days', String(shokPlan.days));
           } else {
+            // Purana login (server pehchaan nahi) — plan ke din yahin yaad rakho
+            setCreditDays(shokPlan.days);
+            localStorage.setItem('shok_plan_days', String(shokPlan.days));
             localStorage.setItem('shok_membership_active', 'true');
           }
         },
@@ -377,7 +404,7 @@ export default function ShokSandeshPage() {
       return;
     }
 
-    const ph = await firebasePhone();
+    const ph = await readerPhone();
     if (!ph) {
       alert('कृपया पहले लॉगिन करें।');
       window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
@@ -416,6 +443,10 @@ export default function ShokSandeshPage() {
         setHasMembership(false);
       } else {
         await addDoc(collection(db, 'shok_sandesh'), shokData);
+        localStorage.removeItem('shok_membership_active');
+        localStorage.removeItem('shok_plan_days');
+        setHasMembership(false);
+        setCreditDays(0);
       }
 
       alert('शोक संदेश सफलतापूर्वक सबमिट हो गया है! एडमिन द्वारा सत्यापन के बाद यह पोर्टल पर लाइव दिखेगा। "मेरे शोक संदेश" में आप इसे PNG / PDF में डाउनलोड कर सकते हैं।');
