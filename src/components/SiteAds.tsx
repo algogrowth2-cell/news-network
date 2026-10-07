@@ -15,6 +15,7 @@ export interface SiteAd {
   id: string;
   name: string;
   imageUrl: string;
+  videoUrl?: string;
   targetUrl: string;
 }
 export interface SiteClassified {
@@ -25,6 +26,7 @@ export interface SiteClassified {
   price: string;
   contactNumber: string;
   imageUrl: string;
+  videoUrl?: string;
 }
 
 const LIVE = ['active', 'approved'];
@@ -76,12 +78,13 @@ function loadAds(slug: string) {
               city: x.city || '',
               price: String(x.price || ''),
               contactNumber: x.contactNumber || '',
-              imageUrl: x.imageUrl || ''
+              imageUrl: x.imageUrl || '',
+              videoUrl: x.videoUrl || ''
             });
             return;
           }
-          if (!x.imageUrl) return;
-          const ad = { id: d.id, name: x.name || x.title || '', imageUrl: x.imageUrl, targetUrl: x.targetUrl || '' };
+          if (!x.imageUrl && !x.videoUrl) return;
+          const ad = { id: d.id, name: x.name || x.title || '', imageUrl: x.imageUrl || '', videoUrl: x.videoUrl || '', targetUrl: x.targetUrl || '' };
           if (zone.includes('300') || zone.includes('sidebar') || zone.includes('साइडबार') || fmt === 'sidebar') sidebars.push(ad);
           else if (zone.includes('728') || zone.includes('header') || zone.includes('हेडर') || fmt === 'banner') headers.push(ad);
           else if (zone.includes('feed') || zone.includes('in-article') || zone.includes('banner')) feeds.push(ad);
@@ -96,7 +99,8 @@ function loadAds(slug: string) {
             city: x.city || '',
             price: String(x.price || ''),
             contactNumber: x.contactNumber || '',
-            imageUrl: x.imageUrl || ''
+            imageUrl: x.imageUrl || '',
+            videoUrl: x.videoUrl || ''
           });
         });
         // Upar wali jagah header-banner wale (unhone wahi kharida), phir in-feed; baaki header beech me
@@ -134,6 +138,30 @@ function useImpression(ads: AdSet | null, ad: SiteAd | null | undefined) {
     ads.seen.add(ad.id);
     updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
   }, [ads, ad]);
+}
+
+/**
+ * Vigyapan ka media: video ho toh chupchaap (muted) loop me apne aap chalta hai, warna photo / GIF.
+ * Dono fix size ke dabbe me (object-fit: cover) — photo jaisa hi dikhta hai.
+ */
+export function AdMedia({ ad, alt, className, style }: { ad: { imageUrl?: string; videoUrl?: string }; alt: string; className?: string; style?: React.CSSProperties }) {
+  if (ad.videoUrl) {
+    return (
+      <video
+        src={ad.videoUrl}
+        poster={ad.imageUrl || undefined}
+        className={className}
+        style={{ objectFit: 'cover', ...style }}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-label={alt}
+      />
+    );
+  }
+  return <img src={ad.imageUrl} alt={alt} className={className} style={style} loading="lazy" />;
 }
 
 const adClick = (id: string) => updateDoc(doc(db, 'ads', id), { clicks: increment(1) }).catch(() => {});
@@ -178,7 +206,7 @@ export function AdBanner({ slug, height = 110 }: { slug: string; height?: number
       <Styles />
       {ad ? (
         <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-          <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height }} />
+          <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height }} />
         </a>
       ) : (
         <Link href={`/advertiser/login?site=${slug}`} className="sa-slot sa-cta" style={{ minHeight: 90 }}>
@@ -203,7 +231,7 @@ export function AdSide({ slug, index = 0 }: { slug: string; index?: number }) {
         <div>
           <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
           <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-            <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
+            <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 250 }} />
           </a>
         </div>
       ) : (
@@ -242,7 +270,7 @@ export function ClassifiedsWidget({ slug, color = '#ea580c' }: { slug: string; c
       ) : (
         list.map((c) => (
           <div key={c.id} className="sa-cl">
-            {c.imageUrl ? <img src={c.imageUrl} alt={c.title} className="sa-cl-img" /> : <div className="sa-cl-img">📋</div>}
+            {c.imageUrl || c.videoUrl ? <AdMedia ad={c} alt={c.title} className="sa-cl-img" /> : <div className="sa-cl-img">📋</div>}
             <div style={{ minWidth: 0 }}>
               <p className="sa-cl-t">{c.title}</p>
               <div className="sa-cl-m">{[c.category, c.city, c.price].filter(Boolean).join(' · ')}</div>
@@ -339,7 +367,7 @@ export function AdInline({ slug, index = 0 }: { slug?: string; index?: number })
       <Styles />
       <span className="sa-label">{en ? 'Advertisement' : 'विज्ञापन'}</span>
       <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
-        <img src={ad.imageUrl} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 110 }} />
+        <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={{ height: 110 }} />
       </a>
     </div>
   );

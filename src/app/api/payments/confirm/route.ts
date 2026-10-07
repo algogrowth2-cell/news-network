@@ -20,6 +20,11 @@ const cleanImage = (v: any) => {
   if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) && s.length <= 700_000) return s;
   return '';
 };
+// Animated vigyapan ka video (MP4/WebM, https — aam taur par hamara Storage link)
+const cleanVideo = (v: any) => {
+  const s = String(v || '').trim();
+  return /^https:\/\/[^\s"'<>]{4,2000}$/i.test(s) && /\.(mp4|webm)$/i.test(s.split(/[?#]/)[0]) ? s : '';
+};
 const cleanUrl = (v: any) => (/^https?:\/\/[^\s"'<>]{4,1000}$/i.test(String(v || '').trim()) ? String(v).trim() : '');
 
 export async function POST(req: Request) {
@@ -42,8 +47,8 @@ export async function POST(req: Request) {
   if (kind === 'ad') {
     if (!Object.prototype.hasOwnProperty.call(AD_PRICES, adFormat)) return NextResponse.json({ error: 'bad-format' }, { status: 400 });
     if (!clean(ad.title, 150)) return NextResponse.json({ error: 'bad-ad', message: 'विज्ञापन का शीर्षक आवश्यक है।' }, { status: 400 });
-    if (adFormat !== 'classified' && !cleanImage(ad.imageUrl))
-      return NextResponse.json({ error: 'bad-ad', message: 'बैनर के लिए सही इमेज (लिंक या 500KB तक की फोटो) आवश्यक है।' }, { status: 400 });
+    if (adFormat !== 'classified' && !cleanImage(ad.imageUrl) && !cleanVideo(ad.videoUrl))
+      return NextResponse.json({ error: 'bad-ad', message: 'बैनर के लिए सही इमेज, GIF या वीडियो आवश्यक है।' }, { status: 400 });
   }
   const amount =
     kind === 'epaper' ? plan!.price
@@ -174,6 +179,7 @@ export async function POST(req: Request) {
             price: clean(ad.price, 30),
             contactNumber: clean(ad.contactNumber, 15) || phone,
             imageUrl: cleanImage(ad.imageUrl),
+            videoUrl: cleanVideo(ad.videoUrl),
             siteId,
             status: 'pending', // Admin ki manzoori ke baad hi live
             format: 'classified',
@@ -193,6 +199,7 @@ export async function POST(req: Request) {
             type: 'image',
             device: 'all',
             imageUrl: cleanImage(ad.imageUrl),
+            videoUrl: cleanVideo(ad.videoUrl),
             targetUrl: cleanUrl(ad.targetUrl) || '#',
             startDate: clean(ad.startDate, 20) || 'तत्काल',
             endDate: clean(ad.endDate, 20) || 'खुला',

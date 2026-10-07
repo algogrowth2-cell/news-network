@@ -141,6 +141,12 @@ try {
   res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD003', ad: { ...adBase, format: 'banner', imageUrl: 'https://x.com/b.jpg', targetUrl: 'javascript:alert(1)' } }, tAdv);
   const bn = (await db.doc('ads/pay_TESTAD003').get()).data();
   check('banner bhugtan → pending, ₹1999, nakli link saaf', res.ok && bn?.status === 'pending' && bn?.amountPaid === 1999 && bn?.targetUrl === '#');
+  const VID = 'https://firebasestorage.googleapis.com/v0/b/x/o/ad-media%2F9844444444%2F1.mp4?alt=media&token=t';
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD007', ad: { ...adBase, format: 'sidebar', videoUrl: VID } }, tAdv);
+  const vd = (await db.doc('ads/pay_TESTAD007').get()).data();
+  check('video sidebar vigyapan (bina photo) → pending, video link', res.ok && vd?.status === 'pending' && vd?.videoUrl === VID && vd?.amountPaid === 999);
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD008', ad: { ...adBase, format: 'banner', videoUrl: 'javascript:alert(1)//x.mp4' } }, tAdv);
+  check('nakli video link band', res.status === 400);
   res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD004', ad: { ...adBase, format: 'free' } }, tAdv);
   check('nakli format band', res.status === 400);
   res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD005', ad: { ...adBase, format: 'classified' } }, tNew);

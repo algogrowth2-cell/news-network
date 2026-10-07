@@ -4,6 +4,7 @@ import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } fr
 import { db } from '@/lib/firebase';
 import { fallbackFor } from '@/lib/siteTheme';
 import styles from '../Admin.module.css';
+import { AdMedia } from '@/components/SiteAds';
 
 /* Advertiser ke classified vigyapan — admin ki manzoori ke baad hi homepage par (status: active) */
 
@@ -15,6 +16,7 @@ interface Classified {
   price: string;
   contactNumber: string;
   imageUrl: string;
+  videoUrl: string;
   siteId: string;
   status: string;
   advertiserName: string;
@@ -69,6 +71,7 @@ export default function ClassifiedsPage() {
                 price: x.price || '',
                 contactNumber: x.contactNumber || '',
                 imageUrl: x.imageUrl || '',
+                videoUrl: x.videoUrl || '',
                 siteId: x.siteId || '',
                 status: String(x.status || 'active').toLowerCase(),
                 advertiserName: x.advertiserName || '',
@@ -159,7 +162,7 @@ export default function ClassifiedsPage() {
                 return (
                   <tr key={r.id}>
                     <td style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      {r.imageUrl && <img src={r.imageUrl} alt="" style={{ width: '64px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />}
+                      {(r.imageUrl || r.videoUrl) && <AdMedia ad={r} alt="" style={{ width: '64px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />}
                       <span>
                         <b>{r.title}</b>
                         <span className="cl-sub">{r.createdAt ? r.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</span>

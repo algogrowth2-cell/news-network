@@ -11,6 +11,7 @@ import {
   addDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
+import { AdMedia } from '@/components/SiteAds';
 
 interface AdItem {
   id: string;
@@ -27,6 +28,7 @@ interface AdItem {
   budget?: string | number;
   targetUrl?: string;
   imageUrl?: string;
+  videoUrl?: string;
   startDate?: string;
   endDate?: string;
   paymentId?: string;
@@ -47,6 +49,7 @@ export default function AdsRevenuePage() {
     priority: 1,
     targetUrl: '',
     imageUrl: '',
+    videoUrl: '',
     advertiserName: '',
     budget: '5000'
   });
@@ -73,6 +76,7 @@ export default function AdsRevenuePage() {
           budget: data.budget || 5000,
           targetUrl: data.targetUrl || '',
           imageUrl: data.imageUrl || '',
+          videoUrl: data.videoUrl || '',
           startDate: data.startDate || '',
           endDate: data.endDate || '',
           paymentId: data.paymentId || '',
@@ -153,6 +157,7 @@ export default function AdsRevenuePage() {
         impressions: 0,
         clicks: 0,
         imageUrl: formData.imageUrl,
+        videoUrl: formData.videoUrl.trim(),
         targetUrl: formData.targetUrl,
         advertiserName: formData.advertiserName || 'Admin Created',
         budget: formData.budget,
@@ -167,6 +172,7 @@ export default function AdsRevenuePage() {
         priority: 1,
         targetUrl: '',
         imageUrl: '',
+        videoUrl: '',
         advertiserName: '',
         budget: '5000'
       });
@@ -419,8 +425,8 @@ export default function AdsRevenuePage() {
                 <div key={req.id} style={{ backgroundColor: 'var(--bg-131d33)', border: '1px solid var(--bd-27354f)', borderRadius: '8px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   
                   <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                    {req.imageUrl && (
-                      <img src={req.imageUrl} alt={req.name} style={{ width: '80px', height: '55px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--bd-475569)' }} />
+                    {(req.imageUrl || req.videoUrl) && (
+                      <AdMedia ad={req} alt={req.name} style={{ width: '80px', height: '55px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--bd-475569)' }} />
                     )}
                     <div>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', color: 'var(--fg-ffffff)' }}>{req.name}</h4>
@@ -542,6 +548,18 @@ export default function AdsRevenuePage() {
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 placeholder="https://..."
+                style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '9px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
+              />
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--fg-94a3b8)', marginTop: '4px' }}>GIF का लिंक भी यहीं डालें (animated चलेगा)।</span>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--fg-94a3b8)', marginBottom: '6px' }}>🎬 Video URL (MP4/WebM, वैकल्पिक — होने पर फोटो की जगह वीडियो चलेगा)</label>
+              <input
+                type="url"
+                value={formData.videoUrl}
+                onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                placeholder="https://.../banner.mp4"
                 style={{ width: '100%', boxSizing: 'border-box', backgroundColor: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: '6px', padding: '9px 12px', color: 'var(--fg-ffffff)', fontSize: '13px' }}
               />
             </div>

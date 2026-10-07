@@ -7,7 +7,7 @@ import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AdBanner, AdInline, AdSideSlots, useStickySidebar } from '@/components/SiteAds';
+import { AdBanner, AdInline, AdMedia, AdSideSlots, useStickySidebar } from '@/components/SiteAds';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
@@ -57,6 +57,7 @@ interface ClassifiedItem {
   price?: string;
   contactNumber?: string;
   imageUrl?: string;
+  videoUrl?: string;
   status?: string;
   siteId?: string;
 }
@@ -797,6 +798,7 @@ function HomePageContent() {
               price: data.price || data.budget || '',
               contactNumber: data.contactNumber || '',
               imageUrl: data.imageUrl || '',
+              videoUrl: data.videoUrl || '',
               status: 'active'
             });
           }
@@ -1543,8 +1545,8 @@ function HomePageContent() {
             ) : (
               classifiedAds.map((c) => (
                 <div key={c.id} className="hp-classified">
-                  {c.imageUrl ? (
-                    <img src={c.imageUrl} alt={c.title} className="hp-classified-img" />
+                  {c.imageUrl || c.videoUrl ? (
+                    <AdMedia ad={c} alt={c.title} className="hp-classified-img" />
                   ) : (
                     <div className="hp-classified-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
                       📋

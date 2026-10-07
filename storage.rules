@@ -25,6 +25,16 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*|video/.*');
     }
 
+    // Vigyapan ki GIF / video (animated ads) — website par sabko dikhti hain.
+    // Upload: sirf apne mobile number ke folder me (OTP wala Firebase token) ya admin; GIF/MP4/WebM, 20 MB tak.
+    match /ad-media/{owner}/{file} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if (isAdmin() || (request.auth != null && request.auth.token.get('phone', '') == owner))
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('image/gif|video/mp4|video/webm');
+    }
+
     // Baaki sab band (admin sirf padh sake; upload sirf upar ke folders me, sahi file-type ke saath)
     match /{allPaths=**} {
       allow read: if isAdmin();

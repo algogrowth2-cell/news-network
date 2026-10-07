@@ -18,6 +18,8 @@ import { confirmPayment } from '@/lib/payments';
 import { AD_FORMAT_LABEL, AD_PRICES } from '@/lib/plans';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
+import { isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
+import { AdMedia } from '@/components/SiteAds';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
@@ -28,6 +30,7 @@ interface AdvertiserAd {
   type: string;
   format: 'banner' | 'sidebar' | 'classified' | 'popup';
   imageUrl: string;
+  videoUrl?: string;
   targetUrl: string;
   startDate: string;
   endDate: string;
@@ -95,6 +98,9 @@ export default function AdvertiserDashboard() {
   const [imageUploadType, setImageUploadType] = useState<'url' | 'file'>('url');
   const [imageUrl, setImageUrl] = useState('');
   const [selectedFilePreview, setSelectedFilePreview] = useState<string>('');
+  // Animated vigyapan: video ka link (GIF imageUrl me hi jaata hai); upload chal raha ho toh % (warna null)
+  const [videoUrl, setVideoUrl] = useState('');
+  const [mediaUploadPct, setMediaUploadPct] = useState<number | null>(null);
 
   // 1. Fetch Site Config for Brand Color matching Logo
   useEffect(() => {
@@ -176,6 +182,7 @@ export default function AdvertiserDashboard() {
           type: data.type || 'image',
           format: (data.format || 'banner') as any,
           imageUrl: data.imageUrl || '',
+          videoUrl: data.videoUrl || '',
           targetUrl: data.targetUrl || '',
           startDate: data.startDate || 'तत्काल',
           endDate: data.endDate || 'खुला',
@@ -201,6 +208,7 @@ export default function AdvertiserDashboard() {
           type: 'classified',
           format: 'classified',
           imageUrl: data.imageUrl || '',
+          videoUrl: data.videoUrl || '',
           targetUrl: data.targetUrl || '#',
           startDate: data.startDate || 'तत्काल',
           endDate: data.endDate || 'खुला',
@@ -235,9 +243,39 @@ export default function AdvertiserDashboard() {
       alert('यह फोटो पढ़ी नहीं जा सकी, कृपया JPG/PNG फोटो चुनें।');
     }
   };
-  const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // GIF / video: bina crop seedha Storage me (animation bani rahe) — website par fix size ke dabbe me chalega
+    if (isAnimatedFile(file)) {
+      const problem = await validateAdMedia(file);
+      if (problem) {
+        alert(problem);
+        e.target.value = '';
+        return;
+      }
+      if (!currentUser?.phone) return;
+      setUploadedFile(null);
+      setMediaUploadPct(0);
+      try {
+        const url = await uploadAdMedia(file, currentUser.phone, setMediaUploadPct);
+        if (file.type === 'image/gif') {
+          setImageUrl(url);
+          setVideoUrl('');
+        } else {
+          setVideoUrl(url);
+          setImageUrl('');
+        }
+        setSelectedFilePreview(url);
+      } catch (err: any) {
+        const code = String(err?.code || '');
+        alert(code.includes('unauthorized') ? 'अपलोड की अनुमति नहीं मिली। कृपया दोबारा लॉगिन करके प्रयास करें।' : 'अपलोड नहीं हो पाया, कृपया इंटरनेट जांचकर पुनः प्रयास करें।');
+        e.target.value = '';
+      }
+      setMediaUploadPct(null);
+      return;
+    }
+    setVideoUrl('');
     if (!file.type.startsWith('image/')) {
       alert('कृपया फोटो (JPG/PNG/WebP) चुनें।');
       return;
@@ -280,9 +318,14 @@ export default function AdvertiserDashboard() {
     }
 
     // Payment se PEHLE saari jaanch (paise katne ke baad request na ruke)
+    if (mediaUploadPct !== null) {
+      alert('GIF / वीडियो अपलोड हो रहा है, कृपया पूरा होने दें।');
+      return;
+    }
     const img = imageUrl.trim();
-    if (format !== 'classified' && !img) {
-      alert('बैनर विज्ञापन के लिए इमेज (लिंक या फोटो) आवश्यक है।');
+    const vid = videoUrl.trim();
+    if (format !== 'classified' && !img && !vid) {
+      alert('बैनर विज्ञापन के लिए इमेज, GIF या वीडियो आवश्यक है।');
       return;
     }
     if (img.startsWith('data:') && img.length > 700_000) {
@@ -299,6 +342,7 @@ export default function AdvertiserDashboard() {
       price: price.trim(),
       contactNumber: contactPhone.trim() || currentUser.phone,
       imageUrl: img,
+      videoUrl: vid,
       siteId: selectedSite,
       zone,
       targetUrl: targetUrl.trim(),
@@ -350,6 +394,7 @@ export default function AdvertiserDashboard() {
                 price: adData.price,
                 contactNumber: adData.contactNumber,
                 imageUrl: img,
+                videoUrl: vid,
                 siteId: selectedSite,
                 status: 'pending',
                 format: 'classified',
@@ -369,6 +414,7 @@ export default function AdvertiserDashboard() {
                 type: 'image',
                 device: 'all',
                 imageUrl: img,
+                videoUrl: vid,
                 targetUrl: adData.targetUrl || '#',
                 startDate: startDate || 'तत्काल',
                 endDate: endDate || 'खुला',
@@ -402,6 +448,7 @@ export default function AdvertiserDashboard() {
   const resetForm = () => {
     setName('');
     setImageUrl('');
+    setVideoUrl('');
     setSelectedFilePreview('');
     setTargetUrl('');
     setCity('');
@@ -567,11 +614,11 @@ export default function AdvertiserDashboard() {
                       >
                         <td style={{ padding: '14px 18px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {ad.imageUrl ? (
-                              <img 
-                                src={ad.imageUrl} 
-                                alt={ad.name} 
-                                style={{ width: '48px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                            {ad.imageUrl || ad.videoUrl ? (
+                              <AdMedia
+                                ad={ad}
+                                alt={ad.name}
+                                style={{ width: '48px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                               />
                             ) : (
                               <div style={{ width: '48px', height: '36px', backgroundColor: '#f1f5f9', borderRadius: '4px', display: 'grid', placeItems: 'center', fontSize: '16px' }}>
@@ -811,9 +858,12 @@ export default function AdvertiserDashboard() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                    विज्ञापन फोटो / बैनर {format === 'classified' ? '(वैकल्पिक)' : '*'}
+                    विज्ञापन फोटो / GIF / वीडियो {format === 'classified' ? '(वैकल्पिक)' : '*'}
                     <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 500, color: '#64748b', marginTop: '2px' }}>
                       साइज़: <b>{AD_IMAGE_SIZE[format].label} px</b> — अपलोड की गई फोटो अपने आप इसी साइज़ में फिट हो जाएगी
+                    </span>
+                    <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 500, color: '#64748b' }}>
+                      🎬 Animated: GIF ({MAX_AD_GIF_MB} MB तक) या MP4/WebM वीडियो ({MAX_AD_VIDEO_MB} MB, {MAX_AD_VIDEO_SECONDS} सेकंड तक) — बिना आवाज़ के लूप में चलेगा
                     </span>
                   </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -852,31 +902,48 @@ export default function AdvertiserDashboard() {
                 {imageUploadType === 'url' ? (
                   <input
                     type="url"
-                    placeholder="https://example.com/banner.jpg"
-                    value={imageUrl}
+                    placeholder="https://example.com/banner.jpg (या .gif / .mp4)"
+                    value={videoUrl || imageUrl}
                     onChange={(e) => {
-                      setImageUrl(e.target.value);
-                      setSelectedFilePreview(e.target.value);
+                      // MP4/WebM link = video vigyapan, baaki photo / GIF
+                      const v = e.target.value;
+                      if (isVideoUrl(v)) {
+                        setVideoUrl(v);
+                        setImageUrl('');
+                      } else {
+                        setImageUrl(v);
+                        setVideoUrl('');
+                      }
+                      setSelectedFilePreview(v);
                     }}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 ) : (
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/webm"
                     onChange={handleLocalImageSelect}
                     style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '9px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none' }}
                   />
                 )}
 
+                {mediaUploadPct !== null && (
+                  <div style={{ marginTop: '10px', fontSize: '12.5px', color: themeColor, fontWeight: 600 }}>
+                    ⏳ अपलोड हो रहा है… {mediaUploadPct}%
+                    <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '4px', marginTop: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${mediaUploadPct}%`, height: '100%', background: themeColor, transition: 'width .2s' }} />
+                    </div>
+                  </div>
+                )}
+
                 {selectedFilePreview && (
                   <div style={{ marginTop: '14px', padding: '12px', border: '1px dashed #cbd5e1', borderRadius: '8px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
-                    <span style={{ fontSize: '11.5px', color: '#64748b', display: 'block', marginBottom: '8px', fontWeight: 600 }}>इमेज पूर्वावलोकन</span>
-                    <img 
-                      src={selectedFilePreview} 
-                      alt="Banner Preview" 
-                      // Website par isi ratio me dikhega (link wali photo bhi isi tarah crop hoti hai)
-                      style={{ width: '100%', maxWidth: `${AD_IMAGE_SIZE[format].w}px`, aspectRatio: `${AD_IMAGE_SIZE[format].w} / ${AD_IMAGE_SIZE[format].h}`, objectFit: 'cover', borderRadius: '6px', display: 'block', margin: '0 auto' }} 
+                    <span style={{ fontSize: '11.5px', color: '#64748b', display: 'block', marginBottom: '8px', fontWeight: 600 }}>{videoUrl ? 'वीडियो पूर्वावलोकन' : 'पूर्वावलोकन'}</span>
+                    {/* Website par isi ratio me dikhega (link wali photo / video bhi isi tarah crop hoti hai) */}
+                    <AdMedia
+                      ad={{ imageUrl: videoUrl ? '' : selectedFilePreview, videoUrl }}
+                      alt="Banner Preview"
+                      style={{ width: '100%', maxWidth: `${AD_IMAGE_SIZE[format].w}px`, aspectRatio: `${AD_IMAGE_SIZE[format].w} / ${AD_IMAGE_SIZE[format].h}`, objectFit: 'cover', borderRadius: '6px', display: 'block', margin: '0 auto' }}
                     />
                   </div>
                 )}

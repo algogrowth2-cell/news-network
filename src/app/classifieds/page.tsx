@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { AdInline, AdLayout } from '@/components/SiteAds';
+import { AdInline, AdLayout, AdMedia } from '@/components/SiteAds';
 import EmptyState from '@/components/EmptyState';
 
 interface ClassifiedItem {
@@ -21,6 +21,7 @@ interface ClassifiedItem {
   contactNumber?: string;
   email?: string;
   imageUrl?: string;
+  videoUrl?: string;
   siteId?: string;
   createdAt?: string;
   status?: string;
@@ -109,6 +110,7 @@ function ClassifiedsContent() {
                 contactNumber: data.contactNumber || data.phone || '',
                 email: data.email || '',
                 imageUrl: data.imageUrl || '',
+                videoUrl: data.videoUrl || '',
                 siteId: itemSite,
                 createdAt: data.createdAt || 'आज',
                 status: 'active'
@@ -153,6 +155,7 @@ function ClassifiedsContent() {
                 contactNumber: data.contactNumber || data.phone || '',
                 email: data.advertiserEmail || '',
                 imageUrl: data.imageUrl || '',
+                videoUrl: data.videoUrl || '',
                 siteId: itemSite,
                 createdAt: 'आज',
                 status: 'active'
@@ -371,8 +374,8 @@ function ClassifiedsContent() {
               >
                 {/* Classified photo ka fix size 400×300 (4:3) — har card ek jaisa */}
                 <div style={{ width: '100%', aspectRatio: '4 / 3', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
-                  {ad.imageUrl ? (
-                    <img src={ad.imageUrl} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {ad.imageUrl || ad.videoUrl ? (
+                    <AdMedia ad={ad} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   ) : (
                     <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', fontSize: '38px', opacity: 0.5 }}>
                       🏷️
@@ -460,9 +463,9 @@ function ClassifiedsContent() {
               </button>
             </div>
 
-            {selectedAd.imageUrl && (
+            {(selectedAd.imageUrl || selectedAd.videoUrl) && (
               <div style={{ width: '100%', aspectRatio: '4 / 3', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px', backgroundColor: '#f1f5f9' }}>
-                <img src={selectedAd.imageUrl} alt={selectedAd.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <AdMedia ad={selectedAd} alt={selectedAd.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
             )}
 
