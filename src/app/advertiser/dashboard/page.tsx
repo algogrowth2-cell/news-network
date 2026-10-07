@@ -18,7 +18,7 @@ import { confirmPayment } from '@/lib/payments';
 import { AD_FORMAT_LABEL, AD_PRICES } from '@/lib/plans';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
-import { isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
+import { adUploadErrorMessage, isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
 import { AdMedia } from '@/components/SiteAds';
 import { logoFor } from '@/lib/siteTheme';
 
@@ -269,8 +269,7 @@ export default function AdvertiserDashboard() {
         }
         setSelectedFilePreview(url);
       } catch (err: any) {
-        const code = String(err?.code || '');
-        alert(code.includes('unauthorized') ? 'अपलोड की अनुमति नहीं मिली। कृपया दोबारा लॉगिन करके प्रयास करें।' : 'अपलोड नहीं हो पाया, कृपया इंटरनेट जांचकर पुनः प्रयास करें।');
+        alert(adUploadErrorMessage(err));
         e.target.value = '';
       }
       setMediaUploadPct(null);

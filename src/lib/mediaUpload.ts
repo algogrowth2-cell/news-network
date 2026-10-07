@@ -25,11 +25,25 @@ export function uploadArticleMedia(file: File, kind: MediaKind, onProgress?: (pc
   const path = `${folder}/${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`;
   const task = uploadBytesResumable(ref(storage, path), file, { contentType: file.type, cacheControl: 'public, max-age=31536000' });
   return new Promise((resolve, reject) => {
+    // Storage chalu na ho toh Firebase 0% par atka retry karta hai — 20 sec me ek byte na jaaye toh rok do
+    let moved = false;
+    const stall = setTimeout(() => {
+      if (moved) return;
+      task.cancel();
+      reject(Object.assign(new Error('storage-stalled'), { code: 'storage/stalled' }));
+    }, 20000);
     task.on(
       'state_changed',
-      (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-      (err) => reject(err),
+      (snap) => {
+        if (snap.bytesTransferred > 0) moved = true;
+        onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
+      },
+      (err) => {
+        clearTimeout(stall);
+        reject(err);
+      },
       async () => {
+        clearTimeout(stall);
         try {
           resolve(await getDownloadURL(task.snapshot.ref));
         } catch (err) {
@@ -43,6 +57,8 @@ export function uploadArticleMedia(file: File, kind: MediaKind, onProgress?: (pc
 /** Upload ki galti ka saaf sandesh */
 export function uploadErrorMessage(err: any) {
   const code = String(err?.code || '');
+  if (code.includes('stalled') || code.includes('retry-limit') || code.includes('bucket-not-found'))
+    return 'Firebase Storage चालू नहीं है — Firebase Console → Storage → "Get started" करें (Blaze प्लान ज़रूरी)।';
   if (code.includes('unauthorized')) return 'अपलोड की अनुमति नहीं है (Firebase Storage rules जांचें)।';
   if (code.includes('canceled')) return 'अपलोड रद्द किया गया।';
   if (code.includes('quota')) return 'स्टोरेज की सीमा पूरी हो गई है।';
