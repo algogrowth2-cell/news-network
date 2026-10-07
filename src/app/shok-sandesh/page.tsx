@@ -722,8 +722,8 @@ export default function ShokSandeshPage() {
                 {posts.map((item, pi) => (
                   <React.Fragment key={item.id}>
                     <div>{renderCard(item)}</div>
-                    {/* Har 3 sandesh ke baad ek banner vigyapan (homepage jaisa) */}
-                    {(pi + 1) % 3 === 0 && pi < posts.length - 1 && <AdInline index={(pi + 1) / 3 - 1} />}
+                    {/* Shok card lambe hain (ek line me 2) — har line (2 sandesh) ke baad ek banner vigyapan */}
+                    {(pi + 1) % 2 === 0 && pi < posts.length - 1 && <AdInline index={(pi + 1) / 2 - 1} />}
                   </React.Fragment>
                 ))}
               </div>
