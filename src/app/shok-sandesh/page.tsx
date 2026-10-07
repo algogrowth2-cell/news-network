@@ -1157,17 +1157,17 @@ export default function ShokSandeshPage() {
                 </div>
 
                 {/* Membership Payment Status Bar */}
-                <div style={{ backgroundColor: '#fef3c7', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                <div style={{ backgroundColor: '#fef3c7', border: '1px solid #fde68a', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '12px', marginTop: '6px' }}>
                   <div>
                     <b style={{ fontSize: '13px', color: '#92400e' }}>प्रकाशन प्लान:</b>
                     {hasMembership ? (
                       <div style={{ fontSize: '11.5px', color: '#b45309' }}>✓ भुगतान सत्यापित — {creditDays || shokPlan.days} दिन तक वेबसाइट पर रहेगा</div>
                     ) : (
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
                         {SHOK_PLANS.map((pl) => (
-                          <label key={pl.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: shokPlanId === pl.id ? '#fff7ed' : '#fffdf7', border: `1.5px solid ${shokPlanId === pl.id ? '#b45309' : '#fde68a'}`, borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12.5px', color: '#78350f' }}>
+                          <label key={pl.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '42px', boxSizing: 'border-box', background: shokPlanId === pl.id ? '#fff7ed' : '#fffdf7', border: `1.5px solid ${shokPlanId === pl.id ? '#b45309' : '#fde68a'}`, borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12.5px', color: '#78350f' }}>
                             <input type="radio" name="shok-plan" checked={shokPlanId === pl.id} onChange={() => setShokPlanId(pl.id)} />
-                            <span><b>₹{pl.price}</b> · {pl.name}</span>
+                            <span style={{ whiteSpace: 'nowrap' }}><b>₹{pl.price}</b> · {pl.days} दिन</span>
                           </label>
                         ))}
                       </div>
@@ -1182,9 +1182,10 @@ export default function ShokSandeshPage() {
                         backgroundColor: '#b45309',
                         color: '#fff',
                         border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '6px',
-                        fontSize: '12.5px',
+                        padding: '11px 16px',
+                        width: '100%',
+                        borderRadius: '8px',
+                        fontSize: '14px',
                         fontWeight: 700,
                         cursor: paymentLoading ? 'not-allowed' : 'pointer',
                         opacity: paymentLoading ? 0.7 : 1
