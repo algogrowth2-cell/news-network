@@ -369,7 +369,8 @@ function ClassifiedsContent() {
                   e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
                 }}
               >
-                <div style={{ width: '100%', height: '170px', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
+                {/* Classified photo ka fix size 400×300 (4:3) — har card ek jaisa */}
+                <div style={{ width: '100%', aspectRatio: '4 / 3', backgroundColor: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
                   {ad.imageUrl ? (
                     <img src={ad.imageUrl} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
@@ -460,8 +461,8 @@ function ClassifiedsContent() {
             </div>
 
             {selectedAd.imageUrl && (
-              <div style={{ width: '100%', borderRadius: '10px', overflow: 'hidden', maxHeight: '260px', marginBottom: '16px' }}>
-                <img src={selectedAd.imageUrl} alt={selectedAd.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ width: '100%', aspectRatio: '4 / 3', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px', backgroundColor: '#f1f5f9' }}>
+                <img src={selectedAd.imageUrl} alt={selectedAd.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
             )}
 

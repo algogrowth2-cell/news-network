@@ -159,7 +159,7 @@ export default function ClassifiedsPage() {
                 return (
                   <tr key={r.id}>
                     <td style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      {r.imageUrl && <img src={r.imageUrl} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />}
+                      {r.imageUrl && <img src={r.imageUrl} alt="" style={{ width: '64px', height: '48px', objectFit: 'cover', borderRadius: '6px' }} />}
                       <span>
                         <b>{r.title}</b>
                         <span className="cl-sub">{r.createdAt ? r.createdAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</span>

@@ -17,6 +17,7 @@ import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
 import { AD_FORMAT_LABEL, AD_PRICES } from '@/lib/plans';
 import { loadRazorpayScript } from '@/lib/razorpay';
+import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
 
@@ -223,23 +224,36 @@ export default function AdvertiserDashboard() {
     };
   }, [currentUser?.email]);
 
+  // Upload ki photo format ke fix size (classified 400×300, sidebar 300×250, banner 728×90) me apne aap crop + resize
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fitAndSet = async (file: File, fmt: typeof format) => {
+    try {
+      const dataUrl = await fitAdImage(file, fmt);
+      setSelectedFilePreview(dataUrl);
+      setImageUrl(dataUrl);
+    } catch {
+      alert('यह फोटो पढ़ी नहीं जा सकी, कृपया JPG/PNG फोटो चुनें।');
+    }
+  };
   const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert('कृपया 2 MB से छोटी इमेज चुनें।');
+    if (!file.type.startsWith('image/')) {
+      alert('कृपया फोटो (JPG/PNG/WebP) चुनें।');
       return;
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setSelectedFilePreview(base64String);
-      setImageUrl(base64String);
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 10 * 1024 * 1024) {
+      alert('कृपया 10 MB से छोटी फोटो चुनें।');
+      return;
+    }
+    setUploadedFile(file);
+    fitAndSet(file, format);
   };
+  // Format badla toh upload ki hui photo naye size me dobara fit
+  useEffect(() => {
+    if (uploadedFile && imageUploadType === 'file') fitAndSet(uploadedFile, format);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [format]);
 
   const handleFormatChange = (selected: 'banner' | 'sidebar' | 'classified' | 'popup') => {
     setFormat(selected);
@@ -798,6 +812,9 @@ export default function AdvertiserDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
                     विज्ञापन फोटो / बैनर {format === 'classified' ? '(वैकल्पिक)' : '*'}
+                    <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 500, color: '#64748b', marginTop: '2px' }}>
+                      साइज़: <b>{AD_IMAGE_SIZE[format].label} px</b> — अपलोड की गई फोटो अपने आप इसी साइज़ में फिट हो जाएगी
+                    </span>
                   </label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -858,7 +875,8 @@ export default function AdvertiserDashboard() {
                     <img 
                       src={selectedFilePreview} 
                       alt="Banner Preview" 
-                      style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px' }} 
+                      // Website par isi ratio me dikhega (link wali photo bhi isi tarah crop hoti hai)
+                      style={{ width: '100%', maxWidth: `${AD_IMAGE_SIZE[format].w}px`, aspectRatio: `${AD_IMAGE_SIZE[format].w} / ${AD_IMAGE_SIZE[format].h}`, objectFit: 'cover', borderRadius: '6px', display: 'block', margin: '0 auto' }} 
                     />
                   </div>
                 )}

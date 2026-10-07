@@ -145,7 +145,7 @@ const CSS = `
 .sa-title{font-size:15px;font-weight:800;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid}
 .sa-cl{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f0eee9}
 .sa-cl:last-of-type{border-bottom:0}
-.sa-cl-img{width:54px;height:54px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f1f0ec;display:flex;align-items:center;justify-content:center;font-size:20px}
+.sa-cl-img{width:72px;height:54px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#f1f0ec;display:flex;align-items:center;justify-content:center;font-size:20px}
 .sa-cl-t{font-size:13.5px;font-weight:700;margin:0 0 3px;line-height:1.35;color:#1a1a1a}
 .sa-cl-m{font-size:11.5px;color:#888}
 .sa-call{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;text-decoration:none}
