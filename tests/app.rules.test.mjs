@@ -135,7 +135,13 @@ describe('App khabar / booking', () => {
     await assertFails(getDoc(doc(asPhone(B), 'shok_sandesh', 'pay_shok1')));
     await assertFails(getDoc(doc(anon(), 'shok_sandesh', 'pay_shok1')));
     await assertSucceeds(addDoc(collection(asPhone(REP), 'press_card_deliveries'), { reporterPhone: REP, status: 'pending_dispatch' }));
-    await assertSucceeds(addDoc(collection(asPhone(A), 'app_switch_subscriptions'), { portalId: 'x', amount: 21 }));
+    // App Switch pass: sirf apne number ka record; apna hi padh sake (dobara login par pass wapas)
+    await assertSucceeds(setDoc(doc(asPhone(A), 'app_switch_subscriptions', 'pay_sw1'), { phone: A, planId: '1_month', expiresAt: '2099-01-01T00:00:00.000Z' }));
+    await assertFails(setDoc(doc(asPhone(A), 'app_switch_subscriptions', 'pay_sw2'), { phone: B, planId: '1_month' }));
+    await assertFails(addDoc(collection(asPhone(A), 'app_switch_subscriptions'), { portalId: 'x', amount: 21 }));
+    await assertSucceeds(getDocs(query(collection(asPhone(A), 'app_switch_subscriptions'), where('phone', '==', A))));
+    await assertFails(getDocs(query(collection(asPhone(B), 'app_switch_subscriptions'), where('phone', '==', A))));
+    await assertFails(getDocs(query(collection(anon(), 'app_switch_subscriptions'), where('phone', '==', A))));
   });
   test('video like ±1 aur views / clicks +1', async () => {
     await assertSucceeds(updateDoc(doc(anon(), 'videos', 'v1'), { likes: increment(1) }));

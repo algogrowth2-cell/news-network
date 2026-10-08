@@ -332,7 +332,11 @@ service cloud.firestore {
 
     // ---------- App: booking / anurodh ke records (admin dekhta hai) ----------
     match /press_card_deliveries/{id} { allow create: if hasPhone() && request.resource.data.get('status', '') == 'pending_dispatch'; }
-    match /app_switch_subscriptions/{id} { allow create: if hasPhone(); }
+    // App Switch pass: apne number ka record banana / padhna (logout ke baad dobara login par pass wapas)
+    match /app_switch_subscriptions/{id} {
+      allow create: if hasPhone() && request.resource.data.get('phone', '') == phone();
+      allow read: if hasPhone() && resource.data.get('phone', '') == phone();
+    }
     match /account_deletions/{id} { allow create: if hasPhone(); }
   }
 }
