@@ -163,27 +163,24 @@ export default function AdvertiserDashboard() {
 
   // 3. Fetch advertiser's ads in real-time (Dono: 'ads' aur 'classifieds' collections se)
   useEffect(() => {
-    if (!currentUser?.email) return;
+    if (!currentUser) return;
 
     setLoading(true);
 
-    // Banner Ads query
-    const qAds = query(
-      collection(db, 'ads'),
-      where('advertiserEmail', '==', currentUser.email)
-    );
-
-    // Classified Ads query
-    const qClassifieds = query(
-      collection(db, 'classifieds'),
-      where('advertiserEmail', '==', currentUser.email)
-    );
+    // Apne vigyapan email YA phone se — ek hi number par alag-alag email wali profile ho tab bhi sab dikhein
+    const byField = (col: string) => [
+      ...(currentUser.email ? [query(collection(db, col), where('advertiserEmail', '==', currentUser.email))] : []),
+      query(collection(db, col), where('advertiserPhone', '==', currentUser.phone))
+    ];
 
     let bannerList: AdvertiserAd[] = [];
     let classifiedList: AdvertiserAd[] = [];
+    const bannerParts: AdvertiserAd[][] = [];
+    const classifiedParts: AdvertiserAd[][] = [];
+    const uniq = (parts: AdvertiserAd[][]) => [...new Map(parts.flat().map((x) => [x.id, x])).values()];
 
-    const unsubAds = onSnapshot(qAds, (snapshot) => {
-      bannerList = snapshot.docs.map((docSnap) => {
+    const unsubAds = byField('ads').map((q, i) => onSnapshot(q, (snapshot) => {
+      bannerParts[i] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
@@ -207,12 +204,13 @@ export default function AdvertiserDashboard() {
           advertiserName: data.advertiserName || ''
         };
       });
+      bannerList = uniq(bannerParts);
       setAds([...classifiedList, ...bannerList]);
       setLoading(false);
-    });
+    }, (err) => { console.error('ads load error:', err); setLoading(false); }));
 
-    const unsubCls = onSnapshot(qClassifieds, (snapshot) => {
-      classifiedList = snapshot.docs.map((docSnap) => {
+    const unsubCls = byField('classifieds').map((q, i) => onSnapshot(q, (snapshot) => {
+      classifiedParts[i] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
@@ -238,15 +236,15 @@ export default function AdvertiserDashboard() {
           price: data.price || ''
         };
       });
+      classifiedList = uniq(classifiedParts);
       setAds([...classifiedList, ...bannerList]);
       setLoading(false);
-    });
+    }, (err) => { console.error('classifieds load error:', err); setLoading(false); }));
 
     return () => {
-      unsubAds();
-      unsubCls();
+      [...unsubAds, ...unsubCls].forEach((u) => u());
     };
-  }, [currentUser?.email]);
+  }, [currentUser?.email, currentUser?.phone]);
 
   // Upload ki photo format ke fix size (classified 400×300, sidebar 300×250, banner 728×90) me apne aap crop + resize
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
