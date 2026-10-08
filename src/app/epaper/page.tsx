@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
-import { EPAPER_PLANS } from '@/lib/plans';
+import { daysShort, epaperPlans } from '@/lib/pricing';
+import { usePricing } from '@/lib/usePricing';
 import { fallbackFor, logoFor } from '@/lib/siteTheme';
 import { epaperSite, epaperSubId, hasEpaper, isActiveForSite } from '@/lib/epaperSub';
 import { confirmPayment } from '@/lib/payments';
@@ -263,7 +264,13 @@ function EPaperComponent() {
   const [currentPage, setCurrentPage] = useState(0);
   const [currentUser, setCurrentUser] = useState<{ email: string; name?: string } | null>(null);
   const [hasSubscribed, setHasSubscribed] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(EPAPER_PLANS[0]);
+  // Plan + keemat admin ki tay ki hui (Admin → प्लान व कीमतें)
+  const pricing = usePricing();
+  const EP_PLANS = epaperPlans(pricing);
+  const [selectedPlanId, setSelectedPlanId] = useState('epaper_1_month');
+  const selectedPlan = EP_PLANS.find((p) => p.id === selectedPlanId) || EP_PLANS[0];
+  const setSelectedPlan = (p: { id: string }) => setSelectedPlanId(p.id);
+  const [epMonth, epYear] = EP_PLANS;
   const [showPayModal, setShowPayModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -530,7 +537,7 @@ function EPaperComponent() {
               <span className="ep-vip">✓ VIP एक्टिव</span>
             ) : (
               <button className="ep-btn ep-cta" onClick={handleOpenSubscribe}>
-                ⭐ प्लान चुनें<span className="ep-hide-sm"> (₹21 से शुरू)</span>
+                ⭐ प्लान चुनें<span className="ep-hide-sm"> (₹{Math.min(epMonth.price, epYear.price)} से शुरू)</span>
               </button>
             )}
             <Link href="/" className="ep-home" aria-label="मुख्य वेबसाइट">
@@ -549,7 +556,7 @@ function EPaperComponent() {
             <div>
               <span className="ep-kicker">📰 डिजिटल सदस्यता</span>
               <h2 className="ep-serif">दैनिक डिजिटल ई-पेपर संपूर्ण ऐक्सेस</h2>
-              <p>₹21 (1 माह) या ₹111 (1 वर्ष — सिर्फ़ ₹9.25/माह) में इस पोर्टल के सभी संस्करण अनलॉक करें।</p>
+              <p>₹{epMonth.price} ({daysShort(epMonth.durationDays)}) या ₹{epYear.price} ({daysShort(epYear.durationDays)}) में इस पोर्टल के सभी संस्करण अनलॉक करें।</p>
               <button className="ep-btn ep-hero-cta" onClick={handleOpenSubscribe}>
                 सब्सक्रिप्शन लें →
               </button>
@@ -558,7 +565,7 @@ function EPaperComponent() {
               </Link>
             </div>
             <div className="ep-hero-plans">
-              {EPAPER_PLANS.map((plan) => (
+              {EP_PLANS.map((plan) => (
                 <div key={plan.id} className="ep-mini">
                   <div style={{ minWidth: 0 }}>
                     <div className="ep-mini-name">{plan.name}</div>
@@ -764,7 +771,7 @@ function EPaperComponent() {
             <p className="ep-sheet-sub">सभी शहरों के संस्करण, हर सुबह आपके फ़ोन पर।</p>
 
             <div className="ep-plans" role="radiogroup">
-              {EPAPER_PLANS.map((plan) => (
+              {EP_PLANS.map((plan) => (
                 <div
                   key={plan.id}
                   role="radio"

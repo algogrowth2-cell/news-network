@@ -165,6 +165,20 @@ try {
   res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTAD006', ad: { ...adBase, format: 'classified' } });
   check('bina login vigyapan band', res.status === 401);
 
+  // 5c. Admin ki badli keemat server maanta hai (settings/pricing), purane default nahi
+  await db.doc('settings/pricing').set({ ads: { classified: { price: 77, days: 15 } }, shok: { shok_7_days: { price: 13, days: 5 } } });
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTPRICE01', ad: { ...adBase, format: 'classified' } }, tAdv);
+  const pc = (await db.doc('classifieds/pay_TESTPRICE01').get()).data();
+  check('admin keemat: classified ₹77 / 15 din', res.ok && pc?.amountPaid === 77 && pc?.days === 15);
+  res = await post('/api/payments/confirm', { kind: 'shok', paymentId: 'pay_TESTPRICE02', planId: 'shok_7_days' }, tAdv);
+  const ps = (await db.doc('payments/pay_TESTPRICE02').get()).data();
+  check('admin keemat: shok ₹13 / 5 din', res.ok && ps?.amount === 13 && ps?.days === 5);
+  await db.doc('settings/pricing').set({ ads: { banner: { price: -5, days: 99999 } } });
+  res = await post('/api/payments/confirm', { kind: 'ad', paymentId: 'pay_TESTPRICE03', ad: { ...adBase, format: 'banner', imageUrl: 'https://x.com/b.jpg' } }, tAdv);
+  const pb = (await db.doc('ads/pay_TESTPRICE03').get()).data();
+  check('galat admin keemat par surakshit default (₹999 / 365)', res.ok && pb?.amountPaid === 999 && pb?.days === 365);
+  await db.doc('settings/pricing').delete();
+
   // 6. Verify page API (sirf public jaankari)
   r = await (await fetch(`${B}/api/verify-press?id=NI24-${new Date().getFullYear()}-001`)).json();
   check('verify: card ki jaankari, mobile nahi', r.found && r.name === 'Rep' && !JSON.stringify(r).includes(REP));

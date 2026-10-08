@@ -18,7 +18,9 @@ import { AdInline, AdLayout } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
 import { firebasePhone, SECURE_AUTH } from '@/lib/phoneAuth';
-import { SHOK_LEGACY_DAYS, SHOK_PLANS } from '@/lib/plans';
+import { SHOK_LEGACY_DAYS } from '@/lib/plans';
+import { shokPlans } from '@/lib/pricing';
+import { usePricing } from '@/lib/usePricing';
 import ShokCard, { SHOK_TEMPLATES, type ShokTemplateId } from '@/components/shok/ShokCard';
 
 declare global {
@@ -122,8 +124,10 @@ export default function ShokSandeshPage() {
   const [myPhone, setMyPhone] = useState<string | null>(null);
   const [myPosts, setMyPosts] = useState<ShokSandeshItem[]>([]);
   const [downloading, setDownloading] = useState('');
-  const [shokPlanId, setShokPlanId] = useState<string>(SHOK_PLANS[0].id);
-  const shokPlan = SHOK_PLANS.find((x) => x.id === shokPlanId) || SHOK_PLANS[0];
+  // Plan + keemat admin ki tay ki hui (Admin → प्लान व कीमतें)
+  const SK_PLANS = shokPlans(usePricing());
+  const [shokPlanId, setShokPlanId] = useState<string>('shok_7_days');
+  const shokPlan = SK_PLANS.find((x) => x.id === shokPlanId) || SK_PLANS[0];
   // Kaunsa portal (?site= / domain / pichhla khola) — header ka logo aur home link isi ka
   const [portalSlug, setPortalSlug] = useState('the-local-leader');
   useEffect(() => {
@@ -400,7 +404,7 @@ export default function ShokSandeshPage() {
     }
 
     if (!hasMembership) {
-      alert('शोक संदेश प्रकाशित करने हेतु पहले प्लान (₹11 में 7 दिन / ₹51 में 30 दिन) चुनकर भुगतान करें।');
+      alert(`शोक संदेश प्रकाशित करने हेतु पहले प्लान (${SK_PLANS.map((x) => `₹${x.price} में ${x.days} दिन`).join(' / ')}) चुनकर भुगतान करें।`);
       handleBuyPlan();
       return;
     }
@@ -431,7 +435,7 @@ export default function ShokSandeshPage() {
         templateId: selectedTemplate,
         status: 'pending', // Awaiting Admin verification
         ownerPhone: ph, // sirf yahi download kar sake
-        days: creditDays || SHOK_PLANS[0].days, // website par kitne din (server payment se milan)
+        days: creditDays || SK_PLANS[0].days, // website par kitne din (server payment se milan)
         createdAt: serverTimestamp()
       };
       if (shokCredit) {
@@ -861,7 +865,7 @@ export default function ShokSandeshPage() {
                       <div style={{ fontSize: '11.5px', color: '#b45309' }}>✓ भुगतान सत्यापित — {creditDays || shokPlan.days} दिन तक वेबसाइट पर रहेगा</div>
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
-                        {SHOK_PLANS.map((pl) => (
+                        {SK_PLANS.map((pl) => (
                           <label key={pl.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '42px', boxSizing: 'border-box', background: shokPlanId === pl.id ? '#fff7ed' : '#fffdf7', border: `1.5px solid ${shokPlanId === pl.id ? '#b45309' : '#fde68a'}`, borderRadius: '8px', padding: '6px 10px', cursor: 'pointer', fontSize: '12.5px', color: '#78350f' }}>
                             <input type="radio" name="shok-plan" checked={shokPlanId === pl.id} onChange={() => setShokPlanId(pl.id)} />
                             <span style={{ whiteSpace: 'nowrap' }}><b>₹{pl.price}</b> · {pl.days} दिन</span>

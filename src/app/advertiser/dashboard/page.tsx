@@ -15,7 +15,9 @@ import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
-import { AD_DAYS, AD_DURATION_LABEL, AD_FORMAT_LABEL, AD_PRICES, adExpiryMs, adNotExpired } from '@/lib/plans';
+import { AD_FORMAT_LABEL, adExpiryMs, adNotExpired } from '@/lib/plans';
+import { daysLabel } from '@/lib/pricing';
+import { usePricing } from '@/lib/usePricing';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { AD_IMAGE_SIZE, fitAdImage } from '@/lib/adImage';
 import { adUploadErrorMessage, isAnimatedFile, isVideoUrl, MAX_AD_GIF_MB, MAX_AD_VIDEO_MB, MAX_AD_VIDEO_SECONDS, uploadAdMedia, validateAdMedia } from '@/lib/adMedia';
@@ -72,6 +74,12 @@ const CLASSIFIED_CATEGORIES = [
 export default function AdvertiserDashboard() {
   const [activeTab, setActiveTab] = useState<'my-ads' | 'create-ad'>('my-ads');
   const [ads, setAds] = useState<AdvertiserAd[]>([]);
+  // Vigyapan ki keemat + muddat admin ki tay ki hui (Admin → प्लान व कीमतें)
+  const pricing = usePricing();
+  const AD_FORMATS = ['classified', 'sidebar', 'banner', 'popup'] as const;
+  const AD_PRICES = Object.fromEntries(AD_FORMATS.map((f) => [f, pricing.ads[f].price])) as Record<(typeof AD_FORMATS)[number], number>;
+  const AD_DAYS = Object.fromEntries(AD_FORMATS.map((f) => [f, pricing.ads[f].days])) as Record<(typeof AD_FORMATS)[number], number>;
+  const AD_DURATION_LABEL = Object.fromEntries(AD_FORMATS.map((f) => [f, daysLabel(pricing.ads[f].days)])) as Record<(typeof AD_FORMATS)[number], string>;
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -730,10 +738,10 @@ export default function AdvertiserDashboard() {
                   onChange={(e) => handleFormatChange(e.target.value as any)}
                   style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: `2px solid ${themeColor}`, borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '14px', outline: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
-                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज) — ₹{AD_PRICES.classified} / {AD_DURATION_LABEL.classified}</option>
-                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90) — ₹{AD_PRICES.banner} / {AD_DURATION_LABEL.banner}</option>
-                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250) — ₹{AD_PRICES.sidebar} / {AD_DURATION_LABEL.sidebar}</option>
-                  <option value="popup">🛑 पॉप-अप विज्ञापन — ₹{AD_PRICES.popup}</option>
+                  <option value="classified">📋 क्लासिफाइड विज्ञापन (साइडबार विजेट और क्लासिफाइड पेज) — ₹{AD_PRICES.classified}{AD_DURATION_LABEL.classified ? ` / ${AD_DURATION_LABEL.classified}` : ''}</option>
+                  <option value="banner">🔝 हेडर / लीडरबोर्ड बैनर (728 × 90) — ₹{AD_PRICES.banner}{AD_DURATION_LABEL.banner ? ` / ${AD_DURATION_LABEL.banner}` : ''}</option>
+                  <option value="sidebar">🔲 साइडबार इमेज बैनर (300 × 250) — ₹{AD_PRICES.sidebar}{AD_DURATION_LABEL.sidebar ? ` / ${AD_DURATION_LABEL.sidebar}` : ''}</option>
+                  <option value="popup">🛑 पॉप-अप विज्ञापन — ₹{AD_PRICES.popup}{AD_DURATION_LABEL.popup ? ` / ${AD_DURATION_LABEL.popup}` : ''}</option>
                 </select>
                 <p style={{ margin: '8px 0 0', fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
                   💳 विज्ञापन शुल्क: <b style={{ color: themeColor }}>₹{AD_PRICES[format]}{AD_DURATION_LABEL[format] ? ` / ${AD_DURATION_LABEL[format]}` : ''}</b> — भुगतान के बाद अनुरोध एडमिन के पास जाएगा और स्वीकृति के बाद ही वेबसाइट पर लाइव होगा।{AD_DAYS[format] ? ` विज्ञापन स्वीकृति के दिन से ${AD_DURATION_LABEL[format]} तक चलेगा।` : ''}

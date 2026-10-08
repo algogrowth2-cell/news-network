@@ -3,8 +3,10 @@ import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
-import { MEMBERSHIP_DAYS, membershipSite, membershipTillMs } from '@/lib/membership';
-import { AD_DAYS, AD_PRICES, EPAPER_PLANS, PATRAKAR_MEMBERSHIP_PRICE, PRESS_KIT_DELIVERY_PRICE, SHOK_PLANS, type AdFormat, type PaymentKind } from '@/lib/plans';
+import { membershipSite, membershipTillMs } from '@/lib/membership';
+import { type AdFormat, type PaymentKind } from '@/lib/plans';
+import { epaperPlans, shokPlans } from '@/lib/pricing';
+import { getServerPricing } from '@/lib/pricingServer';
 
 /*
  * Razorpay payment ke baad: server payment jaanchta hai, phir hi subscription / membership / delivery / shok-credit likhta hai.
@@ -44,26 +46,28 @@ export async function POST(req: Request) {
   const phone = await phoneFromRequest(req);
   if (!phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया दोबारा लॉगिन करें।' }, { status: 401 });
 
-  const plan = kind === 'epaper' ? EPAPER_PLANS.find((p) => p.id === body.planId) : null;
+  // Keemat + muddat admin ki tay ki hui (settings/pricing) — wahi Razorpay se jaanchi jaati hai
+  const pricing = await getServerPricing(db);
+  const plan = kind === 'epaper' ? epaperPlans(pricing).find((p) => p.id === body.planId) : null;
   if (kind === 'epaper' && !plan) return NextResponse.json({ error: 'bad-plan' }, { status: 400 });
   // Sadasyata: shulk sevaon ka hai (naukri / niyukti nahi) — shartein maanna zaroori, record rehta hai
   if (kind === 'membership' && body.termsAccepted !== true)
     return NextResponse.json({ error: 'terms', message: 'कृपया सदस्यता की शर्तें पढ़कर स्वीकार करें।' }, { status: 400 });
-  const shokPlan = kind === 'shok' ? SHOK_PLANS.find((p) => p.id === body.planId) : null;
+  const shokPlan = kind === 'shok' ? shokPlans(pricing).find((p) => p.id === body.planId) : null;
   if (kind === 'shok' && !shokPlan) return NextResponse.json({ error: 'bad-plan', message: 'कृपया शोक संदेश का प्लान चुनें।' }, { status: 400 });
   const ad = body.ad || {};
   const adFormat = String(ad.format || '') as AdFormat;
   if (kind === 'ad') {
-    if (!Object.prototype.hasOwnProperty.call(AD_PRICES, adFormat)) return NextResponse.json({ error: 'bad-format' }, { status: 400 });
+    if (!Object.prototype.hasOwnProperty.call(pricing.ads, adFormat)) return NextResponse.json({ error: 'bad-format' }, { status: 400 });
     if (!clean(ad.title, 150)) return NextResponse.json({ error: 'bad-ad', message: 'विज्ञापन का शीर्षक आवश्यक है।' }, { status: 400 });
     if (adFormat !== 'classified' && !cleanImage(ad.imageUrl) && !cleanVideo(ad.videoUrl))
       return NextResponse.json({ error: 'bad-ad', message: 'बैनर के लिए सही इमेज, GIF या वीडियो आवश्यक है।' }, { status: 400 });
   }
   const amount =
     kind === 'epaper' ? plan!.price
-    : kind === 'membership' ? PATRAKAR_MEMBERSHIP_PRICE
-    : kind === 'delivery' ? PRESS_KIT_DELIVERY_PRICE
-    : kind === 'ad' ? AD_PRICES[adFormat]
+    : kind === 'membership' ? pricing.membership.price
+    : kind === 'delivery' ? pricing.delivery.price
+    : kind === 'ad' ? pricing.ads[adFormat].price
     : shokPlan!.price;
 
   // Pehle hi use ho chuka? (do baar activation nahi)
@@ -130,7 +134,7 @@ export async function POST(req: Request) {
           // Har portal ki alag sadasyata: chalu ho toh uski expiry se aage 1 saal, warna aaj se
           const portal = membershipSite(body.siteId);
           const cur = membershipTillMs(rep, portal);
-          const expiresAt = new Date(Math.max(cur, Date.now()) + MEMBERSHIP_DAYS * 864e5);
+          const expiresAt = new Date(Math.max(cur, Date.now()) + pricing.membership.days * 864e5);
           tx.update(repRef, {
             [`memberships.${portal}`]: { expiresAt: admin.Timestamp.fromDate(expiresAt), paymentId, since: admin.FieldValue.serverTimestamp() },
             membershipUpdatedAt: admin.FieldValue.serverTimestamp()
@@ -194,7 +198,7 @@ export async function POST(req: Request) {
           advertiserName: adv.businessName || adv.contactName || adv.contactPerson || 'विज्ञापनदाता'
         };
         // days: kitne din chalega (banner / sidebar 365, classified 30) — admin manzoori ke din se
-        const paid = { paymentId, amountPaid: amount, paymentStatus: 'paid', testMode: v.testMode, paidAt: admin.FieldValue.serverTimestamp(), days: AD_DAYS[adFormat] };
+        const paid = { paymentId, amountPaid: amount, paymentStatus: 'paid', testMode: v.testMode, paidAt: admin.FieldValue.serverTimestamp(), days: pricing.ads[adFormat].days };
         const siteId = clean(ad.siteId, 60) || 'the-local-leader';
         const title = clean(ad.title, 150);
         // Payment ID hi document ID — ek payment se ek hi vigyapan

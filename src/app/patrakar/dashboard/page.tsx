@@ -20,8 +20,9 @@ import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryIte
 import { clearRoleSession, getProfileById, getRoleSession, isReporterApproved } from '@/lib/roleSession';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
-import { activeMembershipSites, hasMembership, MEMBERSHIP_DAYS, membershipTillMs } from '@/lib/membership';
-import { PATRAKAR_MEMBERSHIP_PRICE } from '@/lib/plans';
+import { activeMembershipSites, hasMembership, membershipTillMs } from '@/lib/membership';
+import { daysLabel } from '@/lib/pricing';
+import { usePricing } from '@/lib/usePricing';
 import { uploadNewsPhoto, validateNewsPhoto } from '@/lib/reporterMedia';
 
 declare global {
@@ -54,6 +55,11 @@ const NETWORK_WEBSITES = [
 
 export default function PatrakarDashboard() {
   const [reporter, setReporter] = useState<any>(null);
+  // Keemat + muddat admin ki tay ki hui (Admin → प्लान व कीमतें)
+  const pricing = usePricing();
+  const MEMBER_PRICE = pricing.membership.price;
+  const MEMBER_PERIOD = daysLabel(pricing.membership.days);
+  const DELIVERY_PRICE = pricing.delivery.price;
   // Sadasyata form: shartein maani (portal = jis portal se aaye)
   const [termsOk, setTermsOk] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'create-article' | 'id-card' | 'membership' | 'delivery'>('create-article');
@@ -265,10 +271,10 @@ export default function PatrakarDashboard() {
 
     const options = {
       key: RAZORPAY_KEY,
-      amount: PATRAKAR_MEMBERSHIP_PRICE * 100,
+      amount: MEMBER_PRICE * 100,
       currency: 'INR',
       name: siteName,
-      description: `पत्रकार सेवा सदस्यता (1 वर्ष) — ${siteLabel}`,
+      description: `पत्रकार सेवा सदस्यता (${MEMBER_PERIOD}) — ${siteLabel}`,
       handler: async function (response: any) {
         // Server Razorpay se jaanch kar isi portal ki sadasyata 1 saal chalu karta hai
         const confirmed = await confirmPayment('membership', response.razorpay_payment_id, { siteId: site, termsAccepted: true });
@@ -276,7 +282,7 @@ export default function PatrakarDashboard() {
           alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
           return;
         }
-        const till = confirmed.ok && confirmed.data?.validTill ? new Date(confirmed.data.validTill) : new Date(Date.now() + MEMBERSHIP_DAYS * 864e5);
+        const till = confirmed.ok && confirmed.data?.validTill ? new Date(confirmed.data.validTill) : new Date(Date.now() + pricing.membership.days * 864e5);
         setReporter((r: any) => ({ ...r, memberships: { ...(r?.memberships || {}), [site]: { expiresAt: till.toISOString() } } }));
         alert(`सदस्यता भुगतान सफल! अब आप "${siteLabel}" पर खबरें भेज सकते हैं (${till.toLocaleDateString('hi-IN')} तक)।`);
         setArtSiteId(site);
@@ -290,7 +296,7 @@ export default function PatrakarDashboard() {
             reporterName: reporter.name,
             siteId: site,
             paymentId: response.razorpay_payment_id || 'test_pay_' + Date.now(),
-            amount: PATRAKAR_MEMBERSHIP_PRICE,
+            amount: MEMBER_PRICE,
             termsAccepted: true,
             status: 'success',
             createdAt: serverTimestamp()
@@ -329,7 +335,7 @@ export default function PatrakarDashboard() {
     setPayingDelivery(true);
     const options = {
       key: RAZORPAY_KEY,
-      amount: 299 * 100,
+      amount: DELIVERY_PRICE * 100,
       currency: 'INR',
       name: siteName,
       description: 'प्रेस आईडी कार्ड एवं प्रमाणपत्र होम डिलीवरी शुल्क',
@@ -342,7 +348,7 @@ export default function PatrakarDashboard() {
           alert(`⚠️ ${confirmed.message}\nभुगतान ID: ${response.razorpay_payment_id || '—'}`);
           return;
         }
-        alert('डिलीवरी शुल्क ₹299 का भुगतान सफल! आपकी किट 5-7 कार्यदिवसों में भेज दी जाएगी।');
+        alert(`डिलीवरी शुल्क ₹${DELIVERY_PRICE} का भुगतान सफल! आपकी किट 5-7 कार्यदिवसों में भेज दी जाएगी।`);
         if (confirmed.ok) {
           setActiveTab('overview');
           return;
@@ -355,7 +361,7 @@ export default function PatrakarDashboard() {
           address: delAddress,
           pincode: delPincode,
           idNumber: reporter.idNumber || 'LL-PRESS-7821',
-          amountPaid: 299,
+          amountPaid: DELIVERY_PRICE,
           paymentId: response.razorpay_payment_id || 'test_del_' + Date.now(),
           status: 'pending_dispatch',
           createdAt: serverTimestamp()
@@ -598,7 +604,7 @@ export default function PatrakarDashboard() {
               boxShadow: activeTab === 'delivery' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
             }}
           >
-            📦 होम डिलीवरी किट (₹299)
+            📦 होम डिलीवरी किट (₹{DELIVERY_PRICE})
           </button>
 
           {reporter && (
@@ -687,7 +693,7 @@ export default function PatrakarDashboard() {
           <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '32px', maxWidth: '640px', margin: '0 auto', textAlign: 'center', color: '#78350f' }}>
             <div style={{ fontSize: '30px' }}>🔒</div>
             <h3 style={{ fontSize: '19px', margin: '8px 0 6px', color: '#0f172a' }}>खबर भेजने के लिए सदस्यता आवश्यक है</h3>
-            <p style={{ fontSize: '13.5px', margin: '0 0 16px' }}>इस पोर्टल पर खबर भेजने के लिए पत्रकार सेवा सदस्यता (₹{PATRAKAR_MEMBERSHIP_PRICE} / वर्ष) लें। सदस्यता के बिना खबर सबमिट नहीं होगी।</p>
+            <p style={{ fontSize: '13.5px', margin: '0 0 16px' }}>इस पोर्टल पर खबर भेजने के लिए पत्रकार सेवा सदस्यता (₹{MEMBER_PRICE} / {MEMBER_PERIOD}) लें। सदस्यता के बिना खबर सबमिट नहीं होगी।</p>
             <button type="button" onClick={() => setActiveTab('membership')} style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '11px 22px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
               सदस्यता लें
             </button>
@@ -867,13 +873,13 @@ export default function PatrakarDashboard() {
             <div style={{ marginTop: '24px', backgroundColor: '#ffffff', border: `1.5px solid ${themeColor}`, borderRadius: '14px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
               <div>
                 <b style={{ color: '#0f172a', fontSize: '16px' }}>क्या आपको ओरिजिनल लैमिनेटेड कार्ड + डोरी + सील प्रमाणपत्र घर पर चाहिए?</b>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>मात्र ₹299 डिलीवरी व प्रिंटिंग शुल्क में स्पीड पोस्ट द्वारा आपके पते पर भेज दिया जाएगा।</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>मात्र ₹{DELIVERY_PRICE} डिलीवरी व प्रिंटिंग शुल्क में स्पीड पोस्ट द्वारा आपके पते पर भेज दिया जाएगा।</p>
               </div>
               <button
                 onClick={() => setActiveTab('delivery')}
                 style={{ backgroundColor: themeColor, color: '#fff', border: 'none', padding: '11px 22px', borderRadius: '8px', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer' }}
               >
-                घर मंगवाएं (₹299)
+                घर मंगवाएं (₹{DELIVERY_PRICE})
               </button>
             </div>
 
@@ -883,7 +889,7 @@ export default function PatrakarDashboard() {
         {/* TAB 4: DELIVERY FORM (₹299) */}
         {activeTab === 'delivery' && (
           <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '32px', maxWidth: '650px', margin: '0 auto', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>प्रेस किट होम डिलीवरी ऑर्डर (₹299)</h2>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>प्रेस किट होम डिलीवरी ऑर्डर (₹{DELIVERY_PRICE})</h2>
             <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 22px 0' }}>
               किट में शामिल: हार्ड लैमिनेटेड प्रेस कार्ड, ब्रांडेड नेक डोरी (Lanyard), आधिकारिक अधिमान्यता प्रमाणपत्र व वाहन प्रेस स्टिकर।
             </p>
@@ -938,7 +944,7 @@ export default function PatrakarDashboard() {
 
               <div style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '14px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '14px', color: '#334155', fontWeight: 600 }}>कुल डिलीवरी व प्रिंटिंग शुल्क:</span>
-                <b style={{ fontSize: '20px', color: '#16a34a' }}>₹299</b>
+                <b style={{ fontSize: '20px', color: '#16a34a' }}>₹{DELIVERY_PRICE}</b>
               </div>
 
               <button
@@ -946,7 +952,7 @@ export default function PatrakarDashboard() {
                 disabled={payingDelivery}
                 style={{ backgroundColor: themeColor, border: 'none', color: '#ffffff', padding: '13px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', marginTop: '6px' }}
               >
-                {payingDelivery ? 'पेमेंट शुरू हो रहा है...' : '₹299 का ऑनलाइन भुगतान करें'}
+                {payingDelivery ? 'पेमेंट शुरू हो रहा है...' : `₹${DELIVERY_PRICE} का ऑनलाइन भुगतान करें`}
               </button>
             </form>
           </div>
@@ -969,9 +975,9 @@ export default function PatrakarDashboard() {
               पोर्टल: <span style={{ color: themeColor }}>{siteLabel}</span>
             </div>
 
-            <div style={{ fontSize: '38px', fontWeight: 800, color: themeColor, margin: '12px 0 2px' }}>₹{PATRAKAR_MEMBERSHIP_PRICE} <small style={{ fontSize: '14px', color: '#64748b' }}>/ वर्ष · केवल {siteLabel}</small></div>
+            <div style={{ fontSize: '38px', fontWeight: 800, color: themeColor, margin: '12px 0 2px' }}>₹{MEMBER_PRICE} <small style={{ fontSize: '14px', color: '#64748b' }}>/ {MEMBER_PERIOD} · केवल {siteLabel}</small></div>
             {active && (
-              <div style={{ fontSize: '13px', color: '#16a34a', fontWeight: 700 }}>✓ इस पोर्टल की सदस्यता {new Date(till).toLocaleDateString('hi-IN')} तक सक्रिय है — दोबारा लेने पर 1 वर्ष आगे बढ़ेगी।</div>
+              <div style={{ fontSize: '13px', color: '#16a34a', fontWeight: 700 }}>✓ इस पोर्टल की सदस्यता {new Date(till).toLocaleDateString('hi-IN')} तक सक्रिय है — दोबारा लेने पर {MEMBER_PERIOD} आगे बढ़ेगी।</div>
             )}
 
             <div style={{ textAlign: 'left', margin: '18px 0', borderTop: '1px solid #e2e8f0', paddingTop: '16px', fontSize: '14px', color: '#334155', display: 'flex', flexDirection: 'column', gap: '9px' }}>
@@ -1006,7 +1012,7 @@ export default function PatrakarDashboard() {
               disabled={!termsOk}
               style={{ backgroundColor: termsOk ? themeColor : '#cbd5e1', color: '#ffffff', border: 'none', padding: '13px 28px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: termsOk ? 'pointer' : 'not-allowed', width: '100%' }}
             >
-              {active ? `1 वर्ष और बढ़ाएँ — ₹${PATRAKAR_MEMBERSHIP_PRICE}` : `सदस्यता लें — ₹${PATRAKAR_MEMBERSHIP_PRICE} भुगतान करें`}
+              {active ? `${MEMBER_PERIOD} और बढ़ाएँ — ₹${MEMBER_PRICE}` : `सदस्यता लें — ₹${MEMBER_PRICE} भुगतान करें`}
             </button>
           </div>
           );
