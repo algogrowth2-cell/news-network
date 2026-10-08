@@ -14,14 +14,14 @@ const PREFIX: Record<string, { col: string; prefix: string }> = {
   advertiser: { col: 'advertisers', prefix: 'adv_' }
 };
 
-// Number ginne (enumeration) se bachav: ek IP se 60/ghanta
+// Number ginne (enumeration) se bachav: ek IP se 20/ghanta
 const hits = new Map<string, number[]>();
 const limited = (ip: string) => {
   const now = Date.now();
   const list = (hits.get(ip) || []).filter((t) => now - t < 3600e3);
   list.push(now);
   hits.set(ip, list);
-  return list.length > 60;
+  return list.length > 20;
 };
 
 export async function POST(req: Request) {
