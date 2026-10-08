@@ -186,5 +186,153 @@ service cloud.firestore {
 
     // readers (purana), referral_codes, counters, payments, vip_all_access, subscriptions:
     // sirf admin / server — upar wale admin niyam ke alawa koi allow nahi.
+
+    // =====================================================================================
+    // Mobile app (Golden Pearl News Android) — EXTRA ijazat.
+    // Website ke upar wale niyam jaise ke taise hain; app ke apne features / price alag hain,
+    // isliye uske kaam yahan alag se allow hain. Har jagah: sirf apna data, sirf tay fields,
+    // koi khud ko approve / admin / inaam nahi de sakta, dusre ka data nahi padh sakta.
+    // =====================================================================================
+
+    // Record mera hai (app ke purane records random ID ke — phone / mobile field se pehchaan)
+    function myRecord(data) { return hasPhone() && (data.get('phone', '') == phone() || data.get('mobile', '') == phone()); }
+    // Likhne ke baad bhi record usi number ka rahe
+    function keepsMyPhone() {
+      return request.resource.data.get('phone', phone()) == phone()
+        && request.resource.data.get('mobile', phone()) == phone();
+    }
+    // Sirf ye fields badle / bane
+    function onlyKeys(keys) { return request.resource.data.keys().hasOnly(keys); }
+    // Refer & Earn: naya pathak apne sign-up ke SAATH (isi batch me referrals/<apna number> banate hue) referrer ko sirf +1
+    function referralCreditInThisBatch() {
+      return hasPhone() && !exists(docPath('referrals', phone()))
+        && existsAfter(docPath('referrals', phone()))
+        && getAfter(docPath('referrals', phone())).data.get('refereePhone', '') == phone();
+    }
+    // Referral inaam lena: rewardsClaimed sirf +1, tabhi jab inaam bacha ho, aur saath me sirf ek pass ki tareekh
+    function spendsOneReward() {
+      return changedOnly(['rewardsClaimed', 'epaperPassUntil', 'allAppsPassUntil'])
+        && request.resource.data.get('rewardsClaimed', 0) == resource.data.get('rewardsClaimed', 0) + 1
+        && resource.data.get('referralCount', 0) > resource.data.get('rewardsClaimed', 0);
+    }
+
+    // App login / profile ke fields (role, status, verified, referral ginti, inaam — inme nahi)
+    function userAppKeys() {
+      return ['name', 'email', 'phone', 'mobile', 'isPhoneVerified', 'lastLoginAt', 'updatedAt', 'dpdpConsent',
+        'consent', 'city', 'dob', 'gender', 'photoUrl', 'bio', 'interests', 'referralCode'];
+    }
+    // Sadasyata (memberships) sirf server likhta hai — payment jaanch ke baad (/api/payments/confirm)
+    function reporterAppKeys() {
+      return ['phone', 'mobile', 'isPhoneVerified', 'lastLoginAt', 'updatedAt', 'dpdpConsent', 'consent',
+        'photoUrl', 'bloodGroup', 'workArea', 'state', 'pressPortalId'];
+    }
+    function advertiserAppKeys() {
+      return ['phone', 'mobile', 'isPhoneVerified', 'lastLoginAt', 'updatedAt', 'dpdpConsent', 'consent',
+        'name', 'email', 'companyName'];
+    }
+
+    // ---------- App: pathak khata ----------
+    match /users/{uid} {
+      allow get, list: if myRecord(resource.data);
+      allow create: if myRecord(request.resource.data) && keepsMyPhone()
+        && request.resource.data.get('role', 'user') == 'user'
+        && request.resource.data.get('status', 'active') == 'active'
+        && onlyKeys(['name', 'email', 'phone', 'mobile', 'role', 'status', 'isPhoneVerified', 'source',
+          'lastLoginAt', 'updatedAt', 'createdAt', 'referralCode', 'referredBy', 'dpdpConsent', 'consent']);
+      allow update: if myRecord(resource.data) && keepsMyPhone()
+        && (changedOnly(userAppKeys()) || spendsOneReward());
+      // Naya pathak ke sign-up ke saath referrer ko +1 (isi batch me referral record)
+      allow update: if hasPhone() && changedOnly(['referralCount'])
+        && request.resource.data.referralCount == resource.data.get('referralCount', 0) + 1
+        && referralCreditInThisBatch();
+      allow delete: if myRecord(resource.data);
+    }
+
+    // ---------- App: patrakar khata (status / ID / padnaam / membership sirf admin) ----------
+    match /reporters/{rid} {
+      allow create: if myRecord(request.resource.data) && keepsMyPhone()
+        && request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('role', 'reporter') == 'reporter'
+        && onlyKeys(['name', 'email', 'phone', 'mobile', 'role', 'status', 'pressCardNo', 'isPhoneVerified', 'source',
+          'lastLoginAt', 'updatedAt', 'createdAt', 'dpdpConsent', 'consent']);
+      allow update: if myRecord(resource.data) && keepsMyPhone() && changedOnly(reporterAppKeys());
+      allow delete: if myRecord(resource.data);
+    }
+
+    // ---------- App: vigyapandata khata ----------
+    match /advertisers/{aid} {
+      allow create: if myRecord(request.resource.data) && keepsMyPhone()
+        && request.resource.data.get('role', 'advertiser') == 'advertiser'
+        && onlyKeys(['name', 'email', 'companyName', 'phone', 'mobile', 'role', 'status', 'isPhoneVerified', 'source',
+          'lastLoginAt', 'updatedAt', 'createdAt', 'dpdpConsent', 'consent']);
+      allow update: if myRecord(resource.data) && keepsMyPhone() && changedOnly(advertiserAppKeys());
+      allow delete: if myRecord(resource.data);
+    }
+
+    // ---------- App: patrakar ki khabar (review ke liye) ----------
+    // Usi portal ki chalu sadasyata (₹999 / saal, har portal ki alag) wala patrakar; khabar hamesha pending, apne naam se
+    match /articles/{id} {
+      allow create: if hasPhone() && exists(docPath('reporters', repId()))
+        && recordIsMine(get(docPath('reporters', repId())).data)
+        && reporterMemberOn(request.resource.data.get('siteId', ''))
+        && request.resource.data.get('status', '') == 'pending_admin_approval'
+        && request.resource.data.get('approved', false) == false
+        && request.resource.data.get('authorIdentifier', '') == phone();
+    }
+
+    // App ke vigyapan / classified bhi server banata hai (payment ke baad, 'pending'); shok sandesh upar wale
+    // niyam se (payments/{id} ke saath) — app ke liye alag booking niyam nahi.
+
+    // ---------- App: video like / unlike ----------
+    match /videos/{id} {
+      allow update: if changedOnly(['likes'])
+        && (request.resource.data.likes == resource.data.get('likes', 0) + 1
+          || request.resource.data.likes == resource.data.get('likes', 0) - 1);
+    }
+
+    // ---------- App: apni tippani hatana (khata hatate waqt) ----------
+    match /comments/{id} {
+      allow delete: if hasPhone() && resource.data.get('userPhone', '') == phone();
+    }
+
+    // ---------- App: sev ki gayi khabrein (id = <phone>_<articleId>) ----------
+    match /bookmarks/{id} {
+      allow read, delete: if hasPhone() && resource.data.get('userKey', '') == phone();
+      allow create, update: if hasPhone() && request.resource.data.get('userKey', '') == phone()
+        && id == phone() + '_' + request.resource.data.get('articleId', '');
+    }
+
+    // ---------- App: push notification token (ek device = ek document) ----------
+    match /push_tokens/{token} {
+      allow read, delete: if hasPhone() && resource.data.get('phone', '') == phone();
+      allow create, update: if hasPhone() && request.resource.data.get('phone', '') == phone();
+    }
+
+    // ---------- App: Refer & Earn ----------
+    // Login pathak ek code ka referrer dekh sake (list nahi); apna code darj / hata sake
+    match /referral_codes/{code} {
+      allow get: if hasPhone();
+      allow create: if hasPhone() && request.resource.data.get('phone', '') == phone();
+      allow delete: if hasPhone() && resource.data.get('phone', '') == phone();
+    }
+    // Naya pathak apna referral record (id = apna number); khata hatane par apna record / naam hata sake
+    match /referrals/{refereePhone} {
+      allow read: if hasPhone() && resource.data.get('refereePhone', '') == phone();
+      allow create: if hasPhone() && refereePhone == phone()
+        && request.resource.data.get('refereePhone', '') == phone()
+        && request.resource.data.get('referrerPhone', '') != phone();
+      allow update: if hasPhone() && resource.data.get('referrerPhone', '') == phone()
+        && changedOnly(['referrerPhone', 'referrerName']);
+      allow delete: if hasPhone() && resource.data.get('refereePhone', '') == phone();
+    }
+    match /referral_rewards/{id} {
+      allow read: if hasPhone() && resource.data.get('phone', '') == phone();
+      allow create: if hasPhone() && request.resource.data.get('phone', '') == phone();
+    }
+
+    // ---------- App: booking / anurodh ke records (admin dekhta hai) ----------
+    match /press_card_deliveries/{id} { allow create: if hasPhone() && request.resource.data.get('status', '') == 'pending_dispatch'; }
+    match /app_switch_subscriptions/{id} { allow create: if hasPhone(); }
+    match /account_deletions/{id} { allow create: if hasPhone(); }
   }
 }
