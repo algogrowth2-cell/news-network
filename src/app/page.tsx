@@ -122,6 +122,7 @@ const MENU_HEAD_HI = [
 ];
 const MENU_TAIL_HI = [
   { key: 'शोक संदेश', icon: '🕯️' },
+  { key: 'विवाह', icon: '💍' },
   { key: 'ई-पेपर', icon: '📄' }
 ];
 const MENU_HEAD_EN = [
@@ -130,7 +131,10 @@ const MENU_HEAD_EN = [
   { key: 'Live', icon: '🔴' },
   { key: 'Videos', icon: '📹' }
 ];
-const MENU_TAIL_EN = [{ key: 'E-Paper', icon: '📄' }];
+const MENU_TAIL_EN = [
+  { key: 'Matrimony', icon: '💍' },
+  { key: 'E-Paper', icon: '📄' }
+];
 
 const HP_STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&display=swap');
@@ -406,6 +410,7 @@ function HomePageContent() {
     if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
     if ((cat === 'ई-पेपर' || cat === 'E-Paper') && hasEpaper(currentSlug)) { router.push(`/epaper?site=${currentSlug}`); return; }
     if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
+    if (cat === 'विवाह' || cat === 'Matrimony') { router.push(`/matrimony?site=${currentSlug}`); return; }
     if (cat === 'सर्च' || cat === 'Search') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
@@ -1100,6 +1105,7 @@ function HomePageContent() {
               { key: isEnglishSite ? 'Videos' : 'वीडियो', emoji: '📹' },
               { key: isEnglishSite ? 'Latest News' : 'ताज़ा खबरें', emoji: '⚡' },
               ...(isEnglishSite ? [] : [{ key: 'शोक संदेश', emoji: '🕯️' }]),
+              { key: isEnglishSite ? 'Matrimony' : 'विवाह', emoji: '💍' },
               { key: isEnglishSite ? 'E-Paper' : 'ई-पेपर', emoji: '📄' }
             ].filter(noEpaper).map(({ key, emoji }) => {
               const isActive = activeCategory === key && !activeTrendTag;
