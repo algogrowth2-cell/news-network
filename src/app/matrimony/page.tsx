@@ -69,8 +69,10 @@ const STYLE = `
 .mx-tab:hover{border-color:var(--mx-p)}
 .mx-tab.on{background:var(--mx-p);color:#fff;border-color:var(--mx-p);box-shadow:0 3px 10px var(--mx-sh)}
 .mx-wrap{max-width:1120px;margin:0 auto}
-.mx-hero{background:linear-gradient(135deg,var(--mx-p),var(--mx-d));border-radius:20px;padding:26px 26px;color:#fff;margin-bottom:18px;box-shadow:0 12px 30px var(--mx-sh);position:relative;overflow:hidden}
-.mx-hero::after{content:'';position:absolute;right:-30px;top:-30px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.08)}
+.mx-body{padding:18px 0 10px}
+.mx-hero{background:linear-gradient(135deg,var(--mx-p),var(--mx-d));border-radius:22px;padding:28px 28px;color:#fff;margin-bottom:20px;box-shadow:0 14px 34px var(--mx-sh);position:relative;overflow:hidden}
+.mx-hero::after{content:'💍';position:absolute;right:20px;bottom:-14px;font-size:120px;opacity:.14;transform:rotate(-12deg)}
+.mx-hero::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.08)}
 .mx-hero h1{margin:0;font-size:23px;font-weight:800;position:relative}
 .mx-hero p{margin:6px 0 0;font-size:13.5px;opacity:.93;position:relative;max-width:560px}
 .mx-trust{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;position:relative}
@@ -173,16 +175,18 @@ export default function MatrimonyPage() {
       </header>
 
       <AdLayout color={primary}>
-        {!authReady ? <div className="mx-center">लोड हो रहा है…</div>
-          : !phone ? <LoginGate loginUrl={loginUrl} />
-          : (
-            <>
-              {tab === 'browse' && <Browse onCreate={() => setTab('profile')} />}
-              {tab === 'profile' && <MyProfile slug={slug} />}
-              {tab === 'interests' && <Interests onCreate={() => setTab('profile')} />}
-              <div style={{ marginTop: 20 }}><AdInline /></div>
-            </>
-          )}
+        <div className="mx-body">
+          {!authReady ? <div className="mx-center">लोड हो रहा है…</div>
+            : !phone ? <LoginGate loginUrl={loginUrl} />
+            : (
+              <>
+                {tab === 'browse' && <Browse onCreate={() => setTab('profile')} />}
+                {tab === 'profile' && <MyProfile slug={slug} />}
+                {tab === 'interests' && <Interests onCreate={() => setTab('profile')} />}
+                <div style={{ marginTop: 22 }}><AdInline /></div>
+              </>
+            )}
+        </div>
       </AdLayout>
 
       <Footer siteName={cfg.name} primaryColor={primary} logoUrl={logoFor(slug, cfg.logoUrl)} tagline={cfg.tagline} currentSlug={slug} />
