@@ -10,8 +10,8 @@ import { AdInline, AdLayout } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import {
-  ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
+  ABOUT_SUGGESTIONS, ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
+  MARITAL_STATUS, MOTHER_TONGUES, PARTNER_SUGGESTIONS, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
 
 /* ---- Modern line (SVG) icons — koi emoji nahi ---- */
@@ -140,6 +140,10 @@ const STYLE = `
 .mx-in{width:100%;padding:10px 12px;border:1px solid var(--mx-l);border-radius:10px;font-size:14px;background:#fff;color:#111;outline:none;font-family:inherit;transition:.15s}
 .mx-in:focus{border-color:var(--mx-p);box-shadow:0 0 0 3px var(--mx-sh)}
 textarea.mx-in{min-height:64px;resize:vertical}
+.mx-sg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.mx-sgc{font-size:12px;padding:5px 11px;border-radius:999px;border:1px dashed var(--mx-l);background:#fff;color:var(--mx-d);cursor:pointer;font-family:inherit;transition:.12s;font-weight:600}
+.mx-sgc:hover{border-style:solid;border-color:var(--mx-p)}
+.mx-sgc.on{background:var(--mx-p);color:#fff;border-style:solid;border-color:var(--mx-p)}
 .mx-save{width:100%;background:linear-gradient(135deg,var(--mx-p),var(--mx-d));color:#fff;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:15.5px;cursor:pointer;box-shadow:0 5px 18px var(--mx-sh);font-family:inherit}
 .mx-save:disabled{opacity:.7}
 .mx-note{background:var(--mx-ss);border:1px solid var(--mx-l);border-radius:12px;padding:11px 14px;font-size:12.5px;color:var(--mx-d);display:flex;gap:8px;align-items:flex-start;margin-bottom:14px}
@@ -542,8 +546,14 @@ function MyProfile({ slug }: { slug: string }) {
 
       <div className="mx-fcard">
         <div className="mx-sec"><i><Ic n="chat"/></i> अपने बारे में व अपेक्षा</div>
-        <Field label="अपने बारे में"><textarea className="mx-in" value={f.about} onChange={(e) => set('about', e.target.value)} /></Field>
-        <Field label="कैसा जीवनसाथी चाहिए"><textarea className="mx-in" value={f.partnerPreference} onChange={(e) => set('partnerPreference', e.target.value)} /></Field>
+        <Field label="अपने बारे में">
+          <ChipRow options={ABOUT_SUGGESTIONS} value={f.about} onAdd={(t) => set('about', t)} />
+          <textarea className="mx-in" value={f.about} onChange={(e) => set('about', e.target.value)} placeholder="नीचे से चुनें या खुद लिखें…" />
+        </Field>
+        <Field label="कैसा जीवनसाथी चाहिए">
+          <ChipRow options={PARTNER_SUGGESTIONS} value={f.partnerPreference} onAdd={(t) => set('partnerPreference', t)} />
+          <textarea className="mx-in" value={f.partnerPreference} onChange={(e) => set('partnerPreference', e.target.value)} placeholder="नीचे से चुनें या खुद लिखें…" />
+        </Field>
       </div>
 
       <div className="mx-fcard">
@@ -631,4 +641,21 @@ function Interests({ onCreate }: { onCreate: () => void }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="mx-field" style={{ marginTop: 10 }}><span>{label}</span>{children}</label>;
+}
+
+/* Quick-fill chips: click karke add/hata (comma se juda), textarea me khud bhi likh sakte hain */
+function ChipRow({ options, value, onAdd }: { options: string[]; value: string; onAdd: (t: string) => void }) {
+  const parts = String(value || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const has = (o: string) => parts.some((p) => p.toLowerCase() === o.toLowerCase());
+  const toggle = (o: string) => {
+    if (has(o)) onAdd(parts.filter((p) => p.toLowerCase() !== o.toLowerCase()).join(', '));
+    else onAdd([...parts, o].join(', '));
+  };
+  return (
+    <div className="mx-sg">
+      {options.map((o) => (
+        <button type="button" key={o} className={`mx-sgc${has(o) ? ' on' : ''}`} onClick={() => toggle(o)}>{has(o) ? '✓ ' : '+ '}{o}</button>
+      ))}
+    </div>
+  );
 }
