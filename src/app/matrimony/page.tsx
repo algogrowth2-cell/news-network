@@ -10,8 +10,8 @@ import { AdInline, AdLayout } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import {
-  ageFromDob, CASTE_PREFERENCES, DIETS, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, SIBLING_COUNTS, type Gender, type MatrimonyProfile
+  ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
+  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
 
 type Tab = 'browse' | 'profile' | 'interests';
@@ -30,7 +30,8 @@ const isIntercaste = (v?: string) => !!v && v.includes('कोई भी');
 
 const EMPTY = {
   name: '', gender: '' as Gender | '', dob: '', heightCm: 0, maritalStatus: '', religion: '',
-  community: '', castePreference: '', motherTongue: '', city: '', state: '', education: '', occupation: '',
+  community: '', castePreference: '', motherTongue: '', city: '', state: '', education: '',
+  employmentType: '', workField: '', companyName: '', designation: '', occupation: '',
   annualIncome: '', diet: '', fatherName: '', motherName: '', grandfatherName: '', brothers: '0', sisters: '0',
   about: '', family: '', partnerPreference: '', photoUrl: ''
 };
@@ -284,7 +285,7 @@ function Browse({ onCreate }: { onCreate: () => void }) {
                     <span className="mx-pill">{p.maritalStatus}</span>
                   </div>
                   <div className="mx-cmeta">🎓 {p.education}</div>
-                  <div className="mx-cmeta" style={{ color: 'var(--mx-d)', fontWeight: 600 }}>💼 {p.occupation}</div>
+                  <div className="mx-cmeta" style={{ color: 'var(--mx-d)', fontWeight: 600 }}>💼 {careerLine(p) || p.employmentType}</div>
                 </div>
               </button>
             ))}
@@ -330,7 +331,7 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
           <h2 style={{ margin: 0, color: 'var(--mx-d)', fontSize: 23 }}>{p.name}, {ageFromDob(p.dob)} वर्ष</h2>
           <p style={{ margin: '4px 0 16px', color: 'var(--mx-m)', fontSize: 13.5 }}>{heightLabel(p.heightCm)} · {p.maritalStatus} · {p.city}, {p.state}</p>
           {row('धर्म', p.religion)}{row('जाति / समुदाय', p.community)}{row('जाति पसंद', p.castePreference)}{row('मातृभाषा', p.motherTongue)}
-          {row('शिक्षा', p.education)}{row('व्यवसाय', p.occupation)}{row('आय', p.annualIncome)}{row('आहार', p.diet)}
+          {row('शिक्षा', p.education)}{row('कार्य', p.employmentType)}{row('क्षेत्र', p.workField)}{row('कंपनी', p.companyName)}{row('पद', p.designation)}{row('आय', p.annualIncome)}{row('आहार', p.diet)}
           {row('पिता', p.fatherName)}{row('माता', p.motherName)}{row('दादाजी', p.grandfatherName)}
           {((p.brothers && p.brothers !== '0') || (p.sisters && p.sisters !== '0')) ? row('भाई-बहन', `${p.brothers || 0} भाई · ${p.sisters || 0} बहन`) : null}
           {row('अन्य परिवार', p.family)}{row('अपने बारे में', p.about)}{row('जीवनसाथी में', p.partnerPreference)}
@@ -425,12 +426,33 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>🎓</i> स्थान, शिक्षा व कार्य</div>
+        <div className="mx-sec"><i>📍</i> स्थान व शिक्षा</div>
         <div className="mx-fgrid">
           <Field label="शहर *"><input className="mx-in" value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
           <Field label="राज्य *"><input className="mx-in" value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
-          <Field label="शिक्षा *"><input className="mx-in" value={f.education} onChange={(e) => set('education', e.target.value)} placeholder="जैसे B.A., B.Tech" /></Field>
-          <Field label="व्यवसाय *"><input className="mx-in" value={f.occupation} onChange={(e) => set('occupation', e.target.value)} placeholder="जैसे शिक्षक, व्यापार" /></Field>
+          <Field label="शिक्षा *"><input className="mx-in" value={f.education} onChange={(e) => set('education', e.target.value)} placeholder="जैसे B.A., B.Tech, 12वीं" /></Field>
+        </div>
+      </div>
+
+      <div className="mx-fcard">
+        <div className="mx-sec"><i>💼</i> कार्य / रोज़गार</div>
+        <div className="mx-fgrid">
+          <Field label="आप क्या करते हैं? *">
+            <select className="mx-in" value={f.employmentType} onChange={(e) => set('employmentType', e.target.value)}>
+              <option value="">चुनें</option>{EMPLOYMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </Field>
+          {WORKS_FOR_PAY(f.employmentType) && (
+            <>
+              <Field label="किस क्षेत्र में?">
+                <select className="mx-in" value={f.workField} onChange={(e) => set('workField', e.target.value)}>
+                  <option value="">चुनें (वैकल्पिक)</option>{WORK_FIELDS.map((w) => <option key={w} value={w}>{w}</option>)}
+                </select>
+              </Field>
+              <Field label="कंपनी / संस्था का नाम"><input className="mx-in" value={f.companyName} onChange={(e) => set('companyName', e.target.value)} placeholder="(वैकल्पिक)" /></Field>
+              <Field label="पद / डेज़िग्नेशन"><input className="mx-in" value={f.designation} onChange={(e) => set('designation', e.target.value)} placeholder="जैसे मैनेजर, इंजीनियर" /></Field>
+            </>
+          )}
           <Field label="वार्षिक आय"><select className="mx-in" value={f.annualIncome} onChange={(e) => set('annualIncome', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{INCOME_RANGES.map((i) => <option key={i} value={i}>{i}</option>)}</select></Field>
         </div>
       </div>

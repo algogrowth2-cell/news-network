@@ -4,14 +4,14 @@ import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, updateDoc } fr
 import { db } from '@/lib/firebase';
 import { fallbackFor } from '@/lib/siteTheme';
 import styles from '../Admin.module.css';
-import { ageFromDob, heightLabel, STATUS_LABEL, type ProfileStatus } from '@/lib/matrimony';
+import { ageFromDob, careerLine, heightLabel, STATUS_LABEL, type ProfileStatus } from '@/lib/matrimony';
 
 /* Matrimony profiles — admin approve kare tabhi website par. Number (contact) sirf yahan admin dekhta hai. */
 
 interface Row {
   id: string; name: string; gender: string; dob: string; heightCm: number; maritalStatus: string;
   religion: string; community: string; castePreference: string; motherTongue: string; city: string; state: string;
-  education: string; occupation: string; annualIncome: string; diet: string; about: string;
+  education: string; employmentType: string; workField: string; companyName: string; designation: string; occupation: string; annualIncome: string; diet: string; about: string;
   fatherName: string; motherName: string; grandfatherName: string; brothers: string; sisters: string;
   family: string; partnerPreference: string; photoUrl: string; siteId: string; status: ProfileStatus;
   contactPhone?: string; ownerPhone?: string; interestCount?: number; createdAt?: any;
@@ -114,7 +114,8 @@ export default function AdminMatrimony() {
                   <div className="mt-row">{r.religion}{r.community ? ` · ${r.community}` : ''} · {r.motherTongue}</div>
                   {r.castePreference && <div className="mt-row">💑 {r.castePreference}</div>}
                   <div className="mt-row">📍 {r.city}, {r.state}</div>
-                  <div className="mt-row">🎓 {r.education} · 💼 {r.occupation}</div>
+                  <div className="mt-row">🎓 {r.education}</div>
+                  <div className="mt-row">💼 {r.employmentType}{careerLine(r) && careerLine(r) !== r.employmentType ? ` · ${careerLine(r)}` : ''}{r.workField ? ` · ${r.workField}` : ''}</div>
                   {r.annualIncome && <div className="mt-row">💰 {r.annualIncome}</div>}
                   {r.diet && <div className="mt-row">🍽 {r.diet}</div>}
                   {(r.fatherName || r.motherName) && <div className="mt-row"><b>माता-पिता:</b> {[r.fatherName, r.motherName].filter(Boolean).join(' / ')}</div>}

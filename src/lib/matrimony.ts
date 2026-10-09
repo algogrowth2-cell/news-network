@@ -31,7 +31,11 @@ export interface MatrimonyProfile {
   city: string;
   state: string;
   education: string;
-  occupation: string;
+  employmentType: string; // naukri / business / student… (dropdown, zaroori)
+  workField: string; // kis kshetra me (dropdown, optional)
+  companyName: string; // company / sanstha ka naam (optional)
+  designation: string; // padnaam (optional)
+  occupation: string; // purana/short (optional — ab structured fields se)
   annualIncome: string; // range label (optional)
   diet: string; // optional
   fatherName: string;
@@ -59,6 +63,19 @@ export const CASTE_PREFERENCES = ['अपनी ही जाति / समु�
 export const MOTHER_TONGUES = ['हिंदी', 'मराठी', 'गुजराती', 'पंजाबी', 'राजस्थानी', 'मालवी', 'निमाड़ी', 'उर्दू', 'बंगाली', 'तमिल', 'तेलुगु', 'मलयालम', 'कन्नड़', 'अंग्रेज़ी', 'अन्य'];
 export const DIETS = ['शाकाहारी', 'मांसाहारी', 'अंडाहारी', 'जैन शाकाहारी'];
 export const SIBLING_COUNTS = ['0', '1', '2', '3', '4', '5', '6', '7', '8 से अधिक'];
+// Kaam / rozgaar
+export const EMPLOYMENT_TYPES = ['निजी नौकरी (Private Job)', 'सरकारी नौकरी (Govt Job)', 'व्यवसाय / बिज़नेस', 'स्वरोज़गार / फ्रीलांस', 'खेती / किसान', 'छात्र (पढ़ाई जारी)', 'गृहिणी', 'वर्तमान में कार्यरत नहीं'];
+export const WORK_FIELDS = ['आईटी / सॉफ्टवेयर', 'इंजीनियरिंग', 'चिकित्सा / स्वास्थ्य', 'शिक्षा / अध्यापन', 'बैंकिंग / वित्त', 'सरकारी / प्रशासनिक', 'रक्षा / पुलिस / सेना', 'व्यापार / रिटेल', 'कृषि', 'कानून', 'मीडिया / पत्रकारिता', 'कला / डिज़ाइन', 'मार्केटिंग / सेल्स', 'अन्य'];
+// Jinme company/designation poochhna theek (student/grihini/berozgar me nahi)
+export const WORKS_FOR_PAY = (t: string) => !!t && !['छात्र (पढ़ाई जारी)', 'गृहिणी', 'वर्तमान में कार्यरत नहीं'].includes(t);
+// Card/list ke liye ek saaf career line
+export function careerLine(p: { designation?: string; companyName?: string; occupation?: string; workField?: string; employmentType?: string }): string {
+  const parts = [p.designation, p.companyName].filter(Boolean) as string[];
+  if (parts.length) return parts.join(', ');
+  if (p.occupation) return p.occupation;
+  if (p.workField && WORKS_FOR_PAY(p.employmentType || '')) return p.workField;
+  return p.employmentType || '';
+}
 export const INCOME_RANGES = ['कोई आय नहीं', '₹1 लाख से कम', '₹1–3 लाख', '₹3–5 लाख', '₹5–10 लाख', '₹10–20 लाख', '₹20 लाख से अधिक', 'बताना नहीं चाहते'];
 
 /* ---------- Height: cm ⇄ feet/inch ---------- */
@@ -143,8 +160,14 @@ export function cleanProfileInput(input: any): CleanResult {
 
   const education = str(input.education, 80);
   if (education.length < 2) return { ok: false, error: 'कृपया शिक्षा दर्ज करें।' };
+
+  // Kaam / rozgaar — type zaroori; baaki (kshetra/company/padnaam) jab kaam karte hon
+  const employmentType = EMPLOYMENT_TYPES.includes(String(input.employmentType)) ? String(input.employmentType) : null;
+  if (!employmentType) return { ok: false, error: 'कृपया चुनें कि आप नौकरी/व्यवसाय करते हैं या नहीं।' };
+  const workField = WORK_FIELDS.includes(String(input.workField)) ? String(input.workField) : '';
+  const companyName = str(input.companyName, 80);
+  const designation = str(input.designation, 80);
   const occupation = str(input.occupation, 80);
-  if (occupation.length < 2) return { ok: false, error: 'कृपया व्यवसाय दर्ज करें।' };
 
   // Parivaar — papa/mummy ka naam zaroori, dadaji vaikalpik, bhai/bahan dropdown
   const fatherName = str(input.fatherName, 60);
@@ -175,7 +198,7 @@ export function cleanProfileInput(input: any): CleanResult {
     ok: true,
     data: {
       name, gender, dob, heightCm, maritalStatus, religion, community, castePreference, motherTongue,
-      city, state, education, occupation, annualIncome, diet,
+      city, state, education, employmentType, workField, companyName, designation, occupation, annualIncome, diet,
       fatherName, motherName, grandfatherName, brothers, sisters,
       about, family, partnerPreference, photoUrl, siteId
     }
