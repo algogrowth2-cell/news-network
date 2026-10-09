@@ -11,7 +11,7 @@ import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import {
   ageFromDob, CASTE_PREFERENCES, DIETS, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, type Gender, type MatrimonyProfile
+  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, SIBLING_COUNTS, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
 
 type Tab = 'browse' | 'profile' | 'interests';
@@ -31,7 +31,8 @@ const isIntercaste = (v?: string) => !!v && v.includes('कोई भी');
 const EMPTY = {
   name: '', gender: '' as Gender | '', dob: '', heightCm: 0, maritalStatus: '', religion: '',
   community: '', castePreference: '', motherTongue: '', city: '', state: '', education: '', occupation: '',
-  annualIncome: '', diet: '', about: '', family: '', partnerPreference: '', photoUrl: ''
+  annualIncome: '', diet: '', fatherName: '', motherName: '', grandfatherName: '', brothers: '0', sisters: '0',
+  about: '', family: '', partnerPreference: '', photoUrl: ''
 };
 
 function fileToSmallDataUrl(file: File): Promise<string> {
@@ -330,7 +331,9 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
           <p style={{ margin: '4px 0 16px', color: 'var(--mx-m)', fontSize: 13.5 }}>{heightLabel(p.heightCm)} · {p.maritalStatus} · {p.city}, {p.state}</p>
           {row('धर्म', p.religion)}{row('जाति / समुदाय', p.community)}{row('जाति पसंद', p.castePreference)}{row('मातृभाषा', p.motherTongue)}
           {row('शिक्षा', p.education)}{row('व्यवसाय', p.occupation)}{row('आय', p.annualIncome)}{row('आहार', p.diet)}
-          {row('परिवार', p.family)}{row('अपने बारे में', p.about)}{row('जीवनसाथी में', p.partnerPreference)}
+          {row('पिता', p.fatherName)}{row('माता', p.motherName)}{row('दादाजी', p.grandfatherName)}
+          {((p.brothers && p.brothers !== '0') || (p.sisters && p.sisters !== '0')) ? row('भाई-बहन', `${p.brothers || 0} भाई · ${p.sisters || 0} बहन`) : null}
+          {row('अन्य परिवार', p.family)}{row('अपने बारे में', p.about)}{row('जीवनसाथी में', p.partnerPreference)}
 
           {contact ? (
             <div style={{ marginTop: 16, background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 12, padding: 14, textAlign: 'center' }}>
@@ -433,8 +436,19 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>👨‍👩‍👧</i> परिवार व अपेक्षा</div>
-        <Field label="परिवार (संक्षेप में)"><textarea className="mx-in" value={f.family} onChange={(e) => set('family', e.target.value)} placeholder="पिता/माता का कार्य, भाई-बहन…" /></Field>
+        <div className="mx-sec"><i>👨‍👩‍👧</i> परिवार की जानकारी</div>
+        <div className="mx-fgrid">
+          <Field label="पिता का नाम *"><input className="mx-in" value={f.fatherName} onChange={(e) => set('fatherName', e.target.value)} /></Field>
+          <Field label="माता का नाम *"><input className="mx-in" value={f.motherName} onChange={(e) => set('motherName', e.target.value)} /></Field>
+          <Field label="दादाजी का नाम"><input className="mx-in" value={f.grandfatherName} onChange={(e) => set('grandfatherName', e.target.value)} placeholder="(वैकल्पिक)" /></Field>
+          <Field label="कितने भाई"><select className="mx-in" value={f.brothers} onChange={(e) => set('brothers', e.target.value)}>{SIBLING_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
+          <Field label="कितनी बहनें"><select className="mx-in" value={f.sisters} onChange={(e) => set('sisters', e.target.value)}>{SIBLING_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
+        </div>
+        <Field label="अन्य पारिवारिक जानकारी"><textarea className="mx-in" value={f.family} onChange={(e) => set('family', e.target.value)} placeholder="पिता/माता का कार्य, पारिवारिक पृष्ठभूमि…" /></Field>
+      </div>
+
+      <div className="mx-fcard">
+        <div className="mx-sec"><i>💬</i> अपने बारे में व अपेक्षा</div>
         <Field label="अपने बारे में"><textarea className="mx-in" value={f.about} onChange={(e) => set('about', e.target.value)} /></Field>
         <Field label="कैसा जीवनसाथी चाहिए"><textarea className="mx-in" value={f.partnerPreference} onChange={(e) => set('partnerPreference', e.target.value)} /></Field>
       </div>

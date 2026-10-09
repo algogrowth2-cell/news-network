@@ -34,8 +34,13 @@ export interface MatrimonyProfile {
   occupation: string;
   annualIncome: string; // range label (optional)
   diet: string; // optional
+  fatherName: string;
+  motherName: string;
+  grandfatherName: string; // dadaji (optional)
+  brothers: string; // kitne bhai (dropdown)
+  sisters: string; // kitni bahan (dropdown)
   about: string;
-  family: string; // parivaar (short)
+  family: string; // anya parivaar jaankari (optional)
   partnerPreference: string; // kaisa jeevansaathi chahiye (short)
   photoUrl: string; // optional
   siteId: string;
@@ -53,6 +58,7 @@ export const RELIGIONS = ['हिंदू', 'मुस्लिम', 'सिख
 export const CASTE_PREFERENCES = ['अपनी ही जाति / समुदाय में', 'कोई भी जाति / समुदाय चलेगा (अंतरजातीय स्वीकार्य)'];
 export const MOTHER_TONGUES = ['हिंदी', 'मराठी', 'गुजराती', 'पंजाबी', 'राजस्थानी', 'मालवी', 'निमाड़ी', 'उर्दू', 'बंगाली', 'तमिल', 'तेलुगु', 'मलयालम', 'कन्नड़', 'अंग्रेज़ी', 'अन्य'];
 export const DIETS = ['शाकाहारी', 'मांसाहारी', 'अंडाहारी', 'जैन शाकाहारी'];
+export const SIBLING_COUNTS = ['0', '1', '2', '3', '4', '5', '6', '7', '8 से अधिक'];
 export const INCOME_RANGES = ['कोई आय नहीं', '₹1 लाख से कम', '₹1–3 लाख', '₹3–5 लाख', '₹5–10 लाख', '₹10–20 लाख', '₹20 लाख से अधिक', 'बताना नहीं चाहते'];
 
 /* ---------- Height: cm ⇄ feet/inch ---------- */
@@ -140,6 +146,16 @@ export function cleanProfileInput(input: any): CleanResult {
   const occupation = str(input.occupation, 80);
   if (occupation.length < 2) return { ok: false, error: 'कृपया व्यवसाय दर्ज करें।' };
 
+  // Parivaar — papa/mummy ka naam zaroori, dadaji vaikalpik, bhai/bahan dropdown
+  const fatherName = str(input.fatherName, 60);
+  if (fatherName.length < 2) return { ok: false, error: 'कृपया पिता का नाम दर्ज करें।' };
+  const motherName = str(input.motherName, 60);
+  if (motherName.length < 2) return { ok: false, error: 'कृपया माता का नाम दर्ज करें।' };
+  const grandfatherName = str(input.grandfatherName, 60);
+  const sib = (v: any) => (SIBLING_COUNTS.includes(String(v)) ? String(v) : '0');
+  const brothers = sib(input.brothers);
+  const sisters = sib(input.sisters);
+
   // Optional, par ho to valid
   const diet = DIETS.includes(String(input.diet)) ? String(input.diet) : '';
   const annualIncome = INCOME_RANGES.includes(String(input.annualIncome)) ? String(input.annualIncome) : '';
@@ -159,7 +175,9 @@ export function cleanProfileInput(input: any): CleanResult {
     ok: true,
     data: {
       name, gender, dob, heightCm, maritalStatus, religion, community, castePreference, motherTongue,
-      city, state, education, occupation, annualIncome, diet, about, family, partnerPreference, photoUrl, siteId
+      city, state, education, occupation, annualIncome, diet,
+      fatherName, motherName, grandfatherName, brothers, sisters,
+      about, family, partnerPreference, photoUrl, siteId
     }
   };
 }
