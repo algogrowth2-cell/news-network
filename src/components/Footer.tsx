@@ -13,6 +13,7 @@ const TEXT = {
     epaper: 'ई-पेपर',
     shok: 'शोक संदेश',
     classifieds: 'क्लासिफाइड',
+    matrimony: 'विवाह (Matrimony)',
     rashifal: 'राशिफल',
     contact: 'संपर्क',
     hours: 'सोम–शनि · सुबह 10 से शाम 6',
@@ -36,6 +37,7 @@ const TEXT = {
     epaper: 'E-Paper',
     shok: 'Condolence Messages',
     classifieds: 'Classifieds',
+    matrimony: 'Matrimony',
     rashifal: 'Horoscope',
     contact: 'Contact',
     hours: 'Mon–Sat · 10 AM to 6 PM',
@@ -452,6 +454,11 @@ export default function Footer({
               <li>
                 <Link href={`/classifieds?site=${homeSlug}`} className="gp-ft-cat-link">
                   {t.classifieds}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/matrimony?site=${homeSlug}`} className="gp-ft-cat-link">
+                  {t.matrimony}
                 </Link>
               </li>
               <li>

@@ -111,6 +111,14 @@ service cloud.firestore {
         && request.resource.data.paymentId == id;
     }
 
+    // ---------- Matrimony (विवाह) ----------
+    // Browse: sirf login (hasPhone) wale, aur sirf admin-approved profile. Number profile me hai hi nahi.
+    // Banana / badalna / ruchi / contact — sab server (Admin SDK) se; contact/index/interests client ko kabhi nahi.
+    match /matrimony_profiles/{id} {
+      allow read: if hasPhone() && resource.data.status == 'approved';
+    }
+    // matrimony_contacts, matrimony_index, matrimony_interests: sirf admin/server (upar wale admin niyam ke alawa koi allow nahi)
+
     // ---------- Pathak ----------
     match /users/{uid} {
       allow get: if hasPhone() && uid == 'u_' + phone();

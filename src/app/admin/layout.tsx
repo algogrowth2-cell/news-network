@@ -180,6 +180,7 @@ export default function AdminLayout({
         { label: 'Ads & Revenue', icon: '📢', href: '/admin/ads' },
         { label: 'Classifieds', icon: '📋', href: '/admin/classifieds' },
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
+        { label: 'Matrimony', icon: '💍', href: '/admin/matrimony' },
         { label: 'प्लान व कीमतें', icon: '💳', href: '/admin/membership' },
         { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
         { label: 'Account Deletion', icon: '🗑️', href: '/admin/deletion-requests' },
