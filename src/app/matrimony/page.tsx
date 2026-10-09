@@ -177,11 +177,44 @@ export default function MatrimonyPage() {
   const primary = cfg.primaryColor || '#be185d';
   const deep = darken(primary, 0.68);
 
+  const [notif, setNotif] = useState(0);
+  const [actionable, setActionable] = useState<string[]>([]);
+
   useEffect(() => {
     const s = getActivePortal(new URLSearchParams(window.location.search).get('site'));
     setSlug(s); setCfg(fallbackFor(s));
     firebasePhone().then((p) => { setPhone(p); setAuthReady(true); });
   }, []);
+
+  // Sutchana: koi ruchi bheje (mere paas pending) ya meri ruchi accept ho — badge
+  useEffect(() => {
+    if (!phone) return;
+    let alive = true;
+    const run = async () => {
+      try {
+        const r = await authFetch('/api/matrimony/interest'); const j = await r.json();
+        const acts: string[] = [];
+        (j.received || []).forEach((it: any) => { if (it.status === 'pending') acts.push('r:' + it.interestId); });
+        (j.sent || []).forEach((it: any) => { if (it.status === 'accepted') acts.push('a:' + it.interestId); });
+        if (!alive) return;
+        setActionable(acts);
+        let seen: string[] = [];
+        try { seen = JSON.parse(localStorage.getItem(`mx_seen_${phone}`) || '[]'); } catch {}
+        setNotif(acts.filter((id) => !seen.includes(id)).length);
+      } catch {}
+    };
+    run();
+    const iv = setInterval(run, 60000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [phone]);
+
+  // रुचि tab khula → sab "dekh liya"
+  useEffect(() => {
+    if (tab === 'interests' && phone) {
+      try { localStorage.setItem(`mx_seen_${phone}`, JSON.stringify(actionable)); } catch {}
+      setNotif(0);
+    }
+  }, [tab, phone, actionable]);
 
   const loginUrl = `/login?redirect=${encodeURIComponent(`/matrimony?site=${slug}`)}`;
   const cssVars = {
@@ -207,7 +240,10 @@ export default function MatrimonyPage() {
         </div>
         <nav className="mx-tabs">
           {([['browse', 'search', 'प्रोफ़ाइल देखें'], ['profile', 'edit', 'मेरी प्रोफ़ाइल'], ['interests', 'heart', 'रुचि']] as [Tab, string, string][]).map(([t, ic, label]) => (
-            <button key={t} className={`mx-tab${tab === t ? ' on' : ''}`} onClick={() => setTab(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Ic n={ic} size={15} />{label}</button>
+            <button key={t} className={`mx-tab${tab === t ? ' on' : ''}`} onClick={() => setTab(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, position: 'relative' }}>
+              <Ic n={ic} size={15} />{label}
+              {t === 'interests' && notif > 0 && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10.5, fontWeight: 800, minWidth: 17, height: 17, padding: '0 5px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{notif}</span>}
+            </button>
           ))}
         </nav>
       </header>
@@ -218,6 +254,12 @@ export default function MatrimonyPage() {
             : !phone ? <LoginGate loginUrl={loginUrl} />
             : (
               <>
+                {notif > 0 && tab !== 'interests' && (
+                  <button onClick={() => setTab('interests')} style={{ width: '100%', maxWidth: 1120, margin: '0 auto 16px', display: 'flex', alignItems: 'center', gap: 10, background: 'linear-gradient(135deg,var(--mx-p),var(--mx-d))', color: '#fff', border: 'none', borderRadius: 14, padding: '12px 16px', cursor: 'pointer', fontWeight: 700, fontSize: 13.5, boxShadow: '0 4px 14px var(--mx-sh)' }}>
+                    <span style={{ background: 'rgba(255,255,255,.2)', borderRadius: 8, padding: 6, display: 'inline-flex' }}><Ic n="heart" size={16} /></span>
+                    आपके पास {notif} नई सूचना{notif > 1 ? 'एँ' : ''} — रुचि देखें →
+                  </button>
+                )}
                 {tab === 'browse' && <Browse onCreate={() => setTab('profile')} />}
                 {tab === 'profile' && <MyProfile slug={slug} />}
                 {tab === 'interests' && <Interests onCreate={() => setTab('profile')} />}
@@ -267,10 +309,12 @@ function Browse({ onCreate }: { onCreate: () => void }) {
     })();
   }, []);
 
+  const q = cityQ.trim().toLowerCase();
   const filtered = list.filter((p) =>
     (!genderWant || p.gender === genderWant) &&
     (!onlyIntercaste || isIntercaste(p.castePreference)) &&
-    (!cityQ || (p.city || '').toLowerCase().includes(cityQ.toLowerCase()) || (p.state || '').toLowerCase().includes(cityQ.toLowerCase())));
+    (!q || [p.name, p.city, p.state, p.community, p.religion, p.education, p.occupation, p.designation, p.motherTongue, careerLine(p)]
+      .filter(Boolean).some((s) => String(s).toLowerCase().includes(q))));
 
   return (
     <div className="mx-wrap">
@@ -293,7 +337,7 @@ function Browse({ onCreate }: { onCreate: () => void }) {
         </select>
         <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
           <span style={{ position: 'absolute', left: 13, color: 'var(--mx-m)', display: 'inline-flex' }}><Ic n="search" size={15} /></span>
-          <input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder="शहर / राज्य खोजें" className="mx-chip" style={{ minWidth: 190, paddingLeft: 34 }} />
+          <input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder="नाम, शहर, जाति, काम… खोजें" className="mx-chip" style={{ minWidth: 220, paddingLeft: 34 }} />
         </span>
         <button onClick={() => setOnlyIntercaste((v) => !v)} className="mx-chip" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, background: onlyIntercaste ? 'var(--mx-p)' : '#fff', color: onlyIntercaste ? '#fff' : 'var(--mx-d)', borderColor: onlyIntercaste ? 'var(--mx-p)' : 'var(--mx-l)' }}>
           <Ic n="handshake" size={15} /> अंतरजातीय
