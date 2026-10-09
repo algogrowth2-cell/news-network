@@ -151,8 +151,9 @@ textarea.mx-in{min-height:64px;resize:vertical}
 /* modal */
 .mx-mask{position:fixed;inset:0;background:rgba(17,17,17,.58);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
 .mx-modal{background:#fff;border-radius:22px;max-width:580px;width:100%;margin:20px 0;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35);font-family:inherit}
-.mx-mphoto{position:relative;height:280px;background:var(--mx-s);display:flex;align-items:center;justify-content:center}
-.mx-mphoto img{width:100%;height:100%;object-fit:cover}
+.mx-mphoto{position:relative;background:#0f172a;display:flex;align-items:center;justify-content:center;min-height:260px;max-height:66vh;overflow:hidden}
+.mx-mphoto img{max-width:100%;max-height:66vh;width:auto;height:auto;object-fit:contain;position:relative;z-index:1}
+.mx-mphoto .mx-blur{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(26px) brightness(.55);transform:scale(1.15);z-index:0}
 .mx-x{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:16px;cursor:pointer}
 .mx-mrow{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--mx-ss);font-size:13.5px}
 .mx-mrow b{color:var(--mx-p);min-width:120px;font-weight:700}
@@ -163,7 +164,7 @@ textarea.mx-in{min-height:64px;resize:vertical}
 .mx-it-av{width:56px;height:56px;border-radius:13px;background:var(--mx-s);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .mx-it-av img{width:100%;height:100%;object-fit:cover}
 .mx-center{padding:56px;text-align:center;color:var(--mx-d);font-size:14px}
-@media(max-width:560px){.mx-hero h1{font-size:20px}.mx-photo{height:180px}.mx-mphoto{height:230px}}
+@media(max-width:560px){.mx-hero h1{font-size:20px}.mx-photo{height:180px}.mx-mphoto{min-height:220px;max-height:56vh}.mx-mphoto img{max-height:56vh}}
 `;
 
 export default function MatrimonyPage() {
@@ -369,6 +370,7 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
     <div className="mx-mask" onClick={onClose}>
       <div className="mx-modal" onClick={(e) => e.stopPropagation()}>
         <div className="mx-mphoto">
+          {photos.length ? <div className="mx-blur" style={{ backgroundImage: `url("${(photos[pi] || photos[0]).replace(/"/g, '')}")` }} /> : null}
           {photos.length ? <img src={photos[pi] || photos[0]} alt={p.name} /> : <Ic n="user" size={92} sw={1.1} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
           <button className="mx-x" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="x" size={16} /></button>
           {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ bottom: 12, left: 12, top: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ic n="check" size={12} sw={2.6} /> अंतरजातीय स्वीकार्य</span>}
