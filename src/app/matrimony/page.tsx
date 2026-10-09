@@ -9,6 +9,9 @@ import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
+import { confirmPayment } from '@/lib/payments';
+import { matrimonyPlans } from '@/lib/pricing';
+import { usePricing } from '@/lib/usePricing';
 import {
   ABOUT_SUGGESTIONS, ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
   MARITAL_STATUS, MAX_PHOTOS, MOTHER_TONGUES, PARTNER_SUGGESTIONS, POSTED_BY_OPTIONS, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
@@ -58,6 +61,18 @@ const tint = (hex: string, a: number) => { const { r, g, b } = hexToRgb(hex); re
 const darken = (hex: string, f = 0.72) => { const { r, g, b } = hexToRgb(hex); return `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`; };
 
 const isIntercaste = (v?: string) => !!v && v.includes('कोई भी');
+
+declare global { interface Window { Razorpay: any } }
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TZSA6UoKATong0';
+const loadRazorpay = (): Promise<boolean> => new Promise((resolve) => {
+  if (typeof window !== 'undefined' && window.Razorpay) return resolve(true);
+  const ex = document.getElementById('razorpay-checkout-js');
+  if (ex) { ex.addEventListener('load', () => resolve(true)); return; }
+  const s = document.createElement('script');
+  s.id = 'razorpay-checkout-js'; s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  s.onload = () => resolve(true); s.onerror = () => resolve(false);
+  document.body.appendChild(s);
+});
 
 const EMPTY = {
   name: '', gender: '' as Gender | '', dob: '', heightCm: 0, maritalStatus: '', religion: '',
@@ -261,7 +276,7 @@ export default function MatrimonyPage() {
                   </button>
                 )}
                 {tab === 'browse' && <Browse onCreate={() => setTab('profile')} />}
-                {tab === 'profile' && <MyProfile slug={slug} />}
+                {tab === 'profile' && <MyProfile slug={slug} phone={phone || ''} />}
                 {tab === 'interests' && <Interests onCreate={() => setTab('profile')} />}
                 <div style={{ marginTop: 22 }}><AdInline /></div>
               </>
@@ -457,26 +472,55 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
 }
 
 /* ---------------- My profile ---------------- */
-function MyProfile({ slug }: { slug: string }) {
+function MyProfile({ slug, phone }: { slug: string; phone: string }) {
   const [f, setF] = useState<any>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [status, setStatus] = useState<string>('');
+  const [member, setMember] = useState<{ active: boolean; expiresAt: string | null; plan: string }>({ active: false, expiresAt: null, plan: '' });
+  const [buying, setBuying] = useState('');
+  const pricing = usePricing();
+  const plans = matrimonyPlans(pricing);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await authFetch('/api/matrimony/profile'); const j = await r.json();
-        if (j.profile) {
-          const pr = { ...EMPTY, ...j.profile };
-          if ((!pr.photos || !pr.photos.length) && pr.photoUrl) pr.photos = [pr.photoUrl]; // purani single-photo profile
-          setF(pr); setStatus(j.profile.status);
-        }
-      } catch {}
-      setLoading(false);
-    })();
+  const loadProfile = React.useCallback(async () => {
+    try {
+      const r = await authFetch('/api/matrimony/profile'); const j = await r.json();
+      if (j.membership) setMember(j.membership);
+      if (j.profile) {
+        const pr = { ...EMPTY, ...j.profile };
+        if ((!pr.photos || !pr.photos.length) && pr.photoUrl) pr.photos = [pr.photoUrl];
+        setF(pr); setStatus(j.profile.status);
+      }
+    } catch {}
+    setLoading(false);
   }, []);
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const buyMembership = async (plan: { id: string; name: string; price: number; days: number }) => {
+    setBuying(plan.id); setMsg('');
+    const ok = await loadRazorpay();
+    if (!ok || !window.Razorpay) { setBuying(''); setMsg('भुगतान स्क्रिप्ट लोड नहीं हुई, कृपया पेज रिफ्रेश करें।'); return; }
+    try {
+      const rzp = new window.Razorpay({
+        key: RAZORPAY_KEY, amount: plan.price * 100, currency: 'INR',
+        name: 'विवाह सदस्यता', description: `${plan.name} — ₹${plan.price}`,
+        prefill: { contact: phone },
+        theme: { color: fallbackFor(slug).primaryColor || '#be185d' },
+        handler: async (resp: any) => {
+          const c = await confirmPayment('matrimony', resp.razorpay_payment_id, { planId: plan.id });
+          setBuying('');
+          if (!c.ok && !c.fallback) { setMsg(c.message || 'भुगतान दर्ज नहीं हुआ।'); return; }
+          setMember({ active: true, expiresAt: c.ok ? c.data?.membership?.expiresAt : null, plan: plan.id });
+          setMsg('✓ सदस्यता सक्रिय! अब आप अपनी प्रोफ़ाइल सबमिट कर सकते हैं।');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        modal: { ondismiss: () => setBuying('') }
+      });
+      rzp.on('payment.failed', (r: any) => { setBuying(''); setMsg('भुगतान असफल: ' + (r.error?.description || 'पुनः प्रयास करें')); });
+      rzp.open();
+    } catch (e: any) { setBuying(''); setMsg('गेटवे त्रुटि: ' + e.message); }
+  };
 
   const [locating, setLocating] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -534,6 +578,28 @@ function MyProfile({ slug }: { slug: string }) {
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <h2 style={{ color: 'var(--mx-d)', margin: '0 0 14px', fontSize: 22 }}>मेरी विवाह प्रोफ़ाइल</h2>
+
+      {member.active ? (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', borderRadius: 10, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>
+          <Ic n="shield" size={14} /> सदस्यता सक्रिय{member.expiresAt ? ` — ${new Date(member.expiresAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })} तक` : ''}
+        </div>
+      ) : (
+        <div className="mx-fcard" style={{ borderColor: 'var(--mx-p)', background: 'var(--mx-ss)' }}>
+          <div className="mx-sec"><i><Ic n="shield"/></i> सदस्यता लें <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--mx-m)', marginLeft: 4 }}>(प्रोफ़ाइल सबमिट के लिए आवश्यक)</span></div>
+          <p style={{ fontSize: 12.5, color: 'var(--mx-m)', margin: '0 0 12px' }}>विवाह प्रोफ़ाइल बनाने व संपर्क सुविधा के लिए सदस्यता लें। नीचे प्लान चुनें:</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
+            {plans.map((pl, i) => (
+              <div key={pl.id} style={{ border: `1.5px solid ${i === 1 ? 'var(--mx-p)' : 'var(--mx-l)'}`, borderRadius: 14, padding: 16, background: '#fff', position: 'relative' }}>
+                {i === 1 && <span style={{ position: 'absolute', top: -10, right: 12, background: 'var(--mx-p)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 10px', borderRadius: 999 }}>बेस्ट वैल्यू</span>}
+                <div style={{ fontWeight: 800, color: 'var(--mx-d)', fontSize: 15 }}>{pl.name}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--mx-p)', margin: '4px 0' }}>₹{pl.price}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--mx-m)', minHeight: 32 }}>{pl.desc}</div>
+                <button disabled={!!buying} onClick={() => buyMembership(pl)} className="mx-btn-p" style={{ width: '100%', marginTop: 10, justifyContent: 'center', display: 'inline-flex' }}>{buying === pl.id ? 'खुल रहा…' : 'लें →'}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {status && (
         <div className="mx-status" style={{ background: status === 'approved' ? '#ecfdf5' : status === 'rejected' ? '#fef2f2' : 'var(--mx-ss)', border: `1px solid ${status === 'approved' ? '#a7f3d0' : status === 'rejected' ? '#fecaca' : 'var(--mx-l)'}`, color: status === 'approved' ? '#047857' : status === 'rejected' ? '#b91c1c' : 'var(--mx-d)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Ic n={status === 'approved' ? 'check' : status === 'rejected' ? 'x' : 'clock'} size={15} /> स्थिति: {status === 'approved' ? 'स्वीकृत — वेबसाइट पर live' : status === 'rejected' ? 'अस्वीकृत — कृपया सही जानकारी भरें' : 'समीक्षा में — एडमिन स्वीकृति के बाद दिखेगी'}</span>
@@ -651,7 +717,9 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-note"><Ic n="lock" size={15} style={{ marginTop: 1 }} /> <span>आपका मोबाइल नंबर प्रोफ़ाइल में कहीं नहीं दिखेगा। किसी की रुचि स्वीकार करने पर ही आपका संपर्क उस तक पहुँचेगा।</span></div>
-      <button disabled={saving} onClick={save} className="mx-save">{saving ? 'सहेज रहे…' : status ? 'प्रोफ़ाइल अपडेट करें' : 'प्रोफ़ाइल सहेजें'}</button>
+      <button disabled={saving || !member.active} onClick={save} className="mx-save" style={!member.active ? { opacity: .6, cursor: 'not-allowed' } : undefined}>
+        {!member.active ? 'पहले सदस्यता लें' : saving ? 'सहेज रहे…' : status ? 'प्रोफ़ाइल अपडेट करें' : 'प्रोफ़ाइल सहेजें'}
+      </button>
     </div>
   );
 }

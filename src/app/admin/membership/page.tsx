@@ -53,6 +53,15 @@ const SECTIONS: { title: string; icon: string; note: string; rows: Row[] }[] = [
       get: (p: Pricing) => p.ads[f],
       set: (p: Pricing, v: { price: number; days?: number }) => ({ ...p, ads: { ...p.ads, [f]: { price: v.price, days: v.days! } } })
     }))
+  },
+  {
+    title: 'विवाह (Matrimony) सदस्यता',
+    icon: '💍',
+    note: 'प्रोफ़ाइल सबमिट करने के लिए आवश्यक। दिन सदस्यता लेने के दिन से गिने जाते हैं।',
+    rows: [
+      { key: 'mat1', label: '1 महीने का प्लान', get: (p) => p.matrimony.matrimony_1_month, set: (p, v) => ({ ...p, matrimony: { ...p.matrimony, matrimony_1_month: { price: v.price, days: v.days! } } }) },
+      { key: 'mat2', label: '1 वर्ष का प्लान', get: (p) => p.matrimony.matrimony_1_year, set: (p, v) => ({ ...p, matrimony: { ...p.matrimony, matrimony_1_year: { price: v.price, days: v.days! } } }) }
+    ]
   }
 ];
 

@@ -58,4 +58,4 @@ export function adExpiryMs(x: any): number {
 }
 export const adNotExpired = (x: any, now = Date.now()) => adExpiryMs(x) > now;
 
-export type PaymentKind = 'epaper' | 'membership' | 'delivery' | 'shok' | 'ad';
+export type PaymentKind = 'epaper' | 'membership' | 'delivery' | 'shok' | 'ad' | 'matrimony';

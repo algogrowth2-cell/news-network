@@ -17,6 +17,7 @@ export interface Pricing {
   delivery: { price: number };
   shok: { shok_7_days: PriceDays; shok_30_days: PriceDays };
   ads: Record<AdFormat, PriceDays>;
+  matrimony: { matrimony_1_month: PriceDays; matrimony_1_year: PriceDays };
 }
 
 const epMonth = EPAPER_PLANS.find((p) => p.id === 'epaper_1_month')!;
@@ -40,6 +41,10 @@ export const DEFAULT_PRICING: Pricing = {
     sidebar: { price: AD_PRICES.sidebar, days: AD_DAYS.sidebar },
     banner: { price: AD_PRICES.banner, days: AD_DAYS.banner },
     popup: { price: AD_PRICES.popup, days: AD_DAYS.popup }
+  },
+  matrimony: {
+    matrimony_1_month: { price: 299, days: 30 },
+    matrimony_1_year: { price: 1999, days: 365 }
   }
 };
 
@@ -75,6 +80,10 @@ export function normalizePricing(raw: any): Pricing {
       sidebar: pd(raw?.ads?.sidebar, d.ads.sidebar, true),
       banner: pd(raw?.ads?.banner, d.ads.banner, true),
       popup: pd(raw?.ads?.popup, d.ads.popup, true)
+    },
+    matrimony: {
+      matrimony_1_month: pd(raw?.matrimony?.matrimony_1_month, d.matrimony.matrimony_1_month),
+      matrimony_1_year: pd(raw?.matrimony?.matrimony_1_year, d.matrimony.matrimony_1_year)
     }
   };
 }
@@ -110,6 +119,14 @@ export function epaperPlans(p: Pricing) {
       desc: `₹${y.price} (मात्र ₹${(y.price / Math.max(1, Math.round(y.days / 30.4))).toFixed(2)}/माह) में पूरे ${y.days} दिनों का असीमित ऐक्सेस`
     }
   ];
+}
+
+/** Matrimony membership plan list */
+export function matrimonyPlans(p: Pricing) {
+  return (['matrimony_1_month', 'matrimony_1_year'] as const).map((id) => {
+    const v = p.matrimony[id];
+    return { id, name: daysLabel(v.days), price: v.price, days: v.days, desc: `₹${v.price} में ${daysShort(v.days)} तक विवाह प्रोफ़ाइल व संपर्क सुविधा` };
+  });
 }
 
 /** Shok sandesh plan list */

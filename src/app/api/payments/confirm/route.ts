@@ -5,7 +5,7 @@ import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
 import { membershipSite, membershipTillMs } from '@/lib/membership';
 import { type AdFormat, type PaymentKind } from '@/lib/plans';
-import { epaperPlans, shokPlans } from '@/lib/pricing';
+import { epaperPlans, matrimonyPlans, shokPlans } from '@/lib/pricing';
 import { getServerPricing } from '@/lib/pricingServer';
 
 /*
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const kind = body.kind as PaymentKind;
   const paymentId = String(body.paymentId || '');
-  if (!['epaper', 'membership', 'delivery', 'shok', 'ad'].includes(kind)) return NextResponse.json({ error: 'bad-kind' }, { status: 400 });
+  if (!['epaper', 'membership', 'delivery', 'shok', 'ad', 'matrimony'].includes(kind)) return NextResponse.json({ error: 'bad-kind' }, { status: 400 });
 
   // Shok sandesh bhi ab login ke saath (sandesh kiska hai — sirf wahi download kar sake)
   const phone = await phoneFromRequest(req);
@@ -55,6 +55,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'terms', message: 'कृपया सदस्यता की शर्तें पढ़कर स्वीकार करें।' }, { status: 400 });
   const shokPlan = kind === 'shok' ? shokPlans(pricing).find((p) => p.id === body.planId) : null;
   if (kind === 'shok' && !shokPlan) return NextResponse.json({ error: 'bad-plan', message: 'कृपया शोक संदेश का प्लान चुनें।' }, { status: 400 });
+  const matPlan = kind === 'matrimony' ? matrimonyPlans(pricing).find((p) => p.id === body.planId) : null;
+  if (kind === 'matrimony' && !matPlan) return NextResponse.json({ error: 'bad-plan', message: 'कृपया विवाह सदस्यता का प्लान चुनें।' }, { status: 400 });
   const ad = body.ad || {};
   const adFormat = String(ad.format || '') as AdFormat;
   if (kind === 'ad') {
@@ -68,6 +70,7 @@ export async function POST(req: Request) {
     : kind === 'membership' ? pricing.membership.price
     : kind === 'delivery' ? pricing.delivery.price
     : kind === 'ad' ? pricing.ads[adFormat].price
+    : kind === 'matrimony' ? matPlan!.price
     : shokPlan!.price;
 
   // Pehle hi use ho chuka? (do baar activation nahi)
@@ -249,6 +252,18 @@ export async function POST(req: Request) {
         }
         tx.set(payRef, { ...base, advertiserId: advRef.id, adFormat, adCollection: adFormat === 'classified' ? 'classifieds' : 'ads' });
         return { adId: paymentId };
+      }
+
+      if (kind === 'matrimony') {
+        // Vivah sadasyata — is number ki chalu ho toh aage badhao, warna aaj se; isi ke rehte bio-data submit hoti hai
+        const memRef = db.collection('matrimony_members').doc(phone);
+        const cur = (await tx.get(memRef)).data();
+        const curMs = cur?.expiresAt?.toDate ? cur.expiresAt.toDate().getTime() : 0;
+        const start = curMs > Date.now() ? curMs : Date.now();
+        const expiresAt = new Date(start + matPlan!.days * 864e5);
+        tx.set(memRef, { phone, planId: matPlan!.id, planName: matPlan!.name, paymentId, expiresAt: admin.Timestamp.fromDate(expiresAt), updatedAt: admin.FieldValue.serverTimestamp() }, { merge: true });
+        tx.set(payRef, { ...base, planId: matPlan!.id, days: matPlan!.days });
+        return { membership: { active: true, plan: matPlan!.id, expiresAt: expiresAt.toISOString() } };
       }
 
       // shok: sirf credit — shok_sandesh/{paymentId} browser banata hai (rules payments/{id} dekhte hain)
