@@ -13,7 +13,7 @@ interface Row {
   religion: string; community: string; castePreference: string; motherTongue: string; city: string; state: string;
   education: string; employmentType: string; workField: string; companyName: string; designation: string; occupation: string; annualIncome: string; diet: string; about: string;
   fatherName: string; motherName: string; grandfatherName: string; brothers: string; sisters: string; landBigha: string;
-  family: string; partnerPreference: string; photoUrl: string; siteId: string; status: ProfileStatus;
+  family: string; partnerPreference: string; postedBy: string; photoUrl: string; photos: string[]; siteId: string; status: ProfileStatus;
   contactPhone?: string; ownerPhone?: string; interestCount?: number; createdAt?: any;
 }
 
@@ -22,14 +22,19 @@ const CSS = `
 .mt-tab.on{background:#be185d;border-color:#be185d;color:#fff}
 .mt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .mt-card{background:var(--bg-0b1120);border:1px solid var(--bd-1e293b);border-radius:12px;overflow:hidden}
-.mt-ph{height:150px;background:#2a1322;display:flex;align-items:center;justify-content:center;font-size:40px}
-.mt-body{padding:12px}
-.mt-name{font-weight:700;color:var(--fg-f1f5f9);font-size:15px}
-.mt-row{font-size:12.5px;color:var(--fg-94a3b8);margin-top:3px}
-.mt-row b{color:var(--fg-cbd5e1);font-weight:600}
-.mt-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
-.mt-contact{margin-top:8px;font-size:13px;color:#34d399;font-weight:700}
-.mt-btn{border:1px solid var(--bd-334155);background:transparent;color:var(--fg-cbd5e1);border-radius:6px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit;margin:8px 6px 0 0}
+.mt-ph{position:relative;height:200px;background:#1a1226;display:flex;align-items:center;justify-content:center}
+.mt-ph-n{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:99px}
+.mt-ph-s{position:absolute;top:8px;left:8px}
+.mt-body{padding:14px}
+.mt-name{font-weight:800;color:var(--fg-f1f5f9);font-size:17px}
+.mt-sub2{font-size:12.5px;color:var(--fg-94a3b8);margin:3px 0 10px}
+.mt-kv{display:flex;gap:10px;font-size:12.5px;padding:3px 0;line-height:1.5}
+.mt-kv .k{color:var(--fg-64748b);min-width:72px;flex-shrink:0;font-weight:500}
+.mt-kv .v{color:var(--fg-e2e8f0,#e2e8f0)}
+.mt-group{border-top:1px solid var(--bd-1e293b);margin-top:9px;padding-top:9px}
+.mt-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
+.mt-contact2{margin-top:11px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35);border-radius:9px;padding:9px 11px;font-size:14px;color:#34d399;font-weight:800;text-align:center;letter-spacing:.3px}
+.mt-btn{border:1px solid var(--bd-334155);background:transparent;color:var(--fg-cbd5e1);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit;margin:9px 6px 0 0;font-weight:600}
 .mt-btn.ok{border-color:#059669;color:#34d399}
 .mt-btn.danger{border-color:#7f1d1d;color:#f87171}
 `;
@@ -104,35 +109,45 @@ export default function AdminMatrimony() {
             const sc = STATUS_COLOR[r.status] || STATUS_COLOR.pending;
             return (
               <div key={r.id} className="mt-card">
-                <div className="mt-ph">{r.photoUrl ? <img src={r.photoUrl} alt={r.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.gender === 'female' ? '👰' : '🤵')}</div>
+                <div className="mt-ph">
+                  {r.photoUrl ? <img src={r.photoUrl} alt={r.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#64748b', fontSize: 13 }}>फोटो नहीं</span>}
+                  {r.photos && r.photos.length > 1 && <span className="mt-ph-n">{r.photos.length} फोटो</span>}
+                  <span className="mt-pill mt-ph-s" style={{ background: sc.bg, color: sc.fg }}>{STATUS_LABEL[r.status]}</span>
+                </div>
                 <div className="mt-body">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                    <span className="mt-name">{r.name}, {ageFromDob(r.dob)}</span>
-                    <span className="mt-pill" style={{ background: sc.bg, color: sc.fg }}>{STATUS_LABEL[r.status]}</span>
-                  </div>
-                  <div className="mt-row"><b>{heightLabel(r.heightCm)}</b> · {r.maritalStatus} · {r.gender === 'female' ? 'वधू' : 'वर'}</div>
-                  <div className="mt-row">{r.religion}{r.community ? ` · ${r.community}` : ''} · {r.motherTongue}</div>
-                  {r.castePreference && <div className="mt-row">💑 {r.castePreference}</div>}
-                  <div className="mt-row">📍 {r.city}, {r.state}</div>
-                  <div className="mt-row">🎓 {r.education}</div>
-                  <div className="mt-row">💼 {r.employmentType}{careerLine(r) && careerLine(r) !== r.employmentType ? ` · ${careerLine(r)}` : ''}{r.workField ? ` · ${r.workField}` : ''}</div>
-                  {r.annualIncome && <div className="mt-row">💰 {r.annualIncome}</div>}
-                  {r.diet && <div className="mt-row">🍽 {r.diet}</div>}
-                  {(r.fatherName || r.motherName) && <div className="mt-row"><b>माता-पिता:</b> {[r.fatherName, r.motherName].filter(Boolean).join(' / ')}</div>}
-                  {r.grandfatherName && <div className="mt-row"><b>दादाजी:</b> {r.grandfatherName}</div>}
-                  {((r.brothers && r.brothers !== '0') || (r.sisters && r.sisters !== '0')) && <div className="mt-row">👨‍👩‍👧 {r.brothers || 0} भाई · {r.sisters || 0} बहन</div>}
-                  {r.landBigha && <div className="mt-row"><b>कृषि भूमि:</b> {r.landBigha}</div>}
-                  {r.family && <div className="mt-row"><b>परिवार:</b> {r.family}</div>}
-                  {r.about && <div className="mt-row"><b>बारे में:</b> {r.about}</div>}
-                  {r.partnerPreference && <div className="mt-row"><b>चाहिए:</b> {r.partnerPreference}</div>}
-                  <div className="mt-row" style={{ marginTop: 4 }}>पोर्टल: {fallbackFor(r.siteId).name} · रुचि: {interestCounts[r.id] || 0}</div>
-                  <div className="mt-contact">📞 {contacts[r.id] ? `+91 ${contacts[r.id]}` : '—'}</div>
+                  <div className="mt-name">{r.name}, {ageFromDob(r.dob)}</div>
+                  <div className="mt-sub2">{heightLabel(r.heightCm)} · {r.maritalStatus} · {r.gender === 'female' ? 'वधू' : 'वर'}{r.postedBy ? ` · रिश्ता: ${r.postedBy}` : ''}</div>
 
-                  <div>
-                    {r.status !== 'approved' && <button className="mt-btn ok" onClick={() => setStatus(r, 'approved')}>✓ स्वीकृत</button>}
-                    {r.status !== 'paused' && <button className="mt-btn" onClick={() => setStatus(r, 'paused')}>⏸ रोकें</button>}
-                    {r.status !== 'rejected' && <button className="mt-btn" onClick={() => setStatus(r, 'rejected')}>✕ अस्वीकृत</button>}
-                    <button className="mt-btn danger" onClick={() => remove(r)}>🗑 हटाएं</button>
+                  <div className="mt-kv"><span className="k">धर्म/जाति</span><span className="v">{r.religion}{r.community ? ` · ${r.community}` : ''} · {r.motherTongue}</span></div>
+                  {r.castePreference && <div className="mt-kv"><span className="k">जाति पसंद</span><span className="v">{r.castePreference}</span></div>}
+                  <div className="mt-kv"><span className="k">स्थान</span><span className="v">{r.city}, {r.state}</span></div>
+                  <div className="mt-kv"><span className="k">शिक्षा</span><span className="v">{r.education}</span></div>
+                  <div className="mt-kv"><span className="k">कार्य</span><span className="v">{r.employmentType}{careerLine(r) && careerLine(r) !== r.employmentType ? ` · ${careerLine(r)}` : ''}{r.workField ? ` · ${r.workField}` : ''}{r.annualIncome ? ` · ${r.annualIncome}` : ''}</span></div>
+                  {r.diet && <div className="mt-kv"><span className="k">आहार</span><span className="v">{r.diet}</span></div>}
+
+                  <div className="mt-group">
+                    {(r.fatherName || r.motherName) && <div className="mt-kv"><span className="k">माता-पिता</span><span className="v">{[r.fatherName, r.motherName].filter(Boolean).join(' / ')}</span></div>}
+                    {r.grandfatherName && <div className="mt-kv"><span className="k">दादाजी</span><span className="v">{r.grandfatherName}</span></div>}
+                    {((r.brothers && r.brothers !== '0') || (r.sisters && r.sisters !== '0')) && <div className="mt-kv"><span className="k">भाई-बहन</span><span className="v">{r.brothers || 0} भाई · {r.sisters || 0} बहन</span></div>}
+                    {r.landBigha && <div className="mt-kv"><span className="k">कृषि भूमि</span><span className="v">{r.landBigha}</span></div>}
+                    {r.family && <div className="mt-kv"><span className="k">परिवार</span><span className="v">{r.family}</span></div>}
+                  </div>
+
+                  {(r.about || r.partnerPreference) && (
+                    <div className="mt-group">
+                      {r.about && <div className="mt-kv"><span className="k">बारे में</span><span className="v">{r.about}</span></div>}
+                      {r.partnerPreference && <div className="mt-kv"><span className="k">चाहिए</span><span className="v">{r.partnerPreference}</span></div>}
+                    </div>
+                  )}
+
+                  <div className="mt-kv" style={{ marginTop: 6 }}><span className="k">पोर्टल</span><span className="v">{fallbackFor(r.siteId).name} · रुचि: {interestCounts[r.id] || 0}</span></div>
+                  <div className="mt-contact2">संपर्क: {contacts[r.id] ? `+91 ${contacts[r.id]}` : '—'}</div>
+
+                  <div style={{ marginTop: 4 }}>
+                    {r.status !== 'approved' && <button className="mt-btn ok" onClick={() => setStatus(r, 'approved')}>स्वीकृत करें</button>}
+                    {r.status !== 'paused' && <button className="mt-btn" onClick={() => setStatus(r, 'paused')}>रोकें</button>}
+                    {r.status !== 'rejected' && <button className="mt-btn" onClick={() => setStatus(r, 'rejected')}>अस्वीकृत</button>}
+                    <button className="mt-btn danger" onClick={() => remove(r)}>हटाएं</button>
                   </div>
                 </div>
               </div>

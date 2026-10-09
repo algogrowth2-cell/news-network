@@ -11,7 +11,7 @@ import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import {
   ABOUT_SUGGESTIONS, ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MOTHER_TONGUES, PARTNER_SUGGESTIONS, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
+  MARITAL_STATUS, MAX_PHOTOS, MOTHER_TONGUES, PARTNER_SUGGESTIONS, POSTED_BY_OPTIONS, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
 
 /* ---- Modern line (SVG) icons — koi emoji nahi ---- */
@@ -64,7 +64,7 @@ const EMPTY = {
   community: '', castePreference: '', motherTongue: '', city: '', state: '', education: '',
   employmentType: '', workField: '', companyName: '', designation: '', occupation: '',
   annualIncome: '', diet: '', fatherName: '', motherName: '', grandfatherName: '', brothers: '0', sisters: '0', landBigha: '',
-  about: '', family: '', partnerPreference: '', photoUrl: ''
+  about: '', family: '', partnerPreference: '', postedBy: 'स्वयं', photoUrl: '', photos: [] as string[]
 };
 
 function fileToSmallDataUrl(file: File): Promise<string> {
@@ -72,14 +72,14 @@ function fileToSmallDataUrl(file: File): Promise<string> {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const max = 800;
+      const max = 720;
       let { width, height } = img;
       if (width > max || height > max) { const r = Math.min(max / width, max / height); width = Math.round(width * r); height = Math.round(height * r); }
       const c = document.createElement('canvas');
       c.width = width; c.height = height;
       c.getContext('2d')!.drawImage(img, 0, 0, width, height);
       URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', 0.82));
+      resolve(c.toDataURL('image/jpeg', 0.74));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('photo')); };
     img.src = url;
@@ -315,6 +315,7 @@ function Browse({ onCreate }: { onCreate: () => void }) {
                 <div className="mx-photo">
                   {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <Ic n="user" size={52} sw={1.3} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
                   <span className="mx-badge">{ageFromDob(p.dob)} वर्ष</span>
+                  {p.photos && p.photos.length > 1 && <span style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,.6)', color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ic n="camera" size={11} /> {p.photos.length}</span>}
                   {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Ic n="check" size={12} sw={2.6} /> अंतरजातीय</span>}
                   <div className="mx-ov">
                     <div className="n">{p.name}</div>
@@ -345,6 +346,8 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState('');
   const [contact, setContact] = useState('');
+  const photos = (p.photos && p.photos.length ? p.photos : (p.photoUrl ? [p.photoUrl] : []));
+  const [pi, setPi] = useState(0);
 
   const sendInterest = async () => {
     setSending(true); setMsg('');
@@ -366,13 +369,21 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
     <div className="mx-mask" onClick={onClose}>
       <div className="mx-modal" onClick={(e) => e.stopPropagation()}>
         <div className="mx-mphoto">
-          {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <Ic n="user" size={92} sw={1.1} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
+          {photos.length ? <img src={photos[pi] || photos[0]} alt={p.name} /> : <Ic n="user" size={92} sw={1.1} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
           <button className="mx-x" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="x" size={16} /></button>
           {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ bottom: 12, left: 12, top: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ic n="check" size={12} sw={2.6} /> अंतरजातीय स्वीकार्य</span>}
         </div>
+        {photos.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, padding: '10px 22px 0', flexWrap: 'wrap' }}>
+            {photos.map((ph, i) => (
+              <img key={i} src={ph} alt="" onClick={() => setPi(i)} style={{ width: 54, height: 54, objectFit: 'cover', borderRadius: 9, cursor: 'pointer', border: `2px solid ${i === pi ? 'var(--mx-p)' : 'transparent'}` }} />
+            ))}
+          </div>
+        )}
         <div style={{ padding: 22 }}>
           <h2 style={{ margin: 0, color: 'var(--mx-d)', fontSize: 23 }}>{p.name}, {ageFromDob(p.dob)} वर्ष</h2>
-          <p style={{ margin: '4px 0 16px', color: 'var(--mx-m)', fontSize: 13.5 }}>{heightLabel(p.heightCm)} · {p.maritalStatus} · {p.city}, {p.state}</p>
+          <p style={{ margin: '4px 0 10px', color: 'var(--mx-m)', fontSize: 13.5 }}>{heightLabel(p.heightCm)} · {p.maritalStatus} · {p.city}, {p.state}</p>
+          {p.postedBy && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--mx-d)', background: 'var(--mx-s)', padding: '4px 11px', borderRadius: 999, marginBottom: 14 }}><Ic n="user" size={12} /> यह रिश्ता {p.postedBy === 'स्वयं' ? 'स्वयं द्वारा' : `${p.postedBy} द्वारा`}</div>}
           {row('धर्म', p.religion)}{row('जाति / समुदाय', p.community)}{row('जाति पसंद', p.castePreference)}{row('मातृभाषा', p.motherTongue)}
           {row('शिक्षा', p.education)}{row('कार्य', p.employmentType)}{row('क्षेत्र', p.workField)}{row('कंपनी', p.companyName)}{row('पद', p.designation)}{row('आय', p.annualIncome)}{row('आहार', p.diet)}
           {row('पिता', p.fatherName)}{row('माता', p.motherName)}{row('दादाजी', p.grandfatherName)}
@@ -409,7 +420,14 @@ function MyProfile({ slug }: { slug: string }) {
 
   useEffect(() => {
     (async () => {
-      try { const r = await authFetch('/api/matrimony/profile'); const j = await r.json(); if (j.profile) { setF({ ...EMPTY, ...j.profile }); setStatus(j.profile.status); } } catch {}
+      try {
+        const r = await authFetch('/api/matrimony/profile'); const j = await r.json();
+        if (j.profile) {
+          const pr = { ...EMPTY, ...j.profile };
+          if ((!pr.photos || !pr.photos.length) && pr.photoUrl) pr.photos = [pr.photoUrl]; // purani single-photo profile
+          setF(pr); setStatus(j.profile.status);
+        }
+      } catch {}
       setLoading(false);
     })();
   }, []);
@@ -439,11 +457,21 @@ function MyProfile({ slug }: { slug: string }) {
     );
   };
 
-  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { setMsg('फोटो 8MB से छोटी चुनें।'); return; }
-    try { set('photoUrl', await fileToSmallDataUrl(file)); } catch { setMsg('फोटो लोड नहीं हुई।'); }
+  const onPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    const cur: string[] = Array.isArray(f.photos) ? f.photos : [];
+    const room = MAX_PHOTOS - cur.length;
+    if (room <= 0) { setMsg(`अधिकतम ${MAX_PHOTOS} फोटो ही जोड़ सकते हैं।`); return; }
+    const add: string[] = [];
+    for (const file of files.slice(0, room)) {
+      if (file.size > 10 * 1024 * 1024) continue;
+      try { add.push(await fileToSmallDataUrl(file)); } catch {}
+    }
+    if (add.length) setF((p: any) => { const arr = [...(p.photos || []), ...add].slice(0, MAX_PHOTOS); return { ...p, photos: arr, photoUrl: arr[0] }; });
   };
+  const removePhoto = (i: number) => setF((p: any) => { const arr = (p.photos || []).filter((_: string, j: number) => j !== i); return { ...p, photos: arr, photoUrl: arr[0] || '' }; });
   const save = async () => {
     setSaving(true); setMsg('');
     try {
@@ -476,6 +504,7 @@ function MyProfile({ slug }: { slug: string }) {
           <Field label="लंबाई *"><select className="mx-in" value={f.heightCm} onChange={(e) => set('heightCm', Number(e.target.value))}><option value={0}>चुनें</option>{HEIGHT_OPTIONS.map((h) => <option key={h.cm} value={h.cm}>{h.label}</option>)}</select></Field>
           <Field label="वैवाहिक स्थिति *"><select className="mx-in" value={f.maritalStatus} onChange={(e) => set('maritalStatus', e.target.value)}><option value="">चुनें</option>{MARITAL_STATUS.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>
           <Field label="आहार"><select className="mx-in" value={f.diet} onChange={(e) => set('diet', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{DIETS.map((d) => <option key={d} value={d}>{d}</option>)}</select></Field>
+          <Field label="यह रिश्ता किसने डाला? *"><select className="mx-in" value={f.postedBy} onChange={(e) => set('postedBy', e.target.value)}>{POSTED_BY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}</select></Field>
         </div>
       </div>
 
@@ -557,11 +586,21 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i><Ic n="camera"/></i> फोटो</div>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          {f.photoUrl && <img src={f.photoUrl} alt="" style={{ width: 82, height: 82, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--mx-l)' }} />}
-          <input type="file" accept="image/*" onChange={onPhoto} style={{ fontSize: 13 }} />
-          {f.photoUrl && <button onClick={() => set('photoUrl', '')} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 12.5 }}>हटाएं</button>}
+        <div className="mx-sec"><i><Ic n="camera"/></i> फोटो <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--mx-m)', marginLeft: 4 }}>(कम से कम 1, अधिकतम {MAX_PHOTOS})</span></div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {(f.photos || []).map((ph: string, i: number) => (
+            <div key={i} style={{ position: 'relative', width: 86, height: 86 }}>
+              <img src={ph} alt="" style={{ width: 86, height: 86, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--mx-l)' }} />
+              {i === 0 && <span style={{ position: 'absolute', bottom: 3, left: 3, background: 'var(--mx-p)', color: '#fff', fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 999 }}>मुख्य</span>}
+              <button type="button" onClick={() => removePhoto(i)} aria-label="हटाएं" style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="x" size={12} sw={2.6} /></button>
+            </div>
+          ))}
+          {(f.photos || []).length < MAX_PHOTOS && (
+            <label style={{ width: 86, height: 86, borderRadius: 12, border: '1.5px dashed var(--mx-l)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--mx-p)', gap: 4 }}>
+              <Ic n="plus" size={20} /><span style={{ fontSize: 10.5, fontWeight: 600 }}>फोटो जोड़ें</span>
+              <input type="file" accept="image/*" multiple onChange={onPhotos} style={{ display: 'none' }} />
+            </label>
+          )}
         </div>
       </div>
 

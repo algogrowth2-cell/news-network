@@ -47,7 +47,9 @@ export interface MatrimonyProfile {
   about: string;
   family: string; // anya parivaar jaankari (optional)
   partnerPreference: string; // kaisa jeevansaathi chahiye (short)
-  photoUrl: string; // optional
+  postedBy: string; // rishta kisne daala — swayं / papa / mummy / mama / fufa...
+  photoUrl: string; // pehli photo (card/thumbnail)
+  photos: string[]; // 1 se 5 photo
   siteId: string;
   status: ProfileStatus;
 }
@@ -64,6 +66,9 @@ export const CASTE_PREFERENCES = ['अपनी ही जाति / समु�
 export const MOTHER_TONGUES = ['हिंदी', 'मराठी', 'गुजराती', 'पंजाबी', 'राजस्थानी', 'मालवी', 'निमाड़ी', 'उर्दू', 'बंगाली', 'तमिल', 'तेलुगु', 'मलयालम', 'कन्नड़', 'अंग्रेज़ी', 'अन्य'];
 export const DIETS = ['शाकाहारी', 'मांसाहारी', 'अंडाहारी', 'जैन शाकाहारी'];
 export const SIBLING_COUNTS = ['0', '1', '2', '3', '4', '5', '6', '7', '8 से अधिक'];
+// Rishta kisne daala (profile kisne banayी)
+export const POSTED_BY_OPTIONS = ['स्वयं', 'पिता', 'माता', 'भाई', 'बहन', 'मामा', 'मामी', 'फूफा', 'बुआ', 'चाचा', 'ताऊ', 'अन्य संबंधी'];
+export const MAX_PHOTOS = 5;
 // Kaam / rozgaar
 export const EMPLOYMENT_TYPES = ['निजी नौकरी (Private Job)', 'सरकारी नौकरी (Govt Job)', 'व्यवसाय / बिज़नेस', 'स्वरोज़गार / फ्रीलांस', 'खेती / किसान', 'छात्र (पढ़ाई जारी)', 'गृहिणी', 'वर्तमान में कार्यरत नहीं'];
 export const WORK_FIELDS = ['आईटी / सॉफ्टवेयर', 'इंजीनियरिंग', 'चिकित्सा / स्वास्थ्य', 'शिक्षा / अध्यापन', 'बैंकिंग / वित्त', 'सरकारी / प्रशासनिक', 'रक्षा / पुलिस / सेना', 'व्यापार / रिटेल', 'कृषि', 'कानून', 'मीडिया / पत्रकारिता', 'कला / डिज़ाइन', 'मार्केटिंग / सेल्स', 'अन्य'];
@@ -206,11 +211,20 @@ export function cleanProfileInput(input: any): CleanResult {
   const family = str(input.family, 400);
   const partnerPreference = str(input.partnerPreference, 400);
 
-  // Photo: https link ya chhoti data:image (Firestore 1MB seema me)
-  const rawPhoto = String(input.photoUrl || '').trim();
-  let photoUrl = '';
-  if (/^https:\/\/[^\s"'<>]{4,2000}$/i.test(rawPhoto)) photoUrl = rawPhoto;
-  else if (/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(rawPhoto) && rawPhoto.length <= 900_000) photoUrl = rawPhoto;
+  const postedBy = POSTED_BY_OPTIONS.includes(String(input.postedBy)) ? String(input.postedBy) : 'स्वयं';
+
+  // Photos: 1 se MAX_PHOTOS. Har ek https ya chhoti data:image; kul milakar Firestore 1MB seema me
+  const cleanPhoto = (raw: any): string => {
+    const s = String(raw || '').trim();
+    if (/^https:\/\/[^\s"'<>]{4,2000}$/i.test(s)) return s;
+    if (/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(s) && s.length <= 300_000) return s;
+    return '';
+  };
+  const rawList = Array.isArray(input.photos) && input.photos.length ? input.photos : [input.photoUrl];
+  const photos = rawList.map(cleanPhoto).filter(Boolean).slice(0, MAX_PHOTOS);
+  if (!photos.length) return { ok: false, error: 'कृपया कम से कम 1 फोटो जोड़ें।' };
+  if (photos.reduce((n: number, p: string) => n + p.length, 0) > 950_000) return { ok: false, error: 'फोटो का कुल आकार बहुत बड़ा है, कृपया कम या छोटी फोटो चुनें।' };
+  const photoUrl = photos[0];
 
   const siteId = str(input.siteId, 60) || 'the-local-leader';
 
@@ -220,7 +234,7 @@ export function cleanProfileInput(input: any): CleanResult {
       name, gender, dob, heightCm, maritalStatus, religion, community, castePreference, motherTongue,
       city, state, education, employmentType, workField, companyName, designation, occupation, annualIncome, diet,
       fatherName, motherName, grandfatherName, brothers, sisters, landBigha,
-      about, family, partnerPreference, photoUrl, siteId
+      about, family, partnerPreference, postedBy, photoUrl, photos, siteId
     }
   };
 }
