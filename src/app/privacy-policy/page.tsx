@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
+import PolicyOverride from '@/components/PolicyOverride';
+import { useSitePolicy } from '@/lib/useSitePolicy';
 
 const SECTIONS = [
   { id: 'collection', num: '1', title: 'सूचना का संग्रह' },
@@ -19,6 +21,7 @@ const SECTIONS = [
 ];
 
 export default function PrivacyPolicyPage() {
+  const policyOverride = useSitePolicy('privacy');
   const [activeSection, setActiveSection] = useState('collection');
 
   useEffect(() => {
@@ -45,6 +48,7 @@ export default function PrivacyPolicyPage() {
 
   const primary = '#ea580c';
 
+  if (policyOverride?.html) return <PolicyOverride title={policyOverride.title || 'निजता नीति (Privacy Policy)'} html={policyOverride.html} />;
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
 

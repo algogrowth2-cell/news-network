@@ -2,10 +2,14 @@
 import Link from 'next/link';
 import { AdLayout } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
+import PolicyOverride from '@/components/PolicyOverride';
+import { useSitePolicy } from '@/lib/useSitePolicy';
 
 const primary = '#ea580c';
 
 export default function GrievancePage() {
+  const policyOverride = useSitePolicy('grievance');
+  if (policyOverride?.html) return <PolicyOverride title={policyOverride.title || 'शिकायत निवारण'} html={policyOverride.html} />;
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
 

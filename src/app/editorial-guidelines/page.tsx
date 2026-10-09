@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AdInline, AdLayout } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
+import PolicyOverride from '@/components/PolicyOverride';
+import { useSitePolicy } from '@/lib/useSitePolicy';
 
 const primary = '#ea580c';
 
@@ -18,6 +20,7 @@ const SECTIONS = [
 ];
 
 export default function EditorialGuidelinesPage() {
+  const policyOverride = useSitePolicy('editorial');
   const [activeSection, setActiveSection] = useState('accuracy');
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function EditorialGuidelinesPage() {
     }
   };
 
+  if (policyOverride?.html) return <PolicyOverride title={policyOverride.title || 'संपादकीय दिशानिर्देश'} html={policyOverride.html} />;
   return (
     <div style={{ minHeight: '100vh', background: '#f4f3f0', color: '#1a1a1a', fontFamily: '"Mukta", system-ui, -apple-system, sans-serif' }}>
 

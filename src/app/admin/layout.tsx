@@ -200,6 +200,7 @@ export default function AdminLayout({
       items: [
         { label: 'Sites', icon: '🌐', href: '/admin/sites' },
         { label: 'Page Builder', icon: '🧱', href: '/admin/page-builder' },
+        { label: 'नीति पेज', icon: '📜', href: '/admin/policy-pages' },
         { label: 'Users', icon: '👥', href: '/admin/users' },
         { label: 'Audit Log', icon: '🛡️', href: '/admin/audit-log' },
         { label: 'Settings', icon: '⚙️', href: '/admin/settings' }
