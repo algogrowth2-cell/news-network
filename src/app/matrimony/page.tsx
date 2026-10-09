@@ -11,8 +11,39 @@ import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import {
   ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
+  MARITAL_STATUS, MOTHER_TONGUES, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
+
+/* ---- Modern line (SVG) icons — koi emoji nahi ---- */
+const ICON_PATHS: Record<string, string> = {
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+  faith: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  work: '<rect x="2.5" y="7" width="19" height="13" rx="2"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/><path d="M2.5 12h19"/>',
+  family: '<circle cx="8" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 20v-1a5.5 5.5 0 0 1 11 0v1"/><path d="M15 20v-1a4.5 4.5 0 0 1 6.5-4"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z"/>',
+  camera: '<path d="M4 8h3l1.5-2.2h7L17 8h3a1.5 1.5 0 0 1 1.5 1.5V18A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9.5A1.5 1.5 0 0 1 4 8z"/><circle cx="12" cy="13" r="3.4"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0l-1.7 1.7-1.7-1.7a5 5 0 0 0-7.1 7.1l1.7 1.7L12 21l8.8-6.6 1.7-1.7a5 5 0 0 0-1.7-7.1z"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M12 8S10 3 7.5 4.5 10 8 12 8zM12 8s2-5 4.5-3.5S14 8 12 8z"/>',
+  grad: '<path d="M22 9.5 12 5 2 9.5l10 4.5 10-4.5z"/><path d="M6 11.5V16c0 1.2 2.7 2.5 6 2.5s6-1.3 6-2.5v-4.5"/>',
+  phone: '<path d="M21 16.5v2.5a2 2 0 0 1-2.2 2 19 19 0 0 1-8.3-3 18.7 18.7 0 0 1-5.7-5.7 19 19 0 0 1-3-8.4A2 2 0 0 1 3.8 2h2.5a2 2 0 0 1 2 1.7c.1.9.3 1.7.6 2.5a2 2 0 0 1-.5 2.1L7.3 9.4a15 15 0 0 0 5.7 5.7l1.1-1.1a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.5.6a2 2 0 0 1 1.7 2z"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
+  handshake: '<path d="m11 12 2-2 4 3.5a2 2 0 0 1-2.6 3L12 14"/><path d="M12 10 8.5 6.5a2 2 0 0 0-2.8 0L2.5 9.7"/><path d="m2 13 3.5 3.5a2 2 0 0 0 2.8 0L10 15"/><path d="M14 13.5 18 10l3.5 3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>'
+};
+function Ic({ n, size = 16, sw = 2, style }: { n: string; size?: number; sw?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, ...style }}
+      dangerouslySetInnerHTML={{ __html: ICON_PATHS[n] || '' }} />
+  );
+}
 
 type Tab = 'browse' | 'profile' | 'interests';
 
@@ -73,12 +104,12 @@ const STYLE = `
 .mx-wrap{max-width:1120px;margin:0 auto}
 .mx-body{padding:18px 0 10px}
 .mx-hero{background:linear-gradient(135deg,var(--mx-p),var(--mx-d));border-radius:22px;padding:28px 28px;color:#fff;margin-bottom:20px;box-shadow:0 14px 34px var(--mx-sh);position:relative;overflow:hidden}
-.mx-hero::after{content:'💍';position:absolute;right:20px;bottom:-14px;font-size:120px;opacity:.14;transform:rotate(-12deg)}
 .mx-hero::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.08)}
+.mx-hero-wm{position:absolute;right:18px;bottom:-26px;opacity:.14;transform:rotate(-10deg);pointer-events:none}
 .mx-hero h1{margin:0;font-size:23px;font-weight:800;position:relative}
 .mx-hero p{margin:6px 0 0;font-size:13.5px;opacity:.93;position:relative;max-width:560px}
 .mx-trust{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;position:relative}
-.mx-trust span{font-size:12px;background:rgba(255,255,255,.16);padding:5px 12px;border-radius:999px;font-weight:600}
+.mx-trust span{font-size:12px;background:rgba(255,255,255,.16);padding:5px 12px;border-radius:999px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .mx-hero-btn{margin-top:16px;background:#fff;color:var(--mx-d);border:none;border-radius:12px;padding:11px 22px;font-weight:800;font-size:14px;cursor:pointer;position:relative;font-family:inherit}
 .mx-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .mx-chip{padding:10px 15px;border:1px solid var(--mx-l);border-radius:999px;font-size:13.5px;background:#fff;color:var(--mx-d);font-weight:600;outline:none;font-family:inherit;transition:.15s}
@@ -170,8 +201,8 @@ export default function MatrimonyPage() {
           <Link href={`/?site=${slug}`} className="mx-back">← मुख्य वेबसाइट</Link>
         </div>
         <nav className="mx-tabs">
-          {([['browse', '🔍 प्रोफ़ाइल देखें'], ['profile', '📝 मेरी प्रोफ़ाइल'], ['interests', '💌 रुचि']] as [Tab, string][]).map(([t, label]) => (
-            <button key={t} className={`mx-tab${tab === t ? ' on' : ''}`} onClick={() => setTab(t)}>{label}</button>
+          {([['browse', 'search', 'प्रोफ़ाइल देखें'], ['profile', 'edit', 'मेरी प्रोफ़ाइल'], ['interests', 'heart', 'रुचि']] as [Tab, string, string][]).map(([t, ic, label]) => (
+            <button key={t} className={`mx-tab${tab === t ? ' on' : ''}`} onClick={() => setTab(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Ic n={ic} size={15} />{label}</button>
           ))}
         </nav>
       </header>
@@ -200,7 +231,7 @@ export default function MatrimonyPage() {
 function LoginGate({ loginUrl }: { loginUrl: string }) {
   return (
     <div style={{ maxWidth: 560, margin: '36px auto', background: '#fff', border: '1px solid var(--mx-l)', borderRadius: 20, padding: 34, textAlign: 'center', boxShadow: '0 10px 34px rgba(0,0,0,0.06)' }}>
-      <div style={{ width: 74, height: 74, margin: '0 auto', borderRadius: '50%', background: 'linear-gradient(135deg,var(--mx-p),var(--mx-d))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34 }}>💍</div>
+      <div style={{ width: 74, height: 74, margin: '0 auto', borderRadius: '50%', background: 'linear-gradient(135deg,var(--mx-p),var(--mx-d))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Ic n="heart" size={34} sw={1.8} /></div>
       <h2 style={{ color: 'var(--mx-d)', margin: '14px 0 8px', fontSize: 21 }}>विवाह प्रोफ़ाइल — लॉगिन करें</h2>
       <p style={{ color: 'var(--mx-m)', fontSize: 14, lineHeight: 1.7 }}>
         सुरक्षा के लिए, प्रोफ़ाइल देखना और बनाना दोनों सिर्फ़ लॉगिन के बाद। <b style={{ color: 'var(--mx-d)' }}>किसी का मोबाइल नंबर किसी को नहीं दिखता</b> — रुचि स्वीकृत होने पर ही संपर्क साझा होता है।
@@ -241,8 +272,13 @@ function Browse({ onCreate }: { onCreate: () => void }) {
       <div className="mx-hero">
         <h1>अपने लिए सही जीवनसाथी खोजें</h1>
         <p>सत्यापित प्रोफ़ाइल · मोबाइल नंबर पूरी तरह सुरक्षित · रुचि स्वीकृत होने पर ही संपर्क साझा होता है।</p>
-        <div className="mx-trust"><span>✅ सत्यापित</span><span>🔒 नंबर सुरक्षित</span><span>🆓 निःशुल्क</span></div>
-        <button className="mx-hero-btn" onClick={onCreate}>+ अपनी प्रोफ़ाइल बनाएं</button>
+        <div className="mx-trust">
+          <span><Ic n="shield" size={14} /> सत्यापित</span>
+          <span><Ic n="lock" size={14} /> नंबर सुरक्षित</span>
+          <span><Ic n="gift" size={14} /> निःशुल्क</span>
+        </div>
+        <button className="mx-hero-btn" onClick={onCreate} style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Ic n="plus" size={16} sw={2.4} /> अपनी प्रोफ़ाइल बनाएं</button>
+        <span className="mx-hero-wm"><Ic n="heart" size={132} sw={1.4} style={{ color: '#fff' }} /></span>
       </div>
 
       <div className="mx-filter">
@@ -250,9 +286,12 @@ function Browse({ onCreate }: { onCreate: () => void }) {
           <option value="">सभी (वर/वधू)</option>
           {GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
         </select>
-        <input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder="🔍 शहर / राज्य खोजें" className="mx-chip" style={{ minWidth: 190 }} />
-        <button onClick={() => setOnlyIntercaste((v) => !v)} className="mx-chip" style={{ cursor: 'pointer', background: onlyIntercaste ? 'var(--mx-p)' : '#fff', color: onlyIntercaste ? '#fff' : 'var(--mx-d)', borderColor: onlyIntercaste ? 'var(--mx-p)' : 'var(--mx-l)' }}>
-          🤝 अंतरजातीय
+        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <span style={{ position: 'absolute', left: 13, color: 'var(--mx-m)', display: 'inline-flex' }}><Ic n="search" size={15} /></span>
+          <input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder="शहर / राज्य खोजें" className="mx-chip" style={{ minWidth: 190, paddingLeft: 34 }} />
+        </span>
+        <button onClick={() => setOnlyIntercaste((v) => !v)} className="mx-chip" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, background: onlyIntercaste ? 'var(--mx-p)' : '#fff', color: onlyIntercaste ? '#fff' : 'var(--mx-d)', borderColor: onlyIntercaste ? 'var(--mx-p)' : 'var(--mx-l)' }}>
+          <Ic n="handshake" size={15} /> अंतरजातीय
         </button>
         <span style={{ fontSize: 12.5, color: 'var(--mx-m)', marginLeft: 'auto' }}>{filtered.length} प्रोफ़ाइल</span>
       </div>
@@ -261,18 +300,18 @@ function Browse({ onCreate }: { onCreate: () => void }) {
         : err ? <div style={{ textAlign: 'center', color: '#dc2626', padding: 40 }}>{err}</div>
         : filtered.length === 0 ? (
           <div className="mx-empty">
-            <div style={{ fontSize: 44 }}>💍</div>
+            <Ic n="heart" size={46} sw={1.3} style={{ color: 'var(--mx-p)', opacity: .5 }} />
             <p style={{ color: 'var(--mx-m)', fontSize: 14, marginTop: 8 }}>इस खोज में कोई प्रोफ़ाइल नहीं मिली। सबसे पहले अपनी प्रोफ़ाइल बनाएं!</p>
-            <button className="mx-btn-p" onClick={onCreate} style={{ marginTop: 12 }}>+ प्रोफ़ाइल बनाएं</button>
+            <button className="mx-btn-p" onClick={onCreate} style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Ic n="plus" size={15} sw={2.4} /> प्रोफ़ाइल बनाएं</button>
           </div>
         ) : (
           <div className="mx-grid">
             {filtered.map((p) => (
               <button key={p.id} className="mx-card" onClick={() => setActive(p)}>
                 <div className="mx-photo">
-                  {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <span className="emoji">{p.gender === 'female' ? '👰' : '🤵'}</span>}
+                  {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <Ic n="user" size={52} sw={1.3} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
                   <span className="mx-badge">{ageFromDob(p.dob)} वर्ष</span>
-                  {isIntercaste(p.castePreference) && <span className="mx-badge ic">अंतरजातीय ✓</span>}
+                  {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Ic n="check" size={12} sw={2.6} /> अंतरजातीय</span>}
                   <div className="mx-ov">
                     <div className="n">{p.name}</div>
                     <div className="m">{heightLabel(p.heightCm)} · {p.city}</div>
@@ -284,8 +323,8 @@ function Browse({ onCreate }: { onCreate: () => void }) {
                     {p.community && <span className="mx-pill">{p.community}</span>}
                     <span className="mx-pill">{p.maritalStatus}</span>
                   </div>
-                  <div className="mx-cmeta">🎓 {p.education}</div>
-                  <div className="mx-cmeta" style={{ color: 'var(--mx-d)', fontWeight: 600 }}>💼 {careerLine(p) || p.employmentType}</div>
+                  <div className="mx-cmeta" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Ic n="grad" size={14} /> {p.education}</div>
+                  <div className="mx-cmeta" style={{ color: 'var(--mx-d)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}><Ic n="work" size={14} /> {careerLine(p) || p.employmentType}</div>
                 </div>
               </button>
             ))}
@@ -308,7 +347,7 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
     try {
       const r = await authFetch('/api/matrimony/interest', { method: 'POST', body: JSON.stringify({ action: 'send', toProfileId: p.id }) });
       const j = await r.json();
-      setMsg(r.ok ? (j.already ? 'आप पहले ही रुचि भेज चुके हैं।' : '💌 रुचि भेज दी गई। स्वीकृत होने पर संपर्क मिलेगा।') : (j.message || 'रुचि नहीं भेजी जा सकी।'));
+      setMsg(r.ok ? (j.already ? 'आप पहले ही रुचि भेज चुके हैं।' : 'रुचि भेज दी गई। स्वीकृत होने पर संपर्क मिलेगा।') : (j.message || 'रुचि नहीं भेजी जा सकी।'));
     } catch { setMsg('कुछ गड़बड़ हुई, दोबारा प्रयास करें।'); }
     setSending(false);
   };
@@ -323,9 +362,9 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
     <div className="mx-mask" onClick={onClose}>
       <div className="mx-modal" onClick={(e) => e.stopPropagation()}>
         <div className="mx-mphoto">
-          {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <span style={{ fontSize: 92 }}>{p.gender === 'female' ? '👰' : '🤵'}</span>}
-          <button className="mx-x" onClick={onClose}>✕</button>
-          {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ bottom: 12, left: 12, top: 'auto' }}>अंतरजातीय स्वीकार्य ✓</span>}
+          {p.photoUrl ? <img src={p.photoUrl} alt={p.name} /> : <Ic n="user" size={92} sw={1.1} style={{ color: 'var(--mx-p)', opacity: .5 }} />}
+          <button className="mx-x" onClick={onClose} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Ic n="x" size={16} /></button>
+          {isIntercaste(p.castePreference) && <span className="mx-badge ic" style={{ bottom: 12, left: 12, top: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Ic n="check" size={12} sw={2.6} /> अंतरजातीय स्वीकार्य</span>}
         </div>
         <div style={{ padding: 22 }}>
           <h2 style={{ margin: 0, color: 'var(--mx-d)', fontSize: 23 }}>{p.name}, {ageFromDob(p.dob)} वर्ष</h2>
@@ -339,16 +378,16 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
           {contact ? (
             <div style={{ marginTop: 16, background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 12, padding: 14, textAlign: 'center' }}>
               <div style={{ fontSize: 12, color: '#047857' }}>संपर्क नंबर</div>
-              <a href={`tel:${contact}`} style={{ fontSize: 22, fontWeight: 800, color: '#065f46', textDecoration: 'none' }}>📞 {contact}</a>
+              <a href={`tel:${contact}`} style={{ fontSize: 22, fontWeight: 800, color: '#065f46', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}><Ic n="phone" size={20} /> {contact}</a>
             </div>
           ) : (
             <div style={{ marginTop: 18, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button disabled={sending} onClick={sendInterest} className="mx-btn-p" style={{ flex: 1, minWidth: 170 }}>{sending ? 'भेज रहे…' : '💌 रुचि भेजें'}</button>
-              <button onClick={viewContact} className="mx-btn-o">संपर्क देखें</button>
+              <button disabled={sending} onClick={sendInterest} className="mx-btn-p" style={{ flex: 1, minWidth: 170, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{sending ? 'भेज रहे…' : <><Ic n="heart" size={17} /> रुचि भेजें</>}</button>
+              <button onClick={viewContact} className="mx-btn-o" style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}><Ic n="phone" size={15} /> संपर्क देखें</button>
             </div>
           )}
           {msg && <p style={{ marginTop: 12, color: 'var(--mx-d)', fontSize: 13, textAlign: 'center' }}>{msg}</p>}
-          <p style={{ marginTop: 12, fontSize: 11.5, color: '#9ca3af', textAlign: 'center' }}>🔒 नंबर तभी दिखता है जब रुचि स्वीकृत हो।</p>
+          <p style={{ marginTop: 12, fontSize: 11.5, color: '#9ca3af', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Ic n="lock" size={12} /> नंबर तभी दिखता है जब रुचि स्वीकृत हो।</p>
         </div>
       </div>
     </div>
@@ -381,7 +420,7 @@ function MyProfile({ slug }: { slug: string }) {
     try {
       const r = await authFetch('/api/matrimony/profile', { method: 'POST', body: JSON.stringify({ ...f, siteId: slug }) });
       const j = await r.json();
-      if (r.ok) { setStatus('pending'); setMsg('✅ प्रोफ़ाइल सहेज दी गई। एडमिन स्वीकृति के बाद यह वेबसाइट पर दिखेगी।'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (r.ok) { setStatus('pending'); setMsg('प्रोफ़ाइल सहेज दी गई। एडमिन स्वीकृति के बाद यह वेबसाइट पर दिखेगी।'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
       else setMsg(j.message || 'सहेजा नहीं जा सका।');
     } catch { setMsg('कुछ गड़बड़ हुई, दोबारा प्रयास करें।'); }
     setSaving(false);
@@ -394,13 +433,13 @@ function MyProfile({ slug }: { slug: string }) {
       <h2 style={{ color: 'var(--mx-d)', margin: '0 0 14px', fontSize: 22 }}>मेरी विवाह प्रोफ़ाइल</h2>
       {status && (
         <div className="mx-status" style={{ background: status === 'approved' ? '#ecfdf5' : status === 'rejected' ? '#fef2f2' : 'var(--mx-ss)', border: `1px solid ${status === 'approved' ? '#a7f3d0' : status === 'rejected' ? '#fecaca' : 'var(--mx-l)'}`, color: status === 'approved' ? '#047857' : status === 'rejected' ? '#b91c1c' : 'var(--mx-d)' }}>
-          स्थिति: {status === 'approved' ? '✅ स्वीकृत — वेबसाइट पर live' : status === 'rejected' ? '❌ अस्वीकृत — कृपया सही जानकारी भरें' : '⏳ समीक्षा में — एडमिन स्वीकृति के बाद दिखेगी'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Ic n={status === 'approved' ? 'check' : status === 'rejected' ? 'x' : 'clock'} size={15} /> स्थिति: {status === 'approved' ? 'स्वीकृत — वेबसाइट पर live' : status === 'rejected' ? 'अस्वीकृत — कृपया सही जानकारी भरें' : 'समीक्षा में — एडमिन स्वीकृति के बाद दिखेगी'}</span>
         </div>
       )}
       {msg && <div className="mx-note" style={{ color: 'var(--mx-d)' }}>{msg}</div>}
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>👤</i> मूल जानकारी</div>
+        <div className="mx-sec"><i><Ic n="user"/></i> मूल जानकारी</div>
         <div className="mx-fgrid">
           <Field label="पूरा नाम *"><input className="mx-in" value={f.name} onChange={(e) => set('name', e.target.value)} /></Field>
           <Field label="लिंग *"><select className="mx-in" value={f.gender} onChange={(e) => set('gender', e.target.value)}><option value="">चुनें</option>{GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}</select></Field>
@@ -412,7 +451,7 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>🛕</i> धर्म, जाति व भाषा</div>
+        <div className="mx-sec"><i><Ic n="faith"/></i> धर्म, जाति व भाषा</div>
         <div className="mx-fgrid">
           <Field label="धर्म *"><select className="mx-in" value={f.religion} onChange={(e) => set('religion', e.target.value)}><option value="">चुनें</option>{RELIGIONS.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
           <Field label="जाति / समुदाय *"><input className="mx-in" value={f.community} onChange={(e) => set('community', e.target.value)} placeholder="अपनी जाति / समुदाय" /></Field>
@@ -426,7 +465,7 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>📍</i> स्थान व शिक्षा</div>
+        <div className="mx-sec"><i><Ic n="pin"/></i> स्थान व शिक्षा</div>
         <div className="mx-fgrid">
           <Field label="शहर *"><input className="mx-in" value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
           <Field label="राज्य *"><input className="mx-in" value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
@@ -435,7 +474,7 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>💼</i> कार्य / रोज़गार</div>
+        <div className="mx-sec"><i><Ic n="work"/></i> कार्य / रोज़गार</div>
         <div className="mx-fgrid">
           <Field label="आप क्या करते हैं? *">
             <select className="mx-in" value={f.employmentType} onChange={(e) => set('employmentType', e.target.value)}>
@@ -449,8 +488,11 @@ function MyProfile({ slug }: { slug: string }) {
                   <option value="">चुनें (वैकल्पिक)</option>{WORK_FIELDS.map((w) => <option key={w} value={w}>{w}</option>)}
                 </select>
               </Field>
+              <Field label="पद / भूमिका (Role)">
+                <input className="mx-in" list="mx-roles" value={f.designation} onChange={(e) => set('designation', e.target.value)} placeholder="चुनें या लिखें — जैसे सॉफ्टवेयर इंजीनियर" />
+                <datalist id="mx-roles">{ROLE_OPTIONS.map((r) => <option key={r} value={r} />)}</datalist>
+              </Field>
               <Field label="कंपनी / संस्था का नाम"><input className="mx-in" value={f.companyName} onChange={(e) => set('companyName', e.target.value)} placeholder="(वैकल्पिक)" /></Field>
-              <Field label="पद / डेज़िग्नेशन"><input className="mx-in" value={f.designation} onChange={(e) => set('designation', e.target.value)} placeholder="जैसे मैनेजर, इंजीनियर" /></Field>
             </>
           )}
           <Field label="वार्षिक आय"><select className="mx-in" value={f.annualIncome} onChange={(e) => set('annualIncome', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{INCOME_RANGES.map((i) => <option key={i} value={i}>{i}</option>)}</select></Field>
@@ -458,7 +500,7 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>👨‍👩‍👧</i> परिवार की जानकारी</div>
+        <div className="mx-sec"><i><Ic n="family"/></i> परिवार की जानकारी</div>
         <div className="mx-fgrid">
           <Field label="पिता का नाम *"><input className="mx-in" value={f.fatherName} onChange={(e) => set('fatherName', e.target.value)} /></Field>
           <Field label="माता का नाम *"><input className="mx-in" value={f.motherName} onChange={(e) => set('motherName', e.target.value)} /></Field>
@@ -470,13 +512,13 @@ function MyProfile({ slug }: { slug: string }) {
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>💬</i> अपने बारे में व अपेक्षा</div>
+        <div className="mx-sec"><i><Ic n="chat"/></i> अपने बारे में व अपेक्षा</div>
         <Field label="अपने बारे में"><textarea className="mx-in" value={f.about} onChange={(e) => set('about', e.target.value)} /></Field>
         <Field label="कैसा जीवनसाथी चाहिए"><textarea className="mx-in" value={f.partnerPreference} onChange={(e) => set('partnerPreference', e.target.value)} /></Field>
       </div>
 
       <div className="mx-fcard">
-        <div className="mx-sec"><i>📷</i> फोटो</div>
+        <div className="mx-sec"><i><Ic n="camera"/></i> फोटो</div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           {f.photoUrl && <img src={f.photoUrl} alt="" style={{ width: 82, height: 82, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--mx-l)' }} />}
           <input type="file" accept="image/*" onChange={onPhoto} style={{ fontSize: 13 }} />
@@ -484,7 +526,7 @@ function MyProfile({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div className="mx-note">🔒 <span>आपका मोबाइल नंबर प्रोफ़ाइल में कहीं नहीं दिखेगा। किसी की रुचि स्वीकार करने पर ही आपका संपर्क उस तक पहुँचेगा।</span></div>
+      <div className="mx-note"><Ic n="lock" size={15} style={{ marginTop: 1 }} /> <span>आपका मोबाइल नंबर प्रोफ़ाइल में कहीं नहीं दिखेगा। किसी की रुचि स्वीकार करने पर ही आपका संपर्क उस तक पहुँचेगा।</span></div>
       <button disabled={saving} onClick={save} className="mx-save">{saving ? 'सहेज रहे…' : status ? 'प्रोफ़ाइल अपडेट करें' : 'प्रोफ़ाइल सहेजें'}</button>
     </div>
   );
@@ -520,12 +562,12 @@ function Interests({ onCreate }: { onCreate: () => void }) {
 
   const Item = ({ it, incoming }: { it: any; incoming: boolean }) => (
     <div className="mx-it">
-      <div className="mx-it-av">{it.profile.photoUrl ? <img src={it.profile.photoUrl} alt="" /> : <span style={{ fontSize: 26 }}>💍</span>}</div>
+      <div className="mx-it-av">{it.profile.photoUrl ? <img src={it.profile.photoUrl} alt="" /> : <Ic n="user" size={26} sw={1.4} style={{ color: 'var(--mx-p)', opacity: .55 }} />}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, color: 'var(--mx-d)', fontSize: 14.5 }}>{it.profile.name || 'प्रोफ़ाइल'}{it.profile.age ? `, ${it.profile.age}` : ''}</div>
         <div style={{ fontSize: 12, color: 'var(--mx-m)' }}>{[it.profile.city, it.profile.occupation].filter(Boolean).join(' · ')}</div>
-        <div style={{ fontSize: 11.5, marginTop: 3, fontWeight: 700, color: it.status === 'accepted' ? '#047857' : it.status === 'declined' ? '#dc2626' : '#b45309' }}>
-          {it.status === 'accepted' ? '✅ स्वीकृत' : it.status === 'declined' ? '❌ अस्वीकृत' : '⏳ प्रतीक्षा में'}
+        <div style={{ fontSize: 11.5, marginTop: 3, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5, color: it.status === 'accepted' ? '#047857' : it.status === 'declined' ? '#dc2626' : '#b45309' }}>
+          <Ic n={it.status === 'accepted' ? 'check' : it.status === 'declined' ? 'x' : 'clock'} size={13} /> {it.status === 'accepted' ? 'स्वीकृत' : it.status === 'declined' ? 'अस्वीकृत' : 'प्रतीक्षा में'}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -536,7 +578,7 @@ function Interests({ onCreate }: { onCreate: () => void }) {
           </>
         )}
         {it.canSeeContact && it.profile.id && (
-          <button disabled={busy === it.interestId} onClick={() => viewContact(it.profile.id, it.interestId)} className="mx-btn-p" style={{ padding: '8px 13px', fontSize: 12 }}>📞 संपर्क</button>
+          <button disabled={busy === it.interestId} onClick={() => viewContact(it.profile.id, it.interestId)} className="mx-btn-p" style={{ padding: '8px 13px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Ic n="phone" size={13} /> संपर्क</button>
         )}
       </div>
     </div>
@@ -547,12 +589,12 @@ function Interests({ onCreate }: { onCreate: () => void }) {
       {!data?.hasProfile && (
         <div className="mx-note" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <span>रुचि भेजने/पाने के लिए पहले अपनी प्रोफ़ाइल बनाएं।</span>
-          <button className="mx-btn-p" onClick={onCreate} style={{ padding: '8px 16px', fontSize: 12.5 }}>+ प्रोफ़ाइल बनाएं</button>
+          <button className="mx-btn-p" onClick={onCreate} style={{ padding: '8px 16px', fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Ic n="plus" size={14} sw={2.4} /> प्रोफ़ाइल बनाएं</button>
         </div>
       )}
-      <h3 style={{ color: 'var(--mx-d)', fontSize: 16.5, margin: '6px 0 12px' }}>💌 मेरे पास आई रुचि</h3>
+      <h3 style={{ color: 'var(--mx-d)', fontSize: 16.5, margin: '6px 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}><Ic n="heart" size={17} /> मेरे पास आई रुचि</h3>
       {data?.received?.length ? data.received.map((it) => <Item key={it.interestId} it={it} incoming />) : <p style={{ color: '#9ca3af', fontSize: 13 }}>अभी कोई रुचि नहीं आई।</p>}
-      <h3 style={{ color: 'var(--mx-d)', fontSize: 16.5, margin: '24px 0 12px' }}>📤 मेरी भेजी रुचि</h3>
+      <h3 style={{ color: 'var(--mx-d)', fontSize: 16.5, margin: '24px 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}><Ic n="send" size={16} /> मेरी भेजी रुचि</h3>
       {data?.sent?.length ? data.sent.map((it) => <Item key={it.interestId} it={it} incoming={false} />) : <p style={{ color: '#9ca3af', fontSize: 13 }}>आपने अभी तक कोई रुचि नहीं भेजी।</p>}
     </div>
   );
