@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
 import { hasEpaper } from '@/lib/epaperSub';
+import { useSiteContact } from '@/lib/useSiteContact';
 
 // English portals (NEWS INFO 24, National Defence Network) par footer English me
 const TEXT = {
@@ -127,12 +128,7 @@ const SOCIAL_LINKS = [
   }
 ];
 
-// Official WhatsApp par seedhi chat (pehle se likhe sandesh ke saath)
-const WHATSAPP_NUMBER = '918103333381';
-const WHATSAPP_CHAT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('नमस्ते, मुझे विज्ञापन/समाचार के संबंध में जानकारी चाहिए।')}`;
-
-const CONTACT_EMAIL = 'goldenpearlnews@gmail.com';
-const GMAIL_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('विज्ञापन / समाचार के संबंध में')}`;
+// WhatsApp / Gmail / timing ab admin (settings/contact) se — niche component me waUrl/gmailUrl/hoursText
 
 // Gmail ka "M" logo (rangon wala)
 const GmailIcon = () => (
@@ -193,6 +189,11 @@ export default function Footer({
   }, [currentSlug]);
   const t = isEnglishSlug(homeSlug) ? TEXT.en : TEXT.hi;
   const isTightLogo = homeSlug === 'jan-bharat-news' || logoUrl.includes('jan-bharat-news');
+  // Sampark — admin (settings/contact) se; na ho toh default
+  const contact = useSiteContact();
+  const waUrl = `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent('नमस्ते, मुझे विज्ञापन/समाचार के संबंध में जानकारी चाहिए।')}`;
+  const gmailUrl = `mailto:${contact.email}?subject=${encodeURIComponent('विज्ञापन / समाचार के संबंध में')}`;
+  const hoursText = isEnglishSlug(homeSlug) ? contact.hoursEn : contact.hoursHi;
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -402,7 +403,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-btns">
                 <a
-                  href={WHATSAPP_CHAT_URL}
+                  href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="gp-ft-wa-chat"
@@ -412,7 +413,7 @@ export default function Footer({
                   <span>{t.whatsapp}</span>
                 </a>
                 {/* Footer wali email (goldenpearlnews@gmail.com) par seedha mail */}
-                <a href={GMAIL_URL} className="gp-ft-gmail" aria-label={`${t.gmail} (${CONTACT_EMAIL})`} title={CONTACT_EMAIL}>
+                <a href={gmailUrl} className="gp-ft-gmail" aria-label={` ()`} title={contact.email}>
                   <GmailIcon />
                   <span>{t.gmail}</span>
                 </a>
@@ -480,7 +481,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.email(primaryColor)}</span>
-                <a href={GMAIL_URL} style={{ wordBreak: 'break-all', color: 'inherit', textDecoration: 'none' }}>{CONTACT_EMAIL}</a>
+                <a href={gmailUrl} style={{ wordBreak: 'break-all', color: 'inherit', textDecoration: 'none' }}>{contact.email}</a>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.phone(primaryColor)}</span>
@@ -488,7 +489,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.clock(primaryColor)}</span>
-                <span>{t.hours}</span>
+                <span>{hoursText}</span>
               </div>
             </div>
 
