@@ -8,7 +8,7 @@ import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
  * Har public page ke neeche footer (root layout se). Jin pages ka apna footer hai (homepage, khabar, e-paper,
  * videos, classifieds) aur admin panel par nahi. Portal: ?site= → domain → pichhla khola portal.
  */
-const OWN_FOOTER = ['/article/', '/classifieds', '/epaper', '/videos'];
+const OWN_FOOTER = ['/article/', '/classifieds', '/epaper', '/videos', '/matrimony'];
 const NO_FOOTER = ['/admin', '/api', '/advertiser/requests/new', '/register'];
 
 export default function AutoFooter() {
