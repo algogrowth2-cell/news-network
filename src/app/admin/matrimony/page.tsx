@@ -12,7 +12,7 @@ interface Row {
   id: string; name: string; gender: string; dob: string; heightCm: number; maritalStatus: string;
   religion: string; community: string; castePreference: string; motherTongue: string; city: string; state: string;
   education: string; employmentType: string; workField: string; companyName: string; designation: string; occupation: string; annualIncome: string; diet: string; about: string;
-  fatherName: string; motherName: string; grandfatherName: string; brothers: string; sisters: string;
+  fatherName: string; motherName: string; grandfatherName: string; brothers: string; sisters: string; landBigha: string;
   family: string; partnerPreference: string; photoUrl: string; siteId: string; status: ProfileStatus;
   contactPhone?: string; ownerPhone?: string; interestCount?: number; createdAt?: any;
 }
@@ -121,6 +121,7 @@ export default function AdminMatrimony() {
                   {(r.fatherName || r.motherName) && <div className="mt-row"><b>माता-पिता:</b> {[r.fatherName, r.motherName].filter(Boolean).join(' / ')}</div>}
                   {r.grandfatherName && <div className="mt-row"><b>दादाजी:</b> {r.grandfatherName}</div>}
                   {((r.brothers && r.brothers !== '0') || (r.sisters && r.sisters !== '0')) && <div className="mt-row">👨‍👩‍👧 {r.brothers || 0} भाई · {r.sisters || 0} बहन</div>}
+                  {r.landBigha && <div className="mt-row"><b>कृषि भूमि:</b> {r.landBigha}</div>}
                   {r.family && <div className="mt-row"><b>परिवार:</b> {r.family}</div>}
                   {r.about && <div className="mt-row"><b>बारे में:</b> {r.about}</div>}
                   {r.partnerPreference && <div className="mt-row"><b>चाहिए:</b> {r.partnerPreference}</div>}

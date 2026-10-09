@@ -43,6 +43,7 @@ export interface MatrimonyProfile {
   grandfatherName: string; // dadaji (optional)
   brothers: string; // kitne bhai (dropdown)
   sisters: string; // kitni bahan (dropdown)
+  landBigha: string; // parivaar ki kृषि bhumi — bigha me (optional, kisan parivaar ke liye)
   about: string;
   family: string; // anya parivaar jaankari (optional)
   partnerPreference: string; // kaisa jeevansaathi chahiye (short)
@@ -187,6 +188,7 @@ export function cleanProfileInput(input: any): CleanResult {
   const sib = (v: any) => (SIBLING_COUNTS.includes(String(v)) ? String(v) : '0');
   const brothers = sib(input.brothers);
   const sisters = sib(input.sisters);
+  const landBigha = str(input.landBigha, 30); // kृषि bhumi (optional)
 
   // Optional, par ho to valid
   const diet = DIETS.includes(String(input.diet)) ? String(input.diet) : '';
@@ -208,7 +210,7 @@ export function cleanProfileInput(input: any): CleanResult {
     data: {
       name, gender, dob, heightCm, maritalStatus, religion, community, castePreference, motherTongue,
       city, state, education, employmentType, workField, companyName, designation, occupation, annualIncome, diet,
-      fatherName, motherName, grandfatherName, brothers, sisters,
+      fatherName, motherName, grandfatherName, brothers, sisters, landBigha,
       about, family, partnerPreference, photoUrl, siteId
     }
   };

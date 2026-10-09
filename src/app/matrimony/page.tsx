@@ -63,7 +63,7 @@ const EMPTY = {
   name: '', gender: '' as Gender | '', dob: '', heightCm: 0, maritalStatus: '', religion: '',
   community: '', castePreference: '', motherTongue: '', city: '', state: '', education: '',
   employmentType: '', workField: '', companyName: '', designation: '', occupation: '',
-  annualIncome: '', diet: '', fatherName: '', motherName: '', grandfatherName: '', brothers: '0', sisters: '0',
+  annualIncome: '', diet: '', fatherName: '', motherName: '', grandfatherName: '', brothers: '0', sisters: '0', landBigha: '',
   about: '', family: '', partnerPreference: '', photoUrl: ''
 };
 
@@ -373,6 +373,7 @@ function ProfileModal({ p, onClose }: { p: MatrimonyProfile; onClose: () => void
           {row('शिक्षा', p.education)}{row('कार्य', p.employmentType)}{row('क्षेत्र', p.workField)}{row('कंपनी', p.companyName)}{row('पद', p.designation)}{row('आय', p.annualIncome)}{row('आहार', p.diet)}
           {row('पिता', p.fatherName)}{row('माता', p.motherName)}{row('दादाजी', p.grandfatherName)}
           {((p.brothers && p.brothers !== '0') || (p.sisters && p.sisters !== '0')) ? row('भाई-बहन', `${p.brothers || 0} भाई · ${p.sisters || 0} बहन`) : null}
+          {row('कृषि भूमि', p.landBigha ? `${p.landBigha}${/\d$/.test(p.landBigha) ? ' बीघा' : ''}` : '')}
           {row('अन्य परिवार', p.family)}{row('अपने बारे में', p.about)}{row('जीवनसाथी में', p.partnerPreference)}
 
           {contact ? (
@@ -409,7 +410,31 @@ function MyProfile({ slug }: { slug: string }) {
     })();
   }, []);
 
+  const [locating, setLocating] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+
+  // Current location → shahar/rajya khud bhar do (bina kisi API key — BigDataCloud free reverse-geocode)
+  const detectLocation = () => {
+    if (!navigator.geolocation) { setMsg('इस डिवाइस पर स्थान उपलब्ध नहीं है।'); return; }
+    setLocating(true); setMsg('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=hi`);
+          const j = await r.json();
+          const city = j.city || j.locality || j.localityInfo?.administrative?.[3]?.name || '';
+          const state = j.principalSubdivision || '';
+          setF((p: any) => ({ ...p, city: city || p.city, state: state || p.state }));
+          if (!city && !state) setMsg('स्थान नहीं मिला, कृपया हाथ से भरें।');
+        } catch { setMsg('स्थान नहीं मिल पाया, कृपया हाथ से भरें।'); }
+        setLocating(false);
+      },
+      () => { setMsg('स्थान की अनुमति नहीं मिली। कृपया हाथ से भरें।'); setLocating(false); },
+      { timeout: 10000, maximumAge: 300000 }
+    );
+  };
+
   const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     if (file.size > 8 * 1024 * 1024) { setMsg('फोटो 8MB से छोटी चुनें।'); return; }
@@ -466,6 +491,9 @@ function MyProfile({ slug }: { slug: string }) {
 
       <div className="mx-fcard">
         <div className="mx-sec"><i><Ic n="pin"/></i> स्थान व शिक्षा</div>
+        <button type="button" onClick={detectLocation} disabled={locating} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--mx-s)', color: 'var(--mx-d)', border: '1px solid var(--mx-l)', borderRadius: 10, padding: '8px 14px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', marginBottom: 4 }}>
+          <Ic n="pin" size={14} /> {locating ? 'स्थान खोज रहे…' : 'वर्तमान स्थान चुनें'}
+        </button>
         <div className="mx-fgrid">
           <Field label="शहर *"><input className="mx-in" value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
           <Field label="राज्य *"><input className="mx-in" value={f.state} onChange={(e) => set('state', e.target.value)} /></Field>
@@ -507,6 +535,7 @@ function MyProfile({ slug }: { slug: string }) {
           <Field label="दादाजी का नाम"><input className="mx-in" value={f.grandfatherName} onChange={(e) => set('grandfatherName', e.target.value)} placeholder="(वैकल्पिक)" /></Field>
           <Field label="कितने भाई"><select className="mx-in" value={f.brothers} onChange={(e) => set('brothers', e.target.value)}>{SIBLING_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
           <Field label="कितनी बहनें"><select className="mx-in" value={f.sisters} onChange={(e) => set('sisters', e.target.value)}>{SIBLING_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
+          <Field label="कृषि भूमि (बीघा में)"><input className="mx-in" value={f.landBigha} onChange={(e) => set('landBigha', e.target.value)} placeholder="जैसे 10 बीघा (वैकल्पिक)" /></Field>
         </div>
         <Field label="अन्य पारिवारिक जानकारी"><textarea className="mx-in" value={f.family} onChange={(e) => set('family', e.target.value)} placeholder="पिता/माता का कार्य, पारिवारिक पृष्ठभूमि…" /></Field>
       </div>
