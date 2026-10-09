@@ -10,7 +10,7 @@ import { ageFromDob, heightLabel, STATUS_LABEL, type ProfileStatus } from '@/lib
 
 interface Row {
   id: string; name: string; gender: string; dob: string; heightCm: number; maritalStatus: string;
-  religion: string; community: string; motherTongue: string; city: string; state: string;
+  religion: string; community: string; castePreference: string; motherTongue: string; city: string; state: string;
   education: string; occupation: string; annualIncome: string; diet: string; about: string;
   family: string; partnerPreference: string; photoUrl: string; siteId: string; status: ProfileStatus;
   contactPhone?: string; ownerPhone?: string; interestCount?: number; createdAt?: any;
@@ -111,6 +111,7 @@ export default function AdminMatrimony() {
                   </div>
                   <div className="mt-row"><b>{heightLabel(r.heightCm)}</b> · {r.maritalStatus} · {r.gender === 'female' ? 'वधू' : 'वर'}</div>
                   <div className="mt-row">{r.religion}{r.community ? ` · ${r.community}` : ''} · {r.motherTongue}</div>
+                  {r.castePreference && <div className="mt-row">💑 {r.castePreference}</div>}
                   <div className="mt-row">📍 {r.city}, {r.state}</div>
                   <div className="mt-row">🎓 {r.education} · 💼 {r.occupation}</div>
                   {r.annualIncome && <div className="mt-row">💰 {r.annualIncome}</div>}

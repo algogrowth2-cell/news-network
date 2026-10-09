@@ -25,7 +25,8 @@ export interface MatrimonyProfile {
   heightCm: number;
   maritalStatus: string;
   religion: string;
-  community: string; // jaati / samुदाय (optional)
+  community: string; // jaati / samुदाय (ab zaroori)
+  castePreference: string; // apni hi jaati me / koi bhi jaati chalegi
   motherTongue: string;
   city: string;
   state: string;
@@ -48,6 +49,8 @@ export const GENDERS: { value: Gender; label: string }[] = [
 ];
 export const MARITAL_STATUS = ['अविवाहित', 'तलाकशुदा', 'विधुर / विधवा', 'अलग रह रहे'];
 export const RELIGIONS = ['हिंदू', 'मुस्लिम', 'सिख', 'ईसाई', 'जैन', 'बौद्ध', 'पारसी', 'यहूदी', 'अन्य'];
+// Jeevansaathi ki jaati ko lekar soch
+export const CASTE_PREFERENCES = ['अपनी ही जाति / समुदाय में', 'कोई भी जाति / समुदाय चलेगा (अंतरजातीय स्वीकार्य)'];
 export const MOTHER_TONGUES = ['हिंदी', 'मराठी', 'गुजराती', 'पंजाबी', 'राजस्थानी', 'मालवी', 'निमाड़ी', 'उर्दू', 'बंगाली', 'तमिल', 'तेलुगु', 'मलयालम', 'कन्नड़', 'अंग्रेज़ी', 'अन्य'];
 export const DIETS = ['शाकाहारी', 'मांसाहारी', 'अंडाहारी', 'जैन शाकाहारी'];
 export const INCOME_RANGES = ['कोई आय नहीं', '₹1 लाख से कम', '₹1–3 लाख', '₹3–5 लाख', '₹5–10 लाख', '₹10–20 लाख', '₹20 लाख से अधिक', 'बताना नहीं चाहते'];
@@ -123,6 +126,10 @@ export function cleanProfileInput(input: any): CleanResult {
   if (!religion) return { ok: false, error: 'कृपया धर्म चुनें।' };
   const motherTongue = MOTHER_TONGUES.includes(String(input.motherTongue)) ? String(input.motherTongue) : null;
   if (!motherTongue) return { ok: false, error: 'कृपया मातृभाषा चुनें।' };
+  const community = str(input.community, 50);
+  if (community.length < 2) return { ok: false, error: 'कृपया जाति / समुदाय दर्ज करें।' };
+  const castePreference = CASTE_PREFERENCES.includes(String(input.castePreference)) ? String(input.castePreference) : null;
+  if (!castePreference) return { ok: false, error: 'कृपया चुनें — अपनी जाति में या कोई भी जाति स्वीकार्य।' };
 
   const city = str(input.city, 40);
   const state = str(input.state, 40);
@@ -134,7 +141,6 @@ export function cleanProfileInput(input: any): CleanResult {
   if (occupation.length < 2) return { ok: false, error: 'कृपया व्यवसाय दर्ज करें।' };
 
   // Optional, par ho to valid
-  const community = str(input.community, 50);
   const diet = DIETS.includes(String(input.diet)) ? String(input.diet) : '';
   const annualIncome = INCOME_RANGES.includes(String(input.annualIncome)) ? String(input.annualIncome) : '';
   const about = str(input.about, 600);
@@ -152,7 +158,7 @@ export function cleanProfileInput(input: any): CleanResult {
   return {
     ok: true,
     data: {
-      name, gender, dob, heightCm, maritalStatus, religion, community, motherTongue,
+      name, gender, dob, heightCm, maritalStatus, religion, community, castePreference, motherTongue,
       city, state, education, occupation, annualIncome, diet, about, family, partnerPreference, photoUrl, siteId
     }
   };
