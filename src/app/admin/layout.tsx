@@ -30,7 +30,7 @@ const AL_STYLES = `
 .al-logout:hover{background:rgba(239,68,68,.2)}
 .al-main{margin-left:250px;min-height:100vh;display:flex;flex-direction:column}
 .al-topbar{display:none}
-.al-content{flex:1;min-width:0}
+.al-content{flex:1;min-width:0;padding:26px 30px;max-width:1500px;width:100%;margin:0 auto}
 .al-theme{display:flex;align-items:center;gap:4px;margin:4px 14px 6px;padding:3px;border-radius:10px;background:var(--bg-0f172a);border:1px solid var(--bd-1e293b)}
 .al-theme button{flex:1;border:0;border-radius:7px;padding:7px 6px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--fg-94a3b8)}
 .al-theme button.on{background:#ea580c;color:#fff}
@@ -42,6 +42,7 @@ const AL_STYLES = `
   .al-sidebar.open{transform:translateX(0);box-shadow:8px 0 30px rgba(0,0,0,.5)}
   .al-backdrop.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:55}
   .al-main{margin-left:0}
+  .al-content{padding:16px 15px}
   .al-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:40;background:var(--bg-0b1120);border-bottom:1px solid var(--bd-1e293b);padding:10px 14px}
   .al-menu-btn{background:var(--bg-0f172a);border:1px solid var(--bd-1e293b);color:var(--fg-fff);border-radius:8px;width:38px;height:38px;font-size:18px;cursor:pointer}
   .al-top-title{font-size:15px;font-weight:800;color:var(--fg-fff)}
