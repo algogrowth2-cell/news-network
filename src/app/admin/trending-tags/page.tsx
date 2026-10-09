@@ -52,12 +52,12 @@ export default function AdminTrendingTags() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16, marginTop: 18 }}>
         <div>
-          <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>हिंदी पोर्टल ({t.hi.length})</label>
-          <textarea style={ta} value={t.hi.join('\n')} onChange={(e) => setT((p) => ({ ...p, hi: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) }))} />
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>हिंदी पोर्टल ({t.hi.filter((x) => x.trim()).length})</label>
+          <textarea style={ta} value={t.hi.join('\n')} onChange={(e) => setT((p) => ({ ...p, hi: e.target.value.split('\n') }))} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>English पोर्टल ({t.en.length})</label>
-          <textarea style={ta} value={t.en.join('\n')} onChange={(e) => setT((p) => ({ ...p, en: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) }))} />
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>English पोर्टल ({t.en.filter((x) => x.trim()).length})</label>
+          <textarea style={ta} value={t.en.join('\n')} onChange={(e) => setT((p) => ({ ...p, en: e.target.value.split('\n') }))} />
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@ export default function AdminMatrimonyOptions() {
   }, []);
 
   const setField = (k: keyof MatrimonyOptions, text: string) =>
-    setO((p) => ({ ...p, [k]: text.split('\n').map((x) => x.trim()).filter(Boolean) }));
+    setO((p) => ({ ...p, [k]: text.split('\n') }));
 
   const save = async () => {
     setSaving(true); setMsg('');
@@ -71,7 +71,7 @@ export default function AdminMatrimonyOptions() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16, marginTop: 18 }}>
         {FIELDS.map((f) => (
           <div key={f.key}>
-            <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>{f.label} <span style={{ color: 'var(--fg-64748b)', fontWeight: 400 }}>({o[f.key].length})</span></label>
+            <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginBottom: 6 }}>{f.label} <span style={{ color: 'var(--fg-64748b)', fontWeight: 400 }}>({o[f.key].filter((x) => x.trim()).length})</span></label>
             <textarea style={ta} value={o[f.key].join('\n')} onChange={(e) => setField(f.key, e.target.value)} />
           </div>
         ))}

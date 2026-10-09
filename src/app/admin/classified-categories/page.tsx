@@ -50,8 +50,8 @@ export default function AdminClassifiedCategories() {
 
       {msg && <div style={{ marginTop: 14, background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.35)', color: '#34d399', borderRadius: 8, padding: '9px 12px', fontSize: 13 }}>{msg}</div>}
 
-      <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, margin: '18px 0 6px' }}>श्रेणियाँ ({list.length})</label>
-      <textarea style={ta} value={list.join('\n')} onChange={(e) => setList(e.target.value.split('\n').map((x) => x.trim()).filter(Boolean))} />
+      <label style={{ display: 'block', fontSize: 13, color: 'var(--fg-cbd5e1)', fontWeight: 600, margin: '18px 0 6px' }}>श्रेणियाँ ({list.filter((x) => x.trim()).length})</label>
+      <textarea style={ta} value={list.join('\n')} onChange={(e) => setList(e.target.value.split('\n'))} />
       <p style={{ fontSize: 11.5, color: 'var(--fg-64748b)', marginTop: 6 }}>“सभी” अपने आप फ़िल्टर में जुड़ जाता है — उसे यहाँ न लिखें।</p>
     </div>
   );
