@@ -102,6 +102,49 @@ export function careerLine(p: { designation?: string; companyName?: string; occu
 }
 export const INCOME_RANGES = ['कोई आय नहीं', '₹1 लाख से कम', '₹1–3 लाख', '₹3–5 लाख', '₹5–10 लाख', '₹10–20 लाख', '₹20 लाख से अधिक', 'बताना नहीं चाहते'];
 
+/* ---------- Admin-editable option lists (settings/matrimony_options) ----------
+ * Jo list code ki logic se bandhi hain (gender, lambai, jaati-pasand, kaam-ka-type) wo editable NAHI —
+ * taaki feature na tute. Baaki yahan se badalti hain; server bhi yahi list jaanchta hai.
+ */
+export interface MatrimonyOptions {
+  religions: string[];
+  motherTongues: string[];
+  maritalStatus: string[];
+  diets: string[];
+  incomeRanges: string[];
+  workFields: string[];
+  postedBy: string[];
+  roleOptions: string[];
+  aboutSuggestions: string[];
+  partnerSuggestions: string[];
+}
+export const DEFAULT_MATRIMONY_OPTIONS: MatrimonyOptions = {
+  religions: RELIGIONS, motherTongues: MOTHER_TONGUES, maritalStatus: MARITAL_STATUS, diets: DIETS,
+  incomeRanges: INCOME_RANGES, workFields: WORK_FIELDS, postedBy: POSTED_BY_OPTIONS,
+  roleOptions: ROLE_OPTIONS, aboutSuggestions: ABOUT_SUGGESTIONS, partnerSuggestions: PARTNER_SUGGESTIONS
+};
+const cleanList = (v: any, def: string[]): string[] => {
+  if (!Array.isArray(v)) return def;
+  const out = Array.from(new Set(v.map((x) => String(x ?? '').replace(/[<>]/g, '').trim()).filter(Boolean))).slice(0, 80);
+  return out.length ? out : def;
+};
+export function normalizeMatrimonyOptions(raw: any): MatrimonyOptions {
+  const d = DEFAULT_MATRIMONY_OPTIONS;
+  return {
+    religions: cleanList(raw?.religions, d.religions),
+    motherTongues: cleanList(raw?.motherTongues, d.motherTongues),
+    maritalStatus: cleanList(raw?.maritalStatus, d.maritalStatus),
+    diets: cleanList(raw?.diets, d.diets),
+    incomeRanges: cleanList(raw?.incomeRanges, d.incomeRanges),
+    workFields: cleanList(raw?.workFields, d.workFields),
+    postedBy: cleanList(raw?.postedBy, d.postedBy),
+    roleOptions: cleanList(raw?.roleOptions, d.roleOptions),
+    aboutSuggestions: cleanList(raw?.aboutSuggestions, d.aboutSuggestions),
+    partnerSuggestions: cleanList(raw?.partnerSuggestions, d.partnerSuggestions)
+  };
+}
+
+
 /* ---------- Height: cm ⇄ feet/inch ---------- */
 export const HEIGHT_OPTIONS = (() => {
   const list: { cm: number; label: string }[] = [];
@@ -150,7 +193,7 @@ export interface CleanResult {
   data?: Omit<MatrimonyProfile, 'id' | 'status'>;
 }
 
-export function cleanProfileInput(input: any): CleanResult {
+export function cleanProfileInput(input: any, opts: MatrimonyOptions = DEFAULT_MATRIMONY_OPTIONS): CleanResult {
   const name = str(input.name, 60);
   if (name.length < 2) return { ok: false, error: 'कृपया पूरा नाम दर्ज करें।' };
 
@@ -167,11 +210,11 @@ export function cleanProfileInput(input: any): CleanResult {
   if (heightCm < 120 || heightCm > 220) return { ok: false, error: 'कृपया सही लंबाई चुनें।' };
 
   const pick = (v: any, list: string[], label: string) => (list.includes(String(v)) ? String(v) : (list.length && v === undefined ? '' : null));
-  const maritalStatus = MARITAL_STATUS.includes(String(input.maritalStatus)) ? String(input.maritalStatus) : null;
+  const maritalStatus = opts.maritalStatus.includes(String(input.maritalStatus)) ? String(input.maritalStatus) : null;
   if (!maritalStatus) return { ok: false, error: 'कृपया वैवाहिक स्थिति चुनें।' };
-  const religion = RELIGIONS.includes(String(input.religion)) ? String(input.religion) : null;
+  const religion = opts.religions.includes(String(input.religion)) ? String(input.religion) : null;
   if (!religion) return { ok: false, error: 'कृपया धर्म चुनें।' };
-  const motherTongue = MOTHER_TONGUES.includes(String(input.motherTongue)) ? String(input.motherTongue) : null;
+  const motherTongue = opts.motherTongues.includes(String(input.motherTongue)) ? String(input.motherTongue) : null;
   if (!motherTongue) return { ok: false, error: 'कृपया मातृभाषा चुनें।' };
   const community = str(input.community, 50);
   if (community.length < 2) return { ok: false, error: 'कृपया जाति / समुदाय दर्ज करें।' };
@@ -188,7 +231,7 @@ export function cleanProfileInput(input: any): CleanResult {
   // Kaam / rozgaar — type zaroori; baaki (kshetra/company/padnaam) jab kaam karte hon
   const employmentType = EMPLOYMENT_TYPES.includes(String(input.employmentType)) ? String(input.employmentType) : null;
   if (!employmentType) return { ok: false, error: 'कृपया चुनें कि आप नौकरी/व्यवसाय करते हैं या नहीं।' };
-  const workField = WORK_FIELDS.includes(String(input.workField)) ? String(input.workField) : '';
+  const workField = opts.workFields.includes(String(input.workField)) ? String(input.workField) : '';
   const companyName = str(input.companyName, 80);
   const designation = str(input.designation, 80);
   const occupation = str(input.occupation, 80);
@@ -205,13 +248,13 @@ export function cleanProfileInput(input: any): CleanResult {
   const landBigha = str(input.landBigha, 30); // kृषि bhumi (optional)
 
   // Optional, par ho to valid
-  const diet = DIETS.includes(String(input.diet)) ? String(input.diet) : '';
-  const annualIncome = INCOME_RANGES.includes(String(input.annualIncome)) ? String(input.annualIncome) : '';
+  const diet = opts.diets.includes(String(input.diet)) ? String(input.diet) : '';
+  const annualIncome = opts.incomeRanges.includes(String(input.annualIncome)) ? String(input.annualIncome) : '';
   const about = str(input.about, 600);
   const family = str(input.family, 400);
   const partnerPreference = str(input.partnerPreference, 400);
 
-  const postedBy = POSTED_BY_OPTIONS.includes(String(input.postedBy)) ? String(input.postedBy) : 'स्वयं';
+  const postedBy = opts.postedBy.includes(String(input.postedBy)) ? String(input.postedBy) : 'स्वयं';
 
   // Photos: 1 se MAX_PHOTOS. Har ek https ya chhoti data:image; kul milakar Firestore 1MB seema me
   const cleanPhoto = (raw: any): string => {

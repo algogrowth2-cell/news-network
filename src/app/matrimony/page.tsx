@@ -12,9 +12,10 @@ import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
 import { matrimonyPlans } from '@/lib/pricing';
 import { usePricing } from '@/lib/usePricing';
+import { useMatrimonyOptions } from '@/lib/useMatrimonyOptions';
 import {
-  ABOUT_SUGGESTIONS, ageFromDob, careerLine, CASTE_PREFERENCES, DIETS, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS, INCOME_RANGES,
-  MARITAL_STATUS, MAX_PHOTOS, MOTHER_TONGUES, PARTNER_SUGGESTIONS, POSTED_BY_OPTIONS, RELIGIONS, ROLE_OPTIONS, SIBLING_COUNTS, WORK_FIELDS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
+  ageFromDob, careerLine, CASTE_PREFERENCES, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS,
+  MAX_PHOTOS, SIBLING_COUNTS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
 } from '@/lib/matrimony';
 
 /* ---- Modern line (SVG) icons — koi emoji nahi ---- */
@@ -482,6 +483,7 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
   const [buying, setBuying] = useState('');
   const pricing = usePricing();
   const plans = matrimonyPlans(pricing);
+  const opt = useMatrimonyOptions();
 
   const loadProfile = React.useCallback(async () => {
     try {
@@ -614,18 +616,18 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
           <Field label="लिंग *"><select className="mx-in" value={f.gender} onChange={(e) => set('gender', e.target.value)}><option value="">चुनें</option>{GENDERS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}</select></Field>
           <Field label="जन्मतिथि *"><input type="date" className="mx-in" value={f.dob} onChange={(e) => set('dob', e.target.value)} /></Field>
           <Field label="लंबाई *"><select className="mx-in" value={f.heightCm} onChange={(e) => set('heightCm', Number(e.target.value))}><option value={0}>चुनें</option>{HEIGHT_OPTIONS.map((h) => <option key={h.cm} value={h.cm}>{h.label}</option>)}</select></Field>
-          <Field label="वैवाहिक स्थिति *"><select className="mx-in" value={f.maritalStatus} onChange={(e) => set('maritalStatus', e.target.value)}><option value="">चुनें</option>{MARITAL_STATUS.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>
-          <Field label="आहार"><select className="mx-in" value={f.diet} onChange={(e) => set('diet', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{DIETS.map((d) => <option key={d} value={d}>{d}</option>)}</select></Field>
-          <Field label="यह रिश्ता किसने डाला? *"><select className="mx-in" value={f.postedBy} onChange={(e) => set('postedBy', e.target.value)}>{POSTED_BY_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}</select></Field>
+          <Field label="वैवाहिक स्थिति *"><select className="mx-in" value={f.maritalStatus} onChange={(e) => set('maritalStatus', e.target.value)}><option value="">चुनें</option>{opt.maritalStatus.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>
+          <Field label="आहार"><select className="mx-in" value={f.diet} onChange={(e) => set('diet', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{opt.diets.map((d) => <option key={d} value={d}>{d}</option>)}</select></Field>
+          <Field label="यह रिश्ता किसने डाला? *"><select className="mx-in" value={f.postedBy} onChange={(e) => set('postedBy', e.target.value)}>{opt.postedBy.map((o) => <option key={o} value={o}>{o}</option>)}</select></Field>
         </div>
       </div>
 
       <div className="mx-fcard">
         <div className="mx-sec"><i><Ic n="faith"/></i> धर्म, जाति व भाषा</div>
         <div className="mx-fgrid">
-          <Field label="धर्म *"><select className="mx-in" value={f.religion} onChange={(e) => set('religion', e.target.value)}><option value="">चुनें</option>{RELIGIONS.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
+          <Field label="धर्म *"><select className="mx-in" value={f.religion} onChange={(e) => set('religion', e.target.value)}><option value="">चुनें</option>{opt.religions.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
           <Field label="जाति / समुदाय *"><input className="mx-in" value={f.community} onChange={(e) => set('community', e.target.value)} placeholder="अपनी जाति / समुदाय" /></Field>
-          <Field label="मातृभाषा *"><select className="mx-in" value={f.motherTongue} onChange={(e) => set('motherTongue', e.target.value)}><option value="">चुनें</option>{MOTHER_TONGUES.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>
+          <Field label="मातृभाषा *"><select className="mx-in" value={f.motherTongue} onChange={(e) => set('motherTongue', e.target.value)}><option value="">चुनें</option>{opt.motherTongues.map((m) => <option key={m} value={m}>{m}</option>)}</select></Field>
         </div>
         <Field label="विवाह किस जाति में करना चाहते हैं? *">
           <select className="mx-in" value={f.castePreference} onChange={(e) => set('castePreference', e.target.value)}>
@@ -658,17 +660,17 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
             <>
               <Field label="किस क्षेत्र में?">
                 <select className="mx-in" value={f.workField} onChange={(e) => set('workField', e.target.value)}>
-                  <option value="">चुनें (वैकल्पिक)</option>{WORK_FIELDS.map((w) => <option key={w} value={w}>{w}</option>)}
+                  <option value="">चुनें (वैकल्पिक)</option>{opt.workFields.map((w) => <option key={w} value={w}>{w}</option>)}
                 </select>
               </Field>
               <Field label="पद / भूमिका (Role)">
                 <input className="mx-in" list="mx-roles" value={f.designation} onChange={(e) => set('designation', e.target.value)} placeholder="चुनें या लिखें — जैसे सॉफ्टवेयर इंजीनियर" />
-                <datalist id="mx-roles">{ROLE_OPTIONS.map((r) => <option key={r} value={r} />)}</datalist>
+                <datalist id="mx-roles">{opt.roleOptions.map((r) => <option key={r} value={r} />)}</datalist>
               </Field>
               <Field label="कंपनी / संस्था का नाम"><input className="mx-in" value={f.companyName} onChange={(e) => set('companyName', e.target.value)} placeholder="(वैकल्पिक)" /></Field>
             </>
           )}
-          <Field label="वार्षिक आय"><select className="mx-in" value={f.annualIncome} onChange={(e) => set('annualIncome', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{INCOME_RANGES.map((i) => <option key={i} value={i}>{i}</option>)}</select></Field>
+          <Field label="वार्षिक आय"><select className="mx-in" value={f.annualIncome} onChange={(e) => set('annualIncome', e.target.value)}><option value="">चुनें (वैकल्पिक)</option>{opt.incomeRanges.map((i) => <option key={i} value={i}>{i}</option>)}</select></Field>
         </div>
       </div>
 
@@ -688,11 +690,11 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
       <div className="mx-fcard">
         <div className="mx-sec"><i><Ic n="chat"/></i> अपने बारे में व अपेक्षा</div>
         <Field label="अपने बारे में">
-          <ChipRow options={ABOUT_SUGGESTIONS} value={f.about} onAdd={(t) => set('about', t)} />
+          <ChipRow options={opt.aboutSuggestions} value={f.about} onAdd={(t) => set('about', t)} />
           <textarea className="mx-in" value={f.about} onChange={(e) => set('about', e.target.value)} placeholder="नीचे से चुनें या खुद लिखें…" />
         </Field>
         <Field label="कैसा जीवनसाथी चाहिए">
-          <ChipRow options={PARTNER_SUGGESTIONS} value={f.partnerPreference} onAdd={(t) => set('partnerPreference', t)} />
+          <ChipRow options={opt.partnerSuggestions} value={f.partnerPreference} onAdd={(t) => set('partnerPreference', t)} />
           <textarea className="mx-in" value={f.partnerPreference} onChange={(e) => set('partnerPreference', e.target.value)} placeholder="नीचे से चुनें या खुद लिखें…" />
         </Field>
       </div>

@@ -182,6 +182,7 @@ export default function AdminLayout({
         { label: 'Classifieds', icon: '📋', href: '/admin/classifieds' },
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
         { label: 'Matrimony', icon: '💍', href: '/admin/matrimony' },
+        { label: 'विवाह विकल्प', icon: '📝', href: '/admin/matrimony-options' },
         { label: 'प्लान व कीमतें', icon: '💳', href: '/admin/membership' },
         { label: 'संपर्क व फुटर', icon: '📞', href: '/admin/site-contact' },
         { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
-import { cleanProfileInput } from '@/lib/matrimony';
+import { cleanProfileInput, normalizeMatrimonyOptions } from '@/lib/matrimony';
 
 // Is number ki chalu vivah sadasyata (bio-data submit ke liye zaroori)
 async function membershipOf(db: Firestore, phone: string) {
@@ -45,7 +45,10 @@ export async function POST(req: Request) {
   if (!membership.active) return NextResponse.json({ error: 'membership-required', message: 'प्रोफ़ाइल सबमिट करने के लिए सदस्यता आवश्यक है।' }, { status: 402 });
 
   const body = await req.json().catch(() => ({}));
-  const res = cleanProfileInput(body);
+  // Admin ki tay ki hui option-list (settings/matrimony_options) — wahi jaanchi jaati hai
+  const optsSnap = await db.collection('settings').doc('matrimony_options').get();
+  const opts = normalizeMatrimonyOptions(optsSnap.exists ? optsSnap.data() : {});
+  const res = cleanProfileInput(body, opts);
   if (!res.ok) return NextResponse.json({ error: 'bad-input', message: res.error }, { status: 400 });
 
   // Ek number = ek profile (id random; number kabhi id me nahi, warna hash se number toda ja sakta)
