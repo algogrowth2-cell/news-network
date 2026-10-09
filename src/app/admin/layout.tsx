@@ -180,6 +180,7 @@ export default function AdminLayout({
         { label: 'Press ID Cards', icon: '🪪', href: '/admin/press-cards' },
         { label: 'Ads & Revenue', icon: '📢', href: '/admin/ads' },
         { label: 'Classifieds', icon: '📋', href: '/admin/classifieds' },
+        { label: 'क्लासिफाइड श्रेणियाँ', icon: '🏷️', href: '/admin/classified-categories' },
         { label: 'Shok Sandesh', icon: '🕊️', href: '/admin/obituaries' },
         { label: 'Matrimony', icon: '💍', href: '/admin/matrimony' },
         { label: 'विवाह विकल्प', icon: '📝', href: '/admin/matrimony-options' },

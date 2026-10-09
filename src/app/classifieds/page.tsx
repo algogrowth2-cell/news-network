@@ -12,6 +12,7 @@ import EmptyState from '@/components/EmptyState';
 import PortalLogo from '@/components/PortalLogo';
 import { fallbackFor, logoFor } from '@/lib/siteTheme';
 import { adNotExpired } from '@/lib/plans';
+import { useClassifiedCategories } from '@/lib/useClassifiedCategories';
 
 interface ClassifiedItem {
   id: string;
@@ -30,19 +31,10 @@ interface ClassifiedItem {
   status?: string;
 }
 
-const CLASSIFIED_CATEGORIES = [
-  'सभी',
-  'प्रॉपर्टी / ज़मीन',
-  'वाहन (गाड़ियां)',
-  'नौकरी / रोजगार',
-  'इलेक्ट्रॉनिक्स',
-  'सेवाएं / बिजनेस',
-  'शिक्षा / कोचिंग',
-  'अन्य'
-];
 
 function ClassifiedsContent() {
   const searchParams = useSearchParams();
+  const categories = ['सभी', ...useClassifiedCategories()];
   const [siteSlug, setSiteSlug] = useState('the-local-leader');
   const [siteConfig, setSiteConfig] = useState<any>(null);
   const [classifieds, setClassifieds] = useState<ClassifiedItem[]>([]);
@@ -294,7 +286,7 @@ function ClassifiedsContent() {
 
         {/* Category Pills */}
         <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', marginBottom: '24px', paddingBottom: '4px' }}>
-          {CLASSIFIED_CATEGORIES.map((cat) => {
+          {categories.map((cat: string) => {
             const isAct = selectedCategory === cat;
             return (
               <button

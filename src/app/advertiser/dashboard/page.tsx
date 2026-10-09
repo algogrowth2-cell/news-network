@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import { clearRoleSession, getProfileById, getRoleSession } from '@/lib/roleSession';
+import { DEFAULT_CLASSIFIED_CATEGORIES, useClassifiedCategories } from '@/lib/useClassifiedCategories';
 import { sessionMatchesFirebase } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
 import { AD_FORMAT_LABEL, adExpiryMs, adNotExpired } from '@/lib/plans';
@@ -61,15 +62,6 @@ const NETWORK_PORTALS = [
   { slug: 'ndn-defence', name: 'National Defence Network' }
 ];
 
-const CLASSIFIED_CATEGORIES = [
-  'प्रॉपर्टी / ज़मीन',
-  'वाहन (गाड़ियां)',
-  'नौकरी / रोजगार',
-  'इलेक्ट्रॉनिक्स',
-  'सेवाएं / बिजनेस',
-  'शिक्षा / कोचिंग',
-  'अन्य'
-];
 
 export default function AdvertiserDashboard() {
   const [activeTab, setActiveTab] = useState<'my-ads' | 'create-ad'>('my-ads');
@@ -96,7 +88,8 @@ export default function AdvertiserDashboard() {
   const [format, setFormat] = useState<'banner' | 'sidebar' | 'classified' | 'popup'>('classified');
   const [zone, setZone] = useState('classifieds-feed');
   const [selectedSite, setSelectedSite] = useState('the-local-leader');
-  const [classifiedCategory, setClassifiedCategory] = useState(CLASSIFIED_CATEGORIES[0]);
+  const classifiedCats = useClassifiedCategories();
+  const [classifiedCategory, setClassifiedCategory] = useState(DEFAULT_CLASSIFIED_CATEGORIES[0]);
   const [city, setCity] = useState('');
   const [price, setPrice] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -768,7 +761,7 @@ export default function AdvertiserDashboard() {
                       onChange={(e) => setClassifiedCategory(e.target.value)}
                       style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '11px 14px', color: '#0f172a', fontSize: '13.5px', outline: 'none', cursor: 'pointer' }}
                     >
-                      {CLASSIFIED_CATEGORIES.map(c => (
+                      {classifiedCats.map((c: string) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
