@@ -170,7 +170,8 @@ export default function AdminLayout({
         { label: 'Photo Galleries', icon: '📷', href: '/admin/galleries' },
         { label: 'E-Paper', icon: '📰', href: '/admin/epaper' },
         { label: 'Live Blogs', icon: '📡', href: '/admin/live-blogs' },
-        { label: 'Rashifal', icon: '⭐', href: '/admin/rashifal' }
+        { label: 'Rashifal', icon: '⭐', href: '/admin/rashifal' },
+        { label: 'ट्रेंडिंग टैग', icon: '🔥', href: '/admin/trending-tags' }
       ]
     },
     {

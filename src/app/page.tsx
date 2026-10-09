@@ -22,6 +22,7 @@ import { categoryMatches, matchesTrendTag, setDynamicCategories } from '@/lib/ca
 import { categoryOnPortal, DEFAULT_CATEGORIES, fetchCategories, type CategoryItem } from '@/lib/taxonomy';
 import { hasEpaper } from '@/lib/epaperSub';
 import { adNotExpired } from '@/lib/plans';
+import { useTrendingTags } from '@/lib/useTrendingTags';
 
 interface ArticleItem {
   id: string;
@@ -110,8 +111,7 @@ const APP_STORE_URL = 'https://apps.apple.com';
 // Ye tabs koi category filter nahi lagate — saari khabrein
 const HOME_TABS = ['होम', 'Home', 'ताज़ा खबरें', 'Latest News', 'राशिफल', 'टॉप न्यूज़', 'Top News'];
 
-const TRENDING_TAGS_HI = ['बजट सत्र', 'पंचायत चुनाव', 'बारिश का मौसम', 'मंडी भाव', 'भर्ती परिणाम', 'बिजली दर', 'क्रिकेट लीग'];
-const TRENDING_TAGS_EN = ['Defence Budget', 'Military Drills', 'Border Security', 'Airforce Tech', 'Naval Fleet', 'Strategic Ties', 'Armed Forces'];
+// Trending tags ab admin (settings/trending_tags) se — useTrendingTags()
 
 // Menu: aage/peeche ke fixed tab + beech me admin (Categories) se aane wali categories
 const MENU_HEAD_HI = [
@@ -848,7 +848,8 @@ function HomePageContent() {
   const portalHasEpaper = hasEpaper(currentSlug);
   const noEpaper = (m: { key: string }) => portalHasEpaper || (m.key !== 'ई-पेपर' && m.key !== 'E-Paper');
   const categories = (isEnglishSite ? [...MENU_HEAD_EN, ...portalCats, ...MENU_TAIL_EN] : [...MENU_HEAD_HI, ...portalCats, ...MENU_TAIL_HI]).filter(noEpaper);
-  const trendingTags = isEnglishSite ? TRENDING_TAGS_EN : TRENDING_TAGS_HI;
+  const trendingTagsCfg = useTrendingTags();
+  const trendingTags = isEnglishSite ? trendingTagsCfg.en : trendingTagsCfg.hi;
 
   // Ye tabs saari khabrein dikhate hain; baaki koi bhi tab category filter hai
   const isFilterCategory = !HOME_TABS.includes(activeCategory);
@@ -1299,7 +1300,7 @@ function HomePageContent() {
                 </svg>
                 {isEnglishSite ? 'Trending' : 'ट्रेंडिंग'}
               </span>
-              {trendingTags.map((t) => {
+              {trendingTags.map((t: string) => {
                 const isTagActive = activeTrendTag === t;
                 return (
                   <button
