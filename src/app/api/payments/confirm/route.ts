@@ -3,6 +3,7 @@ import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
 import { verifyRazorpayPayment } from '@/lib/razorpayVerify';
 import { directMediaUrl } from '@/lib/mediaUrl';
 import { epaperSite, epaperSubId, isActiveForSite, subExpiryMs } from '@/lib/epaperSub';
+import { appEpaperPortals } from '@/lib/epaperServer';
 import { membershipSite, membershipTillMs } from '@/lib/membership';
 import { type AdFormat, type PaymentKind } from '@/lib/plans';
 import { epaperPlans, matrimonyPlans, shokPlans } from '@/lib/pricing';
@@ -82,6 +83,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'payment-used', message: 'यह भुगतान पहले ही उपयोग हो चुका है।' }, { status: 409 });
   }
 
+  // Mobile app me admin ke chalu kiye e-paper portal (fixed list ke alawa)
+  const epExtra = kind === 'epaper' ? await appEpaperPortals(db) : [];
+
   const v = await verifyRazorpayPayment(paymentId, amount);
   if (!v.ok) return NextResponse.json({ error: 'verify-failed', message: v.message }, { status: v.status });
 
@@ -94,12 +98,12 @@ export async function POST(req: Request) {
         const user = (await tx.get(db.collection('users').doc(`u_${phone}`))).data() || {};
         const email = user.email || `${phone}@news.local`;
         // Har portal ka alag subscription: {email}__{portal}
-        const portal = epaperSite(body.siteId);
-        const subRef = db.collection('epaper_subscriptions').doc(epaperSubId(email, portal));
+        const portal = epaperSite(body.siteId, epExtra);
+        const subRef = db.collection('epaper_subscriptions').doc(epaperSubId(email, portal, epExtra));
         const cur = (await tx.get(subRef)).data();
         // Isi portal ka purana record ({email}) chalu ho toh uski expiry se aage badhao
         const legacy = (await tx.get(db.collection('epaper_subscriptions').doc(email))).data();
-        const legacyExp = isActiveForSite(legacy, portal) ? subExpiryMs(legacy) : 0;
+        const legacyExp = isActiveForSite(legacy, portal, Date.now(), epExtra) ? subExpiryMs(legacy) : 0;
         const curExpMs = Math.max(subExpiryMs(cur), legacyExp);
         const start = curExpMs > Date.now() ? curExpMs : Date.now();
         const expiresAt = new Date(start + plan!.durationDays * 864e5);

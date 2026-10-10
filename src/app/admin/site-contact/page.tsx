@@ -57,6 +57,9 @@ export default function AdminSiteContact() {
       <label style={label}>काम के घंटे (English — अंग्रेज़ी पोर्टल के लिए)</label>
       <input style={input} value={c.hoursEn} onChange={(e) => set('hoursEn', e.target.value)} placeholder="Mon–Sat · 10 AM to 6 PM" />
 
+      <label style={label}>कार्यालय का पता (मोबाइल ऐप के Help में)</label>
+      <textarea style={{ ...input, minHeight: 70 }} value={c.address} onChange={(e) => set('address', e.target.value)} placeholder="पूरा पता" />
+
       <div style={{ marginTop: 22 }}>
         <button onClick={save} disabled={saving} style={{ background: '#ea580c', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
           {saving ? 'सहेज रहे…' : 'सहेजें'}

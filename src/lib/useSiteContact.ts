@@ -12,13 +12,15 @@ export interface SiteContact {
   whatsapp: string; // sirf ank, country code ke saath (jaise 918103333381)
   hoursHi: string;
   hoursEn: string;
+  address: string; // karyalay ka pata (mobile app ke Help me)
 }
 
 export const DEFAULT_CONTACT: SiteContact = {
   email: 'goldenpearlnews@gmail.com',
   whatsapp: '918103333381',
   hoursHi: 'सोम–शनि · सुबह 10 से शाम 6',
-  hoursEn: 'Mon–Sat · 10 AM to 6 PM'
+  hoursEn: 'Mon–Sat · 10 AM to 6 PM',
+  address: '1st Floor Shreenath Complex, Old A.B Road, Kishanganj, Dr. Ambedkar Nagar (Mhow), District: Indore (Madhya Pradesh), Pin Code - 453441'
 };
 
 const txt = (v: any, def: string, max = 140) => {
@@ -33,7 +35,8 @@ export function normalizeContact(raw: any): SiteContact {
     email: txt(raw?.email, d.email, 120),
     whatsapp: wa.length >= 10 ? wa.slice(0, 15) : d.whatsapp,
     hoursHi: txt(raw?.hoursHi, d.hoursHi),
-    hoursEn: txt(raw?.hoursEn, d.hoursEn)
+    hoursEn: txt(raw?.hoursEn, d.hoursEn),
+    address: txt(raw?.address, d.address, 300)
   };
 }
 

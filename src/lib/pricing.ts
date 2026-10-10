@@ -18,6 +18,8 @@ export interface Pricing {
   shok: { shok_7_days: PriceDays; shok_30_days: PriceDays };
   ads: Record<AdFormat, PriceDays>;
   matrimony: { matrimony_1_month: PriceDays; matrimony_1_year: PriceDays };
+  // Mobile app ka "App Switch" pass (saare 8 ऐप एक साथ) — sirf app me bikta hai
+  appSwitch: { app_switch_first: PriceDays; app_switch_1_month: PriceDays; app_switch_3_months: PriceDays; app_switch_6_months: PriceDays };
 }
 
 const epMonth = EPAPER_PLANS.find((p) => p.id === 'epaper_1_month')!;
@@ -45,6 +47,12 @@ export const DEFAULT_PRICING: Pricing = {
   matrimony: {
     matrimony_1_month: { price: 299, days: 30 },
     matrimony_1_year: { price: 1999, days: 365 }
+  },
+  appSwitch: {
+    app_switch_first: { price: 1, days: 30 },
+    app_switch_1_month: { price: 21, days: 30 },
+    app_switch_3_months: { price: 33, days: 90 },
+    app_switch_6_months: { price: 66, days: 180 }
   }
 };
 
@@ -84,6 +92,12 @@ export function normalizePricing(raw: any): Pricing {
     matrimony: {
       matrimony_1_month: pd(raw?.matrimony?.matrimony_1_month, d.matrimony.matrimony_1_month),
       matrimony_1_year: pd(raw?.matrimony?.matrimony_1_year, d.matrimony.matrimony_1_year)
+    },
+    appSwitch: {
+      app_switch_first: pd(raw?.appSwitch?.app_switch_first, d.appSwitch.app_switch_first),
+      app_switch_1_month: pd(raw?.appSwitch?.app_switch_1_month, d.appSwitch.app_switch_1_month),
+      app_switch_3_months: pd(raw?.appSwitch?.app_switch_3_months, d.appSwitch.app_switch_3_months),
+      app_switch_6_months: pd(raw?.appSwitch?.app_switch_6_months, d.appSwitch.app_switch_6_months)
     }
   };
 }

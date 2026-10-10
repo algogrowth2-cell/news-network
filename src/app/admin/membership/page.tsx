@@ -62,6 +62,17 @@ const SECTIONS: { title: string; icon: string; note: string; rows: Row[] }[] = [
       { key: 'mat1', label: '1 महीने का प्लान', get: (p) => p.matrimony.matrimony_1_month, set: (p, v) => ({ ...p, matrimony: { ...p.matrimony, matrimony_1_month: { price: v.price, days: v.days! } } }) },
       { key: 'mat2', label: '1 वर्ष का प्लान', get: (p) => p.matrimony.matrimony_1_year, set: (p, v) => ({ ...p, matrimony: { ...p.matrimony, matrimony_1_year: { price: v.price, days: v.days! } } }) }
     ]
+  },
+  {
+    title: 'मोबाइल ऐप — ऐप स्विच पास (सभी 8 ऐप)',
+    icon: '📱',
+    note: 'सिर्फ़ मोबाइल ऐप में — एक पास से सभी 8 नेटवर्क ऐप खुलते हैं। दिन खरीदने के दिन से गिने जाते हैं।',
+    rows: [
+      { key: 'as1', label: 'फ़र्स्ट पास (ट्रायल)', get: (p) => p.appSwitch.app_switch_first, set: (p, v) => ({ ...p, appSwitch: { ...p.appSwitch, app_switch_first: { price: v.price, days: v.days! } } }) },
+      { key: 'as2', label: '1 महीना पास', get: (p) => p.appSwitch.app_switch_1_month, set: (p, v) => ({ ...p, appSwitch: { ...p.appSwitch, app_switch_1_month: { price: v.price, days: v.days! } } }) },
+      { key: 'as3', label: '3 महीने का प्लान', get: (p) => p.appSwitch.app_switch_3_months, set: (p, v) => ({ ...p, appSwitch: { ...p.appSwitch, app_switch_3_months: { price: v.price, days: v.days! } } }) },
+      { key: 'as4', label: '6 महीने का प्लान', get: (p) => p.appSwitch.app_switch_6_months, set: (p, v) => ({ ...p, appSwitch: { ...p.appSwitch, app_switch_6_months: { price: v.price, days: v.days! } } }) }
+    ]
   }
 ];
 

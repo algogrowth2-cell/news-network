@@ -4,24 +4,35 @@
 //  - subscriber ko 10 minute ka signed link; Storage ke public "download token" hata diye jaate hain
 import { adminBucket, getAdmin } from '@/lib/firebaseAdmin';
 import { epaperSite, epaperSubId, isActiveForSite } from '@/lib/epaperSub';
+import { normalizeAppSettings } from '@/lib/appSettings';
 
 const toDate = (v: any): Date | null => (v?.toDate ? v.toDate() : v ? new Date(v) : null);
 
+/** Mobile app me admin ne jin portals par e-paper chalu kiya (settings/app) — fixed list ke alawa */
+export async function appEpaperPortals(db: FirebaseFirestore.Firestore): Promise<string[]> {
+  try {
+    const snap = await db.collection('settings').doc('app').get();
+    return normalizeAppSettings(snap.exists ? snap.data() : {}).epaperPortals;
+  } catch {
+    return [];
+  }
+}
+
 /** Is mobile ka IS PORTAL ka e-paper subscription abhi chalu hai? (har portal ka alag) */
-export async function hasActiveEpaper(phone: string, site: string): Promise<boolean> {
+export async function hasActiveEpaper(phone: string, site: string, extra: string[] = []): Promise<boolean> {
   const admin = (await getAdmin());
   if (!admin) return false;
   const { db } = admin;
-  const portal = epaperSite(site);
+  const portal = epaperSite(site, extra);
   const user = (await db.collection('users').doc(`u_${phone}`).get()).data();
   const emails = [user?.email, `${phone}@news.local`].filter(Boolean) as string[];
   for (const e of emails) {
     // Naya record: {email}__{portal}; purana: {email} (sirf usi portal par jiska siteId hai)
-    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(epaperSubId(e, portal)).get()).data(), portal)) return true;
-    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(e).get()).data(), portal)) return true;
+    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(epaperSubId(e, portal, extra)).get()).data(), portal, Date.now(), extra)) return true;
+    if (isActiveForSite((await db.collection('epaper_subscriptions').doc(e).get()).data(), portal, Date.now(), extra)) return true;
   }
   const byPhone = await db.collection('epaper_subscriptions').where('userPhone', '==', phone).limit(20).get();
-  return byPhone.docs.some((d) => isActiveForSite(d.data(), portal));
+  return byPhone.docs.some((d) => isActiveForSite(d.data(), portal, Date.now(), extra));
 }
 
 /** Firebase Storage download URL se path (…/o/<encoded path>?alt=media&token=…) */

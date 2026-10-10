@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { ADMIN_COOKIE, readSession } from '@/lib/adminAuth';
 import { getAdmin, phoneFromRequest } from '@/lib/firebaseAdmin';
-import { editionFile, hasActiveEpaper } from '@/lib/epaperServer';
+import { appEpaperPortals, editionFile, hasActiveEpaper } from '@/lib/epaperServer';
 import { epaperSite } from '@/lib/epaperSub';
 
 /*
@@ -26,8 +26,9 @@ export async function GET(req: Request) {
     if (!phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया लॉगिन करें।' }, { status: 401 });
     const { db } = (await getAdmin())!;
     const edSite = String((await db.collection('epaper').doc(id).get()).data()?.siteId || '');
-    const portal = edSite && edSite !== 'all' ? epaperSite(edSite) : epaperSite(new URL(req.url).searchParams.get('site'));
-    if (!(await hasActiveEpaper(phone, portal)))
+    const extra = await appEpaperPortals(db);
+    const portal = edSite && edSite !== 'all' ? epaperSite(edSite, extra) : epaperSite(new URL(req.url).searchParams.get('site'), extra);
+    if (!(await hasActiveEpaper(phone, portal, extra)))
       return NextResponse.json({ error: 'no-subscription', message: 'इस पोर्टल का ई-पेपर पढ़ने के लिए सब्सक्रिप्शन लें।' }, { status: 403 });
   }
 
