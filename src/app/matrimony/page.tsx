@@ -558,15 +558,19 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
     const room = MAX_PHOTOS - cur.length;
     if (room <= 0) { setMsg(`अधिकतम ${MAX_PHOTOS} फोटो ही जोड़ सकते हैं।`); return; }
     const add: string[] = [];
+    let s3note = '';
     for (const file of files.slice(0, room)) {
       if (file.size > 10 * 1024 * 1024) continue;
+      let url: string | null = null;
       try {
-        // Pehle AWS S3 par (halki, tez). S3 set na ho (null) ya fail ho toh purana base64.
+        // Pehle AWS S3 par (halki, tez).
         const blob = await compressToBlob(file, 1200, 0.82);
-        const url = await uploadToS3(blob, 'matrimony').catch(() => null);
-        add.push(url || (await fileToSmallDataUrl(file)));
-      } catch { try { add.push(await fileToSmallDataUrl(file)); } catch {} }
+        url = await uploadToS3(blob, 'matrimony');
+        if (!url) s3note = 'S3 बंद (503)';
+      } catch (err: any) { s3note = String(err?.message || err); }
+      try { add.push(url || (await fileToSmallDataUrl(file))); } catch {}
     }
+    if (s3note) setMsg(`ℹ️ फोटो फ़िलहाल सहेज ली गई, पर S3 पर नहीं गई — कारण: ${s3note}`);
     if (add.length) setF((p: any) => { const arr = [...(p.photos || []), ...add].slice(0, MAX_PHOTOS); return { ...p, photos: arr, photoUrl: arr[0] }; });
   };
   const removePhoto = (i: number) => setF((p: any) => { const arr = (p.photos || []).filter((_: string, j: number) => j !== i); return { ...p, photos: arr, photoUrl: arr[0] || '' }; });

@@ -16,9 +16,10 @@ function s3() {
   return client;
 }
 
-/** Upload ke liye 2-min ka signed PUT URL + final public URL */
-export async function presignUpload(key: string, contentType: string): Promise<{ url: string; publicUrl: string }> {
-  const cmd = new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType });
+/** Upload ke liye 2-min ka signed PUT URL + final public URL.
+ * ContentType ko SIGN nahi karte (browser bhejega) — isse signature-mismatch wali aam dikkat nahi aati. */
+export async function presignUpload(key: string, _contentType: string): Promise<{ url: string; publicUrl: string }> {
+  const cmd = new PutObjectCommand({ Bucket: BUCKET, Key: key });
   const url = await getSignedUrl(s3(), cmd, { expiresIn: 120 });
   return { url, publicUrl: s3PublicUrl(key) };
 }

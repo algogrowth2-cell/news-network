@@ -10,13 +10,13 @@ export async function uploadToS3(file: Blob, folder: 'matrimony' | 'ads' | 'repo
     const r = await authFetch('/api/upload/presign', { method: 'POST', body: JSON.stringify({ folder, contentType: file.type }) });
     if (r.status === 503) return null; // S3 abhi set nahi — fallback
     const j = await r.json();
-    if (!r.ok || !j.url) throw new Error(j.message || 'presign-failed');
+    if (!r.ok || !j.url) throw new Error(`presign ${r.status} ${j.message || j.error || ''}`.trim());
     const put = await fetch(j.url, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-    if (!put.ok) throw new Error('s3-put-failed');
+    if (!put.ok) throw new Error(`S3 PUT ${put.status}`);
     return j.publicUrl as string;
-  } catch (e) {
+  } catch (e: any) {
     console.error('S3 upload error:', e);
-    throw e;
+    throw new Error(e?.message || 'upload-failed');
   }
 }
 
