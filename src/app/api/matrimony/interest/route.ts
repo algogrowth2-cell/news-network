@@ -42,16 +42,18 @@ export async function GET(req: Request) {
 
   const myProfileId = (await db.collection('matrimony_index').doc(phone).get()).data()?.profileId || '';
 
+  // orderBy hata diya (where+orderBy ko composite index chahiye) — JS me naya-pehle sort
+  const byNewest = (docs: any[]) => [...docs].sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0)).slice(0, 100);
   const [sentSnap, recvSnap] = await Promise.all([
-    db.collection('matrimony_interests').where('fromPhone', '==', phone).orderBy('createdAt', 'desc').limit(100).get(),
+    db.collection('matrimony_interests').where('fromPhone', '==', phone).limit(200).get(),
     myProfileId
-      ? db.collection('matrimony_interests').where('toProfileId', '==', myProfileId).orderBy('createdAt', 'desc').limit(100).get()
+      ? db.collection('matrimony_interests').where('toProfileId', '==', myProfileId).limit(200).get()
       : Promise.resolve({ docs: [] as any[] })
   ]);
 
   // Bheji gayi: samne wale ki profile summary
   const sent = await Promise.all(
-    sentSnap.docs.map(async (d: any) => {
+    byNewest(sentSnap.docs).map(async (d: any) => {
       const i = d.data();
       const p = (await db.collection('matrimony_profiles').doc(i.toProfileId).get()).data();
       return { interestId: d.id, status: i.status, profile: summary(i.toProfileId, p), canSeeContact: i.status === 'accepted' };
@@ -59,7 +61,7 @@ export async function GET(req: Request) {
   );
   // Aayi: bhejne wale ki profile summary (number nahi)
   const received = await Promise.all(
-    (recvSnap.docs as any[]).map(async (d: any) => {
+    byNewest(recvSnap.docs as any[]).map(async (d: any) => {
       const i = d.data();
       const p = i.fromProfileId ? (await db.collection('matrimony_profiles').doc(i.fromProfileId).get()).data() : null;
       return { interestId: d.id, status: i.status, profile: summary(i.fromProfileId || '', p), canSeeContact: i.status === 'accepted' };
