@@ -587,8 +587,8 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
         </div>
       ) : (
         <div className="mx-fcard" style={{ borderColor: 'var(--mx-p)', background: 'var(--mx-ss)' }}>
-          <div className="mx-sec"><i><Ic n="shield"/></i> सदस्यता लें <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--mx-m)', marginLeft: 4 }}>(प्रोफ़ाइल सबमिट के लिए आवश्यक)</span></div>
-          <p style={{ fontSize: 12.5, color: 'var(--mx-m)', margin: '0 0 12px' }}>विवाह प्रोफ़ाइल बनाने व संपर्क सुविधा के लिए सदस्यता लें। नीचे प्लान चुनें:</p>
+          <div className="mx-sec"><i><Ic n="shield"/></i> सदस्यता लें <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--mx-m)', marginLeft: 4 }}>{status ? '(नई लिस्टिंग/संपर्क के लिए)' : '(प्रोफ़ाइल सबमिट के लिए आवश्यक)'}</span></div>
+          <p style={{ fontSize: 12.5, color: 'var(--mx-m)', margin: '0 0 12px' }}>{status ? 'आपकी प्रोफ़ाइल पहले से है — आप इसे नीचे संपादित/सुधार सकते हैं। सदस्यता लेने पर यह फिर से live व संपर्क-सुविधा के साथ दिखेगी:' : 'विवाह प्रोफ़ाइल बनाने व संपर्क सुविधा के लिए सदस्यता लें। नीचे प्लान चुनें:'}</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
             {plans.map((pl, i) => (
               <div key={pl.id} style={{ border: `1.5px solid ${i === 1 ? 'var(--mx-p)' : 'var(--mx-l)'}`, borderRadius: 14, padding: 16, background: '#fff', position: 'relative' }}>
@@ -719,8 +719,8 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
       </div>
 
       <div className="mx-note"><Ic n="lock" size={15} style={{ marginTop: 1 }} /> <span>आपका मोबाइल नंबर प्रोफ़ाइल में कहीं नहीं दिखेगा। किसी की रुचि स्वीकार करने पर ही आपका संपर्क उस तक पहुँचेगा।</span></div>
-      <button disabled={saving || !member.active} onClick={save} className="mx-save" style={!member.active ? { opacity: .6, cursor: 'not-allowed' } : undefined}>
-        {!member.active ? 'पहले सदस्यता लें' : saving ? 'सहेज रहे…' : status ? 'प्रोफ़ाइल अपडेट करें' : 'प्रोफ़ाइल सहेजें'}
+      <button disabled={saving || (!member.active && !status)} onClick={save} className="mx-save" style={(!member.active && !status) ? { opacity: .6, cursor: 'not-allowed' } : undefined}>
+        {(!member.active && !status) ? 'पहले सदस्यता लें' : saving ? 'सहेज रहे…' : status ? 'प्रोफ़ाइल अपडेट / सुधारें' : 'प्रोफ़ाइल सहेजें'}
       </button>
     </div>
   );

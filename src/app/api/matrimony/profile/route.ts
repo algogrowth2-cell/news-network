@@ -40,9 +40,13 @@ export async function POST(req: Request) {
   if (!phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया लॉगिन करें।' }, { status: 401 });
   const { db, FieldValue } = admin;
 
-  // Bio-data submit ke liye chalu vivah sadasyata zaroori (1 mahina / 1 saal)
   const membership = await membershipOf(db, phone);
-  if (!membership.active) return NextResponse.json({ error: 'membership-required', message: 'प्रोफ़ाइल सबमिट करने के लिए सदस्यता आवश्यक है।' }, { status: 402 });
+  // Ek number = ek profile (id random; number kabhi id me nahi, warna hash se number toda ja sakta)
+  const idxRef = db.collection('matrimony_index').doc(phone);
+  const existing = (await idxRef.get()).data();
+  const isEditing = !!existing?.profileId && (await db.collection('matrimony_profiles').doc(existing.profileId).get()).exists;
+  // NAYI profile ke liye chalu sadasyata zaroori; pehle se bani profile EDIT bina sadasyata ke bhi (sirf sudhaar)
+  if (!membership.active && !isEditing) return NextResponse.json({ error: 'membership-required', message: 'नई प्रोफ़ाइल बनाने के लिए सदस्यता आवश्यक है।' }, { status: 402 });
 
   const body = await req.json().catch(() => ({}));
   // Admin ki tay ki hui option-list (settings/matrimony_options) — wahi jaanchi jaati hai
@@ -51,9 +55,6 @@ export async function POST(req: Request) {
   const res = cleanProfileInput(body, opts);
   if (!res.ok) return NextResponse.json({ error: 'bad-input', message: res.error }, { status: 400 });
 
-  // Ek number = ek profile (id random; number kabhi id me nahi, warna hash se number toda ja sakta)
-  const idxRef = db.collection('matrimony_index').doc(phone);
-  const existing = (await idxRef.get()).data();
   const profileId = existing?.profileId || db.collection('matrimony_profiles').doc().id;
 
   const profileRef = db.collection('matrimony_profiles').doc(profileId);
