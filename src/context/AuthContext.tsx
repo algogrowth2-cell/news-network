@@ -32,10 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          setRole(userDoc.data().role || 'user');
-        } else {
+        // OTP/custom-token user ka uid 'ph_<number>' hota hai — rules sirf 'u_<number>' padhne dete hain,
+        // isliye yahan deny ho sakta hai. try/catch se error chup (role waise bhi 'user' default).
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          setRole(userDoc.exists() ? userDoc.data().role || 'user' : 'user');
+        } catch {
           setRole('user');
         }
       } else {
