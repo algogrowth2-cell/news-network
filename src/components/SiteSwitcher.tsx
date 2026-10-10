@@ -3,39 +3,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { NETWORK_SITES, type SiteItem } from '@/lib/portals';
+import { authFetch } from '@/lib/phoneAuth';
 
 export { NETWORK_SITES, type SiteItem };
 
 const getSsoSessionParam = () => {
   try {
     const cached = localStorage.getItem('reader_user');
-    if (cached) {
-      const encoded = btoa(encodeURIComponent(cached));
-      return `sso_session=${encoded}`;
-    }
+    if (cached) return `sso_session=${btoa(encodeURIComponent(cached))}`;
   } catch (err) {
     console.error('SSO param generation error:', err);
   }
   return '';
 };
 
-// Portal par bhejta hai (SSO session ke saath), localhost/vercel par ?site= se
-export const navigateToSite = (site: SiteItem) => {
-  const ssoParam = getSsoSessionParam();
-  if (typeof window !== 'undefined') {
-    const currentHost = window.location.hostname.toLowerCase().replace('www.', '');
-    if (currentHost.includes('localhost') || currentHost.includes('vercel.app')) {
-      const queryStr = `?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
-      window.location.href = queryStr;
-      return;
+// Firebase login ka handoff-token — taaki doosre domain par bhi login rahe (SECURE_AUTH)
+const getSsoFbParam = async (): Promise<string> => {
+  try {
+    const r = await authFetch('/api/auth/sso-token', { method: 'POST' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j.token) return `sso_fb=${encodeURIComponent(j.token)}`;
     }
+  } catch {
+    /* login na ho toh kuch nahi */
+  }
+  return '';
+};
 
-    if (site.domain) {
-      const targetUrl = `https://${site.domain}${ssoParam ? `?${ssoParam}` : ''}`;
-      window.location.href = targetUrl;
-    } else {
-      window.location.href = `/?site=${site.slug}${ssoParam ? `&${ssoParam}` : ''}`;
-    }
+// Portal par bhejta hai (login handoff ke saath), localhost/vercel par ?site= se
+export const navigateToSite = async (site: SiteItem) => {
+  const params = [getSsoSessionParam(), await getSsoFbParam()].filter(Boolean).join('&');
+  if (typeof window === 'undefined') return;
+  const currentHost = window.location.hostname.toLowerCase().replace('www.', '');
+  if (currentHost.includes('localhost') || currentHost.includes('vercel.app')) {
+    window.location.href = `?site=${site.slug}${params ? `&${params}` : ''}`;
+  } else if (site.domain) {
+    window.location.href = `https://${site.domain}${params ? `?${params}` : ''}`;
+  } else {
+    window.location.href = `/?site=${site.slug}${params ? `&${params}` : ''}`;
   }
 };
 
@@ -75,8 +81,9 @@ export default function SiteSwitcher({
   };
 
   const handleSelectSite = (site: SiteItem) => {
-    setDropdownOpen(false);
-    if (site.slug !== currentSlug) navigateToSite(site);
+    if (site.slug === currentSlug) { setDropdownOpen(false); return; }
+    // Login handoff-token lekar jaate hain (thoda ruk kar) — isliye dropdown band nahi karte turant
+    navigateToSite(site);
   };
 
   const currentSiteObj = NETWORK_SITES.find((s) => s.slug === currentSlug) || NETWORK_SITES[0];

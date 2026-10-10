@@ -1,7 +1,7 @@
 'use client';
 import { Fragment, Suspense, useEffect, useRef, useState } from 'react';
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
 import { SECURE_AUTH } from '@/lib/phoneAuth';
 import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
@@ -542,6 +542,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
 
   // 🔐 CROSS-DOMAIN SSO TOKEN READER & AUTH PERSISTENCE LISTENER
   useEffect(() => {
+    // Firebase handoff-token (portal switch se) — isse naye domain par login ho jaata hai
+    const ssoFb = searchParams?.get('sso_fb');
+    if (ssoFb) {
+      signInWithCustomToken(getAuth(app), ssoFb).catch((e) => console.error('SSO sign-in:', e?.message || e));
+      const kept = searchParams.get('site') ? `?site=${searchParams.get('site')}` : '';
+      window.history.replaceState({}, '', window.location.pathname + kept); // token URL se hatao
+    }
     const ssoSession = searchParams?.get('sso_session');
     if (ssoSession) {
       try {
@@ -567,6 +574,10 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
         }
       }
     }
+
+    // SSO handoff ke dauraan Firebase sign-in abhi chal raha hai — is load par reader_user ko hatao mat
+    // (warna sign-in se pehle null-user wali jaanch use uda deti). Agli load par normal jaanch chalegi.
+    if (ssoFb) return;
 
     // Firebase pehchaan (OTP ke baad server token) se milaan: SECURE mode me pathak session tabhi maana jaata hai
     // jab Firebase user isi mobile ka ho — warna logout (purana/nakli localStorage session).
