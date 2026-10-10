@@ -3,10 +3,11 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 // ASTHAYI diagnostic — server se S3 par ek test file. Asli AWS error dikhata hai. Baad me hata denge.
 export async function GET() {
-  const REGION = process.env.S3_REGION || 'ap-south-1';
-  const BUCKET = process.env.S3_BUCKET || 'goldenpearl-media';
-  const KEY_ID = process.env.S3_ACCESS_KEY_ID || '';
-  const SECRET = process.env.S3_SECRET_ACCESS_KEY || '';
+  const clean = (v: string | undefined) => String(v || '').replace(/[\r\n\t]/g, '').replace(/^['"\s]+|['"\s]+$/g, '');
+  const REGION = clean(process.env.S3_REGION) || 'ap-south-1';
+  const BUCKET = clean(process.env.S3_BUCKET) || 'goldenpearl-media';
+  const KEY_ID = clean(process.env.S3_ACCESS_KEY_ID);
+  const SECRET = clean(process.env.S3_SECRET_ACCESS_KEY);
   const info: any = { region: REGION, bucket: BUCKET, hasKey: !!KEY_ID, keyIdPrefix: KEY_ID.slice(0, 4), hasSecret: !!SECRET };
   if (!KEY_ID || !SECRET) return NextResponse.json({ ok: false, step: 'env', ...info });
   try {

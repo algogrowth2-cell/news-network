@@ -2,10 +2,12 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const REGION = process.env.S3_REGION || 'ap-south-1';
-const BUCKET = process.env.S3_BUCKET || 'goldenpearl-media';
-const KEY_ID = process.env.S3_ACCESS_KEY_ID || '';
-const SECRET = process.env.S3_SECRET_ACCESS_KEY || '';
+// Copy-paste se aaye faltu space/newline/quotes hata do (warna "Invalid character in header" / 403)
+const clean = (v: string | undefined) => String(v || '').replace(/[\r\n\t]/g, '').replace(/^['"\s]+|['"\s]+$/g, '');
+const REGION = clean(process.env.S3_REGION) || 'ap-south-1';
+const BUCKET = clean(process.env.S3_BUCKET) || 'goldenpearl-media';
+const KEY_ID = clean(process.env.S3_ACCESS_KEY_ID);
+const SECRET = clean(process.env.S3_SECRET_ACCESS_KEY);
 
 export const s3Configured = () => !!(KEY_ID && SECRET && BUCKET);
 export const s3PublicUrl = (key: string) => `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
