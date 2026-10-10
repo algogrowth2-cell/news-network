@@ -17,6 +17,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    // AWS S3 (Mumbai) ki images next/image se optimize ho sakें
+    remotePatterns: [
+      { protocol: 'https', hostname: 'goldenpearl-media.s3.ap-south-1.amazonaws.com' },
+      { protocol: 'https', hostname: '*.amazonaws.com' }
+    ]
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

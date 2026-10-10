@@ -13,6 +13,7 @@ import { confirmPayment } from '@/lib/payments';
 import { matrimonyPlans } from '@/lib/pricing';
 import { usePricing } from '@/lib/usePricing';
 import { useMatrimonyOptions } from '@/lib/useMatrimonyOptions';
+import { compressToBlob, uploadToS3 } from '@/lib/s3Upload';
 import {
   ageFromDob, careerLine, CASTE_PREFERENCES, EMPLOYMENT_TYPES, GENDERS, heightLabel, HEIGHT_OPTIONS,
   MAX_PHOTOS, SIBLING_COUNTS, WORKS_FOR_PAY, type Gender, type MatrimonyProfile
@@ -559,7 +560,12 @@ function MyProfile({ slug, phone }: { slug: string; phone: string }) {
     const add: string[] = [];
     for (const file of files.slice(0, room)) {
       if (file.size > 10 * 1024 * 1024) continue;
-      try { add.push(await fileToSmallDataUrl(file)); } catch {}
+      try {
+        // Pehle AWS S3 par (halki, tez). S3 set na ho (null) ya fail ho toh purana base64.
+        const blob = await compressToBlob(file, 1200, 0.82);
+        const url = await uploadToS3(blob, 'matrimony').catch(() => null);
+        add.push(url || (await fileToSmallDataUrl(file)));
+      } catch { try { add.push(await fileToSmallDataUrl(file)); } catch {} }
     }
     if (add.length) setF((p: any) => { const arr = [...(p.photos || []), ...add].slice(0, MAX_PHOTOS); return { ...p, photos: arr, photoUrl: arr[0] }; });
   };
