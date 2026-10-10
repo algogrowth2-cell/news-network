@@ -218,7 +218,7 @@ export function AdBanner({ slug, height = 110 }: { slug: string; height?: number
     <>
       <Styles />
       {ad ? (
-        <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)}>
+        <a href={ad.targetUrl || '#'} target="_blank" rel="noopener noreferrer sponsored" data-ad={ad.id} onClick={() => adClick(ad.id)} style={{ display: 'block', minHeight: 90 }}>
           <AdMedia ad={ad} alt={ad.name || (en ? 'Advertisement' : 'विज्ञापन')} className="sa-img" style={FULL_BANNER} />
         </a>
       ) : (

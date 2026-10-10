@@ -1394,7 +1394,7 @@ function HomePageContent() {
               {filteredArticles[0] && (
                 <Link href={articleHref(filteredArticles[0])} className="hp-hero">
                   {filteredArticles[0].image && (
-                    <img src={filteredArticles[0].image} alt={filteredArticles[0].title} className="hp-hero-img" />
+                    <img src={filteredArticles[0].image} alt={filteredArticles[0].title} className="hp-hero-img" fetchPriority="high" decoding="async" />
                   )}
                   <div className="hp-hero-body">
                     <span className="hp-badge" style={{ background: primary }}>
