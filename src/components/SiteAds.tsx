@@ -130,7 +130,7 @@ export function useSiteAds(slug: string) {
   useEffect(() => {
     if (!slug) return;
     let alive = true;
-    loadAds(slug).then((d) => alive && setData(d));
+    loadAds(slug).then((d) => alive && setData(d)).catch((e) => console.warn('ads load:', e?.message || e));
     return () => {
       alive = false;
     };
