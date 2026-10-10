@@ -1,5 +1,6 @@
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import { compressToBlob, uploadToS3 } from '@/lib/s3Upload';
 
 export const MAX_IMAGE_MB = 10;
 export const MAX_VIDEO_MB = 200;
@@ -16,9 +17,26 @@ export function validateMedia(file: File, kind: MediaKind): string | null {
 }
 
 /**
- * Firebase Storage me upload (articles/{yyyy-mm}/…) — progress 0-100 deta hai, public download URL lautata hai.
+ * News media upload — pehle AWS S3 par (image automatic COMPRESS hokar, halki & tez; quality ~85%, max 1600px).
+ * GIF/video jaise ke taise. S3 set na ho / fail ho toh purana Firebase Storage tareeka (fallback).
  */
-export function uploadArticleMedia(file: File, kind: MediaKind, onProgress?: (pct: number) => void): Promise<string> {
+export async function uploadArticleMedia(file: File, kind: MediaKind, onProgress?: (pct: number) => void): Promise<string> {
+  try {
+    onProgress?.(5);
+    // Image (GIF nahi — animation na tute) ko compress; baaki jaise ke taise
+    const blob: Blob = kind === 'image' && file.type !== 'image/gif' ? await compressToBlob(file, 1600, 0.85) : file;
+    onProgress?.(35);
+    const url = await uploadToS3(blob, 'news'); // 503 (S3 off) → null
+    if (url) { onProgress?.(100); return url; }
+  } catch (e) {
+    console.warn('S3 news upload fail, Firebase fallback:', (e as any)?.message || e);
+  }
+  // Fallback: purana Firebase Storage
+  return uploadViaFirebase(file, kind, onProgress);
+}
+
+/** Purana Firebase Storage upload (fallback) */
+function uploadViaFirebase(file: File, kind: MediaKind, onProgress?: (pct: number) => void): Promise<string> {
   const now = new Date();
   const folder = `articles/${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').slice(-60);

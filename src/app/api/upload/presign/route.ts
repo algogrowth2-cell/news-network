@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { phoneFromRequest } from '@/lib/firebaseAdmin';
+import { ADMIN_COOKIE, readSession } from '@/lib/adminAuth';
 import { presignUpload, s3Configured } from '@/lib/s3';
 
 /*
@@ -15,16 +17,21 @@ const EXT_OK: Record<string, string> = {
 export async function POST(req: Request) {
   if (!s3Configured()) return NextResponse.json({ error: 'not-configured' }, { status: 503 });
   const phone = await phoneFromRequest(req);
-  if (!phone) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया लॉगिन करें।' }, { status: 401 });
+  let admin = false;
+  try { admin = !!readSession((await cookies()).get(ADMIN_COOKIE)?.value); } catch {}
+  if (!phone && !admin) return NextResponse.json({ error: 'unauthenticated', message: 'कृपया लॉगिन करें।' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const folder = FOLDERS.includes(String(body.folder)) ? String(body.folder) : 'misc';
+  // 'news' folder sirf admin ke liye
+  if (folder === 'news' && !admin) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const contentType = String(body.contentType || '');
   const ext = EXT_OK[contentType];
   if (!ext) return NextResponse.json({ error: 'bad-type', message: 'इस फ़ाइल प्रकार की अनुमति नहीं है।' }, { status: 400 });
 
   const rand = Math.random().toString(36).slice(2, 10);
-  const key = `${folder}/${phone}/${Date.now()}-${rand}.${ext}`;
+  const who = phone || 'admin';
+  const key = `${folder}/${who}/${Date.now()}-${rand}.${ext}`;
   try {
     const { url, publicUrl } = await presignUpload(key, contentType);
     return NextResponse.json({ ok: true, url, publicUrl });
