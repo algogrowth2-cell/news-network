@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
-import { collection, doc, getDocs, increment, query, updateDoc, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { normalizeSiteId } from '@/lib/portals';
 import { fallbackFor, getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
@@ -143,7 +143,7 @@ function useImpression(ads: AdSet | null, ad: SiteAd | null | undefined) {
   useEffect(() => {
     if (!ads || !ad || ads.seen.has(ad.id)) return;
     ads.seen.add(ad.id);
-    updateDoc(doc(db, 'ads', ad.id), { impressions: increment(1) }).catch(() => {});
+    fetch('/api/ads/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ad.id, type: 'impression' }), keepalive: true }).catch(() => {});
   }, [ads, ad]);
 }
 
@@ -177,7 +177,7 @@ export function AdMedia({ ad, alt, className, style }: { ad: { imageUrl?: string
 const FULL_BANNER: React.CSSProperties = { width: '100%', height: 'auto', maxHeight: 320, objectFit: 'contain' };
 const FULL_SIDE: React.CSSProperties = { width: '100%', height: 'auto', maxHeight: 600, objectFit: 'contain' };
 
-const adClick = (id: string) => updateDoc(doc(db, 'ads', id), { clicks: increment(1) }).catch(() => {});
+const adClick = (id: string) => fetch('/api/ads/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, type: 'click' }), keepalive: true }).catch(() => {});
 
 const CSS = `
 .sa-slot{display:flex;align-items:center;justify-content:center;background:#fff;border:1px dashed #d6d3cd;border-radius:10px;color:#aaa;font-size:12px;text-align:center;padding:10px;box-sizing:border-box;width:100%}
