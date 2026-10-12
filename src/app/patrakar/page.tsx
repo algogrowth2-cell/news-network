@@ -2,17 +2,9 @@ import Link from 'next/link';
 import PublicPageHeader from '@/components/PublicPageHeader';
 import { AdLayout, AdInline } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
+import { getPageContent, type IntroContent } from '@/lib/pageContent';
 
 export const metadata = { title: 'पत्रकार बनें — हमारे साथ जुड़ें' };
-
-const BENEFITS = [
-  { icon: '🪪', h: 'डिजिटल प्रेस पहचान पत्र', p: 'सत्यापन के बाद आपको आधिकारिक डिजिटल प्रेस ID कार्ड मिलता है — अपने नाम और फोटो के साथ।' },
-  { icon: '📝', h: 'अपनी खबरें प्रकाशित करें', p: 'अपने इलाके की खबरें सीधे पोर्टल पर भेजें। संपादकीय समीक्षा के बाद वे वेबसाइट पर लाइव होती हैं।' },
-  { icon: '🌐', h: '8 पोर्टल का नेटवर्क', p: 'हमारे पूरे न्यूज़ नेटवर्क में आपकी खबरों को पहुँच और पहचान मिलती है।' },
-  { icon: '📊', h: 'अपना डैशबोर्ड', p: 'आपकी भेजी खबरें, उनकी स्थिति (समीक्षा/प्रकाशित) और व्यूज़ — सब एक जगह।' },
-  { icon: '📸', h: 'फोटो व वीडियो', p: 'अपनी रिपोर्ट के साथ फोटो और वीडियो जोड़ें — खबर को और भरोसेमंद बनाएं।' },
-  { icon: '🤝', h: 'पहचान और सम्मान', p: 'हर प्रकाशित खबर आपके नाम के साथ जाती है — एक पत्रकार के रूप में अपनी पहचान बनाएं।' }
-];
 
 const CSS = `
 .pp{min-height:100vh;background:#f4f6f9;font-family:system-ui,-apple-system,'Noto Sans Devanagari',sans-serif;color:#0f172a}
@@ -51,6 +43,7 @@ export default async function PatrakarIntro({ searchParams }: { searchParams: Pr
   const theme = fallbackFor(slug);
   const c = theme.primaryColor || '#ea580c';
   const q = `?site=${encodeURIComponent(slug)}`;
+  const content: IntroContent = await getPageContent('patrakar');
 
   return (
     <div className="pp">
@@ -59,27 +52,21 @@ export default async function PatrakarIntro({ searchParams }: { searchParams: Pr
 
       <section className="pp-hero" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.34))' }}>
         <div className="pp-hero-in">
-          <span className="pp-badge">✍️ पत्रकार पोर्टल</span>
-          <h1 className="pp-h1">हमारे पत्रकार बनें</h1>
-          <p className="pp-lead">
-            क्या आप अपने इलाके की सच्ची खबरें लोगों तक पहुँचाना चाहते हैं? हमारे न्यूज़ नेटवर्क से जुड़िए और
-            एक सत्यापित पत्रकार के रूप में अपनी पहचान बनाइए। नीचे जानिए आपको क्या-क्या मिलेगा।
-          </p>
+          <span className="pp-badge">{content.badge}</span>
+          <h1 className="pp-h1">{content.title}</h1>
+          <p className="pp-lead">{content.subtitle}</p>
           <div className="pp-trust">
-            <span>🪪 सत्यापित प्रेस ID</span>
-            <span>🌐 8 पोर्टल नेटवर्क</span>
-            <span>⚡ मिनटों में रजिस्ट्रेशन</span>
-            <span>✅ फ्री जुड़ें</span>
+            {content.trust.map((t, i) => <span key={i}>{t}</span>)}
           </div>
         </div>
       </section>
 
       <AdLayout slug={slug} color={c}>
         <div style={{ padding: '22px 0 4px' }}>
-          <div className="pp-sec">आपको क्या-क्या मिलेगा</div>
+          <div className="pp-sec">{content.benefitsHeading}</div>
           <div className="pp-grid">
-            {BENEFITS.map((b) => (
-              <div key={b.h} className="pp-card">
+            {content.benefits.map((b, i) => (
+              <div key={i} className="pp-card">
                 <div className="pp-ic" style={{ background: c + '18', color: c }}>{b.icon}</div>
                 <h3>{b.h}</h3>
                 <p>{b.p}</p>
@@ -93,8 +80,8 @@ export default async function PatrakarIntro({ searchParams }: { searchParams: Pr
 
           <div className="pp-cta" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.1), rgba(0,0,0,.3))' }}>
             <div className="pp-cta-in">
-              <h2>आज ही जुड़ें</h2>
-              <p>पहले से खाता है तो लॉगिन करें, या नया पत्रकार खाता बनाएं। (मोबाइल OTP से सुरक्षित सत्यापन)</p>
+              <h2>{content.ctaTitle}</h2>
+              <p>{content.ctaText}</p>
               <div className="pp-btns">
                 <Link href={`/patrakar/login${q}`} className="pp-btn solid" style={{ color: c }}>लॉगिन करें</Link>
                 <Link href={`/patrakar/signup${q}`} className="pp-btn ghost">नया खाता बनाएं</Link>

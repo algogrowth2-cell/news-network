@@ -2,17 +2,9 @@ import Link from 'next/link';
 import PublicPageHeader from '@/components/PublicPageHeader';
 import { AdLayout, AdInline } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
+import { getPageContent, type IntroContent } from '@/lib/pageContent';
 
 export const metadata = { title: 'विज्ञापन दें — अपना व्यापार बढ़ाएं' };
-
-const BENEFITS = [
-  { icon: '📈', h: 'व्यापार तेज़ी से बढ़ाएं', p: 'हज़ारों पाठकों तक सीधे पहुँचें और अपने ग्राहक बढ़ाएं — स्थानीय से लेकर पूरे राज्य तक।' },
-  { icon: '🎯', h: 'सही लोगों तक मार्केटिंग', p: 'अपने शहर/राज्य और श्रेणी के अनुसार विज्ञापन दिखाएं — जहाँ आपके ग्राहक हैं वहीं पहुँचें।' },
-  { icon: '🌐', h: '8 न्यूज़ पोर्टल का नेटवर्क', p: 'एक ही जगह से हमारे पूरे नेटवर्क पर विज्ञापन — ज़्यादा लोग, ज़्यादा पहचान।' },
-  { icon: '💰', h: 'किफ़ायती और लचीले प्लान', p: 'छोटे दुकानदार से बड़े ब्रांड तक — हर बजट के लिए विकल्प। आप तय करें कहाँ और कितना।' },
-  { icon: '📊', h: 'लाइव रिपोर्ट', p: 'आपका विज्ञापन कितनी बार दिखा और कितने लोगों ने क्लिक किया — सब अपने डैशबोर्ड में देखें।' },
-  { icon: '🏷️', h: 'ब्रांड की पहचान', p: 'लगातार दिखने से लोगों के मन में आपके ब्रांड का भरोसा और पहचान बनती है।' }
-];
 
 const CSS = `
 .pp{min-height:100vh;background:#f4f6f9;font-family:system-ui,-apple-system,'Noto Sans Devanagari',sans-serif;color:#0f172a}
@@ -51,6 +43,7 @@ export default async function AdvertiserIntro({ searchParams }: { searchParams: 
   const theme = fallbackFor(slug);
   const c = theme.primaryColor || '#1d4ed8';
   const q = `?site=${encodeURIComponent(slug)}`;
+  const content: IntroContent = await getPageContent('advertiser');
 
   return (
     <div className="pp">
@@ -59,27 +52,21 @@ export default async function AdvertiserIntro({ searchParams }: { searchParams: 
 
       <section className="pp-hero" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.34))' }}>
         <div className="pp-hero-in">
-          <span className="pp-badge">📢 विज्ञापन पोर्टल</span>
-          <h1 className="pp-h1">अपना व्यापार हमारे साथ बढ़ाएं</h1>
-          <p className="pp-lead">
-            हमारे न्यूज़ नेटवर्क पर रोज़ हज़ारों लोग खबरें पढ़ते हैं। अपने व्यापार, दुकान या सेवा का विज्ञापन
-            यहाँ देकर सीधे उन तक पहुँचें। नीचे जानिए विज्ञापन देने से आपको क्या-क्या फ़ायदा होगा।
-          </p>
+          <span className="pp-badge">{content.badge}</span>
+          <h1 className="pp-h1">{content.title}</h1>
+          <p className="pp-lead">{content.subtitle}</p>
           <div className="pp-trust">
-            <span>📈 ज़्यादा ग्राहक</span>
-            <span>🎯 टार्गेटेड पहुँच</span>
-            <span>💰 हर बजट के प्लान</span>
-            <span>📊 लाइव रिपोर्ट</span>
+            {content.trust.map((t, i) => <span key={i}>{t}</span>)}
           </div>
         </div>
       </section>
 
       <AdLayout slug={slug} color={c}>
         <div style={{ padding: '22px 0 4px' }}>
-          <div className="pp-sec">विज्ञापन देने के फ़ायदे</div>
+          <div className="pp-sec">{content.benefitsHeading}</div>
           <div className="pp-grid">
-            {BENEFITS.map((b) => (
-              <div key={b.h} className="pp-card">
+            {content.benefits.map((b, i) => (
+              <div key={i} className="pp-card">
                 <div className="pp-ic" style={{ background: c + '18', color: c }}>{b.icon}</div>
                 <h3>{b.h}</h3>
                 <p>{b.p}</p>
@@ -93,8 +80,8 @@ export default async function AdvertiserIntro({ searchParams }: { searchParams: 
 
           <div className="pp-cta" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.1), rgba(0,0,0,.3))' }}>
             <div className="pp-cta-in">
-              <h2>अभी शुरू करें</h2>
-              <p>पहले से खाता है तो लॉगिन करें, या नया विज्ञापनदाता खाता बनाएं। (मोबाइल OTP से सुरक्षित)</p>
+              <h2>{content.ctaTitle}</h2>
+              <p>{content.ctaText}</p>
               <div className="pp-btns">
                 <Link href={`/advertiser/login${q}`} className="pp-btn solid" style={{ color: c }}>लॉगिन करें</Link>
                 <Link href={`/advertiser/signup${q}`} className="pp-btn ghost">नया खाता बनाएं</Link>

@@ -7,6 +7,7 @@ import { uploadToS3, compressToBlob } from '@/lib/s3Upload';
 import PublicPageHeader from '@/components/PublicPageHeader';
 import { AdLayout, AdInline } from '@/components/SiteAds';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
+import { usePageContent } from '@/lib/usePageContent';
 
 const CATS = ['दुर्घटना', 'अपराध', 'राजनीति', 'समाज', 'खेल', 'शिक्षा', 'स्वास्थ्य', 'मौसम', 'भ्रष्टाचार', 'अन्य'];
 const MAX_PHOTOS = 6;
@@ -57,7 +58,8 @@ function JantaDarbaar() {
   const sp = useSearchParams();
   const router = useRouter();
   const site = getActivePortal(sp.get('site'));
-  const c = fallbackFor(site).primaryColor || 'var(--jc,#ea580c)';
+  const c = fallbackFor(site).primaryColor || '#ea580c';
+  const jc = usePageContent('janta');
   const [user, setUser] = useState<{ name?: string; phone?: string } | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -141,12 +143,9 @@ function JantaDarbaar() {
       <PublicPageHeader slug={site} />
       <div className="jd-hero" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.32))' }}>
         <div style={{ maxWidth: 1380, margin: '0 auto', padding: '0 16px' }}>
-          <span className="jd-badge">📣 जनता दरबार</span>
-          <h1 className="jd-h1">आपके आस-पास की खबर, अब आपकी ज़ुबानी</h1>
-          <p className="jd-sub">
-            आपने कुछ देखा — कोई घटना, समस्या, या कोई अच्छी खबर? सीधे हमें भेजिए। फोटो और वीडियो के साथ।
-            हमारी टीम सत्यापित करके उसे वेबसाइट पर प्रकाशित करेगी।
-          </p>
+          <span className="jd-badge">{jc.badge}</span>
+          <h1 className="jd-h1">{jc.title}</h1>
+          <p className="jd-sub">{jc.subtitle}</p>
         </div>
       </div>
 
@@ -156,24 +155,20 @@ function JantaDarbaar() {
           // ---------- Logged-out: jaankari + login ----------
           <>
             <div className="jd-card">
-              <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>जनता दरबार क्या है?</h3>
-              <p style={{ margin: 0, color: '#475569', fontSize: 14.5, lineHeight: 1.7 }}>
-                जनता दरबार एक <b>नागरिक पत्रकारिता</b> मंच है। यहाँ कोई भी आम नागरिक अपने इलाके की खबर,
-                घटना या समस्या — फोटो और वीडियो के साथ — सीधे हमारे पास भेज सकता है। हमारी संपादकीय टीम
-                हर खबर की <b>जाँच करती है</b>, और सही पाए जाने पर उसे वेबसाइट पर <b>आपके नाम के साथ</b> प्रकाशित किया जाता है।
-              </p>
-              <div className="jd-steps">
-                <div className="jd-step"><div className="n">1</div><h4>खबर लिखें</h4><p>क्या, कहाँ और कब हुआ — संक्षेप में बताएं।</p></div>
-                <div className="jd-step"><div className="n">2</div><h4>फोटो/वीडियो</h4><p>अपने फ़ोन से सीधे फोटो या वीडियो जोड़ें।</p></div>
-                <div className="jd-step"><div className="n">3</div><h4>प्रकाशन</h4><p>टीम सत्यापन के बाद खबर लाइव कर देगी।</p></div>
-              </div>
+              <h3 style={{ margin: '0 0 6px', fontSize: 18 }}>{jc.aboutTitle}</h3>
+              <p style={{ margin: 0, color: '#475569', fontSize: 14.5, lineHeight: 1.7 }}>{jc.aboutText}</p>
+              {jc.steps?.length > 0 && (
+                <div className="jd-steps">
+                  {jc.steps.map((st: { h: string; p: string }, i: number) => (
+                    <div className="jd-step" key={i}><div className="n">{i + 1}</div><h4>{st.h}</h4><p>{st.p}</p></div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="jd-card" style={{ textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 6px', fontSize: 17 }}>खबर भेजने के लिए लॉगिन करें</h3>
-              <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 14 }}>
-                सुरक्षा और भरोसे के लिए खबर सिर्फ़ लॉगिन किए हुए उपयोगकर्ता ही भेज सकते हैं। एक मिनट में मोबाइल OTP से लॉगिन/साइनअप करें।
-              </p>
+              <h3 style={{ margin: '0 0 6px', fontSize: 17 }}>{jc.loginTitle}</h3>
+              <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 14 }}>{jc.loginText}</p>
               <Link href={`/login?redirect=${encodeURIComponent('/janta-darbaar?site=' + site)}`} className="jd-btn">
                 लॉगिन / साइनअप →
               </Link>
