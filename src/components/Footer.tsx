@@ -439,20 +439,30 @@ export default function Footer({
                   <WhatsAppIcon />
                   <span>{t.whatsapp}</span>
                 </a>
-                {/* WhatsApp broadcast/channel — admin URL set ho tabhi */}
-                {contact.whatsappChannel && (
-                  <a href={contact.whatsappChannel} target="_blank" rel="noopener noreferrer" className="gp-ft-wa-channel" aria-label={t.whatsappChannel}>
-                    <WhatsAppIcon />
-                    <span>{t.whatsappChannel}</span>
-                  </a>
-                )}
-                {/* Telegram channel — admin URL set ho tabhi */}
-                {contact.telegram && (
-                  <a href={contact.telegram} target="_blank" rel="noopener noreferrer" className="gp-ft-tg" aria-label={t.telegram}>
-                    <TelegramIcon />
-                    <span>{t.telegram}</span>
-                  </a>
-                )}
+                {/* WhatsApp broadcast/channel — hamesha dikhega; URL set ho to uspe redirect */}
+                <a
+                  href={contact.whatsappChannel || '#'}
+                  target={contact.whatsappChannel ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  className="gp-ft-wa-channel"
+                  aria-label={t.whatsappChannel}
+                  onClick={(e) => { if (!contact.whatsappChannel) e.preventDefault(); }}
+                >
+                  <WhatsAppIcon />
+                  <span>{t.whatsappChannel}</span>
+                </a>
+                {/* Telegram channel — hamesha dikhega; URL set ho to uspe redirect */}
+                <a
+                  href={contact.telegram || '#'}
+                  target={contact.telegram ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  className="gp-ft-tg"
+                  aria-label={t.telegram}
+                  onClick={(e) => { if (!contact.telegram) e.preventDefault(); }}
+                >
+                  <TelegramIcon />
+                  <span>{t.telegram}</span>
+                </a>
                 {/* Footer wali email (goldenpearlnews@gmail.com) par seedha mail */}
                 <a href={gmailUrl} className="gp-ft-gmail" aria-label={` ()`} title={contact.email}>
                   <GmailIcon />
