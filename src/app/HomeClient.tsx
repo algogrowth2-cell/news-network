@@ -200,7 +200,9 @@ body {
 .hp-mobile-tools{display:none;align-items:center;gap:8px}
 /* Mobile/tablet header (≤820px): portal switcher sirf 🌐 gol icon — naam header me dikhta hai */
 .hp-mobile-tools .ss-name,.hp-mobile-tools .ss-caret{display:none}
-.hp-mobile-tools .ss-btn{padding:0 !important;width:34px;height:34px;justify-content:center;border-radius:50% !important}
+.hp-mobile-tools .ss-btn{padding:0 !important;width:34px;height:34px;gap:0 !important;justify-content:center;border-radius:50% !important}
+.hp-mobile-tools .lt-trigger{padding:0 !important;width:34px;height:34px;gap:0 !important;justify-content:center;border-radius:50% !important}
+.hp-mobile-tools .lt-trigger-text,.hp-mobile-tools .lt-trigger-caret{display:none}
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
 .hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
@@ -1188,10 +1190,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
           {/* Mobile Tools */}
           <div className="hp-mobile-tools">
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
+            <Suspense fallback={null}>
+              <LanguageTranslator />
+            </Suspense>
             <button
               onClick={() => setSearchModalOpen(true)}
               aria-label="सर्च"
-              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: '#555' }}
+              style={{ background: '#f5f4f1', border: '1px solid #e5e3df', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: '#555' }}
             >
               <SearchIcon size={15} />
             </button>

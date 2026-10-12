@@ -225,8 +225,9 @@ function LanguageTranslatorInner() {
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="notranslate"
+        className="notranslate lt-trigger"
         translate="no"
+        aria-label="भाषा बदलें / Change language"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -245,8 +246,8 @@ function LanguageTranslatorInner() {
         }}
       >
         <span>🌐</span>
-        <span>{currentLangObj.native}</span>
-        <span style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
+        <span className="lt-trigger-text">{currentLangObj.native}</span>
+        <span className="lt-trigger-caret" style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
 
       {/* POPUP & MOBILE MODAL */}
