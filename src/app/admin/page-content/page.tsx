@@ -20,7 +20,8 @@ const CSS = `
 .pc-tab.on{background:#ea580c;border-color:#ea580c;color:#fff}
 .pc-card{background:var(--bg-0f172a,#0f172a);border:1px solid var(--bd-1e293b,#1e293b);border-radius:14px;padding:20px;margin-bottom:16px}
 .pc-lbl{display:block;font-size:12.5px;font-weight:700;color:var(--fg-94a3b8,#94a3b8);margin:0 0 6px;letter-spacing:.03em}
-.pc-in,.pc-ta{width:100%;background:#020617;color:#fff;border:1px solid var(--bd-334155,#334155);border-radius:9px;padding:10px 12px;font-size:14px;outline:none;box-sizing:border-box}
+.pc-in,.pc-ta{width:100%;background:var(--bg-162238,#0b1220);color:var(--fg-ffffff,#fff);border:1px solid var(--bd-27354f,#334155);border-radius:9px;padding:10px 12px;font-size:14px;outline:none;box-sizing:border-box;font-family:inherit}
+.pc-in:focus,.pc-ta:focus{border-color:#ea580c}
 .pc-ta{resize:vertical;line-height:1.6;min-height:70px}
 .pc-field{margin-bottom:16px}
 .pc-sec{font-size:13px;font-weight:800;color:#fff;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
@@ -55,6 +56,15 @@ export default function AdminPageContent() {
     return () => { alive = false; };
   }, [tab]);
 
+  // Tab badalte hi us page ke sahi shape ka default + loading — warna purana data naye layout me crash karta tha
+  const switchTab = (key: PageKey) => {
+    if (key === tab) return;
+    setData(DEFAULT_FOR[key]);
+    setLoading(true);
+    setMsg('');
+    setTab(key);
+  };
+
   const set = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
   const setArr = (k: string, i: number, patch: any) =>
     setData((d: any) => ({ ...d, [k]: d[k].map((x: any, j: number) => (j === i ? (typeof x === 'string' ? patch : { ...x, ...patch }) : x)) }));
@@ -86,7 +96,7 @@ export default function AdminPageContent() {
 
         <div className="pc-tabs">
           {TABS.map((t) => (
-            <button key={t.key} className={`pc-tab ${tab === t.key ? 'on' : ''}`} onClick={() => setTab(t.key)}>{t.label}</button>
+            <button key={t.key} className={`pc-tab ${tab === t.key ? 'on' : ''}`} onClick={() => switchTab(t.key)}>{t.label}</button>
           ))}
         </div>
 
@@ -112,7 +122,7 @@ export default function AdminPageContent() {
 
                 <div className="pc-card">
                   <div className="pc-sec"><span>स्टेप्स (1-2-3)</span><button className="pc-add" onClick={() => addArr('steps', { h: '', p: '' })}>+ स्टेप जोड़ें</button></div>
-                  {data.steps.map((st: any, i: number) => (
+                  {(data.steps || []).map((st: any, i: number) => (
                     <div className="pc-row2" key={i}>
                       <input className="pc-in" placeholder="शीर्षक" value={st.h} onChange={(e) => setArr('steps', i, { h: e.target.value })} />
                       <input className="pc-in" placeholder="विवरण" value={st.p} onChange={(e) => setArr('steps', i, { p: e.target.value })} />
@@ -131,7 +141,7 @@ export default function AdminPageContent() {
               <>
                 <div className="pc-card">
                   <div className="pc-sec"><span>ट्रस्ट बैज (ऊपर की छोटी चिप्स)</span><button className="pc-add" onClick={() => addArr('trust', '')}>+ जोड़ें</button></div>
-                  {data.trust.map((t: string, i: number) => (
+                  {(data.trust || []).map((t: string, i: number) => (
                     <div className="pc-row3" key={i}>
                       <input className="pc-in" value={t} onChange={(e) => setArr('trust', i, e.target.value)} />
                       <button className="pc-del" onClick={() => delArr('trust', i)}>×</button>
@@ -145,7 +155,7 @@ export default function AdminPageContent() {
                     <button className="pc-add" onClick={() => addArr('benefits', { icon: '⭐', h: '', p: '' })}>+ कार्ड जोड़ें</button>
                   </div>
                   <div className="pc-field"><label className="pc-lbl">सेक्शन शीर्षक</label><input className="pc-in" value={data.benefitsHeading} onChange={(e) => set('benefitsHeading', e.target.value)} /></div>
-                  {data.benefits.map((b: any, i: number) => (
+                  {(data.benefits || []).map((b: any, i: number) => (
                     <div className="pc-row" key={i}>
                       <input className="pc-in" placeholder="आइकन" value={b.icon} onChange={(e) => setArr('benefits', i, { icon: e.target.value })} style={{ textAlign: 'center' }} />
                       <input className="pc-in" placeholder="शीर्षक" value={b.h} onChange={(e) => setArr('benefits', i, { h: e.target.value })} />
