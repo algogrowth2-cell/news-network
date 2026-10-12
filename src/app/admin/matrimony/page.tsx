@@ -50,6 +50,7 @@ export default function AdminMatrimony() {
   const [profiles, setProfiles] = useState<Row[]>([]);
   const [contacts, setContacts] = useState<Record<string, string>>({});
   const [interestCounts, setInterestCounts] = useState<Record<string, number>>({});
+  const [members, setMembers] = useState<{ active: number; total: number }>({ active: 0, total: 0 });
   const [tab, setTab] = useState<'pending' | 'approved' | 'rejected' | 'paused' | 'all'>('pending');
   const [error, setError] = useState('');
 
@@ -63,7 +64,12 @@ export default function AdminMatrimony() {
     const u3 = onSnapshot(collection(db, 'matrimony_interests'), (s) => {
       const m: Record<string, number> = {}; s.docs.forEach((d) => { const t = (d.data() as any).toProfileId; if (t) m[t] = (m[t] || 0) + 1; }); setInterestCounts(m);
     });
-    return () => { u1(); u2(); u3(); };
+    const u4 = onSnapshot(collection(db, 'matrimony_members'), (s) => {
+      const now = Date.now(); let active = 0;
+      s.docs.forEach((d) => { const e = (d.data() as any).expiresAt; const ms = e?.toDate ? e.toDate().getTime() : 0; if (ms > now) active++; });
+      setMembers({ active, total: s.size });
+    }, () => {});
+    return () => { u1(); u2(); u3(); u4(); };
   }, []);
 
   const setStatus = (r: Row, status: ProfileStatus) =>
@@ -94,6 +100,25 @@ export default function AdminMatrimony() {
       <p style={{ color: 'var(--fg-94a3b8)', fontSize: 13, marginBottom: 14 }}>एडमिन स्वीकृति के बाद ही प्रोफ़ाइल वेबसाइट पर दिखती है। संपर्क नंबर सिर्फ़ यहाँ दिखता है।</p>
 
       {error && <div style={{ background: '#7f1d1d', color: '#fecaca', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{error}</div>}
+
+      {/* Stats — ek nazar me poora tracking */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 10, marginBottom: 16 }}>
+        {[
+          { label: 'कुल प्रोफ़ाइल', value: counts.all, sub: 'सभी बनीं', color: '#60a5fa' },
+          { label: 'स्वीकृत (Live)', value: counts.approved || 0, sub: 'पूरी व वेबसाइट पर', color: '#34d399' },
+          { label: 'समीक्षा में', value: counts.pending || 0, sub: 'अधूरी / मंज़ूरी बाकी', color: '#fbbf24' },
+          { label: 'अस्वीकृत / रोकी', value: (counts.rejected || 0) + (counts.paused || 0), sub: 'हटाई/रोकी गईं', color: '#f87171' },
+          { label: 'फोटो वाली', value: profiles.filter((p) => p.photoUrl).length, sub: `${counts.all} में से`, color: '#a78bfa' },
+          { label: 'कुल रुचि', value: Object.values(interestCounts).reduce((a, b) => a + b, 0), sub: 'भेजी गई रुचियाँ', color: '#f472b6' },
+          { label: 'सक्रिय सदस्यता', value: members.active, sub: `${members.total} में से active`, color: '#22d3ee' }
+        ].map((s) => (
+          <div key={s.label} style={{ background: 'var(--bg-0b1120)', border: '1px solid var(--bd-1e293b)', borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--fg-cbd5e1)', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--fg-64748b)', marginTop: 1 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
 
       <div style={{ marginBottom: 14 }}>
         {(['pending', 'approved', 'paused', 'rejected', 'all'] as const).map((k) => (
