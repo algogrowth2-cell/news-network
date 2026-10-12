@@ -113,7 +113,14 @@ export default function SiteSwitcher({
           whiteSpace: 'nowrap'
         }}
       >
-        <span>🌐</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="3" width="7.5" height="7.5" rx="1.6" />
+            <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6" />
+            <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6" />
+            <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6" />
+          </svg>
+        </span>
         <span className="ss-name">{currentSiteObj.name}</span>
         <span className="ss-caret" style={{ fontSize: '9px', color: '#64748b' }}>▼</span>
       </button>
