@@ -91,14 +91,15 @@ export async function gaSummary(): Promise<GaSummary> {
     const reports = batch?.reports || [];
     const daily = reports[0]?.rows || [];
 
-    const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const since = (days: number) => {
-      const d = new Date();
-      d.setDate(d.getDate() - days);
-      return d.toISOString().slice(0, 10).replace(/-/g, '');
-    };
-    const d7 = since(6);
-    const d28 = since(27);
+    // GA property India time par hai — din bhi IST me gino (warna "aaj" galat)
+    const now = Date.now();
+    const ymd = (offsetDays: number) =>
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' })
+        .format(new Date(now + offsetDays * 86400000))
+        .replace(/-/g, '');
+    const todayStr = ymd(0);
+    const d7 = ymd(-6);
+    const d28 = ymd(-27);
 
     let today = { users: 0, views: 0 };
     const last7 = { users: 0, views: 0 };
@@ -120,11 +121,12 @@ export async function gaSummary(): Promise<GaSummary> {
     }
     void d28;
 
-    const topPages = (reports[1]?.rows || []).map((r: any) => ({
-      path: String(r.dimensionValues?.[0]?.value || ''),
-      title: String(r.dimensionValues?.[1]?.value || ''),
-      views: n(r.metricValues?.[0]?.value),
-    }));
+    const clean = (s: string) => (!s || s === '(not set)' ? '' : s);
+    const topPages = (reports[1]?.rows || []).map((r: any) => {
+      const path = clean(String(r.dimensionValues?.[0]?.value || ''));
+      const title = clean(String(r.dimensionValues?.[1]?.value || ''));
+      return { path, title: title || path || 'Home', views: n(r.metricValues?.[0]?.value) };
+    });
 
     const topSources = (reports[2]?.rows || []).map((r: any) => ({
       source: String(r.dimensionValues?.[0]?.value || 'Direct'),
