@@ -1142,10 +1142,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
 
           {/* Desktop Tools */}
           <div className="hp-tools hp-desktop-tools" ref={toolsRef}>
-            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Journalist' : 'पत्रकार'}>
+            <Link href={`/janta-darbaar?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}>
+              📣<span className="hp-tool-text"> {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}</span>
+            </Link>
+            <Link href={`/patrakar?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Journalist' : 'पत्रकार'}>
               ✍️<span className="hp-tool-text"> {isEnglishSite ? 'Journalist' : 'पत्रकार'}</span>
             </Link>
-            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Advertise' : 'विज्ञापन'}>
+            <Link href={`/advertiser?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Advertise' : 'विज्ञापन'}>
               📢<span className="hp-tool-text"> {isEnglishSite ? 'Advertise' : 'विज्ञापन'}</span>
             </Link>
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
@@ -1275,10 +1278,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
           </div>
           {categoryButtons}
           <div className="hp-drawer-links">
-            <Link href={`/patrakar/login?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/janta-darbaar?site=${currentSlug}`} className="hp-tool-link">
+              📣 {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}
+            </Link>
+            <Link href={`/patrakar?site=${currentSlug}`} className="hp-tool-link">
               ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
-            <Link href={`/advertiser/login?site=${currentSlug}`} className="hp-tool-link">
+            <Link href={`/advertiser?site=${currentSlug}`} className="hp-tool-link">
               📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
           </div>

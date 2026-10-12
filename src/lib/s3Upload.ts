@@ -5,7 +5,7 @@ import { authFetch } from '@/lib/phoneAuth';
  * Browser se AWS S3 par upload: server se signed URL lo, phir seedha S3 par PUT. Public URL wapas.
  * S3 set na ho (503) toh null — caller purana tareeka (base64) chala sakta hai.
  */
-export async function uploadToS3(file: Blob, folder: 'matrimony' | 'ads' | 'reporters' | 'news'): Promise<string | null> {
+export async function uploadToS3(file: Blob, folder: 'matrimony' | 'ads' | 'reporters' | 'news' | 'janta'): Promise<string | null> {
   try {
     const r = await authFetch('/api/upload/presign', { method: 'POST', body: JSON.stringify({ folder, contentType: file.type }) });
     if (r.status === 503) return null; // S3 abhi set nahi — fallback

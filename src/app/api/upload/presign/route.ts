@@ -8,7 +8,7 @@ import { presignUpload, s3Configured } from '@/lib/s3';
  * Login (Bearer token) wala user hi upload kar sakta hai. Server ek 2-min ka signed PUT URL deta hai;
  * browser seedha us URL par file daalता hai. Keys browser tak kabhi nahi jaati.
  */
-const FOLDERS = ['matrimony', 'ads', 'reporters', 'news'];
+const FOLDERS = ['matrimony', 'ads', 'reporters', 'news', 'janta'];
 const EXT_OK: Record<string, string> = {
   'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
   'video/mp4': 'mp4', 'video/webm': 'webm'

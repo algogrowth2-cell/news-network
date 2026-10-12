@@ -171,7 +171,8 @@ export default function AdminLayout({
         { label: 'E-Paper', icon: '📰', href: '/admin/epaper' },
         { label: 'Live Blogs', icon: '📡', href: '/admin/live-blogs' },
         { label: 'Rashifal', icon: '⭐', href: '/admin/rashifal' },
-        { label: 'ट्रेंडिंग टैग', icon: '🔥', href: '/admin/trending-tags' }
+        { label: 'ट्रेंडिंग टैग', icon: '🔥', href: '/admin/trending-tags' },
+        { label: 'जनता दरबार', icon: '📢', href: '/admin/janta-darbaar' }
       ]
     },
     {
