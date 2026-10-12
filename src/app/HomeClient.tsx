@@ -272,10 +272,10 @@ body {
 .hp-app-box{margin-top:12px;padding-top:12px;border-top:1px solid #eae8e4}
 .hp-app-title{font-size:13px;font-weight:800;margin:0 0 3px;color:#1a1a1a;padding:0 4px}
 .hp-app-sub{font-size:11.5px;color:#888;margin:0 0 8px;line-height:1.5;padding:0 4px}
-.hp-store{display:flex;align-items:center;gap:11px;background:#000;border:1px solid #000;border-radius:10px;padding:8px 14px;color:#fff;text-decoration:none;margin-top:8px;transition:opacity .15s,transform .15s}
-.hp-store:hover{opacity:.86;transform:translateY(-1px)}
-.hp-store small{display:block;font-size:9px;color:#dcdcdc;line-height:1.2;letter-spacing:.4px;text-transform:uppercase}
-.hp-store strong{display:block;font-size:14px;line-height:1.25;color:#fff;font-weight:700}
+.hp-store{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e5e3df;border-radius:12px;padding:9px 14px;color:#1a1a1a;text-decoration:none;margin-top:8px;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:box-shadow .15s,border-color .15s,transform .15s}
+.hp-store:hover{border-color:#cfcac2;box-shadow:0 5px 14px rgba(0,0,0,.09);transform:translateY(-1px)}
+.hp-store small{display:block;font-size:9px;color:#8a8a8a;line-height:1.2;letter-spacing:.4px;text-transform:uppercase}
+.hp-store strong{display:block;font-size:14px;line-height:1.25;color:#1a1a1a;font-weight:700}
 .hp-classified-call{display:inline-block;margin-top:4px;font-size:12px;font-weight:700;text-decoration:none}
 
 .hp-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:85vw;background:#fff;z-index:400;overflow-y:auto;padding:16px;box-shadow:4px 0 24px rgba(0,0,0,.15);animation:hpSlide .22s ease}
@@ -935,7 +935,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
         </span>
       </a>
       <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="hp-store">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#111" aria-hidden="true">
           <path d="M17.05 12.04c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.78 1.3 10.33.86 1.25 1.88 2.65 3.22 2.6 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.81 1.39-.03 2.27-1.27 3.12-2.53.98-1.45 1.39-2.85 1.41-2.93-.03-.01-2.7-1.04-2.73-4.13zM14.6 4.56c.71-.86 1.19-2.06 1.06-3.25-1.02.04-2.26.68-2.99 1.54-.66.76-1.23 1.98-1.08 3.15 1.14.09 2.3-.58 3.01-1.44z" />
         </svg>
         <span>
