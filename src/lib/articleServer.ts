@@ -31,7 +31,7 @@ function decodeFields(fields: any): Record<string, any> {
 
 async function getById(id: string): Promise<any | null> {
   try {
-    const r = await fetch(`${BASE}/articles/${encodeURIComponent(id)}`, { next: { revalidate: 30 } });
+    const r = await fetch(`${BASE}/articles/${encodeURIComponent(id)}`, { next: { revalidate: 60 } });
     if (!r.ok) return null;
     const j = await r.json();
     if (!j.fields) return null;
@@ -45,7 +45,7 @@ async function getBySlug(slug: string): Promise<any | null> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'articles' }], where: { fieldFilter: { field: { fieldPath: 'slug' }, op: 'EQUAL', value: { stringValue: slug } } }, limit: 1 } }),
-      next: { revalidate: 30 }
+      next: { revalidate: 60 }
     });
     if (!r.ok) return null;
     const j = await r.json();
@@ -63,7 +63,7 @@ async function runQ(filter: any, limit: number): Promise<any[]> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'articles' }], where: filter, limit } }),
-      next: { revalidate: 20 }
+      next: { revalidate: 60 }
     });
     if (!r.ok) return [];
     const j = await r.json();

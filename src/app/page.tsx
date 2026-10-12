@@ -4,8 +4,8 @@ import HomeClient from './HomeClient';
 import { getPortalArticlesForSSR } from '@/lib/articleServer';
 import { normalizeSiteId } from '@/lib/portals';
 
-// Har request par taazi khabar (SSR — static NAHI). Admin ke badlaav turant dikhte hain.
-export const dynamic = 'force-dynamic';
+// SSR (dynamic — domain/?site= par portal tay). News data ~60 sec cache (CDN) hota hai —
+// isse Firestore reads kam, site tej; nayi khabar ~60 sec me dikh jaati hai.
 
 const DOMAIN_MAP: Record<string, string> = {
   'thelocalleader.in': 'the-local-leader',

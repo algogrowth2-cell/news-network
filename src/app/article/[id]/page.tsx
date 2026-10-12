@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import ArticleClient from './ArticleClient';
 import { getArticleForSSR } from '@/lib/articleServer';
 
-// Har request par taazi khabar (SSR — static NAHI). Admin ke badlaav turant dikhte hain.
-export const dynamic = 'force-dynamic';
+// Khabar ka page ~60 sec CDN cache (ISR) — bahut tez, Firestore reads bahut kam.
+// Dynamic hi hai: badli khabar ~60 sec me apne aap refresh. Views/comment client se realtime.
+export const revalidate = 60;
 
 const plain = (s: any) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
