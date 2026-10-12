@@ -13,6 +13,14 @@ export interface SiteContact {
   hoursHi: string;
   hoursEn: string;
   address: string; // karyalay ka pata (mobile app ke Help me)
+  // Social media profile/page URLs (admin se)
+  facebook: string;
+  twitter: string;
+  instagram: string;
+  youtube: string;
+  // Channels — khaali ho toh footer me button nahi dikhega
+  whatsappChannel: string; // WhatsApp broadcast/channel join link
+  telegram: string;        // Telegram channel join link
 }
 
 export const DEFAULT_CONTACT: SiteContact = {
@@ -20,12 +28,24 @@ export const DEFAULT_CONTACT: SiteContact = {
   whatsapp: '918103333381',
   hoursHi: 'सोम–शनि · सुबह 10 से शाम 6',
   hoursEn: 'Mon–Sat · 10 AM to 6 PM',
-  address: '1st Floor Shreenath Complex, Old A.B Road, Kishanganj, Dr. Ambedkar Nagar (Mhow), District: Indore (Madhya Pradesh), Pin Code - 453441'
+  address: '1st Floor Shreenath Complex, Old A.B Road, Kishanganj, Dr. Ambedkar Nagar (Mhow), District: Indore (Madhya Pradesh), Pin Code - 453441',
+  facebook: 'https://www.facebook.com/',
+  twitter: 'https://x.com/',
+  instagram: 'https://www.instagram.com/',
+  youtube: 'https://www.youtube.com/',
+  whatsappChannel: '',
+  telegram: ''
 };
 
 const txt = (v: any, def: string, max = 140) => {
   const s = String(v ?? '').trim();
   return s ? s.slice(0, max) : def;
+};
+
+// http(s):// se shuru ho toh wahi, warna default (channels ke liye default '' = chhupa do)
+const url = (v: any, def: string) => {
+  const s = String(v ?? '').trim();
+  return /^https?:\/\//i.test(s) ? s.slice(0, 400) : def;
 };
 
 export function normalizeContact(raw: any): SiteContact {
@@ -36,7 +56,13 @@ export function normalizeContact(raw: any): SiteContact {
     whatsapp: wa.length >= 10 ? wa.slice(0, 15) : d.whatsapp,
     hoursHi: txt(raw?.hoursHi, d.hoursHi),
     hoursEn: txt(raw?.hoursEn, d.hoursEn),
-    address: txt(raw?.address, d.address, 300)
+    address: txt(raw?.address, d.address, 300),
+    facebook: url(raw?.facebook, d.facebook),
+    twitter: url(raw?.twitter, d.twitter),
+    instagram: url(raw?.instagram, d.instagram),
+    youtube: url(raw?.youtube, d.youtube),
+    whatsappChannel: url(raw?.whatsappChannel, ''),
+    telegram: url(raw?.telegram, '')
   };
 }
 
