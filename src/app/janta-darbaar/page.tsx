@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { authFetch } from '@/lib/phoneAuth';
 import { uploadToS3, compressToBlob } from '@/lib/s3Upload';
+import PublicPageHeader from '@/components/PublicPageHeader';
+import { AdLayout, AdInline } from '@/components/SiteAds';
+import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 
 const CATS = ['दुर्घटना', 'अपराध', 'राजनीति', 'समाज', 'खेल', 'शिक्षा', 'स्वास्थ्य', 'मौसम', 'भ्रष्टाचार', 'अन्य'];
 const MAX_PHOTOS = 6;
@@ -12,7 +15,7 @@ const MAX_VIDEO_MB = 60;
 
 const CSS = `
 .jd{min-height:100vh;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;color:#0f172a}
-.jd-hero{background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;padding:34px 16px 30px}
+.jd-hero{background:linear-gradient(135deg,var(--jc,#ea580c),#c2410c);color:#fff;padding:34px 16px 30px}
 .jd-wrap{max-width:760px;margin:0 auto;padding:0 16px}
 .jd-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.18);border-radius:30px;padding:6px 14px;font-size:13px;font-weight:700}
 .jd-h1{font-size:28px;font-weight:800;margin:14px 0 8px}
@@ -20,12 +23,12 @@ const CSS = `
 .jd-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:22px;margin-top:18px;box-shadow:0 2px 14px rgba(2,6,23,.05)}
 .jd-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
 .jd-step{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px}
-.jd-step .n{width:28px;height:28px;border-radius:50%;background:#ea580c;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.jd-step .n{width:28px;height:28px;border-radius:50%;background:var(--jc,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
 .jd-step h4{margin:10px 0 4px;font-size:14px}
 .jd-step p{margin:0;font-size:12.5px;color:#64748b;line-height:1.5}
-.jd-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#ea580c;color:#fff;border:none;border-radius:10px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none}
+.jd-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--jc,#ea580c);color:#fff;border:none;border-radius:10px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none}
 .jd-btn:disabled{opacity:.6;cursor:not-allowed}
-.jd-btn.ghost{background:#fff;color:#ea580c;border:1.5px solid #ea580c}
+.jd-btn.ghost{background:#fff;color:var(--jc,#ea580c);border:1.5px solid var(--jc,#ea580c)}
 .jd-label{display:block;font-size:13.5px;font-weight:700;color:#334155;margin:0 0 6px}
 .jd-in,.jd-ta,.jd-sel{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #cbd5e1;font-size:14.5px;outline:none;box-sizing:border-box;background:#fff}
 .jd-ta{resize:vertical;line-height:1.6}
@@ -44,7 +47,7 @@ const CSS = `
 .jd-err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
 .jd-chips{display:flex;flex-wrap:wrap;gap:8px}
 .jd-chip{border:1px solid #cbd5e1;background:#fff;border-radius:20px;padding:7px 14px;font-size:13px;cursor:pointer;color:#334155}
-.jd-chip.on{background:#ea580c;color:#fff;border-color:#ea580c}
+.jd-chip.on{background:var(--jc,#ea580c);color:#fff;border-color:var(--jc,#ea580c)}
 @media(max-width:560px){.jd-row{grid-template-columns:1fr}.jd-steps{grid-template-columns:1fr}.jd-h1{font-size:23px}}
 `;
 
@@ -53,7 +56,8 @@ interface Media { url: string; type: 'image' | 'video' }
 function JantaDarbaar() {
   const sp = useSearchParams();
   const router = useRouter();
-  const site = sp.get('site') || 'the-local-leader';
+  const site = getActivePortal(sp.get('site'));
+  const c = fallbackFor(site).primaryColor || 'var(--jc,#ea580c)';
   const [user, setUser] = useState<{ name?: string; phone?: string } | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -132,11 +136,12 @@ function JantaDarbaar() {
   if (!ready) return <div className="jd"><div className="jd-wrap" style={{ padding: '60px 16px', textAlign: 'center', color: '#64748b' }}>लोड हो रहा है...</div></div>;
 
   return (
-    <div className="jd">
+    <div className="jd" style={{ ['--jc' as any]: c }}>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <div className="jd-hero">
-        <div className="jd-wrap">
-          <span className="jd-badge">📢 जनता दरबार</span>
+      <PublicPageHeader slug={site} />
+      <div className="jd-hero" style={{ background: c, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.08), rgba(0,0,0,.32))' }}>
+        <div style={{ maxWidth: 1380, margin: '0 auto', padding: '0 16px' }}>
+          <span className="jd-badge">📣 जनता दरबार</span>
           <h1 className="jd-h1">आपके आस-पास की खबर, अब आपकी ज़ुबानी</h1>
           <p className="jd-sub">
             आपने कुछ देखा — कोई घटना, समस्या, या कोई अच्छी खबर? सीधे हमें भेजिए। फोटो और वीडियो के साथ।
@@ -145,7 +150,8 @@ function JantaDarbaar() {
         </div>
       </div>
 
-      <div className="jd-wrap" style={{ paddingBottom: 50 }}>
+      <AdLayout slug={site} color={c}>
+        <div style={{ maxWidth: 820, margin: '0 auto', padding: '18px 0 40px' }}>
         {!user ? (
           // ---------- Logged-out: jaankari + login ----------
           <>
@@ -248,7 +254,11 @@ function JantaDarbaar() {
             </p>
           </div>
         )}
-      </div>
+          <div style={{ marginTop: 22 }}>
+            <AdInline slug={site} index={0} />
+          </div>
+        </div>
+      </AdLayout>
     </div>
   );
 }
