@@ -61,6 +61,11 @@ function readServiceAccount() {
   }
 }
 
+/** Parsed service account (GA Data API jaise doosre Google API ke liye bhi) — ya null */
+export function getServiceAccount(): { client_email: string; private_key: string; project_id?: string } | null {
+  return readServiceAccount();
+}
+
 async function load(): Promise<AdminCtx | null> {
   const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const emulator = !!process.env.FIRESTORE_EMULATOR_HOST;

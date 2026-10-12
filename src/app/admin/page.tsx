@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestor
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { GaSummary } from '@/lib/ga';
 
 interface ArticleData {
   id: string;
@@ -68,11 +69,29 @@ const AD_STYLES = `
   .ad-main{grid-template-columns:1fr}
   .ad-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+.ga-head{display:flex;align-items:center;gap:10px;margin:4px 0 2px}
+.ga-dot{width:9px;height:9px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:ga-pulse 1.8s infinite}
+@keyframes ga-pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+.ga-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.ga-mini{font-size:11px;color:var(--fg-94a3b8);margin-top:4px}
+.ga-chart{display:flex;align-items:flex-end;gap:8px;height:90px;margin-top:12px;padding-top:6px}
+.ga-bwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.ga-bar{width:100%;max-width:38px;background:linear-gradient(180deg,#f97316,#ea580c);border-radius:6px 6px 0 0;min-height:4px;transition:height .3s}
+.ga-blbl{font-size:10px;color:#64748b}
+.ga-bval{font-size:11px;color:var(--fg-cbd5e1);font-weight:700}
+.ga-list{display:flex;flex-direction:column;gap:9px}
+.ga-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.ga-row .nm{color:var(--fg-cbd5e1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ga-row .vl{color:var(--fg-fff);font-weight:700;flex-shrink:0}
+.ga-msg{background:rgba(234,88,12,.08);border:1px solid rgba(234,88,12,.3);border-radius:12px;padding:16px;font-size:13px;color:var(--fg-cbd5e1);line-height:1.6}
+.ga-msg code{background:var(--bg-0f172a);padding:2px 6px;border-radius:6px;font-size:12px;color:#f97316;word-break:break-all}
+@media(max-width:1000px){.ga-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){
   .ad-root{padding:14px}
   .ad-title{font-size:20px}
   .ad-stats{grid-template-columns:1fr}
   .ad-card-num{font-size:26px}
+  .ga-stats{grid-template-columns:1fr}
 }
 `;
 
@@ -83,6 +102,20 @@ export default function AdminDashboardPage() {
   const [ads, setAds] = useState<AdData[]>([]);
   const [reporters, setReporters] = useState<ReporterData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ga, setGa] = useState<GaSummary | null>(null);
+  const [gaLoading, setGaLoading] = useState(true);
+
+  // Website visitors (Google Analytics) — admin dashboard ke andar hi
+  useEffect(() => {
+    let alive = true;
+    setGaLoading(true);
+    fetch('/api/admin/analytics')
+      .then((r) => (r.ok ? r.json() : { configured: false, error: 'failed' }))
+      .then((d) => { if (alive) setGa(d); })
+      .catch(() => { if (alive) setGa({ configured: false, error: 'failed' }); })
+      .finally(() => { if (alive) setGaLoading(false); });
+    return () => { alive = false; };
+  }, []);
 
   // Auth: server (proxy.ts) aur admin layout session check karte hain
 
@@ -264,6 +297,130 @@ export default function AdminDashboardPage() {
               {pendingAdsCount > 0 ? `⚠️ ${pendingAdsCount} Pending Approval` : '✓ All Ads Active'}
             </div>
           </div>
+        </div>
+
+        {/* 2b. WEBSITE VISITORS — Google Analytics (admin ke andar hi) */}
+        <div className="ad-panel">
+          <div className="ad-panel-head">
+            <h2 className="ad-panel-title">🌐 Website Visitors (Google Analytics)</h2>
+            {ga?.configured && !ga?.error && (
+              <span className="ad-link" style={{ cursor: 'default' }}>
+                {ga?.cached ? 'Last 5 min' : 'Abhi update hua'}
+              </span>
+            )}
+          </div>
+
+          {gaLoading ? (
+            <div className="ad-empty">Visitors data aa raha hai...</div>
+          ) : !ga?.configured ? (
+            <div className="ga-msg">
+              Google Analytics abhi connect nahi hua. Service account set karne ke baad yahan data dikhega.
+            </div>
+          ) : ga?.error === 'api-disabled' ? (
+            <div className="ga-msg">
+              <b>Ek baar &ldquo;Analytics Data API&rdquo; ON karni hai</b> (Google Cloud me, free):
+              <br />Is link par jaayein → <b>Enable</b> dabayein:
+              <br /><br /><code>https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com?project=newsadmin-network</code>
+              <br /><br />Enable karne ke ~2 min baad yahan visitors ka data aa jaayega.
+            </div>
+          ) : ga?.error === 'no-access' ? (
+            <div className="ga-msg">
+              <b>Ek chhota step baaki hai.</b> Google Analytics ko apne server ko &ldquo;dekhne&rdquo; ki ijaazat deni hai:
+              <br />GA → <b>Admin (⚙️)</b> → <b>Property access management</b> → <b>+ (Add users)</b> → ye email daalein aur role <b>Viewer</b> chunein:
+              <br /><br /><code>{ga?.email || 'firebase service account email'}</code>
+              <br /><br />Save karte hi ~5 min me yahan visitors ka poora data aa jaayega.
+            </div>
+          ) : ga?.error ? (
+            <div className="ga-msg">Visitors data abhi nahi mila — thodi der baad dobara dekhein.</div>
+          ) : (
+            <>
+              <div className="ga-head">
+                <span className="ga-dot" />
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-fff)' }}>
+                  {ga?.active ?? 0}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--fg-94a3b8)' }}>log abhi online (realtime)</span>
+              </div>
+
+              <div className="ga-stats" style={{ marginTop: 14 }}>
+                <div className="ad-card">
+                  <div className="ad-card-head"><span>AAJ KE USERS</span></div>
+                  <div className="ad-card-num">{(ga?.today?.users ?? 0).toLocaleString('en-IN')}</div>
+                  <div className="ga-mini">{(ga?.today?.views ?? 0).toLocaleString('en-IN')} page views aaj</div>
+                </div>
+                <div className="ad-card">
+                  <div className="ad-card-head"><span>7 DIN KE USERS</span></div>
+                  <div className="ad-card-num">{(ga?.last7?.users ?? 0).toLocaleString('en-IN')}</div>
+                  <div className="ga-mini">{(ga?.last7?.views ?? 0).toLocaleString('en-IN')} page views</div>
+                </div>
+                <div className="ad-card">
+                  <div className="ad-card-head"><span>28 DIN KE USERS</span></div>
+                  <div className="ad-card-num">{(ga?.last28?.users ?? 0).toLocaleString('en-IN')}</div>
+                  <div className="ga-mini">{(ga?.last28?.views ?? 0).toLocaleString('en-IN')} page views</div>
+                </div>
+                <div className="ad-card">
+                  <div className="ad-card-head"><span>ROZ KA ASAR</span></div>
+                  <div className="ad-card-num">
+                    {Math.round((ga?.last7?.users ?? 0) / 7).toLocaleString('en-IN')}
+                  </div>
+                  <div className="ga-mini">average users / din</div>
+                </div>
+              </div>
+
+              {!!ga?.series?.length && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg-94a3b8)', marginTop: 18 }}>
+                    PICHHLE 7 DIN
+                  </div>
+                  <div className="ga-chart">
+                    {(() => {
+                      const max = Math.max(1, ...ga.series.map((s) => s.users));
+                      return ga.series.map((s) => (
+                        <div className="ga-bwrap" key={s.date}>
+                          <span className="ga-bval">{s.users}</span>
+                          <div className="ga-bar" style={{ height: `${Math.max(4, (s.users / max) * 100)}%` }} />
+                          <span className="ga-blbl">{s.date.slice(6, 8)}/{s.date.slice(4, 6)}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </>
+              )}
+
+              <div className="ad-main" style={{ marginTop: 18 }}>
+                <div className="ad-panel" style={{ border: '1px solid var(--bd-1e293b)' }}>
+                  <div className="ad-panel-title" style={{ fontSize: 14, marginBottom: 12 }}>
+                    📄 Sabse zyada dekhe gaye page (7 din)
+                  </div>
+                  {ga?.topPages?.length ? (
+                    <div className="ga-list">
+                      {ga.topPages.map((p, i) => (
+                        <div className="ga-row" key={i}>
+                          <span className="nm" title={p.path}>{p.title || p.path || '—'}</span>
+                          <span className="vl">{p.views.toLocaleString('en-IN')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <div className="ad-empty">Abhi data nahi</div>}
+                </div>
+                <div className="ad-panel" style={{ border: '1px solid var(--bd-1e293b)' }}>
+                  <div className="ad-panel-title" style={{ fontSize: 14, marginBottom: 12 }}>
+                    🔗 Log kahan se aaye (7 din)
+                  </div>
+                  {ga?.topSources?.length ? (
+                    <div className="ga-list">
+                      {ga.topSources.map((s, i) => (
+                        <div className="ga-row" key={i}>
+                          <span className="nm">{s.source}</span>
+                          <span className="vl">{s.users.toLocaleString('en-IN')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <div className="ad-empty">Abhi data nahi</div>}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 3. MAIN SECTION: RECENT ARTICLES & QUICK STATUS */}
