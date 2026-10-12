@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { AuthProvider } from '@/context/AuthContext';
 import AutoFooter from '@/components/AutoFooter';
 
@@ -35,6 +36,8 @@ export default function RootLayout({
         </AuthProvider>
         <Analytics />
       {/* Vercel Analytics — visitors/pages ka data Vercel dashboard me (free, site par bojh nahi) */}
+        <GoogleAnalytics />
+      {/* Google Analytics (GA4) — detailed per-user journey, Analytics dashboard me */}
       </body>
     </html>
   );
