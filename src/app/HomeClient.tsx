@@ -720,7 +720,8 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     });
 
     async function loadData() {
-      setLoading(true);
+      // SSR se news pehle se hai toh loading skeleton mat dikhao — news turant dikhe, peeche se silently refresh
+      if (initialArticles.length === 0) setLoading(true);
       try {
         // Sirf isi portal ki live khabrein (siteId ya multi-portal siteIds), nayi pehle; scheduled apne samay par
         setArticles(await fetchPortalArticles<ArticleItem>(activeSiteSlug));
