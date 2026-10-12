@@ -189,6 +189,7 @@ export default function AdminLayout({
         { label: 'विवाह विकल्प', icon: '📝', href: '/admin/matrimony-options' },
         { label: 'प्लान व कीमतें', icon: '💳', href: '/admin/membership' },
         { label: 'संपर्क व फुटर', icon: '📞', href: '/admin/site-contact' },
+        { label: 'सोशल लिंक', icon: '🔗', href: '/admin/social-links' },
         { label: 'मोबाइल ऐप सेटिंग्स', icon: '📱', href: '/admin/app-settings' },
         { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
         { label: 'Account Deletion', icon: '🗑️', href: '/admin/deletion-requests' },

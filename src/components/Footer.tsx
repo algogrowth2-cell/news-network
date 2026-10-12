@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getActivePortal, isEnglishSlug } from '@/lib/siteTheme';
 import { hasEpaper } from '@/lib/epaperSub';
 import { useSiteContact } from '@/lib/useSiteContact';
+import { useSiteSocial } from '@/lib/useSiteSocial';
 
 // English portals (NEWS INFO 24, National Defence Network) par footer English me
 const TEXT = {
@@ -201,6 +202,7 @@ export default function Footer({
   const isTightLogo = homeSlug === 'jan-bharat-news' || logoUrl.includes('jan-bharat-news');
   // Sampark — admin (settings/contact) se; na ho toh default
   const contact = useSiteContact();
+  const social = useSiteSocial(homeSlug);
   const waUrl = `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent('नमस्ते, मुझे विज्ञापन/समाचार के संबंध में जानकारी चाहिए।')}`;
   const gmailUrl = `mailto:${contact.email}?subject=${encodeURIComponent('विज्ञापन / समाचार के संबंध में')}`;
   const hoursText = isEnglishSlug(homeSlug) ? contact.hoursEn : contact.hoursHi;
@@ -412,7 +414,7 @@ export default function Footer({
             <div className="gp-ft-social-block">
               <div className="gp-ft-social-row">
                 {SOCIAL_LINKS.map((s) => {
-                  const hrefMap: Record<string, string> = { facebook: contact.facebook, x: contact.twitter, instagram: contact.instagram, youtube: contact.youtube };
+                  const hrefMap: Record<string, string> = { facebook: social.facebook, x: social.twitter, instagram: social.instagram, youtube: social.youtube };
                   return (
                     <a
                       key={s.id}
@@ -441,24 +443,24 @@ export default function Footer({
                 </a>
                 {/* WhatsApp broadcast/channel — hamesha dikhega; URL set ho to uspe redirect */}
                 <a
-                  href={contact.whatsappChannel || '#'}
-                  target={contact.whatsappChannel ? '_blank' : undefined}
+                  href={social.whatsappChannel || '#'}
+                  target={social.whatsappChannel ? '_blank' : undefined}
                   rel="noopener noreferrer"
                   className="gp-ft-wa-channel"
                   aria-label={t.whatsappChannel}
-                  onClick={(e) => { if (!contact.whatsappChannel) e.preventDefault(); }}
+                  onClick={(e) => { if (!social.whatsappChannel) e.preventDefault(); }}
                 >
                   <WhatsAppIcon />
                   <span>{t.whatsappChannel}</span>
                 </a>
                 {/* Telegram channel — hamesha dikhega; URL set ho to uspe redirect */}
                 <a
-                  href={contact.telegram || '#'}
-                  target={contact.telegram ? '_blank' : undefined}
+                  href={social.telegram || '#'}
+                  target={social.telegram ? '_blank' : undefined}
                   rel="noopener noreferrer"
                   className="gp-ft-tg"
                   aria-label={t.telegram}
-                  onClick={(e) => { if (!contact.telegram) e.preventDefault(); }}
+                  onClick={(e) => { if (!social.telegram) e.preventDefault(); }}
                 >
                   <TelegramIcon />
                   <span>{t.telegram}</span>

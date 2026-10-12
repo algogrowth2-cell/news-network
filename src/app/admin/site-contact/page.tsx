@@ -60,28 +60,10 @@ export default function AdminSiteContact() {
       <label style={label}>कार्यालय का पता (मोबाइल ऐप के Help में)</label>
       <textarea style={{ ...input, minHeight: 70 }} value={c.address} onChange={(e) => set('address', e.target.value)} placeholder="पूरा पता" />
 
-      <div style={{ marginTop: 26, paddingTop: 14, borderTop: '1px solid var(--bd-27354f)' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg-fff,#fff)' }}>सोशल मीडिया व चैनल लिंक</div>
-        <div style={{ fontSize: 12, color: 'var(--fg-64748b)', margin: '4px 0 0' }}>पूरा URL डालें (https:// के साथ)। खाली छोड़ने पर WhatsApp चैनल / Telegram बटन फुटर में नहीं दिखेंगे।</div>
+      <div style={{ marginTop: 18, background: 'var(--bg-162238)', border: '1px solid var(--bd-27354f)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: 'var(--fg-94a3b8)' }}>
+        सोशल मीडिया व चैनल लिंक (Facebook, Instagram, WhatsApp चैनल, Telegram…) अब हर पोर्टल के अलग —
+        <a href="/admin/social-links" style={{ color: '#ea580c', fontWeight: 700 }}> सोशल लिंक पेज</a> पर सेट करें।
       </div>
-
-      <label style={label}>Facebook पेज URL</label>
-      <input style={input} value={c.facebook} onChange={(e) => set('facebook', e.target.value)} placeholder="https://www.facebook.com/yourpage" />
-
-      <label style={label}>Instagram URL</label>
-      <input style={input} value={c.instagram} onChange={(e) => set('instagram', e.target.value)} placeholder="https://www.instagram.com/yourpage" />
-
-      <label style={label}>X (Twitter) URL</label>
-      <input style={input} value={c.twitter} onChange={(e) => set('twitter', e.target.value)} placeholder="https://x.com/yourpage" />
-
-      <label style={label}>YouTube चैनल URL</label>
-      <input style={input} value={c.youtube} onChange={(e) => set('youtube', e.target.value)} placeholder="https://www.youtube.com/@yourchannel" />
-
-      <label style={label}>WhatsApp चैनल / ब्रॉडकास्ट जॉइन लिंक</label>
-      <input style={input} value={c.whatsappChannel} onChange={(e) => set('whatsappChannel', e.target.value)} placeholder="https://whatsapp.com/channel/xxxxxxxx" />
-
-      <label style={label}>Telegram चैनल जॉइन लिंक</label>
-      <input style={input} value={c.telegram} onChange={(e) => set('telegram', e.target.value)} placeholder="https://t.me/yourchannel" />
 
       <div style={{ marginTop: 22 }}>
         <button onClick={save} disabled={saving} style={{ background: '#ea580c', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
