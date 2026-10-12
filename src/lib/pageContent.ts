@@ -5,8 +5,14 @@
  */
 const BASE = 'https://firestore.googleapis.com/v1/projects/newsadmin-network/databases/(default)/documents';
 
-export type PageKey = 'janta' | 'patrakar' | 'advertiser';
-export const PAGE_DOC: Record<PageKey, string> = { janta: 'page_janta', patrakar: 'page_patrakar', advertiser: 'page_advertiser' };
+export type PageKey = 'janta' | 'patrakar' | 'advertiser' | 'matrimony' | 'shok';
+export const PAGE_DOC: Record<PageKey, string> = {
+  janta: 'page_janta',
+  patrakar: 'page_patrakar',
+  advertiser: 'page_advertiser',
+  matrimony: 'page_matrimony',
+  shok: 'page_shok'
+};
 
 export interface Benefit { icon: string; h: string; p: string }
 export interface Step { h: string; p: string }
@@ -33,7 +39,14 @@ export interface JantaContent {
   loginText: string;
 }
 
-export type PageContent<K extends PageKey> = K extends 'janta' ? JantaContent : IntroContent;
+// Matrimony / Shok — in pages par bas ek info + benefit-cards section (inka apna header alag hai)
+export interface SectionContent {
+  heading: string;
+  intro: string;
+  benefits: Benefit[];
+}
+
+export type PageContent<K extends PageKey> = K extends 'janta' ? JantaContent : K extends 'matrimony' | 'shok' ? SectionContent : IntroContent;
 
 export const DEFAULT_PATRAKAR: IntroContent = {
   badge: '✍️ पत्रकार पोर्टल',
@@ -86,6 +99,32 @@ export const DEFAULT_JANTA: JantaContent = {
   loginText: 'सुरक्षा और भरोसे के लिए खबर सिर्फ़ लॉगिन किए हुए उपयोगकर्ता ही भेज सकते हैं। एक मिनट में मोबाइल OTP से लॉगिन/साइनअप करें।'
 };
 
+export const DEFAULT_MATRIMONY: SectionContent = {
+  heading: 'क्यों चुनें हमारा विवाह पोर्टल?',
+  intro: 'सुरक्षित, सत्यापित और भरोसेमंद रिश्ते — आपके समुदाय में। आपकी निजता हमारी प्राथमिकता है।',
+  benefits: [
+    { icon: '🛡️', h: 'सुरक्षित व निजी', p: 'किसी का मोबाइल नंबर किसी को नहीं दिखता — रुचि स्वीकृत होने पर ही संपर्क साझा होता है।' },
+    { icon: '✅', h: 'सत्यापित प्रोफ़ाइल', p: 'हर प्रोफ़ाइल हमारी टीम द्वारा जाँची जाती है — फर्ज़ी प्रोफ़ाइल नहीं।' },
+    { icon: '🧑‍🤝‍🧑', h: 'अपने समुदाय में', p: 'जाति/समुदाय, भाषा और शहर के अनुसार मनपसंद रिश्ते खोजें।' },
+    { icon: '📸', h: 'फोटो व बायोडाटा', p: 'पूरी जानकारी, फोटो और बायोडाटा के साथ प्रोफ़ाइल बनाएं।' },
+    { icon: '💌', h: 'रुचि भेजें/स्वीकारें', p: 'पसंद आने पर रुचि भेजें; स्वीकृति मिलने पर ही संपर्क खुलता है।' },
+    { icon: '💳', h: 'सरल मेंबरशिप', p: 'किफ़ायती प्लान में पूरी सुविधा — कम कीमत, पूरा भरोसा।' }
+  ]
+};
+
+export const DEFAULT_SHOK: SectionContent = {
+  heading: 'श्रद्धांजलि एवं शोक संदेश',
+  intro: 'अपने दिवंगत स्वजनों की स्मृति में सम्मानजनक डिजिटल श्रद्धांजलि — आसान, सुंदर और साझा करने योग्य।',
+  benefits: [
+    { icon: '🕯️', h: 'डिजिटल श्रद्धांजलि कार्ड', p: 'दिवंगत स्वजन के लिए सुंदर डिजिटल श्रद्धांजलि कार्ड बनाएं।' },
+    { icon: '📿', h: 'स्मृति संदेश', p: 'परिवार और परिचितों के लिए भावपूर्ण शोक संदेश साझा करें।' },
+    { icon: '🖼️', h: 'फोटो व परिचय', p: 'दिवंगत की फोटो और संक्षिप्त जीवन-परिचय जोड़ें।' },
+    { icon: '🔗', h: 'आसान शेयर', p: 'कार्ड को WhatsApp और सोशल मीडिया पर आसानी से साझा करें।' },
+    { icon: '✅', h: 'सत्यापित प्रकाशन', p: 'हमारी टीम की समीक्षा के बाद ही कार्ड प्रकाशित होता है।' },
+    { icon: '🙏', h: 'गरिमामय व सरल', p: 'सम्मानजनक और सरल — कुछ ही मिनटों में तैयार।' }
+  ]
+};
+
 // ---------- helpers ----------
 const s = (v: any, def: string, max = 2000) => {
   const t = String(v ?? '').trim();
@@ -129,10 +168,26 @@ export function normalizeJanta(raw: any): JantaContent {
   };
 }
 
-export const DEFAULT_FOR: Record<PageKey, any> = { patrakar: DEFAULT_PATRAKAR, advertiser: DEFAULT_ADVERTISER, janta: DEFAULT_JANTA };
+export function normalizeSection(raw: any, def: SectionContent): SectionContent {
+  return {
+    heading: s(raw?.heading, def.heading, 100),
+    intro: s(raw?.intro, def.intro, 500),
+    benefits: benefits(raw?.benefits, def.benefits)
+  };
+}
+
+export const DEFAULT_FOR: Record<PageKey, any> = {
+  patrakar: DEFAULT_PATRAKAR,
+  advertiser: DEFAULT_ADVERTISER,
+  janta: DEFAULT_JANTA,
+  matrimony: DEFAULT_MATRIMONY,
+  shok: DEFAULT_SHOK
+};
 
 export function normalizeFor(key: PageKey, raw: any): any {
   if (key === 'janta') return normalizeJanta(raw);
+  if (key === 'matrimony') return normalizeSection(raw, DEFAULT_MATRIMONY);
+  if (key === 'shok') return normalizeSection(raw, DEFAULT_SHOK);
   return normalizeIntro(raw, key === 'patrakar' ? DEFAULT_PATRAKAR : DEFAULT_ADVERTISER);
 }
 

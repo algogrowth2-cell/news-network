@@ -7,7 +7,9 @@ import { DEFAULT_FOR, PAGE_DOC, normalizeFor, type PageKey } from '@/lib/pageCon
 const TABS: { key: PageKey; label: string }[] = [
   { key: 'janta', label: '📣 जनता दरबार' },
   { key: 'patrakar', label: '✍️ पत्रकार' },
-  { key: 'advertiser', label: '📢 विज्ञापन' }
+  { key: 'advertiser', label: '📢 विज्ञापन' },
+  { key: 'matrimony', label: '💍 विवाह' },
+  { key: 'shok', label: '🕯️ शोक संदेश' }
 ];
 
 const CSS = `
@@ -85,14 +87,33 @@ export default function AdminPageContent() {
 
   const resetDefault = () => { if (confirm('इस पेज का कंटेंट डिफ़ॉल्ट पर लौटाएं? (सेव करने पर लागू होगा)')) setData(DEFAULT_FOR[tab]); };
 
-  const isJanta = tab === 'janta';
+  const kind: 'janta' | 'section' | 'intro' = tab === 'janta' ? 'janta' : tab === 'matrimony' || tab === 'shok' ? 'section' : 'intro';
+
+  // Benefit cards editor (intro + section dono me use hota hai)
+  const benefitsEditor = (
+    <div className="pc-card">
+      <div className="pc-sec">
+        <span>फायदे (Benefit Cards)</span>
+        <button className="pc-add" onClick={() => addArr('benefits', { icon: '⭐', h: '', p: '' })}>+ कार्ड जोड़ें</button>
+      </div>
+      {(data.benefits || []).map((b: any, i: number) => (
+        <div className="pc-row" key={i}>
+          <input className="pc-in" placeholder="आइकन" value={b.icon} onChange={(e) => setArr('benefits', i, { icon: e.target.value })} style={{ textAlign: 'center' }} />
+          <input className="pc-in" placeholder="शीर्षक" value={b.h} onChange={(e) => setArr('benefits', i, { h: e.target.value })} />
+          <textarea className="pc-ta" placeholder="विवरण" rows={2} value={b.p} onChange={(e) => setArr('benefits', i, { p: e.target.value })} />
+          <button className="pc-del" onClick={() => delArr('benefits', i)}>×</button>
+        </div>
+      ))}
+      <p className="pc-note">आइकन में इमोजी डालें (जैसे 🪪 📝 🌐 📊). छोटा रखें।</p>
+    </div>
+  );
 
   return (
     <div className="pc">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="pc-wrap">
-        <h1 className="pc-h">📝 पेज कंटेंट (जनता दरबार / पत्रकार / विज्ञापन)</h1>
-        <p className="pc-sub">इन पेजों का टेक्स्ट यहाँ से बदलें — कोड छूने की ज़रूरत नहीं। हर पोर्टल पर एक जैसा लागू होगा।</p>
+        <h1 className="pc-h">📝 पेज कंटेंट</h1>
+        <p className="pc-sub">जनता दरबार · पत्रकार · विज्ञापन · विवाह · शोक संदेश — इन पेजों का टेक्स्ट यहाँ से बदलें। कोड छूने की ज़रूरत नहीं, हर पोर्टल पर लागू।</p>
 
         <div className="pc-tabs">
           {TABS.map((t) => (
@@ -104,15 +125,26 @@ export default function AdminPageContent() {
           <div className="pc-card">लोड हो रहा है...</div>
         ) : (
           <>
-            {/* Common hero */}
-            <div className="pc-card">
-              <div className="pc-sec">ऊपर का हिस्सा (Hero)</div>
-              <div className="pc-field"><label className="pc-lbl">बैज (छोटा लेबल)</label><input className="pc-in" value={data.badge} onChange={(e) => set('badge', e.target.value)} /></div>
-              <div className="pc-field"><label className="pc-lbl">मुख्य शीर्षक</label><input className="pc-in" value={data.title} onChange={(e) => set('title', e.target.value)} /></div>
-              <div className="pc-field"><label className="pc-lbl">उप-शीर्षक / विवरण</label><textarea className="pc-ta" rows={3} value={data.subtitle} onChange={(e) => set('subtitle', e.target.value)} /></div>
-            </div>
+            {/* Hero — janta/intro ke liye (section ka apna heading alag) */}
+            {kind !== 'section' && (
+              <div className="pc-card">
+                <div className="pc-sec">ऊपर का हिस्सा (Hero)</div>
+                <div className="pc-field"><label className="pc-lbl">बैज (छोटा लेबल)</label><input className="pc-in" value={data.badge} onChange={(e) => set('badge', e.target.value)} /></div>
+                <div className="pc-field"><label className="pc-lbl">मुख्य शीर्षक</label><input className="pc-in" value={data.title} onChange={(e) => set('title', e.target.value)} /></div>
+                <div className="pc-field"><label className="pc-lbl">उप-शीर्षक / विवरण</label><textarea className="pc-ta" rows={3} value={data.subtitle} onChange={(e) => set('subtitle', e.target.value)} /></div>
+              </div>
+            )}
 
-            {isJanta ? (
+            {kind === 'section' ? (
+              <>
+                <div className="pc-card">
+                  <div className="pc-sec">सेक्शन का हिस्सा</div>
+                  <div className="pc-field"><label className="pc-lbl">सेक्शन शीर्षक</label><input className="pc-in" value={data.heading} onChange={(e) => set('heading', e.target.value)} /></div>
+                  <div className="pc-field"><label className="pc-lbl">छोटा विवरण (शीर्षक के नीचे)</label><textarea className="pc-ta" rows={2} value={data.intro} onChange={(e) => set('intro', e.target.value)} /></div>
+                </div>
+                {benefitsEditor}
+              </>
+            ) : kind === 'janta' ? (
               <>
                 <div className="pc-card">
                   <div className="pc-sec">जानकारी (लॉगिन से पहले)</div>

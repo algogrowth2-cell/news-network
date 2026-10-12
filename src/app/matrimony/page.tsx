@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import PortalLogo from '@/components/PortalLogo';
 import Footer from '@/components/Footer';
 import { AdInline, AdLayout } from '@/components/SiteAds';
+import PageInfoSection from '@/components/PageInfoSection';
 import { fallbackFor, getActivePortal, logoFor } from '@/lib/siteTheme';
 import { authFetch, firebasePhone } from '@/lib/phoneAuth';
 import { confirmPayment } from '@/lib/payments';
@@ -268,7 +269,7 @@ export default function MatrimonyPage() {
       <AdLayout color={primary}>
         <div className="mx-body">
           {!authReady ? <div className="mx-center">लोड हो रहा है…</div>
-            : !phone ? <LoginGate loginUrl={loginUrl} />
+            : !phone ? <><LoginGate loginUrl={loginUrl} /><PageInfoSection pageKey="matrimony" color={primary} /></>
             : (
               <>
                 {notif > 0 && tab !== 'interests' && (

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import Link from 'next/link';
 import { AdInline, AdLayout } from '@/components/SiteAds';
+import PageInfoSection from '@/components/PageInfoSection';
 import { fallbackFor, getActivePortal } from '@/lib/siteTheme';
 import { confirmPayment } from '@/lib/payments';
 import { firebasePhone, SECURE_AUTH } from '@/lib/phoneAuth';
@@ -589,6 +590,7 @@ export default function ShokSandeshPage() {
                 ))}
               </div>
             )}
+            <PageInfoSection pageKey="shok" color={fallbackFor(portalSlug).primaryColor} />
           </div>
         )}
 
