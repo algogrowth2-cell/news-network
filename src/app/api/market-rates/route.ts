@@ -2,17 +2,14 @@ import { NextResponse } from 'next/server';
 
 /*
  * Header ticker ke live rates — sirf free public sources, koi API key/account nahi:
- *  - Nifty 50, Sensex, Gold, Silver, USD-INR: Yahoo Finance public chart endpoint
- *  - Petrol, Diesel (Indore): goodreturns.in page ka <title> (robots.txt allow karta hai)
- * Har external fetch 1 ghante cache (next.revalidate). Koi source fail ho toh pichhla sahi value, warna fallback —
- * ticker kabhi khaali nahi rehta.
+ *  - Nifty 50, Sensex: Yahoo Finance public chart endpoint
+ *  - Gold (24K/10g), Silver (per kg): goodreturns.in — ASLI Indian sarafa/retail rate (GST shaamil)
+ *  - Petrol, Diesel (Indore): goodreturns.in page ka <title>
+ * Har external fetch 1 ghante cache. Koi source fail ho toh pichhla sahi value, warna fallback — ticker kabhi khaali nahi.
  */
 
 const REVALIDATE_SECONDS = 3600;
 const TIMEOUT_MS = 8000;
-const TROY_OUNCE_GRAMS = 31.1034768;
-// International rate (USD/oz) se Indian bazaar rate ka andaza: 6% import duty (GST alag). Isliye ticker par "अनुमानित"
-const INDIA_IMPORT_DUTY = 1.06;
 
 const UA = 'Mozilla/5.0 (compatible; NewsNetworkTicker/1.0)';
 
@@ -31,7 +28,7 @@ interface MarketRates {
   live: { fuel: boolean; indices: boolean; metals: boolean };
 }
 
-// 1 Oct 2026 ke asli rates — network fail hone par yahi dikhte hain
+// 15 Oct 2026 ke asli rates — network fail hone par yahi dikhte hain
 const FALLBACK: MarketRates = {
   petrol: '₹114.58',
   diesel: '₹99.70',
@@ -41,9 +38,9 @@ const FALLBACK: MarketRates = {
   sensex: '71,909.70',
   sensexChange: '-619.40',
   sensexPositive: false,
-  gold: '₹1,37,600',
-  silver: '₹1,99,900',
-  updatedAt: '2026-10-01T00:00:00.000Z',
+  gold: '₹1,35,890',
+  silver: '₹2,34,900',
+  updatedAt: '2026-10-15T00:00:00.000Z',
   live: { fuel: false, indices: false, metals: false }
 };
 
@@ -83,18 +80,50 @@ async function fuelPrice(kind: 'petrol' | 'diesel') {
   return value;
 }
 
+/*
+ * goodreturns gold/silver page par bhaav HTML me kai jagah aata hai (18K/22K/24K, kai sheher).
+ * Jo value sabse zyada baar repeat ho (diye range me) wahi asli din ka bhaav — robust aur markup badle to bhi tike.
+ */
+function mostFrequent(html: string, re: RegExp, min: number, max: number): number | null {
+  const counts = new Map<number, number>();
+  for (const m of html.matchAll(re)) {
+    const n = Number(m[0].replace(/,/g, ''));
+    if (Number.isFinite(n) && n >= min && n <= max) counts.set(n, (counts.get(n) || 0) + 1);
+  }
+  let best = 0, bestC = 0;
+  for (const [n, c] of counts) if (c > bestC || (c === bestC && n > best)) { best = n; bestC = c; }
+  return best || null;
+}
+
+// 24K gold per 10g — page par 24K per-gram (₹13,xxx) sabse zyada; x10
+async function goodreturnsGold(): Promise<number> {
+  const res = await fetchWithTimeout('https://www.goodreturns.in/gold-rates/');
+  if (!res.ok) throw new Error(`gold ${res.status}`);
+  const perGram = mostFrequent(await res.text(), /\b1[0-9],[0-9]{3}\b/g, 8000, 25000);
+  if (!perGram) throw new Error('gold parse');
+  return perGram * 10;
+}
+
+// Silver per kg — page par per-kg (₹2,xx,xxx) sabse zyada
+async function goodreturnsSilver(): Promise<number> {
+  const res = await fetchWithTimeout('https://www.goodreturns.in/silver-rates/');
+  if (!res.ok) throw new Error(`silver ${res.status}`);
+  const perKg = mostFrequent(await res.text(), /\b[0-9],[0-9]{2},[0-9]{3}\b/g, 50000, 600000);
+  if (!perKg) throw new Error('silver parse');
+  return perKg;
+}
+
 const indexFields = (q: { price: number; prev: number }) => {
   const change = q.price - q.prev;
   return { value: inr(q.price, 2), change: `${change >= 0 ? '+' : '-'}${inr(Math.abs(change), 2)}`, positive: change >= 0 };
 };
 
 export async function GET() {
-  const [nifty, sensex, gold, silver, usdInr, petrol, diesel] = await Promise.allSettled([
+  const [nifty, sensex, gold, silver, petrol, diesel] = await Promise.allSettled([
     yahooQuote('^NSEI'),
     yahooQuote('^BSESN'),
-    yahooQuote('GC=F'),
-    yahooQuote('SI=F'),
-    yahooQuote('INR=X'),
+    goodreturnsGold(),
+    goodreturnsSilver(),
     fuelPrice('petrol'),
     fuelPrice('diesel')
   ]);
@@ -108,12 +137,9 @@ export async function GET() {
     rates.live.indices = true;
   }
 
-  if (gold.status === 'fulfilled' && silver.status === 'fulfilled' && usdInr.status === 'fulfilled') {
-    const fx = usdInr.value.price;
-    const goldPer10g = (gold.value.price * fx * 10 * INDIA_IMPORT_DUTY) / TROY_OUNCE_GRAMS;
-    const silverPerKg = (silver.value.price * fx * 1000 * INDIA_IMPORT_DUTY) / TROY_OUNCE_GRAMS;
-    rates.gold = `₹${inr(Math.round(goldPer10g / 10) * 10)}`;
-    rates.silver = `₹${inr(Math.round(silverPerKg / 100) * 100)}`;
+  if (gold.status === 'fulfilled' && silver.status === 'fulfilled') {
+    rates.gold = `₹${inr(gold.value)}`;
+    rates.silver = `₹${inr(silver.value)}`;
     rates.live.metals = true;
   }
 
@@ -123,7 +149,7 @@ export async function GET() {
     rates.live.fuel = true;
   }
 
-  const failed = [nifty, sensex, gold, silver, usdInr, petrol, diesel].filter((r) => r.status === 'rejected');
+  const failed = [nifty, sensex, gold, silver, petrol, diesel].filter((r) => r.status === 'rejected');
   if (failed.length) console.warn('market-rates: some sources failed', failed.map((r) => (r as PromiseRejectedResult).reason?.message));
 
   if (rates.live.indices || rates.live.metals || rates.live.fuel) {
