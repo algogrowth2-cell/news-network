@@ -38,7 +38,7 @@ const FALLBACK: MarketRates = {
   sensex: '71,909.70',
   sensexChange: '-619.40',
   sensexPositive: false,
-  gold: '₹1,35,890',
+  gold: '₹1,48,250',
   silver: '₹2,34,900',
   updatedAt: '2026-10-15T00:00:00.000Z',
   live: { fuel: false, indices: false, metals: false }
@@ -84,22 +84,38 @@ async function fuelPrice(kind: 'petrol' | 'diesel') {
  * goodreturns gold/silver page par bhaav HTML me kai jagah aata hai (18K/22K/24K, kai sheher).
  * Jo value sabse zyada baar repeat ho (diye range me) wahi asli din ka bhaav — robust aur markup badle to bhi tike.
  */
-function mostFrequent(html: string, re: RegExp, min: number, max: number): number | null {
+function countNumbers(html: string, re: RegExp, min: number, max: number): Map<number, number> {
   const counts = new Map<number, number>();
   for (const m of html.matchAll(re)) {
     const n = Number(m[0].replace(/,/g, ''));
     if (Number.isFinite(n) && n >= min && n <= max) counts.set(n, (counts.get(n) || 0) + 1);
   }
+  return counts;
+}
+
+function mostFrequent(html: string, re: RegExp, min: number, max: number): number | null {
+  const counts = countNumbers(html, re, min, max);
   let best = 0, bestC = 0;
   for (const [n, c] of counts) if (c > bestC || (c === bestC && n > best)) { best = n; bestC = c; }
   return best || null;
 }
 
-// 24K gold per 10g — page par 24K per-gram (₹13,xxx) sabse zyada; x10
+// Jo values kaafi baar repeat (din ka bhaav) unme se sabse ऊंचा — gold me 24K (pure), 22K/18K se upar
+function dominantHighest(html: string, re: RegExp, min: number, max: number): number | null {
+  const counts = countNumbers(html, re, min, max);
+  if (!counts.size) return null;
+  const top = Math.max(...counts.values());
+  const threshold = Math.max(4, Math.ceil(top * 0.5));
+  let best = 0;
+  for (const [n, c] of counts) if (c >= threshold && n > best) best = n;
+  return best || null;
+}
+
+// 24K gold per 10g — frequent per-gram values me se sabse ऊंचा (= 24K) x10
 async function goodreturnsGold(): Promise<number> {
   const res = await fetchWithTimeout('https://www.goodreturns.in/gold-rates/');
   if (!res.ok) throw new Error(`gold ${res.status}`);
-  const perGram = mostFrequent(await res.text(), /\b1[0-9],[0-9]{3}\b/g, 8000, 25000);
+  const perGram = dominantHighest(await res.text(), /\b1[0-9],[0-9]{3}\b/g, 8000, 25000);
   if (!perGram) throw new Error('gold parse');
   return perGram * 10;
 }
