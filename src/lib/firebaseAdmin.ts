@@ -52,7 +52,7 @@ function readServiceAccount() {
     const sa = JSON.parse(json);
     if (!sa.private_key || !sa.client_email) throw new Error('private_key / client_email nahi');
     sa.private_key = String(sa.private_key).replace(/\\n/g, '\n');
-    if (json.length < text.trim().length) console.warn('FIREBASE_SERVICE_ACCOUNT ke baad extra text tha — pehli key use ki');
+    // Note: env me JSON ke baad extra text ho toh bhi pehli (sahi) key use hoti hai — kaam par asar nahi.
     return sa;
   } catch (err) {
     // Sirf lambai/aakaar — key ka koi hissa log me nahi
