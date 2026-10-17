@@ -7,7 +7,7 @@ import { db, app } from '@/lib/firebase';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AdBanner, AdInline, AdMedia, AdSideSlots, useStickySidebar } from '@/components/SiteAds';
+import { AdBanner, AdInline, AdMedia, AdSideSlots } from '@/components/SiteAds';
 import SiteSwitcher from '@/components/SiteSwitcher';
 import { normalizeSiteId } from '@/lib/portals';
 import { fetchPortalArticles } from '@/lib/articleQueries';
@@ -214,7 +214,8 @@ html.translated-ltr .hp-nav-extra,html.translated-rtl .hp-nav-extra,.hp-header.h
 .hp-mobile-tools .lt-trigger-text,.hp-mobile-tools .lt-trigger-caret{display:none}
 
 .hp-shell{max-width:1320px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:220px minmax(0,1fr) 300px;gap:24px;align-items:start}
-.hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
+.hp-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px;max-height:calc(100vh - 100px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.hp-side::-webkit-scrollbar{display:none}
 .hp-box{background:#fff;border:1px solid #eae8e4;border-radius:14px;padding:14px}
 .hp-box-title{font-size:13.5px;font-weight:800;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid}
 .hp-cat{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:7px 10px;border-radius:8px;font-size:13px;cursor:pointer;text-align:left;color:#333;transition:background .15s}
@@ -325,7 +326,7 @@ html.translated-ltr .hp-nav-extra,html.translated-rtl .hp-nav-extra,.hp-header.h
 }
 @media(max-width:820px){
   .hp-shell{grid-template-columns:1fr}
-  .hp-side{position:static}
+  .hp-side{position:static;max-height:none;overflow:visible}
   .hp-desktop-tools{display:none}
   .hp-mobile-tools{display:flex}
   .hp-hero-title{font-size:18px}
@@ -974,7 +975,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
   const fitRef = useRef({ nav: 0, toolsFull: 0, toolsCompact: 0, level: 0 });
   // Lamba right sidebar: smart sticky (khabron ke saath khaali jagah nahi)
   const rightSideRef = useRef<HTMLElement>(null);
-  useStickySidebar(rightSideRef, { top: 90, minWidth: 821 });
+  // Sidebar ab CSS se hi sticky + apna scroll (hp-side); JS smart-sticky hata diya taaki har column alag scroll ho
 
   // Trending tags — desktop par mouse se scroll (arrows + wheel); mobile par touch pehle se
   const tagsRef = useRef<HTMLDivElement>(null);
