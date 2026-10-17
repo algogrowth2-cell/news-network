@@ -186,9 +186,9 @@ body {
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
 .hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap}
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
-.hp-nav{display:flex;gap:2px;flex-shrink:0}
+.hp-nav{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
 .hp-nav::-webkit-scrollbar{display:none}
-.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s;line-height:1.2}
+.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
 /* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
 .hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;flex-shrink:0}
 .hp-ico-cat{width:22px;height:22px;font-size:16px}
@@ -1094,7 +1094,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
       </div>
 
       {/* ═══ 2. HEADER ═══ */}
-      <header className={`hp-header${headerLevel >= 1 ? ' hp-nav-collapsed' : ''}${headerLevel === 2 ? ' hp-tools-compact' : ''}`} style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
+      <header className="hp-header" style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
         <div className="hp-header-in" ref={headerInRef}>
           {/* Left: Brand Logo & Title */}
           <div className="hp-brand-wrap" ref={brandRef}>
