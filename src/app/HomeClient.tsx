@@ -231,7 +231,7 @@ body {
 .hp-updates{background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#444}
 .hp-updates p{margin:4px 0 0;line-height:1.5}
 
-.hp-tags{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;padding-right:12px}
+.hp-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-bottom:2px}
 .hp-tags::-webkit-scrollbar{display:none}
 .hp-tags-label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;white-space:nowrap;flex-shrink:0}
 
@@ -978,7 +978,8 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
       const gap = parseFloat(cs.columnGap || '0') || 0;
       const brand = (b.querySelector<HTMLElement>('.hp-brand')?.offsetWidth || b.offsetWidth) + 2;
       const inner = h.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - brand - gap * 2;
-      const level = m.nav + m.toolsFull <= inner ? 0 : m.nav + m.toolsCompact <= inner ? 1 : 2;
+      // Jagah kam ho: pehle category nav ko ☰ me chhupao (tool buttons poore rahein), fir bhi na aaye to tool buttons compact
+      const level = m.nav + m.toolsFull <= inner ? 0 : m.toolsFull <= inner ? 1 : 2;
       if (level !== m.level) {
         m.level = level;
         setHeaderLevel(level);
@@ -986,11 +987,14 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     };
     check();
     const ro = new ResizeObserver(check);
-    [headerInRef.current, brandRef.current, toolsRef.current].forEach((el) => el && ro.observe(el));
+    [headerInRef.current, brandRef.current, navRef.current, toolsRef.current].forEach((el) => el && ro.observe(el));
     window.addEventListener('resize', check);
+    // Google Translate text baad me badalta hai — tab dobara naapo (warna purani (Hindi) naap par header galat compact ho jaata hai)
+    const timers = [400, 1200, 2800, 5000].map((ms) => window.setTimeout(check, ms));
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', check);
+      timers.forEach((t) => clearTimeout(t));
     };
   }, []);
 
@@ -1090,7 +1094,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
       </div>
 
       {/* ═══ 2. HEADER ═══ */}
-      <header className={`hp-header${headerLevel >= 1 ? ' hp-tools-compact' : ''}${headerLevel === 2 ? ' hp-nav-collapsed' : ''}`} style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
+      <header className={`hp-header${headerLevel >= 1 ? ' hp-nav-collapsed' : ''}${headerLevel === 2 ? ' hp-tools-compact' : ''}`} style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
         <div className="hp-header-in" ref={headerInRef}>
           {/* Left: Brand Logo & Title */}
           <div className="hp-brand-wrap" ref={brandRef}>
