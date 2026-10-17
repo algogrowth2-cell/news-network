@@ -238,7 +238,7 @@ body {
 .hp-tags-arrow:hover{background:#f7f6f3}
 .hp-tags-arrow-l{left:-2px}
 .hp-tags-arrow-r{right:-2px}
-@media(min-width:821px){.hp-tags-arrow{display:flex}}
+@media(min-width:821px){.hp-tags-arrow{display:flex}.hp-tags{cursor:grab}}
 .hp-tags-label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;white-space:nowrap;flex-shrink:0}
 
 .hp-section-title{font-size:17px;font-weight:800;margin:0;padding-bottom:8px;border-bottom:2px solid}
@@ -972,17 +972,47 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     setTagArrows({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
   };
   const scrollTags = (dir: number) => tagsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
+  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
   useEffect(() => {
     const el = tagsRef.current;
     if (!el) return;
+    const d = dragRef.current;
     updateTagArrows();
+    // Mouse wheel / trackpad → horizontal scroll
     const onWheel = (e: WheelEvent) => {
       if (el.scrollWidth <= el.clientWidth) return;
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); el.scrollLeft += e.deltaY; }
+      const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (delta) { e.preventDefault(); el.scrollLeft += delta; }
     };
+    // Mouse se pakad kar kheenchna (mobile touch jaisa)
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return; // mobile: native touch scroll
+      d.down = true; d.moved = false; d.startX = e.clientX; d.startScroll = el.scrollLeft;
+      el.style.cursor = 'grabbing';
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!d.down) return;
+      const dx = e.clientX - d.startX;
+      if (Math.abs(dx) > 3) d.moved = true;
+      el.scrollLeft = d.startScroll - dx;
+    };
+    const onUp = () => { d.down = false; el.style.cursor = ''; };
+    // Drag ke baad tag par galti se click na ho
+    const onClickCapture = (e: MouseEvent) => { if (d.moved) { e.stopPropagation(); e.preventDefault(); d.moved = false; } };
     el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    el.addEventListener('click', onClickCapture, true);
     window.addEventListener('resize', updateTagArrows);
-    return () => { el.removeEventListener('wheel', onWheel); window.removeEventListener('resize', updateTagArrows); };
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      el.removeEventListener('click', onClickCapture, true);
+      window.removeEventListener('resize', updateTagArrows);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trendingTags.length, activeCategory]);
 
