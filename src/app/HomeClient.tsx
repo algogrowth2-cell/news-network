@@ -116,24 +116,24 @@ const HOME_TABS = ['होम', 'Home', 'ताज़ा खबरें', 'Late
 // Menu: aage/peeche ke fixed tab + beech me admin (Categories) se aane wali categories
 const MENU_HEAD_HI = [
   { key: 'होम', icon: '🏠' },
-  { key: 'रेफर और कमाएं', icon: '🎁' },
   { key: 'लाइव', icon: '🔴' },
   { key: 'वीडियो', icon: '📹' }
 ];
 const MENU_TAIL_HI = [
   { key: 'शोक संदेश', icon: '🕯️' },
   { key: 'विवाह', icon: '💍' },
-  { key: 'ई-पेपर', icon: '📄' }
+  { key: 'ई-पेपर', icon: '📄' },
+  { key: 'रेफर और कमाएं', icon: '🎁' }
 ];
 const MENU_HEAD_EN = [
   { key: 'Home', icon: '🏠' },
-  { key: 'Refer & Earn', icon: '🎁' },
   { key: 'Live', icon: '🔴' },
   { key: 'Videos', icon: '📹' }
 ];
 const MENU_TAIL_EN = [
   { key: 'Matrimony', icon: '💍' },
-  { key: 'E-Paper', icon: '📄' }
+  { key: 'E-Paper', icon: '📄' },
+  { key: 'Refer & Earn', icon: '🎁' }
 ];
 
 const HP_STYLES = `
