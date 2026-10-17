@@ -565,7 +565,7 @@ export default function Footer({
           <span style={{ fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: '#9e9a91', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
             {t.network}
           </span>
-          <div className="gp-ft-hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1, paddingBottom: '2px', WebkitOverflowScrolling: 'touch' as any }}>
+          <div className="gp-ft-hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', whiteSpace: 'nowrap', flex: 1, paddingTop: '6px', paddingBottom: '6px', WebkitOverflowScrolling: 'touch' as any }}>
             {NETWORK_PORTALS.filter(p => p.slug !== homeSlug && p.name !== siteName).map(portal => (
               <Link key={portal.slug} href={`/?site=${portal.slug}`} className="gp-ft-portal-chip">
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: portal.color, flexShrink: 0, boxShadow: `0 0 0 2px ${portal.color}33` }} />
