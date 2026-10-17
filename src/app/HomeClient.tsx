@@ -231,8 +231,14 @@ body {
 .hp-updates{background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#444}
 .hp-updates p{margin:4px 0 0;line-height:1.5}
 
-.hp-tags{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;padding-right:12px}
+.hp-tags-wrap{position:relative}
+.hp-tags{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;padding-right:12px;scroll-behavior:smooth}
 .hp-tags::-webkit-scrollbar{display:none}
+.hp-tags-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid #e5e3df;box-shadow:0 2px 8px rgba(0,0,0,.16);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:19px;line-height:1;color:#333;padding:0}
+.hp-tags-arrow:hover{background:#f7f6f3}
+.hp-tags-arrow-l{left:-2px}
+.hp-tags-arrow-r{right:-2px}
+@media(min-width:821px){.hp-tags-arrow{display:flex}}
 .hp-tags-label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;white-space:nowrap;flex-shrink:0}
 
 .hp-section-title{font-size:17px;font-weight:800;margin:0;padding-bottom:8px;border-bottom:2px solid}
@@ -956,6 +962,30 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
   // Lamba right sidebar: smart sticky (khabron ke saath khaali jagah nahi)
   const rightSideRef = useRef<HTMLElement>(null);
   useStickySidebar(rightSideRef, { top: 90, minWidth: 821 });
+
+  // Trending tags — desktop par mouse se scroll (arrows + wheel); mobile par touch pehle se
+  const tagsRef = useRef<HTMLDivElement>(null);
+  const [tagArrows, setTagArrows] = useState({ l: false, r: false });
+  const updateTagArrows = () => {
+    const el = tagsRef.current;
+    if (!el) return;
+    setTagArrows({ l: el.scrollLeft > 4, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  };
+  const scrollTags = (dir: number) => tagsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
+  useEffect(() => {
+    const el = tagsRef.current;
+    if (!el) return;
+    updateTagArrows();
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); el.scrollLeft += e.deltaY; }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('resize', updateTagArrows);
+    return () => { el.removeEventListener('wheel', onWheel); window.removeEventListener('resize', updateTagArrows); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trendingTags.length, activeCategory]);
+
   const [headerLevel, setHeaderLevel] = useState(0);
   useEffect(() => {
     const check = () => {
@@ -1321,7 +1351,11 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
 
           {/* ── TRENDING TAGS — banner ad ke neeche, khabron ke upar ── */}
           {activeCategory !== 'लाइव' && activeCategory !== 'Live' && (
-            <div className="hp-tags">
+            <div className="hp-tags-wrap">
+            {tagArrows.l && (
+              <button className="hp-tags-arrow hp-tags-arrow-l" onClick={() => scrollTags(-1)} aria-label={isEnglishSite ? 'Previous' : 'पीछे'}>‹</button>
+            )}
+            <div className="hp-tags" ref={tagsRef} onScroll={updateTagArrows}>
               <span className="hp-tags-label" style={{ color: primary }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -1354,6 +1388,10 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
                   </button>
                 );
               })}
+            </div>
+            {tagArrows.r && (
+              <button className="hp-tags-arrow hp-tags-arrow-r" onClick={() => scrollTags(1)} aria-label={isEnglishSite ? 'Next' : 'आगे'}>›</button>
+            )}
             </div>
           )}
 
