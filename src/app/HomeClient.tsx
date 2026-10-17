@@ -108,40 +108,6 @@ const formatRashifalDate = (date: string, english: boolean) => {
 const PLAY_STORE_URL = 'https://play.google.com/store';
 const APP_STORE_URL = 'https://apps.apple.com';
 
-// Desktop par ek horizontal-scroll row ko mouse se chalao: wheel + pakad-ke-kheencho (drag). Mobile touch native.
-function attachDragScroll(el: HTMLElement) {
-  const d = { down: false, startX: 0, startScroll: 0, moved: false };
-  const onWheel = (e: WheelEvent) => {
-    if (el.scrollWidth <= el.clientWidth) return;
-    const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-    if (delta) { e.preventDefault(); el.scrollLeft += delta; }
-  };
-  const onDown = (e: PointerEvent) => {
-    if (e.pointerType === 'touch') return;
-    d.down = true; d.moved = false; d.startX = e.clientX; d.startScroll = el.scrollLeft; el.style.cursor = 'grabbing';
-  };
-  const onMove = (e: PointerEvent) => {
-    if (!d.down) return;
-    const dx = e.clientX - d.startX;
-    if (Math.abs(dx) > 3) d.moved = true;
-    el.scrollLeft = d.startScroll - dx;
-  };
-  const onUp = () => { d.down = false; el.style.cursor = ''; };
-  const onClickCapture = (e: MouseEvent) => { if (d.moved) { e.stopPropagation(); e.preventDefault(); d.moved = false; } };
-  el.addEventListener('wheel', onWheel, { passive: false });
-  el.addEventListener('pointerdown', onDown);
-  el.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
-  el.addEventListener('click', onClickCapture, true);
-  return () => {
-    el.removeEventListener('wheel', onWheel);
-    el.removeEventListener('pointerdown', onDown);
-    el.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    el.removeEventListener('click', onClickCapture, true);
-  };
-}
-
 // Ye tabs koi category filter nahi lagate — saari khabrein
 const HOME_TABS = ['होम', 'Home', 'ताज़ा खबरें', 'Latest News', 'राशिफल', 'टॉप न्यूज़', 'Top News'];
 
@@ -220,11 +186,11 @@ body {
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
 .hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap}
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
-.hp-nav{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;cursor:grab;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.hp-nav{display:flex;gap:1px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
 .hp-nav::-webkit-scrollbar{display:none}
-.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
+.hp-nav-btn{border:0;padding:5px 8px;border-radius:18px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
 /* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
-.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;flex-shrink:0}
+.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:13px;line-height:1;flex-shrink:0}
 .hp-ico-cat{width:22px;height:22px;font-size:16px}
 .hp-txt{display:inline-block;line-height:1.25;padding-top:1px}
 .hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -333,9 +299,13 @@ body {
 /* Lamba portal naam (National Defence Network) ho toh menu thoda compact — naam/tagline poore dikhein */
 @media(max-width:1500px){
   .hp-header-in{gap:10px}
-  .hp-nav-btn{padding:6px 7px;font-size:12px;gap:4px}
+  .hp-nav-btn{padding:5px 6px;font-size:11.5px;gap:3px}
+  .hp-ico{width:15px;height:15px;font-size:12px}
   .hp-tools{gap:5px}
   .hp-tool-link{padding:5px 7px}
+}
+@media(max-width:1300px){
+  .hp-nav-btn{padding:4px 5px;font-size:11px;gap:3px}
 }
 /* Jagah kam ho (lamba naam, login chip, zoom) toh poora menu ☰ me — aadhe buttons kabhi nahi chhupte (JS naapta hai) */
 .hp-header.hp-nav-collapsed .hp-nav{display:none}
@@ -1049,12 +1019,6 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trendingTags.length, activeCategory]);
-
-  // Header category nav bhi desktop par mouse se scroll (wheel + drag) — शोक संदेश / विवाह / ई-पेपर tak pahunch
-  useEffect(() => {
-    const el = navRef.current;
-    return el ? attachDragScroll(el as HTMLElement) : undefined;
-  }, []);
 
   const [headerLevel, setHeaderLevel] = useState(0);
   useEffect(() => {
