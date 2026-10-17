@@ -1220,13 +1220,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
           {/* Desktop Tools */}
           <div className="hp-tools hp-desktop-tools" ref={toolsRef}>
             <Link href={`/janta-darbaar?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}>
-              📣<span className="hp-tool-text"> {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}</span>
+              <span className="notranslate" translate="no">📣</span><span className="hp-tool-text"> {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}</span>
             </Link>
             <Link href={`/patrakar?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Journalist' : 'पत्रकार'}>
-              ✍️<span className="hp-tool-text"> {isEnglishSite ? 'Journalist' : 'पत्रकार'}</span>
+              <span className="notranslate" translate="no">✍️</span><span className="hp-tool-text"> {isEnglishSite ? 'Journalist' : 'पत्रकार'}</span>
             </Link>
             <Link href={`/advertiser?site=${currentSlug}`} className="hp-tool-link" title={isEnglishSite ? 'Advertise' : 'विज्ञापन'}>
-              📢<span className="hp-tool-text"> {isEnglishSite ? 'Advertise' : 'विज्ञापन'}</span>
+              <span className="notranslate" translate="no">📢</span><span className="hp-tool-text"> {isEnglishSite ? 'Advertise' : 'विज्ञापन'}</span>
             </Link>
             <SiteSwitcher currentSlug={currentSlug} primaryColor={primary} />
             <Suspense fallback={null}>
@@ -1359,13 +1359,13 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
           {categoryButtons}
           <div className="hp-drawer-links">
             <Link href={`/janta-darbaar?site=${currentSlug}`} className="hp-tool-link">
-              📣 {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}
+              <span className="notranslate" translate="no">📣</span> {isEnglishSite ? 'Janta Darbaar' : 'जनता दरबार'}
             </Link>
             <Link href={`/patrakar?site=${currentSlug}`} className="hp-tool-link">
-              ✍️ {isEnglishSite ? 'Journalist' : 'पत्रकार'}
+              <span className="notranslate" translate="no">✍️</span> {isEnglishSite ? 'Journalist' : 'पत्रकार'}
             </Link>
             <Link href={`/advertiser?site=${currentSlug}`} className="hp-tool-link">
-              📢 {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
+              <span className="notranslate" translate="no">📢</span> {isEnglishSite ? 'Advertise' : 'विज्ञापन'}
             </Link>
           </div>
           {appDownloadBox}
