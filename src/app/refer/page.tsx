@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { activatePendingReward, ensureReferralCode, REFERRAL_REWARD_MONTHS } from '@/lib/referralService';
@@ -32,6 +33,7 @@ const M = REFERRAL_REWARD_MONTHS;
 const TEXT = {
   hi: {
     home: '← होम',
+    back: '← वापस',
     pageTitle: '🎁 रेफर करें और कमाएं',
     loginTitle: `रेफर करें, ${M} महीने ई-पेपर फ्री पाएं`,
     loginDesc: `अपना रेफरल कोड और लिंक पाने के लिए पहले लॉगिन करें। हर सफल रेफरल पर आपको ${M} महीने का ई-पेपर बिल्कुल मुफ़्त मिलेगा।`,
@@ -94,6 +96,7 @@ const TEXT = {
   },
   en: {
     home: '← Home',
+    back: '← Back',
     pageTitle: '🎁 Refer & Earn',
     loginTitle: `Refer friends, get ${M} months of e-paper free`,
     loginDesc: `Please log in to get your referral code and link. For every successful referral you get ${M} months of e-paper absolutely free.`,
@@ -244,6 +247,11 @@ export default function ReferPage() {
 
   const isEnglish = isEnglishSlug(siteSlug);
   const t = isEnglish ? TEXT.en : TEXT.hi;
+  const router = useRouter();
+  const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    else router.push(withSite('/'));
+  };
   const fmtDate = (d: Date | null) =>
     d ? d.toLocaleDateString(isEnglish ? 'en-IN' : 'hi-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
   const withSite = (path: string) => (siteSlug ? `${path}${path.includes('?') ? '&' : '?'}site=${siteSlug}` : path);
@@ -427,7 +435,7 @@ export default function ReferPage() {
         <>
           <header className="rf-top">
             <PortalLogo height={50} />
-            <Link href={withSite('/')}>{t.home}</Link>
+            <a href={withSite('/')} onClick={(e) => { e.preventDefault(); goBack(); }} style={{ cursor: 'pointer' }}>{t.back}</a>
             <b>{t.pageTitle}</b>
           </header>
 
