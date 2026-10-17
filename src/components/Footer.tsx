@@ -10,7 +10,7 @@ import { useSiteSocial } from '@/lib/useSiteSocial';
 const TEXT = {
   hi: {
     news: 'खबरें',
-    cats: ['टॉप न्यूज़', 'राजनीति', 'गुजरात', 'देश', 'व्यापार', 'खेल'],
+    cats: ['टॉप न्यूज़', 'राजनीति', 'देश', 'विदेश', 'व्यापार', 'खेल'],
     services: 'सेवाएं',
     epaper: 'ई-पेपर',
     shok: 'शोक संदेश',
