@@ -189,9 +189,9 @@ body {
 .hp-nav{display:flex;gap:1px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
 .hp-nav::-webkit-scrollbar{display:none}
 .hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
-/* English / Google-translate (translated-ltr) me text lamba — tab nav buttons chhote, taaki saare fit ho (Hindi me normal) */
-html.translated-ltr .hp-nav-btn,.hp-header.hp-en .hp-nav-btn{padding:4px 7px;font-size:11.5px;gap:3px}
-html.translated-ltr .hp-ico,.hp-header.hp-en .hp-ico{width:15px;height:15px;font-size:12px}
+/* English / Google-translate (translated-ltr) me text lamba hota hai — tab ye 3 nav buttons (शोक संदेश/विवाह/ई-पेपर)
+   header se hata do; ye left sidebar/menu me already hain. Hindi (default) me saare normal dikhte hain. */
+html.translated-ltr .hp-nav-extra,html.translated-rtl .hp-nav-extra,.hp-header.hp-en .hp-nav-extra{display:none}
 /* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
 .hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;flex-shrink:0}
 .hp-ico-cat{width:22px;height:22px;font-size:16px}
@@ -305,7 +305,6 @@ html.translated-ltr .hp-ico,.hp-header.hp-en .hp-ico{width:15px;height:15px;font
   .hp-nav-btn{padding:6px 7px;font-size:12px;gap:4px}
   .hp-tools{gap:5px}
   .hp-tool-link{padding:5px 7px}
-  html.translated-ltr .hp-nav-btn,.hp-header.hp-en .hp-nav-btn{padding:4px 5px;font-size:11px;gap:2px}
 }
 /* Jagah kam ho (lamba naam, login chip, zoom) toh poora menu ☰ me — aadhe buttons kabhi nahi chhupte (JS naapta hai) */
 .hp-header.hp-nav-collapsed .hp-nav{display:none}
@@ -1189,15 +1188,15 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
               { key: isEnglishSite ? 'Live' : 'लाइव', emoji: '🔴' },
               { key: isEnglishSite ? 'Videos' : 'वीडियो', emoji: '📹' },
               { key: isEnglishSite ? 'Latest News' : 'ताज़ा खबरें', emoji: '⚡' },
-              ...(isEnglishSite ? [] : [{ key: 'शोक संदेश', emoji: '🕯️' }]),
-              { key: isEnglishSite ? 'Matrimony' : 'विवाह', emoji: '💍' },
-              { key: isEnglishSite ? 'E-Paper' : 'ई-पेपर', emoji: '📄' }
-            ].filter(noEpaper).map(({ key, emoji }) => {
+              ...(isEnglishSite ? [] : [{ key: 'शोक संदेश', emoji: '🕯️', extra: true }]),
+              { key: isEnglishSite ? 'Matrimony' : 'विवाह', emoji: '💍', extra: true },
+              { key: isEnglishSite ? 'E-Paper' : 'ई-पेपर', emoji: '📄', extra: true }
+            ].filter(noEpaper).map(({ key, emoji, extra }) => {
               const isActive = activeCategory === key && !activeTrendTag;
               return (
                 <button
                   key={key}
-                  className="hp-nav-btn"
+                  className={`hp-nav-btn${extra ? ' hp-nav-extra' : ''}`}
                   onClick={() => handleCategoryClick(key)}
                   style={{
                     color: isActive ? primary : (key === 'लाइव' || key === 'Live') && hasLiveStreams ? '#ef4444' : '#555',
