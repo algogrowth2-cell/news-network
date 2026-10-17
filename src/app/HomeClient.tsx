@@ -186,7 +186,7 @@ body {
 .hp-logo{height:40px;width:auto;max-width:130px;object-fit:contain;flex-shrink:0}
 .hp-site-name{font-size:17px;font-weight:800;margin:-2px 0;padding:2px 0;line-height:1.45;white-space:nowrap}
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
-.hp-nav{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.hp-nav{display:flex;gap:2px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
 .hp-nav::-webkit-scrollbar{display:none}
 .hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
 /* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
@@ -231,7 +231,7 @@ body {
 .hp-updates{background:#fff7ed;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#444}
 .hp-updates p{margin:4px 0 0;line-height:1.5}
 
-.hp-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-bottom:2px}
+.hp-tags{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;padding-right:12px}
 .hp-tags::-webkit-scrollbar{display:none}
 .hp-tags-label{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;white-space:nowrap;flex-shrink:0}
 
