@@ -530,11 +530,13 @@ export default function Footer({
             <div style={{ fontSize: '13.5px', color: '#5a574f', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '18px' }}>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.location(primaryColor)}</span>
-                <span>1st Floor Shreenath Complex Old A.B Road, Kishanganj Dr. Ambedkar Nagar (Mhow) District: Indore (Madhya Pradesh) Pin Code - 453441</span>
+                <span>{t === TEXT.en
+                  ? '1st Floor, Shreenath Complex, Old A.B. Road, Kishanganj, Dr. Ambedkar Nagar (Mhow), District: Indore (Madhya Pradesh), Pin Code - 453441'
+                  : 'प्रथम तल, श्रीनाथ कॉम्प्लेक्स, ओल्ड ए.बी. रोड, किशनगंज, डॉ. अम्बेडकर नगर (महू), ज़िला: इंदौर (मध्य प्रदेश), पिन कोड - 453441'}</span>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.email(primaryColor)}</span>
-                <a href={gmailUrl} style={{ wordBreak: 'break-all', color: 'inherit', textDecoration: 'none' }}>{contact.email}</a>
+                <a href={gmailUrl} className="notranslate" translate="no" style={{ wordBreak: 'break-all', color: 'inherit', textDecoration: 'none' }}>{contact.email}</a>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.phone(primaryColor)}</span>
