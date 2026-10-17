@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { NETWORK_SITES } from '@/lib/portals';
-import { EMPTY_SOCIAL, normalizeSocial, type SocialSet } from '@/lib/useSiteSocial';
+import { EMPTY_SOCIAL, normalizeSocial, socialFor, type SocialSet } from '@/lib/useSiteSocial';
 
 type FieldKey = keyof SocialSet;
 
@@ -53,7 +53,7 @@ export default function AdminSocialLinks() {
     let alive = true;
     setLoading(true); setMsg('');
     getDoc(doc(db, 'settings', 'social'))
-      .then((snap) => { if (alive) setData(normalizeSocial((snap.exists() ? (snap.data() as any) : {})?.[slug] || {})); })
+      .then((snap) => { if (alive) setData(socialFor(slug, (snap.exists() ? (snap.data() as any) : {})?.[slug])); })
       .catch(() => alive && setData(EMPTY_SOCIAL))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
