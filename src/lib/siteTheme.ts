@@ -9,7 +9,7 @@ export const SITE_FALLBACKS: Record<string, { name: string; primaryColor: string
   'ndn-defence': { name: 'National Defence Network', primaryColor: '#15803d', logoUrl: '/logos/ndn-defence.jpeg', tagline: 'Defence Beyond Headlines' },
   'bazar-karobar': { name: 'बाजार कारोबार', primaryColor: '#059669', logoUrl: '/logos/bazar-karobar.jpeg', tagline: 'व्यापार और अर्थव्यवस्था' },
   'golden-pearl-chronicles': { name: 'गोल्डन पर्ल क्रॉनिकल्स', primaryColor: '#d97706', logoUrl: '/logos/golden-pearl-chronicles.jpeg', tagline: 'सच के साथ निष्पक्ष' },
-  'desh-ki-aawaz': { name: 'देश की आवाज़', primaryColor: '#7c3aed', logoUrl: '/logos/desh-ki-aawaz.jpeg', tagline: 'हर नागरिक की बुलंद आवाज़' }
+  'desh-ki-aawaz': { name: 'देश की आवाज़', primaryColor: '#7c3aed', logoUrl: '/logos/deshkiawazbg.png', tagline: 'हर नागरिक की बुलंद आवाज़' }
 };
 
 export const DEFAULT_SITE_SLUG = 'the-local-leader';
