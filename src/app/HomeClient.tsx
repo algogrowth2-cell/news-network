@@ -161,6 +161,12 @@ body {
 .hp-mobile-tools .skiptranslate {
   display: block !important;
 }
+/* Google Translate ka apna gadget (jo "ಕನ್ನಡ / Powered by Google" dikhata hai) kahin leak na ho — hamesha chhupa */
+#google_translate_element,
+.goog-te-gadget,
+.goog-te-gadget-simple {
+  display: none !important;
+}
 
 .hp-root{min-height:100vh;background:#f7f6f3;color:#1a1a1a;-webkit-font-smoothing:antialiased}
 .hp-root *{box-sizing:border-box}
@@ -1076,7 +1082,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
               fontWeight: isActive ? 700 : 500
             }}
           >
-            <span className="hp-ico hp-ico-cat">{icon}</span>
+            <span className="hp-ico hp-ico-cat notranslate" translate="no">{icon}</span>
             <span className="hp-txt">{key}</span>
           </button>
         );
@@ -1204,7 +1210,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
                     fontWeight: isActive ? 700 : 500
                   }}
                 >
-                  <span className="hp-ico">{emoji}</span>
+                  <span className="hp-ico notranslate" translate="no">{emoji}</span>
                   <span className="hp-txt">{key}</span>
                 </button>
               );
