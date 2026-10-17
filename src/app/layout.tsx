@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import RouteProgress from '@/components/RouteProgress';
 import { AuthProvider } from '@/context/AuthContext';
 import AutoFooter from '@/components/AutoFooter';
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <RouteProgress />
         <AuthProvider>
           {children}
           <AutoFooter />

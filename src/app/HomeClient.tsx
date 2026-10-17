@@ -417,17 +417,21 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     }
   };
 
+  const nav = (url: string) => {
+    try { window.dispatchEvent(new Event('nav:start')); } catch {}
+    setDrawerOpen(false);
+    router.push(url);
+  };
   const handleCategoryClick = (cat: string) => {
     if (cat === 'रेफर और कमाएं' || cat === 'Refer & Earn') {
       // Refer page khud login maangta hai (login ke baad wapas /refer)
-      setDrawerOpen(false);
-      router.push(`/refer?site=${currentSlug}`);
+      nav(`/refer?site=${currentSlug}`);
       return;
     }
-    if (cat === 'वीडियो' || cat === 'Videos') { router.push(`/videos?site=${currentSlug}`); return; }
-    if ((cat === 'ई-पेपर' || cat === 'E-Paper') && hasEpaper(currentSlug)) { router.push(`/epaper?site=${currentSlug}`); return; }
-    if (cat === 'शोक संदेश') { router.push(`/shok-sandesh?site=${currentSlug}`); return; }
-    if (cat === 'विवाह' || cat === 'Matrimony') { router.push(`/matrimony?site=${currentSlug}`); return; }
+    if (cat === 'वीडियो' || cat === 'Videos') { nav(`/videos?site=${currentSlug}`); return; }
+    if ((cat === 'ई-पेपर' || cat === 'E-Paper') && hasEpaper(currentSlug)) { nav(`/epaper?site=${currentSlug}`); return; }
+    if (cat === 'शोक संदेश') { nav(`/shok-sandesh?site=${currentSlug}`); return; }
+    if (cat === 'विवाह' || cat === 'Matrimony') { nav(`/matrimony?site=${currentSlug}`); return; }
     if (cat === 'सर्च' || cat === 'Search') { setSearchModalOpen(true); return; }
     setActiveCategory(cat);
     setActiveTrendTag('');
