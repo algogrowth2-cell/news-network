@@ -540,7 +540,7 @@ export default function Footer({
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.phone(primaryColor)}</span>
-                <span>+91 8103333381</span>
+                <span className="notranslate" translate="no">+91 8103333381</span>
               </div>
               <div className="gp-ft-contact-row">
                 <span style={{ flexShrink: 0, marginTop: '2px' }}>{ContactIcon.clock(primaryColor)}</span>
