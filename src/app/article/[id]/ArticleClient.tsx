@@ -11,7 +11,7 @@ import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AdBanner, AdSideSlots, ClassifiedsWidget, StickyAside } from '@/components/SiteAds';
 import PortalLogo from '@/components/PortalLogo';
-import { fallbackFor, logoFor } from '@/lib/siteTheme';
+import { fallbackFor, isEnglishSlug, logoFor } from '@/lib/siteTheme';
 import { hasEpaper } from '@/lib/epaperSub';
 
 interface ArticleDetail {
@@ -202,6 +202,13 @@ export default function ArticleClient({ initialArticle = null, routeParam: route
 
   const primary = siteConfig?.primaryColor || '#ea580c';
   const siteName = siteConfig?.name || 'द लोकल लीडर';
+  // Raw ISO/date → padhne-yogya tareekh (galat ho to jaisा hai waisा)
+  const fmtDate = (v?: string) => {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(isEnglishSlug(siteSlug) ? 'en-IN' : 'hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
   const siteLogo = logoFor(siteSlug, siteConfig?.logoUrl);
   const siteTagline = siteConfig?.description || '— जनता की आवाज़, सच्चाई के साथ —';
   const cssVars = { '--p': primary } as React.CSSProperties;
@@ -253,7 +260,6 @@ export default function ArticleClient({ initialArticle = null, routeParam: route
               <span className="ap-hdr-cat">{article.category || 'National'}</span>
             </div>
             <div className="ap-hdr-right">
-              <time className="ap-hdr-date">{article.createdAt || 'आज'}</time>
               <Link href={`/?site=${siteSlug}`} className="ap-hdr-home">होम</Link>
             </div>
           </div>
@@ -273,7 +279,7 @@ export default function ArticleClient({ initialArticle = null, routeParam: route
               {/* Category + Date */}
               <div className="ap-top-row">
                 <span className="ap-pill" style={{ background: primary }}>{article.category || 'ताज़ा खबर'}</span>
-                <span className="ap-top-date">{article.createdAt || 'हाल ही में'}</span>
+                <span className="ap-top-date">{fmtDate(article.createdAt) || 'हाल ही में'}</span>
               </div>
 
               {/* Title */}
