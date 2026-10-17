@@ -188,9 +188,12 @@ body {
 .hp-tagline{font-size:11px;color:#777;margin:2px 0 0;white-space:nowrap}
 .hp-nav{display:flex;gap:1px;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
 .hp-nav::-webkit-scrollbar{display:none}
-.hp-nav-btn{border:0;padding:5px 8px;border-radius:18px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
+.hp-nav-btn{border:0;padding:6px 10px;border-radius:20px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;transition:background .15s;line-height:1.2}
+/* English / Google-translate (translated-ltr) me text lamba — tab nav buttons chhote, taaki saare fit ho (Hindi me normal) */
+html.translated-ltr .hp-nav-btn,.hp-header.hp-en .hp-nav-btn{padding:4px 7px;font-size:11.5px;gap:3px}
+html.translated-ltr .hp-ico,.hp-header.hp-en .hp-ico{width:15px;height:15px;font-size:12px}
 /* Icon (emoji) aur text ek seedh me — emoji ka apna baseline alag hota hai, isliye fix dabba */
-.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:13px;line-height:1;flex-shrink:0}
+.hp-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:14px;line-height:1;flex-shrink:0}
 .hp-ico-cat{width:22px;height:22px;font-size:16px}
 .hp-txt{display:inline-block;line-height:1.25;padding-top:1px}
 .hp-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -299,13 +302,10 @@ body {
 /* Lamba portal naam (National Defence Network) ho toh menu thoda compact — naam/tagline poore dikhein */
 @media(max-width:1500px){
   .hp-header-in{gap:10px}
-  .hp-nav-btn{padding:5px 6px;font-size:11.5px;gap:3px}
-  .hp-ico{width:15px;height:15px;font-size:12px}
+  .hp-nav-btn{padding:6px 7px;font-size:12px;gap:4px}
   .hp-tools{gap:5px}
   .hp-tool-link{padding:5px 7px}
-}
-@media(max-width:1300px){
-  .hp-nav-btn{padding:4px 5px;font-size:11px;gap:3px}
+  html.translated-ltr .hp-nav-btn,.hp-header.hp-en .hp-nav-btn{padding:4px 5px;font-size:11px;gap:2px}
 }
 /* Jagah kam ho (lamba naam, login chip, zoom) toh poora menu ☰ me — aadhe buttons kabhi nahi chhupte (JS naapta hai) */
 .hp-header.hp-nav-collapsed .hp-nav{display:none}
@@ -1158,7 +1158,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
       </div>
 
       {/* ═══ 2. HEADER ═══ */}
-      <header className="hp-header" style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
+      <header className={`hp-header${isEnglishSite ? ' hp-en' : ''}`} style={{ background: headerBg, borderTop: `3px solid ${primary}` }}>
         <div className="hp-header-in" ref={headerInRef}>
           {/* Left: Brand Logo & Title */}
           <div className="hp-brand-wrap" ref={brandRef}>
