@@ -12,7 +12,7 @@ export const NETWORK_SITES: SiteItem[] = [
   { slug: 'news-info-24', name: 'NEWS INFO 24', domain: 'newsinfo24.in' },
   { slug: 'ndn-defence', name: 'National Defence Network', domain: 'nationaldefencenetwork.com' },
   { slug: 'bazar-karobar', name: 'बाज़ार कारोबार', domain: 'bazarkarobar.com' },
-  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', domain: 'goldenpearlcorporation.com' },
+  { slug: 'golden-pearl-chronicles', name: 'गोल्डन पर्ल क्रॉनिकल्स', domain: 'goldenpearlchronicles.com' },
   { slug: 'desh-ki-aawaz', name: 'देश की आवाज़', domain: 'deshkiawaz.com' }
 ];
 

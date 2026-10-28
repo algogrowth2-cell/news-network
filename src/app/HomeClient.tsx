@@ -651,6 +651,7 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
 
       const domainMap: { [key: string]: string } = {
         'goldenpearlnews.com': 'the-local-leader',
+        'goldenpearlchronicles.com': 'golden-pearl-chronicles',
         'thelocalleader.in': 'the-local-leader',
         'theproviewtimes.com': 'the-provue-times',
         'nationaldefencenetwork.com': 'ndn-defence',

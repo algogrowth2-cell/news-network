@@ -14,6 +14,7 @@ const DOMAIN_MAP: Record<string, string> = {
   'deshkiawaz.com': 'desh-ki-aawaz',
   'janbharatnews.com': 'jan-bharat-news',
   'newsinfo24.in': 'news-info-24',
+  'goldenpearlchronicles.com': 'golden-pearl-chronicles',
   // goldenpearlnews.com ab main website (The Local Leader) dikhata hai; admin alag subdomain par
   'goldenpearlnews.com': 'the-local-leader'
 };
