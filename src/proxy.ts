@@ -2,16 +2,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { ADMIN_COOKIE, readSession } from '@/lib/adminAuth';
 
 /*
- * Admin ab ek "secret path" se khulta hai (DNS/subdomain ki zaroorat nahi):
- *   /newsroom[/...]  → admin app (login / panel). URL me /newsroom hi dikhta hai.
- *   /admin[/...]     → sirf logged-in ke liye (login ke baad andar ki navigation). Bina session wala
- *                      (jo /admin guess kare) → home par bhej diya jaata hai, taaki login kahin na mile.
- * Signed cookie hi asli suraksha hai; secret path bas extra parda (casual guessing rok).
+ * Admin ka secret darwaza /newsroom (DNS/subdomain ki zaroorat nahi):
+ *   /newsroom[/...] → ek chhota "gate" cookie set karke admin login (ya logged-in ho to panel) par bhejta hai.
+ *   /admin[/...]    → sirf tab khulta hai jab (a) login ho, ya (b) gate cookie ho (yaani /newsroom se aaye).
+ *                     Bina in dono ke /admin guess karne wala seedha home par — login kahin nahi milta.
+ * Asli suraksha signed session cookie hai; ye secret path + gate bas extra parda (casual guessing rok).
  */
 const SECRET = '/newsroom';
+const GATE = 'gpn_gate';
+const GATE_MAX_AGE = 6 * 60 * 60; // 6 ghante
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   let authed = false;
   try {
@@ -19,20 +21,28 @@ export function proxy(request: NextRequest) {
   } catch {
     authed = false;
   }
+  const gated = request.cookies.get(GATE)?.value === '1';
 
-  // Secret entry → admin app serve (rewrite: URL /newsroom hi rehta hai)
+  // Secret darwaza: gate cookie set + admin par bhejo (login ya panel)
   if (pathname === SECRET || pathname.startsWith(`${SECRET}/`)) {
     const url = request.nextUrl.clone();
-    url.pathname = `/admin${pathname.slice(SECRET.length)}`;
-    // Login nahi hai → admin login dikhao (bina session panel na khule)
-    if (!authed && url.pathname !== '/admin/login') url.pathname = '/admin/login';
-    return NextResponse.rewrite(url);
+    url.pathname = authed ? '/admin' : '/admin/login';
+    url.search = '';
+    const res = NextResponse.redirect(url);
+    res.cookies.set(GATE, '1', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: GATE_MAX_AGE });
+    return res;
   }
 
-  // Seedha /admin: logged-in ko andar jaane do; warna chhupa do (home) — /admin/login bhi nahi khulega
+  // /admin — login ya gate ke bina chhupa (home)
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    if (!authed && !gated) return NextResponse.redirect(new URL('/', request.url));
     if (authed) return NextResponse.next();
-    return NextResponse.redirect(new URL('/', request.url));
+    // gate hai par login nahi: login page khulne do; baaki protected page → login
+    if (pathname === '/admin/login') return NextResponse.next();
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/login';
+    url.search = `?next=${encodeURIComponent(pathname + search)}`;
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
