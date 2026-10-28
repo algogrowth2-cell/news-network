@@ -649,12 +649,8 @@ function HomePageContent({ initialArticles = [], initialSlug = 'the-local-leader
     if (!rawSiteSlug && typeof window !== 'undefined') {
       const hostname = window.location.hostname.toLowerCase().replace('www.', '');
 
-      if (hostname === 'goldenpearlnews.com') {
-        router.push('/admin');
-        return;
-      }
-
       const domainMap: { [key: string]: string } = {
+        'goldenpearlnews.com': 'the-local-leader',
         'thelocalleader.in': 'the-local-leader',
         'theproviewtimes.com': 'the-provue-times',
         'nationaldefencenetwork.com': 'ndn-defence',
