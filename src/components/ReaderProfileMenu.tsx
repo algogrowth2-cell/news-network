@@ -64,7 +64,7 @@ const displayEmail = (email?: string) => (email && !email.endsWith('@news.local'
 export default function ReaderProfileMenu({
   user,
   primaryColor = '#ea580c',
-  isEnglish: isEnglishProp = false,
+  isEnglish = false,
   compact = false,
   onLogout,
   onOpenRewards
@@ -76,33 +76,6 @@ export default function ReaderProfileMenu({
   onLogout: () => Promise<void> | void;
   onOpenRewards?: () => void;
 }) {
-  // Modal 'notranslate' hai (Google Translate ise chhodta hai), isliye site English par ho to bhi
-  // labels Hindi reh jaate the. Yahan khud detect karte hain ki Google Translate target 'en' hai —
-  // tab is modal ke apne labels English dikhate hain. (English-native portal par prop pehle hi true.)
-  const [translatedEn, setTranslatedEn] = useState(false);
-  useEffect(() => {
-    const check = () => {
-      try {
-        const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
-        const target = m ? decodeURIComponent(m[1]).split('/').filter(Boolean).pop() : '';
-        const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo');
-        setTranslatedEn(target === 'en' || combo?.value === 'en');
-      } catch {
-        /* ignore */
-      }
-    };
-    check();
-    // Translate lagne/hatne par <html> ki class badalti hai — tab dobara check
-    const obs = new MutationObserver(check);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    const id = window.setInterval(check, 1500); // widget deri se load ho to bhi pakad le
-    return () => {
-      obs.disconnect();
-      window.clearInterval(id);
-    };
-  }, []);
-  const isEnglish = isEnglishProp || translatedEn;
-
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -297,10 +270,10 @@ export default function ReaderProfileMenu({
   };
 
   const t = isEnglish
-    ? { title: 'My Profile', mobile: 'Mobile', email: 'Email', refCode: 'Referral Code', refTitle: '🎁 Refer & Earn', referrals: 'Successful referrals', rewards: 'Free e-paper months', viewRewards: 'Refer & share link', logout: 'Logout',
+    ? { title: 'My Profile', mobile: 'Mobile', email: 'Email', refCode: 'Referral Code', refTitle: 'Refer & Earn', referrals: 'Successful referrals', rewards: 'Free e-paper months', viewRewards: 'Refer & share link', logout: 'Logout',
         edit: 'Edit Profile', editTitle: 'Edit Profile', name: 'Full Name', changePhoto: 'Tap the camera to change photo', save: 'Save', saving: 'Saving…', cancel: 'Cancel', nameErr: 'Please enter a valid name.', emailErr: 'Please enter a valid email.',
         confirmTitle: 'Confirm logout', confirmBody: 'Are you sure you want to log out of your account?', confirmCancel: 'Cancel', confirmYes: 'Yes, log out', loggingOut: 'Logging out…' }
-    : { title: 'मेरी प्रोफ़ाइल', mobile: 'मोबाइल', email: 'ईमेल', refCode: 'रेफरल कोड', refTitle: '🎁 रेफर और कमाएं', referrals: 'सफल रेफरल', rewards: 'फ्री ई-पेपर महीने', viewRewards: 'रेफरल कोड व लिंक शेयर करें', logout: 'लॉगआउट',
+    : { title: 'मेरी प्रोफ़ाइल', mobile: 'मोबाइल', email: 'ईमेल', refCode: 'रेफरल कोड', refTitle: 'रेफर और कमाएं', referrals: 'सफल रेफरल', rewards: 'फ्री ई-पेपर महीने', viewRewards: 'रेफरल कोड व लिंक शेयर करें', logout: 'लॉगआउट',
         edit: 'प्रोफ़ाइल संपादित करें', editTitle: 'प्रोफ़ाइल संपादित करें', name: 'पूरा नाम', changePhoto: 'फ़ोटो बदलने हेतु कैमरा दबाएं', save: 'सेव करें', saving: 'सेव हो रहा है…', cancel: 'रद्द करें', nameErr: 'कृपया सही नाम दर्ज करें।', emailErr: 'कृपया सही ईमेल दर्ज करें।',
         confirmTitle: 'लॉगआउट की पुष्टि', confirmBody: 'क्या आप वाकई अपने खाते से लॉगआउट करना चाहते हैं?', confirmCancel: 'रद्द करें', confirmYes: 'हाँ, लॉगआउट करें', loggingOut: 'लॉगआउट हो रहा है…' };
 
@@ -309,12 +282,12 @@ export default function ReaderProfileMenu({
       <style dangerouslySetInnerHTML={{ __html: RP_STYLES }} />
       <button type="button" className={`rp-chip${compact ? ' compact' : ''}`} onClick={() => setOpen(true)} aria-label={t.title} aria-haspopup="dialog">
         <span className="rp-av" style={{ background: primaryColor }}>{avatarContent(photoUrl)}</span>
-        {!compact && <span>{shortName}</span>}
+        {!compact && <span className="notranslate" translate="no">{shortName}</span>}
       </button>
 
       {mounted && open &&
         createPortal(
-          <div className="rp-overlay notranslate" translate="no" onClick={() => !loggingOut && !savingProfile && (editing ? setEditing(false) : confirming ? setConfirming(false) : setOpen(false))}>
+          <div className="rp-overlay" onClick={() => !loggingOut && !savingProfile && (editing ? setEditing(false) : confirming ? setConfirming(false) : setOpen(false))}>
             {editing ? (
               <div className="rp-box" role="dialog" aria-modal="true" aria-label={t.editTitle} onClick={(e) => e.stopPropagation()}>
                 <div className="rp-head">
@@ -327,7 +300,7 @@ export default function ReaderProfileMenu({
                 <div className="rp-edit-head">
                   <div className="rp-photo-wrap">
                     <span className="rp-av-xl" style={{ background: primaryColor }}>{avatarContent(photoPreview || photoUrl)}</span>
-                    <button type="button" className="rp-cam" style={{ background: primaryColor }} onClick={() => fileRef.current?.click()} aria-label={t.changePhoto}>📷</button>
+                    <button type="button" className="rp-cam notranslate" translate="no" style={{ background: primaryColor }} onClick={() => fileRef.current?.click()} aria-label={t.changePhoto}>📷</button>
                     <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={pickPhoto} />
                   </div>
                   <span style={{ fontSize: '11.5px', color: '#64748b' }}>{t.changePhoto}</span>
@@ -380,31 +353,31 @@ export default function ReaderProfileMenu({
                   <span className="rp-av-lg" style={{ background: primaryColor }}>{avatarContent(photoUrl)}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>{t.title}</div>
-                    <p className="rp-name">{name || '—'}</p>
+                    <p className="rp-name notranslate" translate="no">{name || '—'}</p>
                   </div>
                   <button type="button" className="rp-close" onClick={() => setOpen(false)} aria-label="बंद करें">✕</button>
                 </div>
 
                 <div className="rp-row">
                   <span className="rp-label">{t.mobile}</span>
-                  <span className="rp-value">{user.phone ? `+91 ${user.phone}` : '—'}</span>
+                  <span className="rp-value notranslate" translate="no">{user.phone ? `+91 ${user.phone}` : '—'}</span>
                 </div>
                 <div className="rp-row">
                   <span className="rp-label">{t.email}</span>
-                  <span className="rp-value">{displayEmail(email)}</span>
+                  <span className="rp-value notranslate" translate="no">{displayEmail(email)}</span>
                 </div>
                 {user.phone && (
                   <div className="rp-row">
                     <span className="rp-label">{t.refCode}</span>
                     <span className="rp-value" style={{ color: primaryColor, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', letterSpacing: '1px' }}>
-                      {stats ? stats.code || (isEnglish ? 'Open Refer & Earn' : 'रेफर पेज खोलें') : '…'}
+                      {!stats ? '…' : stats.code ? <span className="notranslate" translate="no">{stats.code}</span> : isEnglish ? 'Open Refer & Earn' : 'रेफर पेज खोलें'}
                     </span>
                   </div>
                 )}
 
                 {user.phone && (
                   <div className="rp-ref">
-                    <b>{t.refTitle}</b>
+                    <b><span className="notranslate" translate="no">🎁 </span>{t.refTitle}</b>
                     <div className="rp-ref-stats">
                       <span>
                         <b>{stats ? stats.referrals : '…'}</b>
@@ -433,7 +406,7 @@ export default function ReaderProfileMenu({
 
                 {user.phone && marketing !== null && (
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '14px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
-                    <span>📣 {isEnglish ? 'Offers & promotional messages' : 'ऑफ़र व प्रचार संदेश (SMS/WhatsApp/ईमेल)'}</span>
+                    <span><span className="notranslate" translate="no">📣 </span>{isEnglish ? 'Offers & promotional messages' : 'ऑफ़र व प्रचार संदेश (SMS/WhatsApp/ईमेल)'}</span>
                     <input
                       type="checkbox"
                       checked={marketing}
@@ -455,7 +428,7 @@ export default function ReaderProfileMenu({
                   </label>
                 )}
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#64748b' }}>
-                  🔒{' '}
+                  <span className="notranslate" translate="no">🔒</span>{' '}
                   <Link href="/privacy-policy#dpdp" style={{ color: '#64748b' }}>
                     {isEnglish ? 'Privacy & consent' : 'गोपनीयता व सहमति'}
                   </Link>{' '}
@@ -471,11 +444,11 @@ export default function ReaderProfileMenu({
                   style={{ marginTop: '16px', background: primaryColor, color: '#fff', border: 0 }}
                   onClick={startEdit}
                 >
-                  ✏️ {t.edit}
+                  <span className="notranslate" translate="no">✏️ </span>{t.edit}
                 </button>
 
                 <button type="button" className="rp-btn rp-logout" onClick={() => setConfirming(true)}>
-                  ⎋ {t.logout}
+                  <span className="notranslate" translate="no">⎋ </span>{t.logout}
                 </button>
               </div>
             ) : (
