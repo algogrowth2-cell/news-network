@@ -441,7 +441,7 @@ export default function ReaderProfileMenu({
                 <button
                   type="button"
                   className="rp-btn"
-                  style={{ marginTop: '16px', background: primaryColor, color: '#fff', border: 0 }}
+                  style={{ marginTop: '16px', background: primaryColor, color: '#fff', border: 0, textTransform: 'capitalize' }}
                   onClick={startEdit}
                 >
                   <span className="notranslate" translate="no">✏️ </span>{t.edit}
